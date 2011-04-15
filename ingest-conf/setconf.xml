@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Builds the CDL Framework --><!-- Assumes: Java source is at '../src' --><!-- Builds:  Java classes at '../classes' --><!-- Builds:  Jar at '../lib' --><!--  -->
+<project basedir="." default="setprop" name="buildingest">
+    <target name="-init">
+        <echo message="-init entered"/>
+        <delete dir="src"/>
+        <property file="setconf.properties"/>
+    </target>
+    <target name="setprop-local" depends="-init">
+        <echo message="make-repository entered"/>
+        <copy todir="src/main/resources/resources">
+            <fileset dir="properties/local"/>
+        </copy>
+    </target>
+    <target name="setprop-development" depends="-init">
+        <echo message="make-repository entered"/>
+        <copy todir="src/main/resources/resources">
+            <fileset dir="properties/development"/>
+        </copy>
+    </target>
+    <target name="setprop-stage" depends="-init">
+        <echo message="make-repository entered"/>
+        <copy todir="src/main/resources/resources">
+            <fileset dir="properties/stage"/>
+        </copy>
+    </target>
+    <target name="setprop-production" depends="-init">
+        <echo message="make-repository entered"/>
+        <copy todir="src/main/resources/resources">
+            <fileset dir="properties/production"/>
+        </copy>
+    </target>
+</project>
