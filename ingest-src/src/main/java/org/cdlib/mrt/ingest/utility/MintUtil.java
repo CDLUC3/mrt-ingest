@@ -162,7 +162,7 @@ public class MintUtil
     		String collection = (String) collections.next();
 		if (collection.startsWith("ark:/")) {
 		    System.out.println("[info] " + MESSAGE + "Found group identifier: " + collection);
-		    group = "&group=" + collection;
+		    group = "&group=" + escape(collection);
 		    break;
 		} else {
 		    System.err.println("[warning] " + MESSAGE + "Collection ID is not a valid group identifier: " + collection);
@@ -173,13 +173,13 @@ public class MintUtil
 	    try {
 		// e.g. http://merritt.cdlib.org/object?object=ark%3A%2F99999%2Ffk40v8k3k&group=ark:/13030/fk4...
 		target = "_target: " + "http://merritt.cdlib.org/object?object=" + 
-			URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8") + group;
+			URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8") + escape(group);
 	    } catch (Exception e) { }
 
 	    // Is context available?
 	    String context = "";
 	    try {
-	        context = "mrt.creator: " + profileState.getContext();
+	        context = "mrt.creator: " + escape(profileState.getContext());
 	    } catch (Exception e) { }
 
 	    httpCommand = new HttpPost(url);
@@ -261,26 +261,38 @@ public class MintUtil
         try {
 	    String md = "";
 	    try {
-		md += "who: " + jobState.getObjectCreator() + EOL;
+		md += "who: " + escape(jobState.getObjectCreator()) + EOL;
 	    } catch (Exception e) {}
 	    try {
-		md += "what: " + jobState.getObjectTitle() + EOL;
+		md += "what: " + escape(jobState.getObjectTitle()) + EOL;
 	    } catch (Exception e) {}
 	    try {
-		md += "when: " + jobState.getObjectDate() + EOL;
+		md += "when: " + escape(jobState.getObjectDate()) + EOL;
 	    } catch (Exception e) {}
 	    try {
-		md += "where: " + jobState.getPrimaryID().getValue() + EOL;
+		md += "where: " + escape(jobState.getPrimaryID().getValue()) + EOL;
 	    } catch (Exception e) {}
 	    try {
-		md += "where: " + jobState.getLocalID().getValue() + EOL;
+		md += "where: " + escape(jobState.getLocalID().getValue()) + EOL;
 	    } catch (Exception e) {}
 
             return md;
         } catch (Exception ex) {
-            throw new TException.GENERAL_EXCEPTION("error accessing metadata");
+            throw new TException.GENERAL_EXCEPTION("error processing metadata");
         }
     }
+
+    private static String escape(String input)
+        throws TException
+    {
+        try {
+		return input.replaceAll("%", "%25").replaceAll("\n", "%0A").replaceAll("\r", "%0D").replaceAll(":", "%3A");
+        } catch (Exception ex) {
+            throw new TException.GENERAL_EXCEPTION("escaping ERC metadata");
+        }
+    }
+
+
 
     private static String getTargetURL(JobState jobState)
         throws TException
