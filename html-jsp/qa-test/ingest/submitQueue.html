@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <title>UC3 - Test Ingest</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel = "stylesheet" type="text/css" href="styles.css" />
+</head>
+<body onload="recalc_url();">
+  <div class="right_top_nav smaller">
+    <a href="#">My profile</a>&nbsp;&nbsp;&nbsp;
+    <a href="#">Log out</a>&nbsp;&nbsp;&nbsp;
+    <a href="#"
+       onclick="alert('This is the UC3 Merritt Ingest Service that can be used to submit content into the UC3 Digital Preservation Repository (DPR) for long-term management and curation.');return false"
+       title="This is the UC3 Merritt Ingest Service that can be used to submit content into the UC3 Digital Preservation Repository (DPR) for long-term management and curation.">
+      Help
+    </a>
+  </div>
+  <div class="title">
+    <img src="merritt.png" alt="Merritt Logo"/> UC3 Merritt Ingest Service
+    <img src="muncher.png" alt="Ingest Logo"/> 
+    <span style="font-size: 50%;">(Prototype)</span>
+  </div>
+<hr/>
+
+<form method="post" action="http://badger.cdlib.org:33121/poster/submit"
+      enctype="multipart/form-data" id="the_form">
+  <input type="hidden" id="link" value="http://badger.cdlib.org:33121/poster/submit" />
+
+  <div class="right_area">
+    <div class="section_head">
+      Package verification (optional)
+    </div>
+    
+    <div class="left_label">Checksum:</div>
+    <div class="right_field" style="width:auto;">
+    <select name="digestType">
+        <option value="MD5">MD5</option>
+        <option value="SHA-256">SHA-256</option>
+        <option value="SHA-512">SHA-512</option>
+      </select>
+    </div>
+    <div class="right_field">
+      <input type="text" name="digestValue" class="standard_width"/>
+    </div>
+  </div>
+
+
+  <div class="section_head">Submission package</div>
+  <div class="left_label">File:</div>
+  <div class="right_field"><input type="file" name="file" class="standard_width" /></div>
+
+  <div class="left_label">Single object:</div>
+
+  <div class="option_container">
+    <div><!--gratuitious div for ie since it doesn't handle floats right -->
+      <div class="short_option">
+        <input type="radio" name="type" value="file" checked="checked" />File
+      </div>
+      <div class="short_option_description">
+        <a href="#" target="_blank" class="smaller"
+           onclick="alert('Select this option if your object is composed of a single file.');return false;"
+           title="Select this option if your object is composed of a single file.">
+          What is an object file?</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="short_option">
+        <input type="radio" name="type" value="container" />Container
+      </div>
+      <div class="short_option_description">
+        <a href="#" target="_blank" class="smaller"
+           onclick="alert('Select this option if your object is composed of more than one file, all of which are included within a single Tar or Zip file.');return false;"
+           title="Select this option if your object is composed of more than one file, all of which are included within a single Tar or Zip file.">
+          What is an object container?</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="short_option" style="clear:both;">
+        <input type="radio" name="type" value="manifest" /> Manifest
+      </div>
+      <div class="short_option_description">
+        <a href="#" target="_blank" class="smaller"
+           onclick="alert('Select this option if your object is composed of more than one file, all of which are referenced in a manifest file.');return false;"
+           title="Select this option if your object is composed of more than one file, all of which are referenced in a manifest file.">
+          What is an object manifest?
+        </a>
+      </div>
+    </div>
+    <div class="option_sub_divider"><hr/></div>
+  </div>
+
+  <div style="clear:both"></div><!-- gratuitous clearing div for IE -->
+  <div class="left_label">Batch of objects:</div>
+  <div class="option_container">
+    <div>
+      <div class="short_option">
+        <input type="radio" name="type" value="batchManifest" />Manifest
+      </div>
+      <div class="short_option_description">
+        <a href="#" target="_blank" class="smaller"
+           onclick="alert('Select this option if you wish to submit more than one object.  The batch manifest must contain one line for each object, which must be represented by an object manifest.');return false;"
+           title="Select this option if you wish to submit more than one object.  The batch manifest must contain one line for each object, which must be represented by an object manifest.">
+          What is a batch manifest?
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"><hr/></div>
+  <div class="section_head">Object Profile</div>
+
+  <div class="left_label">Profile:</div>
+  <div class="right_field">
+    <select name="profile" class="standard_width">
+      <option value="profileMREYES">M. Reyes</option>
+      <option value="profileDLOY">D. Loy</option>
+      <option value="profileSABRAMS">S. Abrams</option>
+      <option value="profilePWILLETT">P. Willett</option>
+    </select>
+  </div>
+
+  <div class="short_text_description">
+    <a href="#" target="_blank" class="smaller"
+       onclick="alert('A profile is a set of ingest processing choices.');return false;"
+       title="A profile is a set of ingest processing choices.">
+      What is a profile?
+    </a>
+  </div>
+
+  <div class="divider"><hr/></div>
+
+
+  <div class="section_head">Object Identifier</div>
+  <div class="left_label">Primary Identifier:</div>
+  <div class="right_field">
+    <input type="text" name="objectID" class="standard_width" maxlength="30" onchange="recalc_url();" id="objectid"/><br/>
+    <span class="smaller">Leave blank for automatic assignment</span>
+  </div>
+  <div class="short_text_description">
+    <a href="#" target="_blank" class="smaller"
+      onclick="alert('The primary identifier is used to permanently and uniquely identify an object within the repository.  If your object does not already have a primary identifier, leave this field blank and a new identifier will be automatically generated and returned to you in the ingest notification message.');return false;"
+      title="The primary identifier is used to permanently and uniquely identify an object within the repository.  If your object does not already have a primary identifier, leave this field blank and a new identifier will be automatically generated and returned to you in the ingest notification message.">
+      What is a primary identifier?
+    </a>
+  </div>
+  <div class="divider"><hr/></div>
+
+  <div class="section_head">Object description (optional)</div>
+
+  <div>
+    <div class="left_label">Creator:</div>
+    <div class="right_field"><input type="text" name="creator" class="standard_width" maxlength="30" value=""/></div>
+    <div class="short_text_description">
+      <a href="#" target="_blank" class="smaller"
+         onclick="alert('A creator is a person or institution responsible for a digital object.  Examples of creators include authors, contributors, photographers, publishers, etc.');return false;"
+         title="A creator is a person or institution responsible for a digital object.  Examples of creators include authors, contributors, photographers, publishers, etc.">
+        What is a creator?
+      </a>
+    </div>
+  </div>
+
+  <div>
+    <div class="left_label">Title:</div>
+    <div class="right_field"><input type="text" name="title" class="standard_width" maxlength="30" value=""/></div>
+    <div class="short_text_description">
+      <a href="#" target="_blank" class="smaller"
+         onclick="alert('A title is a name or other human-oriented identifier associated with a digital object.');return false;"
+         title="A title is a name or other human-oriented identifier associated with a digital object.">
+        What is a title?
+      </a>
+    </div>
+  </div>
+
+  <div>
+    <div class="left_label">Date:</div>
+    <div class="right_field"><input type="text" name="date" class="standard_width" maxlength="30" value=""/></div>
+    <div class="short_text_description">
+      <a href="#" target="_blank" class="smaller"
+         onclick="alert('A date is a date important in the lifecycle of a digital object.');return false;"
+         title="A date is a date important in the lifecycle of a digital object.">
+        What is a date?
+      </a>
+    </div>
+  </div>
+
+  <div>
+    <div class="left_label">Local Identifier:</div>
+    <div class="right_field"><input type="text" name="localIdentifier" class="standard_width" maxlength="30" value=""/></div>
+    <div class="short_text_description">
+      <a href="#" target="_blank" class="smaller"
+         onclick="alert('A local identifier is an object identifier that is meaningful in your local curatorial management system.');return false;"
+         title="A local identifier is an object identifier that is meaningful in your local curatorial management system.">
+        What is a local identifier?
+      </a>
+    </div>
+  </div>
+
+  <div class="divider"><hr/></div>
+  <div class="section_head">General</div>
+
+  <div>
+    <div class="left_label">Response format:</div>
+    <div class="right_field">
+      <select name="responseForm" class="standard_width">
+        <option value="anvl">ANVL</option>
+        <option value="json">JSON</option>
+        <option value="turtle" disabled="disabled">RDF/Turtle</option>
+        <option value="xhtml" selected="selected">XHTML</option>
+        <option value="xml">XML</option>
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <div class="left_label">&nbsp;</div>
+    <div class="right_field">
+      <input type="submit" name="submit" value="submit"/>
+    </div>
+  </div>
+
+</form>
+
+
+
+<script type="text/javascript">
+	function recalc_url(){
+	  var item = document.getElementById('the_form');
+	  var link = document.getElementById('link').value;
+	  var objectid = document.getElementById('objectid').value;
+	  if(link != ''){
+		if(link.substring(link.length-1)!='/'){
+		  link += '/';
+		}
+		item.action = link + objectid;
+	  }
+	}
+</script>
+
+<div class="divider"><hr/></div>
+<p class="smaller">Copyright &copy; 2009-2010 The Regents of the University of California
+  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#">Terms of service</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="#">Help</a><br/>
+<script type="text/javascript">
+
+var d_names = new Array("Sunday", "Monday", "Tuesday",
+"Wednesday", "Thursday", "Friday", "Saturday");
+
+var m_names = new Array("January", "February", "March",
+"April", "May", "June", "July", "August", "September",
+"October", "November", "December");
+
+var d = new Date();
+var curr_day = d.getDay();
+var curr_date = d.getDate();
+var curr_month = d.getMonth();
+var curr_year = d.getFullYear();
+
+var a_p = "";
+var curr_hour = d.getHours();
+if (curr_hour < 12){
+   a_p = "am";
+}else{
+   a_p = "pm";
+}
+if (curr_hour == 0){
+   curr_hour = 12;
+   }
+if (curr_hour > 12){
+   curr_hour = curr_hour - 12;
+   }
+
+var curr_min = d.getMinutes();
+
+document.write(d_names[curr_day] + ", " + m_names[curr_month] + " " +
+                curr_date + ", " + curr_year + " " + curr_hour + ":" + curr_min + a_p);
+
+</script>
+
+</p>
+
+</body>
+</html>
+ 

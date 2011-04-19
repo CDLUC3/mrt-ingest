@@ -1,0 +1,97 @@
+<html>
+<head>
+    <title>UC3 - Test Ingest</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body onload="recalc_url();">
+<h1>UC3 Micro-services Ingest Test Page</h1>
+
+<form method="post" action="http://linux-oj8o.ad.ucop.edu:8080/ingest/submit" enctype="multipart/form-data" id="the_form">
+<table>
+
+<tr><td>
+<b>Ingest Service URL:</b>
+
+&nbsp; &nbsp;  &nbsp; <input type="text" name="link" SIZE="60" value="http://linux-oj8o.ad.ucop.edu:8080/ingest/submit" onchange="recalc_url()" id="link"><br>
+</td></tr>
+<br>
+
+<tr><td><br>
+<b>Submission package: </b>
+&nbsp;  &nbsp; <INPUT TYPE="file" name="file" size=25>
+</td></tr>
+<br>
+
+<tr><td>
+<b>Submission format:</b><br>
+&nbsp; &nbsp;  &nbsp; <input type="radio" name="type" value="file" checked>file<br>
+&nbsp; &nbsp;  &nbsp; <input type="radio" name="type" value="container">container<br>
+&nbsp; &nbsp;  &nbsp; <input type="radio" name="type" value="manifest">manifest
+</td></tr>
+
+<tr><td>
+<b>Object ID:</b> &nbsp; (leave blank to mint)
+&nbsp; &nbsp;  &nbsp; <INPUT TYPE=text name="objectID" SIZE="30" MAXLENGTH=30 value="13030-abcdefgh" onchange="recalc_url();" id="objectid">
+</td></tr>
+
+<tr><td>
+<b>Profile ID:</b> &nbsp; &nbsp; 
+<select name="profile">
+<option value="profileMREYES">M. Reyes</option>
+<option value="profileDLOY">D. Loy</option>
+<option value="profileSABRAMS">S. Abrams</option>
+<option value="profilePWILLETT">P. Willett</option>
+</select>
+</td></tr>
+
+<tr><td>
+<b>Dublin Core - Creator:</b>
+&nbsp; &nbsp;  &nbsp; <INPUT TYPE=text name="who" SIZE="30" MAXLENGTH=30 value="">
+</td></tr>
+
+<tr><td>
+<b>Dublin Core - Title :</b>
+&nbsp; &nbsp;  &nbsp; <INPUT TYPE=text name="what" SIZE="30" MAXLENGTH=30 value="">
+</td></tr>
+
+<tr><td>
+<b>Dublin Core - Date:</b>
+&nbsp; &nbsp;  &nbsp; <INPUT TYPE=text name="when" SIZE="30" MAXLENGTH=30 value="">
+</td></tr>
+
+<tr>
+<tr><td>
+<b>Response format:</b>  &nbsp; &nbsp;
+<select name="responseForm">
+<option value="anvl">ANVL</option>
+<option value="json">JSON</option>
+<option value="turtle" disabled>RDF/Turtle</option>
+<option value="xhtml" selected>XHTML</option>
+<option value="xml">XML</option>
+</select>
+</td></tr>
+
+<td>
+<hr>
+<input type="submit" name="submit" value="submit">
+</td></tr>
+</table>
+</form>
+
+<script type="text/javascript">
+	function recalc_url(){
+	  var item = document.getElementById('the_form');
+	  var link = document.getElementById('link').value;
+	  var objectid = document.getElementById('objectid').value;
+	  if(link != ''){
+		if(link.substring(link.length-1)!='/'){
+		  link += '/';
+		}
+		item.action = link + objectid;
+	  }
+	}
+</script>
+
+</body>
+</html>
+ 
