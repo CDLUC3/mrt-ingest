@@ -69,7 +69,7 @@ public class HandlerCleanup extends Handler<JobState>
 
 	try {
 
-	    File stageDir = ingestRequest.getQueuePath();
+	    File stageDir = new File(ingestRequest.getQueuePath(), "producer");
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
 
 	    boolean deleteDir = FileUtil.deleteDir(stageDir);
