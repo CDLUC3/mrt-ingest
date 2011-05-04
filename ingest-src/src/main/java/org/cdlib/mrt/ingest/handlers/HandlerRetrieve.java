@@ -117,6 +117,7 @@ public class HandlerRetrieve extends Handler<JobState>
 	    boolean result;
 	    PackageTypeEnum packageType = ingestRequest.getPackageType();
 	    File targetDir = new File(ingestRequest.getQueuePath(), "producer");
+            File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
 
 	    if (packageType == PackageTypeEnum.container) {
 		System.out.println("[info] " + MESSAGE + "container parm specified, no retrieval necessary.");
@@ -228,17 +229,13 @@ public class HandlerRetrieve extends Handler<JobState>
 		    }
 		    digestUtil = null;
 
-		    // cleanup
-		    if (manifestFile.delete()) {
-		        System.out.println("[INFO] deleted manifest file: " + manifestFile.getAbsolutePath());
-		    } else {
-		        System.out.println("[ERROR] failure to delete manifest file: " + manifestFile.getAbsolutePath());
-		    }
+		    // save manifest
+		    System.out.println("[INFO] saving submitter's manifest file: " + manifestFile.getAbsolutePath());
+		    manifestFile.renameTo(new File(systemTargetDir, "mrt-submission-manifest.txt"));
 	        }
 	    }
 
             // metadata file in ANVL format
-            File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File ingestFile = new File(systemTargetDir, "mrt-ingest.txt");
             if ( ! createMetadata(ingestFile, status)) {
                 throw new TException.GENERAL_EXCEPTION("[error] "
