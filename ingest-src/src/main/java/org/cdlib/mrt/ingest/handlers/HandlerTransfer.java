@@ -29,20 +29,22 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 
-import java.util.Date;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Date;
 import java.util.Properties;
+
+import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.xpath.XPath;
@@ -125,7 +127,7 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    // make service request
 	    try {
-  	        response = webResource.type("application/x-www-form-urlencoded").post(ClientResponse.class, formData);
+  	        response = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
 	    } catch (Exception e) {
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
 	    }

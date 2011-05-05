@@ -73,6 +73,12 @@ public interface ProfileStateInf
     public URL getCharacterizationURL();
 
     /**
+     * Get Fixity URL
+     * @return URL fixity
+     */
+    public URL getFixityURL();
+
+    /**
      * Get target storage service
      * @return StoreNode storage service endpoint
      */
