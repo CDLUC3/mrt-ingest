@@ -90,6 +90,7 @@ public class ProfileUtil
     protected static final String matchModificationDate = "ModificationDate";
     protected static final String matchObjectMinterURL = "ObjectMinterURL";
     protected static final String matchCharacterizationURL = "CharacterizationURL";
+    protected static final String matchFixityURL = "FixityURL";
     protected static final String matchCollection = "Collection";
     protected static final String matchType = "Type";
     protected static final String matchRole = "Role";
@@ -156,6 +157,14 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("CharacterizationService parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setCharacterizationURL(new URL(value));
+		} else if (key.startsWith(matchFixityURL)) {
+                    if (DEBUG) System.out.println("[debug] fixity URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("FixityService parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setFixityURL(new URL(value));
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
 		    profileState.setCollection(value);

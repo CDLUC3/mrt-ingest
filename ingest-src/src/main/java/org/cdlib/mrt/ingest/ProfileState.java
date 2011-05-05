@@ -58,6 +58,7 @@ public class ProfileState
     protected String scheme = null;
     protected URL objectMinterURL = null;
     protected URL characterizationURL = null;
+    protected URL fixityURL = null;
     protected Vector<Notification> contactsEmail = new Vector();
     protected SortedMap<Integer,HandlerState> ingestHandlers = null;
     protected SortedMap<Integer,HandlerState> queueHandlers = null;
@@ -194,6 +195,14 @@ public class ProfileState
     }
 
     /**
+     * Set fixity URL
+     * @param URL fixity URL
+     */
+    public void setFixityURL(URL fixityURL) {
+        this.fixityURL = fixityURL;
+    }
+
+    /**
      * Get object minter URL
      * @return object minter URL
      */
@@ -207,6 +216,14 @@ public class ProfileState
      */
     public URL getCharacterizationURL() {
         return this.characterizationURL; 
+    }
+
+    /**
+     * Get fixity URL
+     * @return fixity URL
+     */
+    public URL getFixityURL() {
+        return this.fixityURL; 
     }
 
     /**
