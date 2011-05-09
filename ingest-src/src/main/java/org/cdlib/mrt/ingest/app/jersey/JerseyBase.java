@@ -58,6 +58,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
@@ -101,14 +102,14 @@ public class JerseyBase
      * @return formatted data with MimeType
      * @throws TException
      */
-    protected TypeFile getStateFile(StateInf responseState, ResponseFormEnum outputFormat, LoggerInf logger)
+    protected TypeFile getStateFile(StateInf responseState, FormatType outputFormat, LoggerInf logger)
             throws TException
     {
         if (responseState == null) return null;
         PrintStream stream = null;
         TypeFile typeFile = new TypeFile();
         try {
-            if (outputFormat == ResponseFormEnum.serial) {
+            if (outputFormat == FormatType.serial) {
                 typeFile.formatType = outputFormat;
                 if (responseState instanceof Serializable) {
                     Serializable serial = (Serializable)responseState;
@@ -155,7 +156,7 @@ public class JerseyBase
      * @return DataType.ResponseForm form of user format
      * @throws TException
      */
-    protected ResponseFormEnum getFormatType(String formatType, String form)
+    protected FormatType getFormatType(String formatType, String form)
             throws TException
     {
         try {
@@ -163,7 +164,7 @@ public class JerseyBase
                 throw new TException.REQUEST_ELEMENT_UNSUPPORTED("Format not supported:" + formatType);
             }
             formatType = formatType.toLowerCase();
-            ResponseFormEnum format = ResponseFormEnum.setResponseForm(formatType);
+	    FormatType format = FormatType.valueOf(formatType);
             if (!format.getForm().equals(form)) {
                 throw new TException.REQUEST_ELEMENT_UNSUPPORTED("Format not supported:" + formatType);
             }
@@ -372,12 +373,12 @@ public class JerseyBase
         throws TException
     {
         TypeFile typeFile = null;
-        ResponseFormEnum format = null;
+        FormatType format = null;
         try {
             format = getFormatType(formatType, "state");
         } catch (TException tex) {
             responseState = tex;
-            format = ResponseFormEnum.xml;
+            format = FormatType.xml;
         }
 
         try {
@@ -423,12 +424,12 @@ public class JerseyBase
         if (DEBUG) System.err.println("TRACE:" + StringUtil.stackTrace(exception));
         int httpStatus = exception.getStatus().getHttpResponse();
         TypeFile typeFile = null;
-        ResponseFormEnum format = null;
+        FormatType format = null;
         try {
             format = getFormatType(formatType, "state");
 
         } catch (TException dtex) {
-            format = ResponseFormEnum.xml;
+            format = FormatType.xml;
         }
         try {
             typeFile = getStateFile(exception, format, logger);
@@ -655,7 +656,7 @@ public class JerseyBase
      * @return Formatter
      * @throws TException process exception
      */
-    protected FormatterInf getFormatter(ResponseFormEnum outputFormat, LoggerInf logger)
+    protected FormatterInf getFormatter(FormatType outputFormat, LoggerInf logger)
         throws TException
     {
         String formatS = null;
@@ -747,13 +748,15 @@ public class JerseyBase
         // form parameter overrides "Accept" header
         if (StringUtil.isEmpty(formatType)) {
             try {
-                newFormatType = ResponseFormEnum.valueOfMimeType(acceptParm).toString();
+
+                newFormatType = FormatType.valueOfMimeType(acceptParm).toString();
             } catch (Exception e) {
                 System.out.println("[warning] format type not supported: " + acceptParm + " - setting to: " + newFormatType);
             }
         } else {
 	    try {
-                newFormatType = ResponseFormEnum.valueOfExtension(formatType).toString();
+                FormatType format = FormatType.valueOf(formatType.toLowerCase());
+                newFormatType = format.toString();
 	    } catch (Exception e) {
                 System.out.println("[warning] format type not supported: " + formatType + " - setting to: " + newFormatType);
 	    }
@@ -767,7 +770,7 @@ public class JerseyBase
      */
     public class TypeFile
     {
-        public ResponseFormEnum formatType = null;
+        public FormatType formatType = null;
         public File file = null;
         public String id = null;
     }
