@@ -78,7 +78,7 @@ public class JerseyIngest extends JerseyBase
     @GET
     @Path("/state")
     public Response getServiceState(
-            @DefaultValue("xml") @QueryParam("t") String formatType,
+            @QueryParam("t") String formatType,
 	    @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -86,7 +86,7 @@ public class JerseyIngest extends JerseyBase
     {
         LoggerInf logger = null;
         try {
-	    formatType = processFormatType(request.getHeader("Accept"), formatType);
+	    formatType = processFormatType(request.getHeader("Accept"), formatType);	// xml default
             log("getServiceState entered:" + " - formatType=" + formatType);
 
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
@@ -109,7 +109,7 @@ public class JerseyIngest extends JerseyBase
     @GET
     @Path("/help")
     public Response getHelp(
-            @DefaultValue("xml") @QueryParam("t") String formatType,
+            @QueryParam("t") String formatType,		// xml default
 	    @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
