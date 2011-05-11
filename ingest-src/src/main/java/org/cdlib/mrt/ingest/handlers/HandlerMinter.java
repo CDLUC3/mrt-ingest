@@ -63,6 +63,7 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -531,11 +532,14 @@ public class HandlerMinter extends Handler<JobState>
             // make service request
             clientResponse = webResource.get(ClientResponse.class);
 	    int status = clientResponse.getStatus();
-   	    String response = clientResponse.getEntity(String.class);
+   	    String response = null;
  
 
 	    if (status != 200) {
-		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
+   	        TExceptionResponse tExceptionResponse = clientResponse.getEntity(TExceptionResponse.class);
+		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+	    } else {
+   	        response = clientResponse.getEntity(String.class);
 	    }
 
             DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
