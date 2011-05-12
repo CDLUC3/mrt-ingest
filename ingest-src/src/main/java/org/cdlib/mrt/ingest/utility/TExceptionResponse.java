@@ -32,33 +32,19 @@ package org.cdlib.mrt.ingest.utility;
 import java.io.Serializable;  
   
 import javax.xml.bind.annotation.XmlAccessType;  
+import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAccessorType;  
 import javax.xml.bind.annotation.XmlAttribute;  
 import javax.xml.bind.annotation.XmlElement;  
 import javax.xml.bind.annotation.XmlNsForm;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSchema;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
-  
-@XmlRootElement(name="tException.REQUEST_INVALID", namespace="http://uc3.cdlib.org/ontology/mrt/core/exc")
-
-/*
-@javax.xml.bind.annotation.XmlSchema (
-      xmlns = { @javax.xml.bind.annotation.XmlNs(prefix="exc", namespaceURI="http://uc3.cdlib.org/ontology/mrt/core/exc"), },
-	elementFormDefault = XmlNsForm.QUALIFIED
-)
-*/
-
-/*
-@XmlSchema(namespace = "http://www.example.org",
-	   prefix="exc",
-	   namespaceURI="http://uc3.cdlib.org/ontology/mrt/core/exc",
-           elementFormDefault = XmlNsForm.QUALIFIED)
-*/
-
-// @XmlAccessorType(XmlAccessType.FIELD)  
-public class TExceptionResponse implements Serializable{  
+@XmlRootElement
+public class TExceptionResponse implements Serializable {
   
     private String location; 
     private String lineNumber; 
@@ -116,4 +102,12 @@ public class TExceptionResponse implements Serializable{
     public String getTrace() { return trace; }
     public void setTrace(String trace) { this.trace = trace; }
 
-}  
+
+    @XmlRootElement(name="tException.EXTERNAL_SERVICE_UNAVAILABLE", namespace="http://uc3.cdlib.org/ontology/mrt/core/exc")
+    @XmlSeeAlso(TExceptionResponse.class)
+    public static class EXTERNAL_SERVICE_UNAVAILABLE extends TExceptionResponse {}
+
+    @XmlRootElement(name="tException.REQUEST_INVALID", namespace="http://uc3.cdlib.org/ontology/mrt/core/exc")
+    @XmlSeeAlso(TExceptionResponse.class)
+    public static class REQUEST_INVALID extends TExceptionResponse {}
+}
