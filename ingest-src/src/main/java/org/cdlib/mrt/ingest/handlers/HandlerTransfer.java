@@ -59,6 +59,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -100,7 +101,7 @@ public class HandlerTransfer extends Handler<JobState>
 	throws TException 
     {
 
-  	ClientResponse response = null;
+  	ClientResponse clientResponse = null;
 
 	try {
 
@@ -127,28 +128,39 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    // make service request
 	    try {
-  	        response = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
+  	        clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
 	    } catch (Exception e) {
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
 	    }
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + response.getStatus());
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());
 
 	    jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
-	    jobState.setVersionID(getVersionID(response.getEntity(String.class)));
+	    jobState.setVersionID(getVersionID(clientResponse.getEntity(String.class)));
 
-	    if (response.getStatus() != 200) {
-		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
+	    if (clientResponse.getStatus() != 200) {
+                try {
+                    // most likely exception
+                    // can only call once, as stream is not reset
+                    TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+                } catch (TException te) {
+                    throw te;
+                } catch (Exception e) {
+                    // let's report something
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
+                }
 	    }
-	    return new HandlerResult(true, "SUCCESS: transfer", response.getStatus());
+	    return new HandlerResult(true, "SUCCESS: transfer", clientResponse.getStatus());
 	} catch (TException te) {
 	    te.printStackTrace();
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "processing transfer: " + e.getMessage();
+
             return new HandlerResult(false, msg);
 	} finally {
-	    response = null;
+	    clientResponse = null;
 	}
     }
    

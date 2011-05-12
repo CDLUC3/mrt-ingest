@@ -534,10 +534,18 @@ public class HandlerMinter extends Handler<JobState>
 	    int status = clientResponse.getStatus();
    	    String response = null;
  
-
 	    if (status != 200) {
-   	        TExceptionResponse tExceptionResponse = clientResponse.getEntity(TExceptionResponse.class);
-		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+                try {
+                    // most likely exception
+                    // can only call once, as stream is not reset
+                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
+                    throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+                } catch (TException te) {
+                    throw te;
+                } catch (Exception e) {
+                    // let's report something
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
+                }
 	    } else {
    	        response = clientResponse.getEntity(String.class);
 	    }

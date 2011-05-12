@@ -64,6 +64,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -104,7 +105,7 @@ public class HandlerFixity extends Handler<JobState>
 	throws TException 
     {
 
-  	ClientResponse response = null;
+  	ClientResponse clientResponse = null;
 	String fixityURL = null;
 
 	try {
@@ -147,30 +148,44 @@ public class HandlerFixity extends Handler<JobState>
             	formDataMultiPart.field("context", String.format(context, jobState.getPrimaryID().getValue(), jobState.getVersionID().toString(),
 			fileComponent.getIdentifier()));
             	formDataMultiPart.field("note", "");
-            	formDataMultiPart.field("responseForm", "xml");
+            	formDataMultiPart.field("responseForm", "xml");		// alignment w/ fixity spec. 
+            	formDataMultiPart.field("response-form", "xml");
 
 	        // make service request
 	        try {
-  	            response = webResource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
+  	            clientResponse = webResource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
 	        } catch (Exception e) {
 		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL); 
 	        }
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + response.getStatus());
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());
 
-	        if (response.getStatus() != 200) {
-		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL); 
-	        }
+	        if (clientResponse.getStatus() != 200) {
+                    try {
+			// most likely exception
+			// can only call once, as stream is not reset
+                        TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
+                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+		    } catch (TException te) {
+		        throw te;
+                    } catch (Exception e) {
+		        // let's report something
+		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL); 
+	            }
+		}
             }
-	    return new HandlerResult(true, "SUCCESS: fixity request", response.getStatus());
+	    return new HandlerResult(true, "SUCCESS: fixity request", clientResponse.getStatus());
 	} catch (TException te) {
-	    te.printStackTrace();
-            return new HandlerResult(false, te.getDetail());
+            te.printStackTrace(System.err);
+	    // does not cause ingest failure
+            return new HandlerResult(true, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "processing fixity request: " + e.getMessage();
-            return new HandlerResult(false, msg);
+
+	    // does not cause ingest failure
+            return new HandlerResult(true, msg);
 	} finally {
-	    response = null;
+	    clientResponse = null;
 	}
     }
    
