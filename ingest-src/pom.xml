@@ -11,11 +11,11 @@
   <repositories>
     <repository>
       <id>cdl-releases</id>
-      <url>http://builds.cdlib.org/repo/content/repositories/cdl-releases</url>
+      <url>http://mvn.cdlib.org/repo/content/repositories/cdl-releases</url>
     </repository>
     <repository>
       <id>cdl-snapshots</id>
-      <url>http://builds.cdlib.org/repo/content/repositories/cdl-snapshots/</url>
+      <url>http://mvn.cdlib.org/repo/content/repositories/cdl-snapshots/</url>
     </repository>
   </repositories>
 
