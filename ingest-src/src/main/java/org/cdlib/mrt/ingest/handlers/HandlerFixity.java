@@ -29,20 +29,20 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.multipart.FormDataMultiPart;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,6 +51,10 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathExpression;
+
+import org.apache.commons.mail.EmailAttachment;
+import org.apache.commons.mail.MultiPartEmail;
+import org.apache.commons.mail.ByteArrayDataSource;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.FileComponent;
@@ -92,6 +96,8 @@ public class HandlerFixity extends Handler<JobState>
     protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
+    protected boolean notify = true;	// notify admins if failure
+    protected boolean error = false;
 
     /**
      * Adds an item of requested object to ingest service
@@ -175,22 +181,51 @@ public class HandlerFixity extends Handler<JobState>
             }
 	    return new HandlerResult(true, "SUCCESS: fixity request", clientResponse.getStatus());
 	} catch (TException te) {
+	    error = true;
             te.printStackTrace(System.err);
 	    // does not cause ingest failure
             return new HandlerResult(true, te.getDetail());
 	} catch (Exception e) {
+	    error = true;
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "processing fixity request: " + e.getMessage();
 
 	    // does not cause ingest failure
             return new HandlerResult(true, msg);
 	} finally {
+	     if (error && notify) notify(jobState, profileState, ingestRequest);
 	    clientResponse = null;
 	}
     }
    
     public String getName() {
         return NAME;
+    }
+
+    public void notify(JobState jobState, ProfileState profileState, IngestRequest ingestRequest) {
+	String server = "";
+        MultiPartEmail email = new MultiPartEmail();
+
+	try {
+            email.setHostName("localhost");     // production machines are SMTP enabled
+            if (profileState.getAdmin() != null) {
+                for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
+                    // admin will receive notifications
+                    String recipient = admin.next();
+                    if (StringUtil.isNotEmpty(recipient)) email.addTo(recipient);
+                }
+            }
+            String ingestServiceName = ingestRequest.getServiceState().getServiceName();
+            if (StringUtil.isNotEmpty(ingestServiceName))
+                if (ingestServiceName.contains("Development")) server = " [Development]";
+                else if (ingestServiceName.contains("Stage")) server = " [Stage]";
+            email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+            email.setSubject("[Warning] Fixity service not available" + server);
+            email.setMsg(jobState.dump("Job notification", "\t", "\n", null));
+            email.send();
+	} catch (Exception e) {};
+
+        return;
     }
 }
 
