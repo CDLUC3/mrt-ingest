@@ -552,6 +552,9 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("localIdentifier")){
 		       field = "localIdentifier";
 		       ingestRequest.getJob().setLocalID(item.getString("utf-8"));
+		    } else if (item.getFieldName().equals("primaryIdentifier")){
+		       field = "primaryIdentifier";
+		       ingestRequest.getJob().setPrimaryID(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("note")){
 		       field = "note";
 		       ingestRequest.setNote(item.getString("utf-8"));

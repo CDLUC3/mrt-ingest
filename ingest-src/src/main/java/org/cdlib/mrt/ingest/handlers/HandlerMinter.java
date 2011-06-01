@@ -130,7 +130,7 @@ public class HandlerMinter extends Handler<JobState>
 	    }
 
 	    Identifier localID = jobState.getLocalID();
-	    if (localID != null) retrievedObjectID = fetchPrimaryID(profileState, localID.getValue());
+	    if (localID != null && jobState.getPrimaryID() == null) retrievedObjectID = fetchPrimaryID(profileState, localID.getValue());
 
 	    if (jobState.getPrimaryID() != null) {
 		if (retrievedObjectID != null) {
