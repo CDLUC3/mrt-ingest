@@ -80,6 +80,7 @@ public class JobState
     protected String misc;
     protected String queuePriority;
     protected boolean shadowARK;
+    protected boolean updateFlag;
 
 
     // constructors
@@ -499,6 +500,22 @@ public class JobState
      */
     public boolean getShadowARK() {
         return shadowARK;
+    }
+
+    /**
+     * Set update boolean
+     * @param boolean set update flag
+     */
+    public void setUpdateFlag(boolean updateFlag) {
+        this.updateFlag = updateFlag;
+    }
+
+    /**
+     * Get update boolean
+     * @return boolean update flag
+     */
+    public boolean getUpdateFlag() {
+        return updateFlag;
     }
 
     public void clear() {

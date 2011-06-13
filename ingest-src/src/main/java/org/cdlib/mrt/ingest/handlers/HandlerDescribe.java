@@ -124,46 +124,64 @@ public class HandlerDescribe extends Handler<JobState>
 
 
     /**
-     * create citation file
+     * create/merge citation file
      *
      * @param JobState populate metadata fields if necessary
      * @param ercFile erc file
      * @param producerERC producer supplied metadata
      * @return successful in creating erc file
      */
-    private boolean createERC(JobState jobState, File ercFile, Map producerERC)
+    private boolean createERC(JobState jobState, File systemErcFile, Map producerERC)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating erc: " + ercFile.getAbsolutePath());
-	String objectCreator = jobState.getObjectCreator();
-	String objectTitle = jobState.getObjectTitle();
-	String objectDate = jobState.getObjectDate();
-	String primaryIdentifier = null;
-	String localIdentifier = null;
+	final String DELIMITER = "; ";
+	String append = "";
+	String objectCreator = "";
+	String objectTitle = "";
+	String objectDate = "";
+	String primaryIdentifier = "";
+	String localIdentifier = "";
+
+	// read existing ERC if applicable
+        Map<String, String> systemERC = new LinkedHashMap();	// maintains insertion order
+        if (systemErcFile.exists()) {
+            systemERC = MetadataUtil.readMetadataANVL(systemErcFile);
+        }
+
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating/updating erc: " + systemErcFile.getAbsolutePath());
 	try {
-	    primaryIdentifier = jobState.getPrimaryID().getValue();
+	    objectCreator = jobState.getObjectCreator().replaceAll("^\\s+", "").replaceAll("\\s+$", "");
+	} catch (Exception e) {
+	    objectCreator = "(:unas)";
+	}
+	try {
+	    objectTitle = jobState.getObjectTitle().replaceAll("^\\s+", "").replaceAll("\\s+$", "");
+	} catch (Exception e) {
+	    objectTitle = "(:unas)";
+	}
+	try {
+	    objectDate = jobState.getObjectDate().replaceAll("^\\s+", "").replaceAll("\\s+$", "");
+	} catch (Exception e) {
+	    objectDate = "(:unas)";
+	}
+	try {
+	    primaryIdentifier = jobState.getPrimaryID().getValue().replaceAll("^\\s+", "").replaceAll("\\s+$", "");
 	} catch (Exception e) {
 	    primaryIdentifier = "(:unas)";
 	}
 	try {
-	     localIdentifier = jobState.getLocalID().getValue();
+	     localIdentifier = jobState.getLocalID().getValue().replaceAll("^\\s+", "").replaceAll("\\s+$", "");
 	} catch (Exception e) {
 	    localIdentifier = "(:unas)";
 	}
 
 	ArrayList arrayWhere = new ArrayList();
-        Map<String, Object> ercProperties = new LinkedHashMap();   // maintains insertion order; support duplicate keys
+        Map<String, Object> ercProperties = new LinkedHashMap();   // maintains insertion order
 
         ercProperties.put("erc", "");
-        if ( StringUtil.isNotEmpty(objectCreator)) ercProperties.put("who", objectCreator);
-	else ercProperties.put("who", "(:unas)");
-
-        if ( StringUtil.isNotEmpty(objectTitle)) ercProperties.put("what", objectTitle);
-        else ercProperties.put("what", "(:unas)");
-        
-        if ( StringUtil.isNotEmpty(objectDate)) ercProperties.put("when", objectDate);
-        else ercProperties.put("when", "(:unas)");
-
+        ercProperties.put("who", objectCreator);
+        ercProperties.put("what", objectTitle);
+        ercProperties.put("when", objectDate);
         if ( StringUtil.isNotEmpty(primaryIdentifier)) 
 	    arrayWhere.add(primaryIdentifier);
 
@@ -171,60 +189,152 @@ public class HandlerDescribe extends Handler<JobState>
 	    arrayWhere.add(localIdentifier);
         else 
 	    arrayWhere.add("(:unas)");
-        ercProperties.put("where", arrayWhere);
 
-	// update jobState if necessary
+	// update jobState/citation file with producer supplied values
 	if (producerERC != null) {
 	    Iterator producerERCitr = producerERC.keySet().iterator();
 	    while (producerERCitr.hasNext()) {
 	        String key = (String) producerERCitr.next();
 	        String value = (String) producerERC.get(key);
 
-		final String DELIMITER = " ; ";
-		String append = "";
-		// append
-	        if (key.matches("who")) {
-		    if (objectCreator != null)  append = DELIMITER + jobState.getObjectCreator();
-		     // jobState.setObjectCreator(value + append);
-		}
-	        if (key.matches("what")) {
+	        if (key.matches("who") && ! value.contains("(:unas)")) {
 		    append = "";
-		    if (objectTitle != null) append = DELIMITER + jobState.getObjectTitle(); 
-		    // jobState.setObjectTitle(value + append);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Creator producer data found: " + value);
+		    if (! objectCreator.contains("(:unas)")) {
+		        append = DELIMITER + objectCreator;
+		        jobState.setObjectCreator(value + append);
+		        ercProperties.put(key, value + append);
+			objectCreator = value + append;
+		    } else {
+			ercProperties.put(key, objectCreator);
+		    }
 		}
-	        if (key.matches("when")) {
-		    append = "";
-		    if (objectDate != null) append = DELIMITER + jobState.getObjectDate();
-		    // jobState.setObjectDate(value + append);
+	        if (key.matches("what") && ! value.contains("(:unas)")) {
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Title producer data found: " + value);
+		    if (! objectTitle.contains("(:unas)")) {
+		        append = DELIMITER + objectTitle; 
+		        jobState.setObjectTitle(value + append);
+		        ercProperties.put(key, value + append);
+			objectTitle = value + append;
+		    } else {
+			ercProperties.put(key, objectTitle);
+		    }
 		}
-	        if (key.matches("where") && ! value.contains("ark:")) {
-		    append = "";
+	        if (key.matches("when") && ! value.contains("(:unas)")) {
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Date producer data found: " + value);
+		    if (! objectDate.contains("(:unas)")) {
+		        append = DELIMITER + objectDate;
+		        jobState.setObjectDate(value + append);
+		        ercProperties.put(key, value + append);
+			objectDate = value + append;
+		    } else {
+			ercProperties.put(key, objectDate);
+		    }
+
+		}
+	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
 		        if (localIdentifier != null && ! localIdentifier.equals(jobState.getLocalID().getValue()))
 			    append = DELIMITER + jobState.getLocalID().getValue();
 		    } catch (Exception e) {}
 		    jobState.setLocalID(value + append);
-		}
-	    }
-	} else {
-	    if (DEBUG) System.out.println("No additional ERC metadata found");
-	}
-
-	// Any qualified data?
-	if (producerERC != null) {
-	    Iterator producerERCitr = producerERC.keySet().iterator();
-	    while (producerERCitr.hasNext()) {
-	        String key = (String) producerERCitr.next();
-	        String value = (String) producerERC.get(key);
-
-	        if (key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/") || key.startsWith("where/")) {
+		    arrayWhere.remove(arrayWhere.indexOf("(:unas)"));
+		    arrayWhere.add(value + append);
+		} 
+	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
+		    // let other ERC data through 
 		    ercProperties.put(key, value);
 		}
 	    }
+	} else {
+	    if (DEBUG) System.out.println("No additional producer ERC metadata found");
 	}
 
-        return MetadataUtil.writeMetadataANVL(ercFile, ercProperties, true);
+	// update jobState/citation file with existing system values
+	if (systemERC != null) {
+	    Iterator systemERCitr = systemERC.keySet().iterator();
+	    while (systemERCitr.hasNext()) {
+	        String key = ((String) systemERCitr.next()).replaceAll("^\\s+", "").replaceAll("\\s+$", "");
+	        String value = ((String) systemERC.get(key)).replaceAll("^\\s+", "").replaceAll("\\s+$", "");
+
+		// append
+	        if (key.matches("who") && ! value.contains("(:unas)")) {
+		    if (! objectCreator.contains("(:unas)")) {		// any existing producer data?
+		        if (value.contains(objectCreator)) {
+        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Creator data (system) already exists: " + objectCreator);
+			    ercProperties.put(key, value);
+		            jobState.setObjectCreator(value);
+		        } else {
+        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Appending additional Creator data (system): " + value);
+		            append = DELIMITER + objectCreator; 
+		            jobState.setObjectCreator(value + append);
+			    ercProperties.put(key, value + append);
+			}
+		    } else {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Populating Creator with existing data (system): " + value);
+			ercProperties.put(key, value);
+		        jobState.setObjectCreator(value);
+		    }
+		}
+	        if (key.matches("what")&& ! value.contains("(:unas)")) {
+		    if (! objectTitle.contains("(:unas)")) {
+		        if (value.contains(objectTitle)) {
+        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Title data (system) already exists: " + objectTitle);
+			    ercProperties.put(key, value);
+		            jobState.setObjectTitle(value);
+		        } else {
+        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Appending additional Title data (system): " + value);
+		            append = DELIMITER + objectTitle; 
+		            jobState.setObjectTitle(value + append);
+			    ercProperties.put(key, value + append);
+			}
+		    } else {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Populating Title with existing data (system): " + value);
+			ercProperties.put(key, value);
+		        jobState.setObjectTitle(value);
+		    }
+		}
+	        if (key.matches("when") && ! value.contains("(:unas)")) {
+		    if (! objectDate.contains("(:unas)")) {
+		        if (value.contains(objectDate)) {
+        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Date data (system) already exists: " + objectDate);
+			    ercProperties.put(key, value);
+		            jobState.setObjectDate(value);
+		        } else {
+        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Found additional Date data (system): " + value);
+		            append = DELIMITER + objectDate; 
+		            jobState.setObjectDate(value + append);
+			    ercProperties.put(key, value + append);
+			}
+		    } else {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Populating Date with existing data (system): " + value);
+			ercProperties.put(key, value);
+		        jobState.setObjectDate(value);
+		    }
+		}
+	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
+		    try {
+		        if (localIdentifier != null && ! localIdentifier.equals(jobState.getLocalID().getValue()))
+			    append = DELIMITER + jobState.getLocalID().getValue();
+		    } catch (Exception e) {}
+		    jobState.setLocalID(value + append);
+		    int i = arrayWhere.indexOf("(:unas)");
+		    if (i >= 0) arrayWhere.remove(i);
+		    arrayWhere.add(value + append);
+		}
+	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
+		    // let other ERC data through 
+		    ercProperties.put(key, value);
+		}
+	    }
+	} else {
+	    if (DEBUG) System.out.println("No additional system ERC metadata found");
+	}
+
+        ercProperties.put("where", arrayWhere);
+        return MetadataUtil.writeMetadataANVL(systemErcFile, ercProperties, false);
     }
+
 
     /**
      * write metadata references to resource map

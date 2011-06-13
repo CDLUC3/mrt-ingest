@@ -59,6 +59,7 @@ public class IngestRequest
     protected ResponseFormEnum responseForm;
     protected PackageTypeEnum packageType;
     protected IngestServiceState serviceState;
+    protected boolean updateFlag;
 
     // constructors
     public IngestRequest(){ jobState = new JobState(); }
@@ -70,6 +71,7 @@ public class IngestRequest
 
 	    this.profile = new Identifier(profile);
 	    this.setPackageType(packageType);
+	    this.setUpdateFlag(false);
 	    if (packageSize != null) this.packageSize = new Integer(packageSize).intValue();
 	    ResponseFormEnum.setResponseForm(responseForm);
 	} catch (Exception e) {
@@ -221,6 +223,23 @@ public class IngestRequest
     public void setServiceState(IngestServiceState serviceState) {
         this.serviceState = serviceState;
     }
+
+    /**
+     * Set update boolean
+     * @param boolean set update flag
+     */
+    public void setUpdateFlag(boolean updateFlag) {
+        this.updateFlag = updateFlag;
+    }
+
+    /**
+     * Get update boolean
+     * @return boolean update flag
+     */
+    public boolean getUpdateFlag() {
+        return updateFlag;
+    }
+
 
     public String dump(String header)
     {
