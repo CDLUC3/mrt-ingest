@@ -168,32 +168,6 @@ public class JerseyPost extends JerseyBase
     }
 
 
-    // Update job status
-    @POST
-    @Path("update")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)  
-    public Response update(
-            @QueryParam("t") String formatType,		// xml default
-            @DefaultValue("none") @QueryParam("batchID") String batchID,
-            @DefaultValue("none") @QueryParam("jobID") String jobID,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        // Accept is overridden by responseForm form parm
-        String responseForm = "";
-        try {
-            responseForm = processFormatType(request.getHeader("Accept"), "");
-        } catch (Exception e) {}
-        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-        IngestRequest ingestRequest = new IngestRequest();
-        ingestRequest.setResponseForm(formatType);
-        return updatePost(ingestRequest, request, cs, sc);
-    }
-
-
     // Get queue state 
     // need to also support state/queue/job/..
     @GET
@@ -232,7 +206,70 @@ public class JerseyPost extends JerseyBase
         }
     }
 
-    // Form data submission (No object ID supplied)
+
+    // Update object 
+    // No object ID supplied in URL
+    @POST
+    @Path("update")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
+    public Response update(
+	    @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        log("processing update(no ID, multi-part)");
+
+        // Accept is overridden by responseForm form parm
+        String responseForm = "";
+        try {
+            responseForm = processFormatType(request.getHeader("Accept"), "");
+        } catch (Exception e) {}
+        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+	IngestRequest ingestRequest = new IngestRequest();
+        ingestRequest.setResponseForm(responseForm);
+        ingestRequest.getJob().setPrimaryID(null);
+        ingestRequest.setUpdateFlag(true);
+
+        return submitPost(ingestRequest, request, cs, sc);
+    }
+
+
+    // Update object 
+    // Object ID supplied in URL
+    @POST
+    @Path("update/{scheme}/{shoulder}/{objectid}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
+    public Response update(
+            @PathParam("scheme") String scheme,
+            @PathParam("shoulder") String shoulder,
+            @PathParam("objectid") String object,
+	    @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        log("processing submit (ID, multi-part)");
+
+        // Accept is overridden by responseForm form parm
+        String responseForm = "";
+        try {
+            responseForm = processFormatType(request.getHeader("Accept"), "");
+        } catch (Exception e) {}
+        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+	IngestRequest ingestRequest = new IngestRequest();
+        ingestRequest.setResponseForm(responseForm);
+        ingestRequest.getJob().setPrimaryID(scheme + "/" + shoulder + "/" + object);
+        ingestRequest.setUpdateFlag(true);
+
+        return submitPost(ingestRequest, request, cs, sc);
+    }
+
+
+    // Submit entire object 
+    // No object ID supplied in URL
     @POST
     @Path("submit")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
@@ -259,7 +296,8 @@ public class JerseyPost extends JerseyBase
     }
 
 
-    // Form data submission ( Object ID supplied)
+    // Submit entire object 
+    // Object ID supplied in URL
     @POST
     @Path("submit/{scheme}/{shoulder}/{objectid}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file

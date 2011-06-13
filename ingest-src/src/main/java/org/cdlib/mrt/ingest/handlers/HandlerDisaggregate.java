@@ -141,6 +141,13 @@ public class HandlerDisaggregate extends Handler<JobState>
 		}
             }
 
+            File existingProducerDir = new File(ingestRequest.getQueuePath() + System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
+	    if (existingProducerDir.exists()) {
+		System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
+		FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
+		FileUtil.deleteDir(existingProducerDir);
+	    }
+
             // metadata file in ANVL format
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File ingestFile = new File(systemTargetDir, "mrt-ingest.txt");

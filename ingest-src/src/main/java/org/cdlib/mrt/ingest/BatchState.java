@@ -69,6 +69,7 @@ public class BatchState
     private static Map<String, Integer> batchCompletion = new HashMap<String, Integer>();
     private static Map<String, String> batchQueuePath = new HashMap<String, String>();
     private boolean completion = false;
+    private boolean updateFlag = false;
 
     synchronized public static Map getBatchStates () {
       return batchStates;
@@ -289,6 +290,22 @@ public class BatchState
     // Get single job
     public JobState getJobState(String id) {
         return this.jobStates.get(id);
+    }
+
+    /**
+     * Set update boolean
+     * @param boolean set update flag
+     */
+    public void setUpdateFlag(boolean updateFlag) {
+        this.updateFlag = updateFlag;
+    }
+
+    /**
+     * Get update boolean
+     * @return boolean update flag
+     */
+    public boolean getUpdateFlag() {
+        return updateFlag;
     }
 
     /**

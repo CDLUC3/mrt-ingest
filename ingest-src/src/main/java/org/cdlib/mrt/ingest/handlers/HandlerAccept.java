@@ -85,6 +85,7 @@ public class HandlerAccept extends Handler<JobState>
 	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "copying file to stage dir: " + fileS);
 		File sourceFile = new File(sourceDir, fileS);
 		File targetFile = new File(targetDir, fileS);
+		if (sourceFile.isHidden()) continue;		// process after disaggregate
 		FileUtil.copyFile(sourceFile.getName(), sourceDir, targetDir);
 
 		sourceFile.delete();
