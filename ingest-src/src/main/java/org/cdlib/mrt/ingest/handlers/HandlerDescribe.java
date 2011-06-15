@@ -238,7 +238,10 @@ public class HandlerDescribe extends Handler<JobState>
 			    append = DELIMITER + jobState.getLocalID().getValue();
 		    } catch (Exception e) {}
 		    jobState.setLocalID(value + append);
-		    arrayWhere.remove(arrayWhere.indexOf("(:unas)"));
+		    try {
+			// remove if exists
+		        arrayWhere.remove(arrayWhere.indexOf("(:unas)"));
+		    } catch (Exception e) {}
 		    arrayWhere.add(value + append);
 		} 
 	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
