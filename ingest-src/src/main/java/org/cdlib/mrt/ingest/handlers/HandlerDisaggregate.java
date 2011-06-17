@@ -128,6 +128,16 @@ public class HandlerDisaggregate extends Handler<JobState>
 				+ MESSAGE + "processing tar container: " + file.getAbsolutePath());
 			}
 		        file.delete();
+
+                        // If updating and we have a container
+            		File existingProducerDir = new File(ingestRequest.getQueuePath() + 
+			        System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
+	    		if (existingProducerDir.exists()) {
+			    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
+			    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
+			    FileUtil.deleteDir(existingProducerDir);
+	    		}
+
 	    	} else if (packageType == PackageTypeEnum.file) {
 			System.out.println("[info] " + MESSAGE + "file parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";
@@ -140,13 +150,6 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    		throw new Exception("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType + " - " + fileS);
 		}
             }
-
-            File existingProducerDir = new File(ingestRequest.getQueuePath() + System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
-	    if (existingProducerDir.exists()) {
-		System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
-		FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
-		FileUtil.deleteDir(existingProducerDir);
-	    }
 
             // metadata file in ANVL format
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
