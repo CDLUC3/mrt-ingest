@@ -234,8 +234,8 @@ public class HandlerDescribe extends Handler<JobState>
 		}
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
-		        if (localIdentifier != null && ! localIdentifier.equals(jobState.getLocalID().getValue()))
-			    append = DELIMITER + jobState.getLocalID().getValue();
+		        if (localIdentifier != null && ! localIdentifier.contains(value))
+			    append = DELIMITER + localIdentifier;
 		    } catch (Exception e) {}
 		    jobState.setLocalID(value + append);
 		    try {
@@ -317,8 +317,8 @@ public class HandlerDescribe extends Handler<JobState>
 		}
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
-		        if (localIdentifier != null && ! localIdentifier.equals(jobState.getLocalID().getValue()))
-			    append = DELIMITER + jobState.getLocalID().getValue();
+		        if (localIdentifier != null && ! localIdentifier.contains(value))
+			    append = DELIMITER + localIdentifier;
 		    } catch (Exception e) {}
 		    jobState.setLocalID(value + append);
 		    int i = arrayWhere.indexOf("(:unas)");
