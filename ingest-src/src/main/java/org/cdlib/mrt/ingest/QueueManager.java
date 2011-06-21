@@ -73,6 +73,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
+import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.utility.DateUtil;
@@ -336,7 +337,16 @@ public class QueueManager
 
 	    // The work of posting is done asynchronously to prevent UI timeout
             Post post = new Post(batchState, ingestRequest, profileState);
-            new Thread(post).start();
+            Thread postThread = new Thread(post);
+	    postThread.start();
+	    // undocumented synchronous request
+	    if (ingestRequest.getSynchronousMode()) {
+     		try {
+         	    postThread.join();
+	            if (DEBUG) System.out.println("[debug] Synchronous mode");
+     		} catch (InterruptedException ignore) {
+     		}
+	    }
 
             return batchState;
           
