@@ -201,10 +201,12 @@ public class HandlerDescribe extends Handler<JobState>
 		    append = "";
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Creator producer data found: " + value);
 		    if (! objectCreator.contains("(:unas)")) {
-		        append = DELIMITER + objectCreator;
-		        jobState.setObjectCreator(value + append);
-		        ercProperties.put(key, value + append);
-			objectCreator = value + append;
+		        if (! value.contains(objectCreator)) {
+		            append = DELIMITER + objectCreator;
+		            jobState.setObjectCreator(value + append);
+		            ercProperties.put(key, value + append);
+			    objectCreator = value + append;
+			}
 		    } else {
 			ercProperties.put(key, objectCreator);
 		    }
@@ -212,10 +214,12 @@ public class HandlerDescribe extends Handler<JobState>
 	        if (key.matches("what") && ! value.contains("(:unas)")) {
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Title producer data found: " + value);
 		    if (! objectTitle.contains("(:unas)")) {
-		        append = DELIMITER + objectTitle; 
-		        jobState.setObjectTitle(value + append);
-		        ercProperties.put(key, value + append);
-			objectTitle = value + append;
+		        if (! value.contains(objectTitle)) {
+		            append = DELIMITER + objectTitle; 
+		            jobState.setObjectTitle(value + append);
+		            ercProperties.put(key, value + append);
+			    objectTitle = value + append;
+			}
 		    } else {
 			ercProperties.put(key, objectTitle);
 		    }
@@ -223,10 +227,12 @@ public class HandlerDescribe extends Handler<JobState>
 	        if (key.matches("when") && ! value.contains("(:unas)")) {
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Date producer data found: " + value);
 		    if (! objectDate.contains("(:unas)")) {
-		        append = DELIMITER + objectDate;
-		        jobState.setObjectDate(value + append);
-		        ercProperties.put(key, value + append);
-			objectDate = value + append;
+		        if (! value.contains(objectDate)) {
+		            append = DELIMITER + objectDate;
+		            jobState.setObjectDate(value + append);
+		            ercProperties.put(key, value + append);
+			    objectDate = value + append;
+			}
 		    } else {
 			ercProperties.put(key, objectDate);
 		    }
