@@ -95,7 +95,8 @@ public class HandlerDisaggregate extends Handler<JobState>
 	String status = null;
 
 	PackageTypeEnum packageType = ingestRequest.getPackageType();
-	if (packageType == PackageTypeEnum.batchManifest) {
+	if (packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.batchManifestContainer
+	        || packageType == PackageTypeEnum.batchManifest) {
 	    System.out.println("batch manifest detected. resetting type to object manifest");
 	    ingestRequest.setPackageType("manifest");	// eliminate when ingestRequest is OBSOLETE!!!
 	    packageType = ingestRequest.getPackageType();

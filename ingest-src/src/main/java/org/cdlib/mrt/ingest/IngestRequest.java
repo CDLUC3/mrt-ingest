@@ -60,6 +60,7 @@ public class IngestRequest
     protected PackageTypeEnum packageType;
     protected IngestServiceState serviceState;
     protected boolean updateFlag;
+    protected boolean synchronousMode;
 
     // constructors
     public IngestRequest(){ jobState = new JobState(); }
@@ -72,6 +73,7 @@ public class IngestRequest
 	    this.profile = new Identifier(profile);
 	    this.setPackageType(packageType);
 	    this.setUpdateFlag(false);
+	    this.setSynchronousMode(false);
 	    if (packageSize != null) this.packageSize = new Integer(packageSize).intValue();
 	    ResponseFormEnum.setResponseForm(responseForm);
 	} catch (Exception e) {
@@ -240,6 +242,21 @@ public class IngestRequest
         return updateFlag;
     }
 
+    /**
+     * Set synchronous boolean
+     * @param boolean process queueing in synchronously 
+     */
+    public void setSynchronousMode(boolean synchronousMode) {
+        this.synchronousMode = synchronousMode;
+    }
+
+    /**
+     * Get synchronous boolean
+     * @return queueing done synchronously 
+     */
+    public boolean getSynchronousMode() {
+        return synchronousMode;
+    }
 
     public String dump(String header)
     {

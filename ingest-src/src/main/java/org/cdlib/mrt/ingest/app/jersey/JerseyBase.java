@@ -450,9 +450,13 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("type")){
 		       field = "type";
 		       // object-manifest and batch-Manifest can not be an enum
-		       if (item.getString("utf-8").matches("object-manifest")) 
+		       if (item.getString("utf-8").matches("object-manifest"))
 		           ingestRequest.setPackageType("manifest");
-		       else if (item.getString("utf-8").contains("batch-manifest")) 
+		       else if (item.getString("utf-8").contains("single-file-batch-manifest"))
+		           ingestRequest.setPackageType("batchManifestFile");
+		       else if (item.getString("utf-8").contains("container-batch-manifest"))
+		           ingestRequest.setPackageType("batchManifestContainer");
+		       else if (item.getString("utf-8").contains("batch-manifest"))
 		           ingestRequest.setPackageType("batchManifest");
 		       else 
 		           ingestRequest.setPackageType(item.getString("utf-8"));
@@ -493,6 +497,12 @@ public class JerseyBase
 
             	       ingestRequest.setResponseForm(responseForm);
 		       if (DEBUG) System.err.println("[debug] response form: " + ingestRequest.getResponseForm());
+		    } else if (item.getFieldName().equals("synchronousMode")) {
+		       field = "synchronousMode";
+		       if (item.getString("utf-8").matches("true")) {
+		           ingestRequest.setSynchronousMode(true);
+		           if (DEBUG) System.err.println("[debug] Synchronous mode set");
+			}
 		    } else {
             	       System.err.println("[warning] Form field not supported: " + item.getFieldName());
 		       // throw new TException.INVALID_OR_MISSING_PARM("Form field not supported: " + item.getFieldName());

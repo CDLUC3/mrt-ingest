@@ -89,7 +89,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    File queueDir = new File(ingestRequest.getQueuePath().getAbsolutePath());
 	    for (String fileS : queueDir.list()) {
 	        file = new File(queueDir, fileS);
-	    	if (packageType == PackageTypeEnum.batchManifest) {
+	    	if (packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.batchManifestContainer
+		    || packageType == PackageTypeEnum.batchManifest) {
 			System.out.println("[info] " + MESSAGE + "batchManifest specified, unpacking: " + fileS);
 
 			// unpack
