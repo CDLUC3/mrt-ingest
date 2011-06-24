@@ -113,6 +113,16 @@ public class HandlerInitialize extends Handler<JobState>
 	            throw new TException.GENERAL_EXCEPTION("[error] " + 
 			MESSAGE + ": Unable to update object.  Object does not exist.");
 		}
+
+	        // process now if batch of file or single file
+        	PackageTypeEnum packageType = ingestRequest.getPackageType();
+                File existingProducerDir = new File(ingestRequest.getQueuePath() + System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
+                if (existingProducerDir.exists() && 
+			(packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.file)) {
+                    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
+                    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
+                    FileUtil.deleteDir(existingProducerDir);
+                }
 	    }
 
 	    // metadata file in ANVL format

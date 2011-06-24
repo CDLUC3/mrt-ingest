@@ -240,15 +240,17 @@ public class HandlerDescribe extends Handler<JobState>
 		}
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
-		        if (localIdentifier != null && ! localIdentifier.contains(value))
-			    append = DELIMITER + localIdentifier;
+                        if (localIdentifier != null && ! localIdentifier.contains(value)) {
+                            append = DELIMITER + localIdentifier;
+                            jobState.setLocalID(value + append);
+
+                            try {
+                                int i = arrayWhere.indexOf("(:unas)");
+                                if (i >= 0) arrayWhere.remove(i);
+                                arrayWhere.add(value + append);
+                            } catch (Exception ee) {}
+			}
 		    } catch (Exception e) {}
-		    jobState.setLocalID(value + append);
-		    try {
-			// remove if exists
-		        arrayWhere.remove(arrayWhere.indexOf("(:unas)"));
-		    } catch (Exception e) {}
-		    arrayWhere.add(value + append);
 		} 
 	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
 		    // let other ERC data through 
@@ -323,13 +325,17 @@ public class HandlerDescribe extends Handler<JobState>
 		}
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
-		        if (localIdentifier != null && ! localIdentifier.contains(value))
+		        if (localIdentifier != null && ! localIdentifier.contains(value)) {
 			    append = DELIMITER + localIdentifier;
+		            jobState.setLocalID(value + append);
+
+			    try {
+		                int i = arrayWhere.indexOf("(:unas)");
+		                if (i >= 0) arrayWhere.remove(i);
+		                arrayWhere.add(value + append);
+			    } catch (Exception ee) {}
+			}
 		    } catch (Exception e) {}
-		    jobState.setLocalID(value + append);
-		    int i = arrayWhere.indexOf("(:unas)");
-		    if (i >= 0) arrayWhere.remove(i);
-		    arrayWhere.add(value + append);
 		}
 	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
 		    // let other ERC data through 

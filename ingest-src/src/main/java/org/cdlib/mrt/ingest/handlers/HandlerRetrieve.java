@@ -260,8 +260,10 @@ public class HandlerRetrieve extends Handler<JobState>
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (TRuntimeException trex) {
+	    trex.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + trex.getDetail());
 	} catch (TException te) {
+	    te.printStackTrace(System.err);
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);

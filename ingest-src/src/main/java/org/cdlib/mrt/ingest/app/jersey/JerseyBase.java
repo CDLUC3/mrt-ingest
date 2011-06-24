@@ -449,7 +449,7 @@ public class JerseyBase
 		       if (DEBUG) System.err.println("[debug] package name(filename): " + ingestRequest.getJob().getPackageName());
 		    } else if (item.getFieldName().equals("type")){
 		       field = "type";
-		       // object-manifest and batch-Manifest can not be an enum
+		       // object-manifest and batch-Manifest can not be an enum (hyphens)
 		       if (item.getString("utf-8").matches("object-manifest"))
 		           ingestRequest.setPackageType("manifest");
 		       else if (item.getString("utf-8").contains("single-file-batch-manifest"))

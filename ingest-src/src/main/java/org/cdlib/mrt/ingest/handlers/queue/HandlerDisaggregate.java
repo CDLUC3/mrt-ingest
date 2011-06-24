@@ -295,7 +295,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
     {
 	try {
             if (profile.contains("mrt-batch-manifest")) {
-	        // we have an object manifest
+	        // we have an object-manifest, but can not create an enum w/hyphen
                 return "manifest";
             } else if (profile.contains("mrt-container-batch-manifest")) {
 	        // we have a container manifest
