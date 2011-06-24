@@ -95,10 +95,9 @@ public class HandlerDisaggregate extends Handler<JobState>
 	String status = null;
 
 	PackageTypeEnum packageType = ingestRequest.getPackageType();
-	if (packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.batchManifestContainer
-	        || packageType == PackageTypeEnum.batchManifest) {
+	if (packageType == PackageTypeEnum.batchManifest) {
 	    System.out.println("batch manifest detected. resetting type to object manifest");
-	    ingestRequest.setPackageType("manifest");	// eliminate when ingestRequest is OBSOLETE!!!
+	    ingestRequest.setPackageType("manifest");
 	    packageType = ingestRequest.getPackageType();
 	}
 	try {
@@ -146,9 +145,9 @@ public class HandlerDisaggregate extends Handler<JobState>
 			System.out.println("[info] " + MESSAGE + "manifest parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";
 		} else {
-			System.out.println("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType + " - " + fileS);
+			System.out.println("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
 			status = "not-valid";
-	    		throw new Exception("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType + " - " + fileS);
+	    		throw new Exception("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
 		}
             }
 
