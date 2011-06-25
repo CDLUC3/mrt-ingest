@@ -559,8 +559,8 @@ public class JobState
             if (StringUtil.isNotEmpty(objectDateS)) header += indent + " - Object date: " + objectDateS + delimiter;
             //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + " - object profile: " + objectProfileS + delimiter;
 	    // show URL if a) demo mode b) system object (for debugging)
-            if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
-		    (StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
+            //if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
+		    //(StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
 		    header += indent + " - Object state: " + objectStateS + "?t=xhtml" + delimiter;
             if (StringUtil.isNotEmpty(submissionDateS)) header += indent + " - Submission date: " + submissionDateS + delimiter;
             if (StringUtil.isNotEmpty(completionDateS)) header += indent + " - Completion date: " + completionDateS + delimiter;
