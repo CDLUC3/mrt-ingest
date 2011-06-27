@@ -490,7 +490,7 @@ public class JerseyBase
 		       ingestRequest.getJob().setPrimaryID(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("note")){
 		       field = "note";
-		       ingestRequest.setNote(item.getString("utf-8"));
+		       ingestRequest.getJob().setNote(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("responseForm")) {
 		       field = "responseForm";
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));

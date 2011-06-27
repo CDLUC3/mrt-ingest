@@ -78,6 +78,7 @@ public class JobState
     protected String jobStatusMessage = null;
     protected String objectType;
     protected String misc;
+    protected String note;
     protected String queuePriority;
     protected boolean shadowARK;
     protected boolean updateFlag;
@@ -86,11 +87,12 @@ public class JobState
     // constructors
    public JobState(){}
    public JobState(String user, String packageName, String algorithm, String value, String primaryID,
-		String objectCreator, String objectTitle, String objectDate) {
+		String objectCreator, String objectTitle, String objectDate, String note) {
        this.packageName = packageName;
        this.objectCreator = objectCreator;
        this.objectTitle = objectTitle;
        this.objectDate = objectDate;
+       this.note = note;
        this.hashValue = value;
        this.userAgent = user;
        this.setPrimaryID(primaryID);
@@ -464,10 +466,26 @@ public class JobState
 
     /**
      * Get misc data
-     * @return String job queue priority
+     * @return String misc
      */
     public String getMisc() {
         return misc;
+    }
+
+    /**
+     * Set note, expository note regarding the onject's creation
+     * @param String note
+     */
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    /**
+     * Get note 
+     * @return String note
+     */
+    public String getNote() {
+        return note;
     }
 
     /**
@@ -557,6 +575,7 @@ public class JobState
         String objectTitleS = (objectTitle != null) ? objectTitle : "";
         String objectCreatorS = (objectCreator != null) ? objectCreator : "";
         String objectDateS = (objectDate != null) ? objectDate : "";
+        String noteS = (note != null) ? note : "";
         String objectAggregateS = "";
 	try {
             objectAggregateS = objectProfile.getAggregateType();
@@ -579,6 +598,7 @@ public class JobState
             if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
 		    (StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
 		    header += indent + " - Object state: " + objectStateS + "?t=xhtml" + delimiter;
+            if (StringUtil.isNotEmpty(noteS)) header += indent + " - Note: " + noteS + delimiter;
             if (StringUtil.isNotEmpty(submissionDateS)) header += indent + " - Submission date: " + submissionDateS + delimiter;
             if (StringUtil.isNotEmpty(completionDateS)) header += indent + " - Completion date: " + completionDateS + delimiter;
             if (StringUtil.isNotEmpty(jobStatusS)) header += indent + " - Status: " + jobStatusS + delimiter;

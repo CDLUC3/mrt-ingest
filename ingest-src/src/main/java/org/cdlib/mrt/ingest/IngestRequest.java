@@ -66,9 +66,9 @@ public class IngestRequest
     public IngestRequest(){ jobState = new JobState(); }
     public IngestRequest(String user, String profile, String packageName, String packageType,
 		String packageSize, String algorithm, String value, String primaryID, String objectCreator,
-		String objectTitle, String objectDate, String responseForm) {
+		String objectTitle, String objectDate, String responseForm, String note) {
 	try {
-	    jobState = new JobState(user, packageName, algorithm, value, primaryID, objectCreator, objectTitle, objectDate);
+	    jobState = new JobState(user, packageName, algorithm, value, primaryID, objectCreator, objectTitle, objectDate, note);
 
 	    this.profile = new Identifier(profile);
 	    this.setPackageType(packageType);
