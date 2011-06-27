@@ -218,6 +218,7 @@ public class IngestCmdMain
             CmdLineParser.Option dcCreatorO = parser.addStringOption("creator");
             CmdLineParser.Option dcTitleO = parser.addStringOption("title");
             CmdLineParser.Option dcDateO = parser.addStringOption("date");
+            CmdLineParser.Option noteO = parser.addStringOption("note");
 
             CmdLineParser.Option stateFileO = parser.addStringOption('o', "output");
             CmdLineParser.Option outputFormatO = parser.addStringOption('t', "response-form");
@@ -298,9 +299,10 @@ public class IngestCmdMain
             String dcCreator = (String) parser.getOptionValue(dcCreatorO);
             String dcTitle = (String) parser.getOptionValue(dcTitleO);
             String dcDate = (String) parser.getOptionValue(dcDateO);
+            String note = (String) parser.getOptionValue(noteO);
 
             ingestRequest = new IngestRequest(userIDS, profileIDS, packageS, packageTypeS, null,
-			digestType, digestValue, objectIDS, dcCreator, dcTitle, dcDate, outputFormatS);
+			digestType, digestValue, objectIDS, dcCreator, dcTitle, dcDate, outputFormatS, note);
 	    ingestRequest.getJob().setBatchID(batchID);
 
         } catch (Exception ex) {

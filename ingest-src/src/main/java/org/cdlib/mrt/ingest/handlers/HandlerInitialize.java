@@ -448,8 +448,8 @@ public class HandlerInitialize extends Handler<JobState>
 	} catch (Exception e) {
 	    ingestProperties.put("localIdentifier", "(:unas)");
 	}
-	if (StringUtil.isNotEmpty(ingestRequest.getNote())) {
-	    ingestProperties.put("note", ingestRequest.getNote());
+	if (StringUtil.isNotEmpty(jobState.getNote())) {
+	    ingestProperties.put("note", jobState.getNote());
 	} else {
 	    ingestProperties.put("note", "(:unas)");
 	}

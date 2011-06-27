@@ -132,6 +132,9 @@ public class HandlerDisaggregate extends Handler<BatchState>
 			try {
                             jobState.setObjectDate(ingestRequest.getJob().getObjectDate());
 			} catch (Exception e) { /* optional */ }
+			try {
+                            jobState.setNote(ingestRequest.getJob().getNote());
+			} catch (Exception e) { /* optional */ }
 
 			batchState.addJob(jobState.getJobID().getValue(), jobState);
 			status = "valid";

@@ -169,6 +169,9 @@ public class HandlerSubmit extends Handler<BatchState>
 		    properties.put("date", jobState.getObjectDate());
 		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectDate())) properties.remove("date"); }
 		try {
+		    properties.put("note", jobState.getNote());
+		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getNote())) properties.remove("note"); }
+		try {
 	    	    properties.put("type", jobState.getObjectType());
 		} catch (Exception e) { }
 		try {

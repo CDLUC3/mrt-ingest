@@ -514,7 +514,7 @@ class ConsumeData implements Runnable
 	    IngestRequest ingestRequest = new IngestRequest(p.getProperty("submitter"), p.getProperty("profile"),
 			    p.getProperty("filename"), p.getProperty("type"), p.getProperty("size"), p.getProperty("digestType"),
 			    p.getProperty("digestValue"), p.getProperty("objectID"), p.getProperty("creator"), p.getProperty("title"),
-			    p.getProperty("date"), p.getProperty("responseForm"));
+			    p.getProperty("date"), p.getProperty("responseForm"), p.getProperty("note"));
 	    ingestRequest.getJob().setBatchID(new Identifier(p.getProperty("batchID")));
 	    ingestRequest.getJob().setJobID(new Identifier(p.getProperty("jobID")));
 	    ingestRequest.getJob().setLocalID(p.getProperty("localID"));
