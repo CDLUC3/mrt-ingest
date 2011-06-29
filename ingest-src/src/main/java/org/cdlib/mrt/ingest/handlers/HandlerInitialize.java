@@ -83,6 +83,7 @@ public class HandlerInitialize extends Handler<JobState>
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
     protected static final int BUFFERSIZE = 4096;
+    protected static final String FS = System.getProperty("file.separator");
     protected LoggerInf logger = null;
     protected Properties conf = null;
 
@@ -116,7 +117,7 @@ public class HandlerInitialize extends Handler<JobState>
 
 	        // process now if batch of file or single file
         	PackageTypeEnum packageType = ingestRequest.getPackageType();
-                File existingProducerDir = new File(ingestRequest.getQueuePath() + System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
+                File existingProducerDir = new File(ingestRequest.getQueuePath() + FS + ".producer" + FS);
                 if (existingProducerDir.exists() && 
 			(packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.file)) {
                     System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
@@ -250,7 +251,7 @@ public class HandlerInitialize extends Handler<JobState>
             ZipEntry zipEntry;
             FileOutputStream fileOut = null;
 
-	    File destDir = new File(ingestRequest.getQueuePath() + System.getProperty("file.separator") + "working");
+	    File destDir = new File(ingestRequest.getQueuePath() + FS + "working");
 	    if (! destDir.mkdir()) {
                 if (DEBUG) System.out.println("[error] " + MESSAGE + " could not create working dir: " + destDir.getAbsolutePath());
 		return false;
@@ -279,7 +280,7 @@ public class HandlerInitialize extends Handler<JobState>
             zipIn.close();
 
 	    // define files we wish to retain.  fails if string is not the last occurrence in extracted object!
-	    String[] keepFiles = {"producer" + System.getProperty("file.separator"), "system" + System.getProperty("file.separator") + "mrt-erc.txt"};
+	    String[] keepFiles = {"producer" + FS, "system" + FS + "mrt-erc.txt"};
 	    Vector v = new Vector();
 
 	    FileUtil.getDirectoryFiles(destDir, v);
@@ -297,14 +298,14 @@ public class HandlerInitialize extends Handler<JobState>
 			if (newFile.exists()) {
                     	    if (DEBUG) System.out.println("[info] " + MESSAGE + "retaining file : " + newFile.getAbsolutePath());
 			    String hidden = "";
-			    if (keepFileString.equals("producer" + System.getProperty("file.separator"))) hidden = ".";		// hide producer data for later processing
-			    File targetDir = new File(ingestRequest.getQueuePath() + System.getProperty("file.separator") + hidden + keepFileString);
+			    if (keepFileString.equals("producer" + FS)) hidden = ".";		// hide producer data for later processing
+			    File targetDir = new File(ingestRequest.getQueuePath() + FS + hidden + keepFileString);
 			    if (! targetDir.isDirectory() && ! targetDir.isHidden()) targetDir = targetDir.getParentFile();
 			    if (! targetDir.exists()) targetDir.mkdirs();
 			    if (newFile.isDirectory()) {
 			        FileUtil.copyDirectory(newFile, targetDir);
 			    } else {
-			        newFile.renameTo(new File(targetDir + System.getProperty("file.separator") + newFile.getName()));
+			        newFile.renameTo(new File(targetDir + FS + newFile.getName()));
 			    }
 			    break;
 			}

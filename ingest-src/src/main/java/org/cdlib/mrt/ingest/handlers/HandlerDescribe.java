@@ -67,6 +67,7 @@ public class HandlerDescribe extends Handler<JobState>
     protected static final String NAME = "HandlerDescribe";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
+    protected static final String FS = System.getProperty("file.separator");
     protected LoggerInf logger = null;
     protected Properties conf = null;
     protected Integer defaultStorage = null;
@@ -89,6 +90,23 @@ public class HandlerDescribe extends Handler<JobState>
             File systemErcFile = new File(systemTargetDir, "mrt-erc.txt");
             File producerErcFile = new File(producerTargetDir, "mrt-erc.txt");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
+
+	    // remove update deletions (reserce file name "mrt-delete.txt")
+	    if (jobState.getUpdateFlag()) {
+	        String[] deleteLines = FileUtil.getLinesFromFile(new File(systemTargetDir, "mrt-delete.txt"));
+	        if (deleteLines != null) {
+		    for (String deleteLine : deleteLines) {
+        	    	if (DEBUG) System.out.println("[debug] " + MESSAGE + "Processing deletion entry: " + deleteLine);
+			File deleteFile = new File(producerTargetDir + FS + deleteLine);
+		        if (deleteFile.exists()) {
+        	    	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Deleting file: " + deleteFile.getAbsolutePath());
+			    deleteFile.delete();
+			}
+		    }
+
+	        }
+	    }
+
 
 	    Map<String, String> producerERC = null;
 	    if (producerErcFile.exists()) {

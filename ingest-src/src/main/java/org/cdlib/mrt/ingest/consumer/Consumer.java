@@ -84,7 +84,6 @@ import java.util.Vector;
 public class Consumer extends HttpServlet
 {
 
-
     private static final String NAME = "Consumer";
     private static final String MESSAGE = NAME + ": ";
     private volatile Thread consumerThread = null;
@@ -490,6 +489,7 @@ class ConsumeData implements Runnable
     private static final String NAME = "ConsumeData";
     private static final String MESSAGE = NAME + ":";
     private static final boolean DEBUG = true;
+    protected static final String FS = System.getProperty("file.separator");
 
     private DistributedQueue distributedQueue = null;
     private Item item = null;
@@ -520,9 +520,9 @@ class ConsumeData implements Runnable
 	    ingestRequest.getJob().setLocalID(p.getProperty("localID"));
 	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));
 	    ingestRequest.setUpdateFlag(((Boolean) p.get("update")).booleanValue());
-	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + System.getProperty("file.separator") +
-			"queue" + System.getProperty("file.separator") + ingestRequest.getJob().getBatchID().getValue() + 
-			System.getProperty("file.separator") + ingestRequest.getJob().getJobID().getValue()));
+	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
+			"queue" + FS + ingestRequest.getJob().getBatchID().getValue() + FS + 
+		        ingestRequest.getJob().getJobID().getValue()));
             new File(ingestRequest.getQueuePath(), "system").mkdir();
             new File(ingestRequest.getQueuePath(), "producer").mkdir();
 
