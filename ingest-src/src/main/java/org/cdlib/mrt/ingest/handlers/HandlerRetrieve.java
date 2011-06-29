@@ -238,7 +238,7 @@ public class HandlerRetrieve extends Handler<JobState>
 	    // If updating and we do not have a container
             File existingProducerDir = new File(ingestRequest.getQueuePath() +
                         System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
-            if (existingProducerDir.exists()) {
+            if (jobState.getUpdateFlag() && existingProducerDir.exists()) {
                 System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
                 FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
                 FileUtil.deleteDir(existingProducerDir);

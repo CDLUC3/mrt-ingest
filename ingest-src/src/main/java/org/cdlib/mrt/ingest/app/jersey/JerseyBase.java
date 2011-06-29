@@ -90,6 +90,7 @@ public class JerseyBase
             = FormatterInf.Format.xml;
     protected static final boolean DEBUG = true;
     protected static final String NL = System.getProperty("line.separator");
+    protected static final String FS = System.getProperty("file.separator");
 
     protected LoggerInf defaultLogger = new TFileLogger("Jersey", 10, 10);
     protected JerseyCleanup jerseyCleanup = new JerseyCleanup();
@@ -403,8 +404,8 @@ public class JerseyBase
 	} else {
 	    // direct ingest processing.
 	    ingestRequest.getJob().setBatchID(new Identifier(ProfileUtil.DEFAULT_BATCH_ID, Identifier.Namespace.Local));
-            queueDir = new File(homeDir, ingestRequest.getJob().getBatchID().getValue() + 
-		System.getProperty("file.separator") + ingestRequest.getJob().getJobID().getValue());
+            queueDir = new File(homeDir, ingestRequest.getJob().getBatchID().getValue() + FS + 
+	    ingestRequest.getJob().getJobID().getValue());
 	}
 	if ( ! queueDir.exists()) queueDir.mkdirs();
 
