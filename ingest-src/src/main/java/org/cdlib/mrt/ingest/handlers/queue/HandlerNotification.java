@@ -102,7 +102,7 @@ public class HandlerNotification extends Handler<BatchState>
 
   	    email.setSubject("Completion of submission" + server + aggregate);
 	    if (batchState.getBatchStatus() != BatchStatusEnum.FAILED) {
-                email.attach(new ByteArrayDataSource("Completion of ingest - " + batchState.dump("Notification Report"), "text/plain"),
+                email.attach(new ByteArrayDataSource("Completion of submission - " + batchState.dump("Notification Report"), "text/plain"),
                     batchState.getBatchID().getValue() + ".txt", "Full report for " +  batchState.getBatchID().getValue(),
                     EmailAttachment.ATTACHMENT);
 	    }
