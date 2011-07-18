@@ -59,6 +59,7 @@ public class HandlerAccept extends Handler<JobState>
     protected static final String NAME = "HandlerAccept";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
+    protected static final String FS = System.getProperty("file.separator");
     protected LoggerInf logger = null;
     protected Properties conf = null;
 
@@ -85,6 +86,7 @@ public class HandlerAccept extends Handler<JobState>
 	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "copying file to stage dir: " + fileS);
 		File sourceFile = new File(sourceDir, fileS);
 		File targetFile = new File(targetDir, fileS);
+		if (sourceFile.isHidden()) continue;		// process after disaggregate
 		FileUtil.copyFile(sourceFile.getName(), sourceDir, targetDir);
 
 		sourceFile.delete();
@@ -94,6 +96,17 @@ public class HandlerAccept extends Handler<JobState>
 		    throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] " 
 			+ MESSAGE + ": unable to copying file to stage dir: " + fileS);
 		}
+	    }
+
+	    // process update deletions
+	    if (jobState.getUpdateFlag()) {
+                // process deletions
+                File sourceDelete = new File(ingestRequest.getQueuePath() + FS + "producer" + FS + "mrt-delete.txt");
+                if (sourceDelete.exists()) {
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Found deletion file, moving into system dir");
+                    File targetDelete = new File(ingestRequest.getQueuePath() + FS + "system" + FS + "mrt-delete.txt");
+                    sourceDelete.renameTo(targetDelete);
+                }
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " has copied data to staging area", 0);

@@ -59,17 +59,21 @@ public class IngestRequest
     protected ResponseFormEnum responseForm;
     protected PackageTypeEnum packageType;
     protected IngestServiceState serviceState;
+    protected boolean updateFlag;
+    protected boolean synchronousMode;
 
     // constructors
     public IngestRequest(){ jobState = new JobState(); }
     public IngestRequest(String user, String profile, String packageName, String packageType,
 		String packageSize, String algorithm, String value, String primaryID, String objectCreator,
-		String objectTitle, String objectDate, String responseForm) {
+		String objectTitle, String objectDate, String responseForm, String note) {
 	try {
-	    jobState = new JobState(user, packageName, algorithm, value, primaryID, objectCreator, objectTitle, objectDate);
+	    jobState = new JobState(user, packageName, algorithm, value, primaryID, objectCreator, objectTitle, objectDate, note);
 
 	    this.profile = new Identifier(profile);
 	    this.setPackageType(packageType);
+	    this.setUpdateFlag(false);
+	    this.setSynchronousMode(false);
 	    if (packageSize != null) this.packageSize = new Integer(packageSize).intValue();
 	    ResponseFormEnum.setResponseForm(responseForm);
 	} catch (Exception e) {
@@ -220,6 +224,38 @@ public class IngestRequest
      */
     public void setServiceState(IngestServiceState serviceState) {
         this.serviceState = serviceState;
+    }
+
+    /**
+     * Set update boolean
+     * @param boolean set update flag
+     */
+    public void setUpdateFlag(boolean updateFlag) {
+        this.updateFlag = updateFlag;
+    }
+
+    /**
+     * Get update boolean
+     * @return boolean update flag
+     */
+    public boolean getUpdateFlag() {
+        return updateFlag;
+    }
+
+    /**
+     * Set synchronous boolean
+     * @param boolean process queueing in synchronously 
+     */
+    public void setSynchronousMode(boolean synchronousMode) {
+        this.synchronousMode = synchronousMode;
+    }
+
+    /**
+     * Get synchronous boolean
+     * @return queueing done synchronously 
+     */
+    public boolean getSynchronousMode() {
+        return synchronousMode;
     }
 
     public String dump(String header)

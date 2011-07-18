@@ -75,6 +75,7 @@ public class HandlerDisaggregate extends Handler<JobState>
     protected static final String MESSAGE = NAME + ": ";
     protected static final int BUFFERSIZE = 4096;
     protected static final boolean DEBUG = true;
+    protected static final String FS = System.getProperty("file.separator");
     protected LoggerInf logger = null;
     protected Properties conf = null;
 
@@ -97,7 +98,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	PackageTypeEnum packageType = ingestRequest.getPackageType();
 	if (packageType == PackageTypeEnum.batchManifest) {
 	    System.out.println("batch manifest detected. resetting type to object manifest");
-	    ingestRequest.setPackageType("manifest");	// eliminate when ingestRequest is OBSOLETE!!!
+	    ingestRequest.setPackageType("manifest");
 	    packageType = ingestRequest.getPackageType();
 	}
 	try {
@@ -128,6 +129,15 @@ public class HandlerDisaggregate extends Handler<JobState>
 				+ MESSAGE + "processing tar container: " + file.getAbsolutePath());
 			}
 		        file.delete();
+
+                        // If updating and we have a container
+            		File existingProducerDir = new File(ingestRequest.getQueuePath() + FS + ".producer" + FS);
+	    		if (jobState.getUpdateFlag() && existingProducerDir.exists()) {
+			    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
+			    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
+			    FileUtil.deleteDir(existingProducerDir);
+	    		}
+
 	    	} else if (packageType == PackageTypeEnum.file) {
 			System.out.println("[info] " + MESSAGE + "file parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";
@@ -135,9 +145,9 @@ public class HandlerDisaggregate extends Handler<JobState>
 			System.out.println("[info] " + MESSAGE + "manifest parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";
 		} else {
-			System.out.println("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType + " - " + fileS);
+			System.out.println("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
 			status = "not-valid";
-	    		throw new Exception("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType + " - " + fileS);
+	    		throw new Exception("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
 		}
             }
 
@@ -190,7 +200,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    tarIn = new TarInputStream(new FileInputStream(container));
 	    TarEntry tarEntry = tarIn.getNextEntry();
 	    while (tarEntry != null) {
-	        File destFile = new File(container.getParent() + System.getProperty("file.separator") + tarEntry.getName());
+	        File destFile = new File(container.getParent() + FS + tarEntry.getName());
 	        if (DEBUG) System.out.println("[info] " + MESSAGE + "creating tar entry: " + destFile.getAbsolutePath());
 	        if (tarEntry.isDirectory()){
 		    destFile.mkdirs();

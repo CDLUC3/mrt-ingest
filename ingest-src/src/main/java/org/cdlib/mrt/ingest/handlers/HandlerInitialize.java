@@ -32,6 +32,11 @@ package org.cdlib.mrt.ingest.handlers;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.*;
 
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.representation.Form;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,6 +48,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import javax.ws.rs.core.MediaType;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -51,6 +61,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
+import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.FileUtil;
@@ -71,8 +82,11 @@ public class HandlerInitialize extends Handler<JobState>
     protected static final String NAME = "HandlerInitialize";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
+    protected static final int BUFFERSIZE = 4096;
+    protected static final String FS = System.getProperty("file.separator");
     protected LoggerInf logger = null;
     protected Properties conf = null;
+
 
 
     /**
@@ -91,6 +105,26 @@ public class HandlerInitialize extends Handler<JobState>
 
 	    File targetDir = new File(ingestRequest.getQueuePath(), "system");
 	    if (! targetDir.exists()) targetDir.mkdirs();
+
+	    // grab existing data if this is an update
+	    if (jobState.getUpdateFlag()) {
+		if (updateProcess(jobState, profileState, ingestRequest)) {
+	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Extracting previous version for update process");
+		} else {
+	            throw new TException.GENERAL_EXCEPTION("[error] " + 
+			MESSAGE + ": Unable to update object.  Object does not exist.");
+		}
+
+	        // process now if batch of file or single file
+        	PackageTypeEnum packageType = ingestRequest.getPackageType();
+                File existingProducerDir = new File(ingestRequest.getQueuePath() + FS + ".producer" + FS);
+                if (existingProducerDir.exists() && 
+			(packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.file)) {
+                    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
+                    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
+                    FileUtil.deleteDir(existingProducerDir);
+                }
+	    }
 
 	    // metadata file in ANVL format
 	    File ingestFile = new File(targetDir, "mrt-ingest.txt");
@@ -155,7 +189,7 @@ public class HandlerInitialize extends Handler<JobState>
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " has created metadata");
 	} catch (TException te) {
             te.printStackTrace(System.err);
-            return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
+            return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "failed to create metadata: " + e.getMessage();
@@ -164,6 +198,131 @@ public class HandlerInitialize extends Handler<JobState>
             // cleanup?
         }
     }
+
+    /**
+     * update from previous version
+     *
+     * @param profileState contains target storage service info
+     * @param ingestRequest contains ingest request info
+     * @param jobState contains job state info
+     * @return successful in writing metadata
+     */
+    private boolean updateProcess(JobState jobState, ProfileState profileState, IngestRequest ingestRequest)
+	throws TException 
+    {
+	if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating");
+	
+        ClientResponse clientResponse = null;
+    	StoreNode storeNode = null;
+
+        try {
+	    String retrievedObjectID = null;
+            Identifier localID = jobState.getLocalID();
+            if (localID != null && jobState.getPrimaryID() == null) retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+            if (retrievedObjectID != null) {
+                jobState.setPrimaryID(retrievedObjectID);
+                System.out.println("[debug] " + MESSAGE + "Primary ID found from local ID: " + retrievedObjectID + " --- " + localID);
+            }
+
+            storeNode = profileState.getTargetStorage();
+
+	    // URL format 
+            String url = storeNode.getStorageLink().toString() + "/content/" + storeNode.getNodeID() +
+                        "/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
+	    url += "/0?t=zip";	// latest version in zip format
+            Client client = Client.create();    // reuse?  creation is expensive
+            WebResource webResource = client.resource(url);
+
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + " latest version url: " + url);
+            // make service request
+            try {
+                clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).get(ClientResponse.class);
+            } catch (Exception e) {
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
+            }
+
+            if (clientResponse.getStatus() != 200) {
+                if (DEBUG) System.out.println("[error] " + MESSAGE + " previous version not found: " + url);
+		return false;
+            }
+
+	    // unpack
+            ZipInputStream zipIn = new ZipInputStream(clientResponse.getEntityInputStream());
+            ZipEntry zipEntry;
+            FileOutputStream fileOut = null;
+
+	    File destDir = new File(ingestRequest.getQueuePath() + FS + "working");
+	    if (! destDir.mkdir()) {
+                if (DEBUG) System.out.println("[error] " + MESSAGE + " could not create working dir: " + destDir.getAbsolutePath());
+		return false;
+	    }
+            final byte[] buffer = new byte[BUFFERSIZE];
+            while ((zipEntry = zipIn.getNextEntry()) != null) {
+                File destFile = new File(destDir + "/" + zipEntry.getName());
+                if (DEBUG) System.out.println("[info] " + MESSAGE + "creating zip entry: " + destFile.getAbsolutePath());
+                if (zipEntry.isDirectory()){
+                   destFile.mkdirs();
+                } else {
+                   try {
+                       fileOut = new FileOutputStream(destFile);
+                   } catch (Exception e) {
+                       destFile.getParentFile().mkdirs();
+                       fileOut = new FileOutputStream(destFile);
+                   }
+                   int length = 0;
+                   while((length = zipIn.read(buffer)) != -1) {
+                       fileOut.write(buffer, 0, length);
+                   }
+                   fileOut.close();
+                }
+            }
+
+            zipIn.close();
+
+	    // define files we wish to retain.  fails if string is not the last occurrence in extracted object!
+	    String[] keepFiles = {"producer" + FS, "system" + FS + "mrt-erc.txt"};
+	    Vector v = new Vector();
+
+	    FileUtil.getDirectoryFiles(destDir, v);
+
+	    // move files 
+	    for (String keepFileString: keepFiles) {
+		Iterator itr = v.iterator();
+                if (DEBUG) System.out.println("[info] " + MESSAGE + "Iterating through Vector elements for file: " + keepFileString);
+		while(itr.hasNext()) {
+		    File keepFile = (File) itr.next();
+		    int idx = keepFile.getAbsolutePath().lastIndexOf(keepFileString, keepFile.getAbsolutePath().length());
+		    if (idx > 0) {
+			// create new file
+			File newFile = new File(keepFile.getAbsolutePath().substring(0, idx + keepFileString.length()));
+			if (newFile.exists()) {
+                    	    if (DEBUG) System.out.println("[info] " + MESSAGE + "retaining file : " + newFile.getAbsolutePath());
+			    String hidden = "";
+			    if (keepFileString.equals("producer" + FS)) hidden = ".";		// hide producer data for later processing
+			    File targetDir = new File(ingestRequest.getQueuePath() + FS + hidden + keepFileString);
+			    if (! targetDir.isDirectory() && ! targetDir.isHidden()) targetDir = targetDir.getParentFile();
+			    if (! targetDir.exists()) targetDir.mkdirs();
+			    if (newFile.isDirectory()) {
+			        FileUtil.copyDirectory(newFile, targetDir);
+			    } else {
+			        newFile.renameTo(new File(targetDir + FS + newFile.getName()));
+			    }
+			    break;
+			}
+		    }
+		}
+	    }
+
+	    FileUtil.deleteDir(destDir);
+
+        } catch (Exception e) {
+            if (DEBUG) System.out.println("[error] " + MESSAGE + " error in processing update");
+	    return false;
+	}
+
+	return true;
+    }
+
 
     /**
      * write metadata to MOM file
@@ -290,8 +449,8 @@ public class HandlerInitialize extends Handler<JobState>
 	} catch (Exception e) {
 	    ingestProperties.put("localIdentifier", "(:unas)");
 	}
-	if (StringUtil.isNotEmpty(ingestRequest.getNote())) {
-	    ingestProperties.put("note", ingestRequest.getNote());
+	if (StringUtil.isNotEmpty(jobState.getNote())) {
+	    ingestProperties.put("note", jobState.getNote());
 	} else {
 	    ingestProperties.put("note", "(:unas)");
 	}
