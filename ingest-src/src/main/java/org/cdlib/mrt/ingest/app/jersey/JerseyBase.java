@@ -90,6 +90,7 @@ public class JerseyBase
             = FormatterInf.Format.xml;
     protected static final boolean DEBUG = true;
     protected static final String NL = System.getProperty("line.separator");
+    protected static final String FS = System.getProperty("file.separator");
 
     protected LoggerInf defaultLogger = new TFileLogger("Jersey", 10, 10);
     protected JerseyCleanup jerseyCleanup = new JerseyCleanup();
@@ -286,77 +287,6 @@ public class JerseyBase
 
 
     /**
-     * update an objects job status
-     * @param ingestRequest complete request information
-     * @param request http request information
-     * @param sc ServletConfig used to get system configuration
-     * @return formatted version state information
-     * @throws TException processing exception
-     */
-    public Response updatePost(IngestRequest ingestRequest, HttpServletRequest request, CloseableService cs, ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = defaultLogger;
-        try {
-
-            log("update to queue request entered:"
-                    + " - ingestRequest=" + ingestRequest.dump("updatePost")
-                    + " - request=" + request.toString()
-                    );
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-
-	    FileItem item = null;
-	    DiskFileItemFactory factory = new DiskFileItemFactory();
-	    ServletFileUpload upload = new ServletFileUpload(factory);
-            List<FileItem> items = null;
-            try {
-               items = upload.parseRequest(request);
-            } catch (Exception e) {
-                throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + e);
-            }
-  
-            if (DEBUG) System.err.println("[debug] form items: " + items.toString());
-
-            // Process form fields
-            Iterator iter = items.iterator();
-            while (iter.hasNext()) {
-               item = (FileItem) iter.next();
-
-               String field = null;
-               try {
-                   if (item.isFormField()) {
-                       if (item.getFieldName().equals("batchID")) {
-                           ingestRequest.getJob().setBatchID(new Identifier(item.getString("utf-8")));
-                           if (DEBUG) System.err.println("[debug] batch: " + ingestRequest.getJob().getBatchID().getValue());
-                       } else if (item.getFieldName().equals("jobID")) {
-                           ingestRequest.getJob().setJobID(new Identifier(item.getString("utf-8")));
-                           if (DEBUG) System.err.println("[debug] job: " + ingestRequest.getJob().getJobID().getValue());
-                       } else {
-                           System.err.println("[warning] Form field not supported: " + item.getFieldName());
-                           // throw new TException.INVALID_OR_MISSING_PARM("Form field not supported: " + item.getFieldName());
-                       }
-                       item.delete();
-                   }
-               } catch (Exception e) {
-                   throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Could not process form field: " + field);
-               }
-            }
-
-	    StateInf responseState = ingestService.updatePost(ingestRequest);
-            return getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
-
-        } catch (TException tex) {
-            return getExceptionResponse(tex, ingestRequest.getResponseForm(), logger);
-
-        } catch (Exception ex) {
-            System.err.println("TRACE:" + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-
-    /**
      * Get Response to a formatted State object
      * @param responseState State object to format
      * @param formatType user specified format type
@@ -474,8 +404,8 @@ public class JerseyBase
 	} else {
 	    // direct ingest processing.
 	    ingestRequest.getJob().setBatchID(new Identifier(ProfileUtil.DEFAULT_BATCH_ID, Identifier.Namespace.Local));
-            queueDir = new File(homeDir, ingestRequest.getJob().getBatchID().getValue() + 
-		System.getProperty("file.separator") + ingestRequest.getJob().getJobID().getValue());
+            queueDir = new File(homeDir, ingestRequest.getJob().getBatchID().getValue() + FS + 
+	    ingestRequest.getJob().getJobID().getValue());
 	}
 	if ( ! queueDir.exists()) queueDir.mkdirs();
 
@@ -520,10 +450,14 @@ public class JerseyBase
 		       if (DEBUG) System.err.println("[debug] package name(filename): " + ingestRequest.getJob().getPackageName());
 		    } else if (item.getFieldName().equals("type")){
 		       field = "type";
-		       // object-manifest and batch-Manifest can not be an enum
-		       if (item.getString("utf-8").matches("object-manifest")) 
+		       // object-manifest and batch-Manifest can not be an enum (hyphens)
+		       if (item.getString("utf-8").matches("object-manifest"))
 		           ingestRequest.setPackageType("manifest");
-		       else if (item.getString("utf-8").contains("batch-manifest")) 
+		       else if (item.getString("utf-8").contains("single-file-batch-manifest"))
+		           ingestRequest.setPackageType("batchManifestFile");
+		       else if (item.getString("utf-8").contains("container-batch-manifest"))
+		           ingestRequest.setPackageType("batchManifestContainer");
+		       else if (item.getString("utf-8").contains("batch-manifest"))
 		           ingestRequest.setPackageType("batchManifest");
 		       else 
 		           ingestRequest.setPackageType(item.getString("utf-8"));
@@ -552,15 +486,24 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("localIdentifier")){
 		       field = "localIdentifier";
 		       ingestRequest.getJob().setLocalID(item.getString("utf-8"));
+		    } else if (item.getFieldName().equals("primaryIdentifier")){
+		       field = "primaryIdentifier";
+		       ingestRequest.getJob().setPrimaryID(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("note")){
 		       field = "note";
-		       ingestRequest.setNote(item.getString("utf-8"));
+		       ingestRequest.getJob().setNote(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("responseForm")) {
 		       field = "responseForm";
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));
 
             	       ingestRequest.setResponseForm(responseForm);
 		       if (DEBUG) System.err.println("[debug] response form: " + ingestRequest.getResponseForm());
+		    } else if (item.getFieldName().equals("synchronousMode")) {
+		       field = "synchronousMode";
+		       if (item.getString("utf-8").matches("true")) {
+		           ingestRequest.setSynchronousMode(true);
+		           if (DEBUG) System.err.println("[debug] Synchronous mode set");
+			}
 		    } else {
             	       System.err.println("[warning] Form field not supported: " + item.getFieldName());
 		       // throw new TException.INVALID_OR_MISSING_PARM("Form field not supported: " + item.getFieldName());

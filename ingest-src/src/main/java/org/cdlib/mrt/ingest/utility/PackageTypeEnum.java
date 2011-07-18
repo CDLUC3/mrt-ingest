@@ -43,6 +43,8 @@ public enum PackageTypeEnum {
 	file,
 	container,
 	manifest,
+	batchManifestFile,
+	batchManifestContainer,
 	batchManifest;
 
         public String getValue() {

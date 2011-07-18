@@ -133,8 +133,69 @@ public class JerseyIngest extends JerseyBase
     }
 
 
-    // Form data submission (single or multiple components) 
-    // mint an object ID
+    // Update object 
+    // Object ID not supplied in URL
+    @POST
+    @Path("update-object")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
+    public Response update(
+	    @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        log("processing update-object (no ID, multi-part)");
+
+        // Accept is overridden by responseForm form parm
+        String responseForm = "";
+        try {
+            responseForm = processFormatType(request.getHeader("Accept"), "");
+        } catch (Exception e) {}
+        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+	IngestRequest ingestRequest = new IngestRequest();
+        ingestRequest.setResponseForm(responseForm);
+        ingestRequest.getJob().setPrimaryID(null);
+        ingestRequest.setUpdateFlag(true);
+
+        return submit(ingestRequest, request, cs, sc);
+    }
+
+
+    // Update object 
+    // Object ID supplied in URL
+    @POST
+    @Path("update-object/{scheme}/{shoulder}/{objectid}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
+    public Response update(
+            @PathParam("scheme") String scheme,
+            @PathParam("shoulder") String shoulder,
+            @PathParam("objectid") String object,
+	    @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        log("processing update-object (ID, multi-part)");
+
+	// Accept is overridden by responseForm form parm
+	String responseForm = "";
+	try {
+	    responseForm = processFormatType(request.getHeader("Accept"), "");
+	} catch (Exception e) {}
+	if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+	IngestRequest ingestRequest = new IngestRequest();
+        ingestRequest.setResponseForm(responseForm);
+        ingestRequest.getJob().setPrimaryID(scheme + "/" + shoulder + "/" + object);
+        ingestRequest.setUpdateFlag(true);
+
+        return submit(ingestRequest, request, cs, sc);
+    }
+
+
+    // Submit entire object
+    // Object ID not supplied in URL
     @POST
     @Path("submit-object")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
@@ -161,8 +222,8 @@ public class JerseyIngest extends JerseyBase
     }
 
 
-    // Form data submission (single or multiple components)
-    // object ID supplied
+    // Submit entire object
+    // Object ID supplied in URL
     @POST
     @Path("submit-object/{scheme}/{shoulder}/{objectid}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file

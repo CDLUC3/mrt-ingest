@@ -235,6 +235,16 @@ public class HandlerRetrieve extends Handler<JobState>
 	        }
 	    }
 
+	    // If updating and we do not have a container
+            File existingProducerDir = new File(ingestRequest.getQueuePath() +
+                        System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
+            if (jobState.getUpdateFlag() && existingProducerDir.exists()) {
+                System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
+                FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
+                FileUtil.deleteDir(existingProducerDir);
+            }
+
+
             // metadata file in ANVL format
             File ingestFile = new File(systemTargetDir, "mrt-ingest.txt");
             if ( ! createMetadata(ingestFile, status)) {
@@ -250,8 +260,10 @@ public class HandlerRetrieve extends Handler<JobState>
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (TRuntimeException trex) {
+	    trex.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + trex.getDetail());
 	} catch (TException te) {
+	    te.printStackTrace(System.err);
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
@@ -470,8 +482,8 @@ class RetrieveData implements Callable<String>
 		    throw new Exception("Error creating target file: " + f.getAbsolutePath());
 	        }
 	    } else {
-	        System.out.println("[error] file already exists: " + f.getAbsolutePath());
-		throw new Exception("Target file already exists: " + f.getAbsolutePath());
+	        System.out.println("[warn] file already exists: " + f.getAbsolutePath());
+		return null;
 	    }
             for (int i=0; i < 2; i++) {
 	        try {

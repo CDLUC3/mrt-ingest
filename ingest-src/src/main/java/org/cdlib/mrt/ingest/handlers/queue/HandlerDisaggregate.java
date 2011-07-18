@@ -89,7 +89,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    File queueDir = new File(ingestRequest.getQueuePath().getAbsolutePath());
 	    for (String fileS : queueDir.list()) {
 	        file = new File(queueDir, fileS);
-	    	if (packageType == PackageTypeEnum.batchManifest) {
+	    	if (packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.batchManifestContainer
+		    || packageType == PackageTypeEnum.batchManifest) {
 			System.out.println("[info] " + MESSAGE + "batchManifest specified, unpacking: " + fileS);
 
 			// unpack
@@ -103,6 +104,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 			System.out.println("[info] " + MESSAGE + "job parm specified, no unpacking needed: " + fileS);
 			System.out.println("[info] " + MESSAGE + "batchID: " + batchState.getBatchID().getValue());
 			JobState jobState = createJob(file, queueDir);
+			jobState.setUpdateFlag(batchState.getUpdateFlag());
 
 			if (fileS.equals(ingestRequest.getJob().getPackageName())) 
 			    jobState.setPackageName(ingestRequest.getJob().getPackageName());
@@ -129,6 +131,9 @@ public class HandlerDisaggregate extends Handler<BatchState>
 			} catch (Exception e) { /* optional */ }
 			try {
                             jobState.setObjectDate(ingestRequest.getJob().getObjectDate());
+			} catch (Exception e) { /* optional */ }
+			try {
+                            jobState.setNote(ingestRequest.getJob().getNote());
 			} catch (Exception e) { /* optional */ }
 
 			batchState.addJob(jobState.getJobID().getValue(), jobState);
@@ -174,6 +179,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	        String fileName = fileComponent.getIdentifier();
 	        if (StringUtil.isEmpty(fileName)) fileName = fileComponent.getURL().getFile().replace("/", "");
 		JobState jobState = createJob(fileComponent.getURL(), fileName, queueDir);
+		jobState.setUpdateFlag(batchState.getUpdateFlag());
 
 		// particulars are housed in object manifest file
 		jobState.setPackageName(fileName);
@@ -292,7 +298,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
     {
 	try {
             if (profile.contains("mrt-batch-manifest")) {
-	        // we have an object manifest
+	        // we have an object-manifest, but can not create an enum w/hyphen
                 return "manifest";
             } else if (profile.contains("mrt-container-batch-manifest")) {
 	        // we have a container manifest
