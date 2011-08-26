@@ -29,6 +29,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.util.*;
+import com.hp.hpl.jena.vocabulary.*;
+
 import java.io.File;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -36,6 +40,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Vector;
 
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
@@ -48,6 +53,7 @@ import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.URLEncoder;
 
 /**
  * move package to staging area "producer" directory
@@ -80,6 +86,9 @@ public class HandlerAccept extends Handler<JobState>
 	    boolean result;
 	    File sourceDir = ingestRequest.getQueuePath();
 	    File targetDir = new File(ingestRequest.getQueuePath(), "producer");
+            File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
+            PackageTypeEnum packageType = ingestRequest.getPackageType();
+
 	    for (String fileS : ingestRequest.getQueuePath().list()) {
 	    	if ( ! isComponent(fileS)) continue;
 
@@ -109,6 +118,15 @@ public class HandlerAccept extends Handler<JobState>
                 }
 	    }
 
+            // update resource map if necessary
+            if (packageType == PackageTypeEnum.file) {
+                System.out.println("[info] " + MESSAGE + "file parm specified, updating resource map.");
+                File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
+                if ( ! updateResourceMap(profileState, ingestRequest, mapFile, targetDir)) {
+                    System.err.println("[warn] " + MESSAGE + "Failure to update resource map.");
+                }
+	    }
+
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " has copied data to staging area", 0);
 	} catch (TException te) {
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
@@ -119,7 +137,136 @@ public class HandlerAccept extends Handler<JobState>
 	    // cleanup?
 	}
     }
+
+    /**
+     * write aggregates references to resource map
+     *
+     * @param profileState profile state
+     * @param ingestRequest ingest request
+     * @param resourceMapFile target file (usually "mrt-object-map.ttl")
+     * @param sourceDir source directory 
+     * @return successful in updating resource map
+     */
+    private boolean updateResourceMap(ProfileState profileState, IngestRequest ingestRequest, File mapFile, File sourceDir)
+        throws TException {
+        try {
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath() + " - " + sourceDir.getAbsolutePath());
+
+            Model model = updateModel(profileState, ingestRequest, mapFile, sourceDir);
+            if (DEBUG) dumpModel(model);
+            writeModel(model, mapFile);
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            String msg = "[error] " + MESSAGE + "failed to create resource map: " + e.getMessage();
+            System.err.println(msg);
+            throw new TException.GENERAL_EXCEPTION(msg);
+        } finally {
+        }
+    }
    
+    public Model updateModel(ProfileState profileState, IngestRequest ingestRequest, File mapFile, File sourceDir)
+        throws Exception
+    {
+        try {
+
+            // read in existing model
+            InputStream inputStream = FileManager.get().open(mapFile.getAbsolutePath());
+            if (inputStream == null) {
+                String msg = "[error] " + MESSAGE + "failed to update resource map: " + mapFile.getAbsolutePath();
+                throw new TException.GENERAL_EXCEPTION(msg);
+            }
+            Model model = ModelFactory.createDefaultModel();
+            model.read(inputStream, null, "TURTLE");
+
+            String versionID = "0";             // current
+            String objectIDS = null;
+            String ore = "http://www.openarchives.org/ore/terms#";
+
+            try {
+                objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
+            } catch (Exception e) {
+                objectIDS = "OID_UNKNOWN";          // replace when known
+            }
+            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
+                        profileState.getTargetStorage().getNodeID() + "/" +
+                        URLEncoder.encode(objectIDS, "utf-8");
+
+            String resourceMapURI = objectURI + "/" + versionID + "/system" + "/mrt-object-map.ttl";
+
+            // add each component file
+            Vector<File> files = new Vector();
+
+            FileUtil.getDirectoryFiles(sourceDir, files);
+            for (File file : files) {
+                if (file.isDirectory()) continue;
+                if (file.getName().equals("mrt-erc.txt")) continue;
+                // Turtle will not handle whitespace in URL, must encode
+                String component = objectURI + "/" + versionID + URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer")), "utf-8");
+                model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+                    ResourceFactory.createProperty(ore + "aggregates"),
+                    ResourceFactory.createResource(component)));
+            }
+
+            return model;
+        } catch (Exception e) {
+            e.printStackTrace();
+            String msg = "[error] " + MESSAGE + "failed to update model: " + e.getMessage();
+            throw new TException.GENERAL_EXCEPTION(msg);
+        }
+
+    }
+
+    public static void writeModel(Model model, File mapFile)
+        throws TException
+    {
+        FileOutputStream fos = null;
+        try {
+            String [] formats = { "RDF/XML", "RDF/XML-ABBREV", "N-TRIPLE", "TURTLE", "TTL", "N3"};
+            String format = formats[4]; // Turtle
+
+            fos = new FileOutputStream(mapFile);
+            model.write(fos, format);
+        } catch (Exception e) {
+            e.printStackTrace();
+            String msg = "[error] " + MESSAGE + "failed to write resource map: " + e.getMessage();
+            throw new TException.GENERAL_EXCEPTION(msg);
+        } finally {
+            try {
+                fos.flush();
+            } catch (Exception e) {}
+        }
+    }
+
+    public static void dumpModel(Model model)
+    {
+        System.out.println( "[debug] dump resource map - START");
+
+        // list the statements in the graph
+        StmtIterator iter = model.listStatements();
+
+        // print out the predicate, subject and object of each statement
+        while (iter.hasNext()) {
+            Statement stmt      = iter.nextStatement();         // get next statement
+            Resource  subject   = stmt.getSubject();   // get the subject
+            Property  predicate = stmt.getPredicate(); // get the predicate
+            RDFNode   object    = stmt.getObject();    // get the object
+
+            System.out.print(subject.toString());
+            System.out.print(" " + predicate.toString() + " ");
+            if (object instanceof Resource) {
+                System.out.print(object.toString());
+            } else {
+                // object is a literal
+                System.out.print(" \"" + object.toString() + "\"");
+            }
+            System.out.println(" .");
+        }
+        System.out.println( "[debug] dump resource map - END");
+    }
+
+
     public boolean isComponent(String file) {
 	if (file.equals("producer")) return false;
 	if (file.equals("system")) return false;
