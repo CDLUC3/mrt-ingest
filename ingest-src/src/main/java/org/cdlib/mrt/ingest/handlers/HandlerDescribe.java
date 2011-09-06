@@ -413,6 +413,9 @@ public class HandlerDescribe extends Handler<JobState>
             model.read(inputStream, null, "TURTLE");
 
             String mrt = "http://uc3.cdlib.org/ontology/mom#";
+            String ore = "http://www.openarchives.org/ore/terms#";
+            String msc = "http://uc3.cdlib.org/ontology/schema#";
+            String mts = "http://purl.org/NET/mediatypes/";
 
             String versionIDS = "0";	// current
             Integer versionID = jobState.getVersionID();
@@ -426,34 +429,38 @@ public class HandlerDescribe extends Handler<JobState>
             String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
                         profileState.getTargetStorage().getNodeID() + "/" +
                         URLEncoder.encode(objectIDS, "utf-8");
-            String systemErcURI = objectURI + "/" + versionIDS + "/system/" + systemErcFile.getName();
+            String systemErcURI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + systemErcFile.getName(), "utf-8");
 
             model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
                 ResourceFactory.createResource(systemErcURI)));
 
 	    // system ERC
+            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+                ResourceFactory.createProperty(ore + "aggregates"),
+                ResourceFactory.createResource(systemErcURI)));
             model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemErcURI),
                 ResourceFactory.createProperty(mrt + "metadataSchema"),
-                ResourceFactory.createPlainLiteral("ERC")));
+                ResourceFactory.createResource(msc + "ERC")));
             model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemErcURI),
                 ResourceFactory.createProperty(mrt + "mimeType"),
-                ResourceFactory.createPlainLiteral("text/anvl")));
+                ResourceFactory.createResource(model.shortForm(mts + "text/x-anvl"))));
 
 	    // producer ERC
 	    if (producerErcFile.exists()) {
         	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found ERC data: " + producerErcFile.getAbsolutePath());
-                String producerErcURI = objectURI + "/" + versionIDS + "/producer/" + producerErcFile.getName();
+                String producerErcURI = objectURI + "/" + versionIDS + "/" + 
+			URLEncoder.encode("producer/" + producerErcFile.getName(), "utf-8");
 
                 model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
                     ResourceFactory.createProperty(mrt + "hasMetadata"),
                     ResourceFactory.createResource(producerErcURI)));
                 model.add(ResourceFactory.createStatement(ResourceFactory.createResource(producerErcURI),
                     ResourceFactory.createProperty(mrt + "metadataSchema"),
-                    ResourceFactory.createPlainLiteral("ERC")));
+                    ResourceFactory.createResource(msc + "ERC")));
                 model.add(ResourceFactory.createStatement(ResourceFactory.createResource(producerErcURI),
                     ResourceFactory.createProperty(mrt + "mimeType"),
-                    ResourceFactory.createPlainLiteral("text/anvl")));
+                    ResourceFactory.createResource(model.shortForm(mts + "text/x-anvl"))));
 	    }
 
             return model;

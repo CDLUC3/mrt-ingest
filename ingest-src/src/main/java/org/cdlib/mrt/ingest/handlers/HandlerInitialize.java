@@ -185,7 +185,6 @@ public class HandlerInitialize extends Handler<JobState>
 	        throw new TException.GENERAL_EXCEPTION("[error] " 
 		    + MESSAGE + ": unable to build merritt object model file: " + momFile.getAbsolutePath());
 	    }
-
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " has created metadata");
 	} catch (TException te) {
             te.printStackTrace(System.err);
@@ -342,7 +341,7 @@ public class HandlerInitialize extends Handler<JobState>
 	try {
 	    momProperties.put("primaryIdentifier", jobState.getPrimaryID().getValue());
 	} catch (Exception e) {
-	    momProperties.put("primaryIdentifier", "(:unas)");
+	    // momProperties.put("primaryIdentifier", "(:unas)");
 	}
 	momProperties.put("type", profileState.getObjectType());
 	momProperties.put("role", profileState.getObjectRole());
@@ -352,7 +351,7 @@ public class HandlerInitialize extends Handler<JobState>
 	try {
 	    momProperties.put("localIdentifier", jobState.getLocalID().getValue());
 	} catch (Exception e) {
-	    momProperties.put("localIdentifier", "(:unas)");
+	    // momProperties.put("localIdentifier", "(:unas)");
 	}
 
 	return MetadataUtil.writeMetadataANVL(momFile, momProperties, false);
@@ -504,22 +503,23 @@ public class HandlerInitialize extends Handler<JobState>
 	    String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
                         profileState.getTargetStorage().getNodeID() + "/" + 
 			URLEncoder.encode(objectIDS, "utf-8");
-	    String metadataURI = objectURI + "/" + versionID + "/system/" + URLEncoder.encode(ingestFile.getName(), "utf-8");
-	    String membershipURI = objectURI + "/" + versionID + "/system" + "/mrt-membership.txt"; 
-	    String momURI = objectURI + "/" + versionID + "/system" + "/mrt-mom.txt"; 
-	    String resourceMapURI = objectURI + "/" + versionID + "/system" + "/mrt-object-map.ttl"; 
-	    String ownerURI = objectURI + "/" + versionID + "/system" + "/mrt-owner.txt"; 
+
+	    String metadataURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/" + ingestFile.getName(), "utf-8");
+	    String membershipURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-membership.txt", "utf-8"); 
+	    String momURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-mom.txt", "utf-8"); 
+	    String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8"); 
+	    String ownerURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-owner.txt", "utf-8"); 
 
             String mrt = "http://uc3.cdlib.org/ontology/mom#";
             String ore = "http://www.openarchives.org/ore/terms#";
-            String rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-            String rdfs = "http://www.w3.org/2001/01/rdf-schema#";
+            String msc = "http://uc3.cdlib.org/ontology/schema#";
+            String mts = "http://purl.org/NET/mediatypes/";
 
             Model model = ModelFactory.createDefaultModel();
             model.setNsPrefix("mrt", mrt);
             model.setNsPrefix("ore", ore);
-            model.setNsPrefix("rdf", rdf);
-            model.setNsPrefix("rdfs", rdfs);
+            model.setNsPrefix("msc", msc);
+            model.setNsPrefix("mts", mts);
 
 	    String localIdentifier = null;
             try {
@@ -563,34 +563,42 @@ public class HandlerInitialize extends Handler<JobState>
 	    // metadata
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(metadataURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createPlainLiteral("MRT-ingest")));
+		ResourceFactory.createResource(msc + "MRT-ingest")));
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(metadataURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createPlainLiteral("text/anvl")));
+		ResourceFactory.createResource(model.shortForm(mts + "text/x-anvl"))));
 
 	    // membership
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(membershipURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createPlainLiteral("MRT-membership")));
+		ResourceFactory.createResource(msc + "MRT-membership")));
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(membershipURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createPlainLiteral("text/plain")));
+		ResourceFactory.createResource(model.shortForm(mts + "text/plain"))));
 	
 	    // merritt object model
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(momURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createPlainLiteral("MRT-owner")));
+		ResourceFactory.createResource(msc + "MRT-MOM")));
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(momURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createPlainLiteral("text/plain")));
+		ResourceFactory.createResource(model.shortForm(mts + "text/plain"))));
+	
+	    // ownership
+	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(ownerURI),
+		ResourceFactory.createProperty(mrt + "metadataSchema"), 
+		ResourceFactory.createResource(msc + "MRT-owner")));
+	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(ownerURI),
+		ResourceFactory.createProperty(mrt + "mimeType"), 
+		ResourceFactory.createResource(model.shortForm(mts + "text/plain"))));
 	
 	    // resource map
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createPlainLiteral("MRT-ORE")));
+		ResourceFactory.createResource(msc + "MRT-ORE")));
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createPlainLiteral("text/turtle")));
+		ResourceFactory.createResource(model.shortForm(mts + "text/turtle"))));
 	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(ore + "describes"), 
 		ResourceFactory.createResource(objectURI)));
