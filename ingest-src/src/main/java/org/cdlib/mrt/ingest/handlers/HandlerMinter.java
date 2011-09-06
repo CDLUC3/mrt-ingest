@@ -210,7 +210,7 @@ public class HandlerMinter extends Handler<JobState>
 
             // metadata file in ANVL format
             if ( ! createMetadata(metadataFile, profileState.getIdentifierScheme().toString(), 
-			profileState.getIdentifierNamespace(), jobState.getPrimaryID().getValue(), retrievedObjectID)) {
+			profileState.getIdentifierNamespace(), assignedObjectID, retrievedObjectID)) {
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to append metadata file: " + metadataFile.getAbsolutePath());
             }
@@ -300,23 +300,27 @@ public class HandlerMinter extends Handler<JobState>
 	    momProperties.put("primaryIdentifier", "(:unas)");
 
 	if (StringUtil.isNotEmpty(localIdentifier)) {
-	    if (((String) momProperties.get("localIdentifier")).contains("(:unas)")) {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "assigning localID in momFile: " + localIdentifier);
-	    } else {
-		if (! StringUtil.squeeze(localIdentifier).equals(StringUtil.squeeze((String) momProperties.get("localIdentifier")))) {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "overriding localID in momFile: " 
-			+  momProperties.get("localIdentifier") + " --- " + localIdentifier);
-		} else {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "local ID has not changed.  No action taken");
-		}
+	    if (momProperties.containsValue("localIdentifier")) {
+	        if (((String) momProperties.get("localIdentifier")).contains("(:unas)")) {
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "assigning localID in momFile: " + localIdentifier);
+	        } else {
+		    if (! StringUtil.squeeze(localIdentifier).equals(StringUtil.squeeze((String) momProperties.get("localIdentifier")))) {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "overriding localID in momFile: " 
+			    +  momProperties.get("localIdentifier") + " --- " + localIdentifier);
+		    } else {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "local ID has not changed.  No action taken");
+		    }
+	        }
 	    }
 	    momProperties.put("localIdentifier", localIdentifier);
 	} else {
-	    if (((String) momProperties.get("localIdentifier")).contains("(:unas)")) {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "no localID defined, removing momFile entry");
-	    	momProperties.remove("localIdentifier");
-	    } else {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "no localID created in minter, preserving existing localID");
+	    if (momProperties.containsValue("localIdentifier")) {
+	        if (((String) momProperties.get("localIdentifier")).contains("(:unas)")) {
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "no localID defined, removing momFile entry");
+	    	    momProperties.remove("localIdentifier");
+	        } else {
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "no localID created in minter, preserving existing localID");
+	        }
 	    }
 	}
 
@@ -448,10 +452,6 @@ public class HandlerMinter extends Handler<JobState>
                         profileState.getTargetStorage().getNodeID() + "/" +
                         URLEncoder.encode(objectIDS, "utf-8");
 
-
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
-                ResourceFactory.createProperty(mrt + "primaryIdentifier"),
-                ResourceFactory.createPlainLiteral(objectIDS)));
 
             return model;
         } catch (Exception e) {

@@ -440,7 +440,7 @@ public class HandlerDisaggregate extends Handler<JobState>
                         profileState.getTargetStorage().getNodeID() + "/" +
                         URLEncoder.encode(objectIDS, "utf-8");
 
-            String resourceMapURI = objectURI + "/" + versionID + "/system" + "/mrt-object-map.ttl";
+            String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8");
 
 	    // add each component file
 	    Vector<File> files = new Vector();
@@ -449,9 +449,8 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    FileUtil.getDirectoryFiles(sourceDir, files);
 	    for (File file : files) {
 		if (file.isDirectory()) continue;
-		if (file.getName().equals("mrt-erc.txt")) continue;
-		String component = objectURI + "/" + versionID + 
-			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer")), "utf-8");
+		String component = objectURI + "/" + versionID + "/" +
+			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("producer")), "utf-8");
                 model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
                     ResourceFactory.createProperty(ore + "aggregates"),
                     ResourceFactory.createResource(component)));

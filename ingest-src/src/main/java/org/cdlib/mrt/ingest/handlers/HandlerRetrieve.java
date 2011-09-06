@@ -353,7 +353,7 @@ public class HandlerRetrieve extends Handler<JobState>
                         profileState.getTargetStorage().getNodeID() + "/" +
                         URLEncoder.encode(objectIDS, "utf-8");
 
-            String resourceMapURI = objectURI + "/" + versionID + "/system" + "/mrt-object-map.ttl";
+            String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8");
 
             // add each component file
             Vector<File> files = new Vector();
@@ -362,7 +362,6 @@ public class HandlerRetrieve extends Handler<JobState>
             FileUtil.getDirectoryFiles(sourceDir, files);
             for (File file : files) {
                 if (file.isDirectory()) continue;
-                if (file.getName().equals("mrt-erc.txt")) continue;
                 if (file.getName().equals(manifestFile.getName())) continue;	// ignore manifest file
                 // Turtle will not handle whitespace in URL, must encode
                 String component = objectURI + "/" + versionID + URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer")), "utf-8");

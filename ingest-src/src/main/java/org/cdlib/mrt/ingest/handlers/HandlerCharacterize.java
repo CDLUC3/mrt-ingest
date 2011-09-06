@@ -252,6 +252,8 @@ public class HandlerCharacterize extends Handler<JobState>
 	    model.read(inputStream, null, "TURTLE");
 
             String mrt = "http://uc3.cdlib.org/ontology/mom#";
+            String msc = "http://uc3.cdlib.org/ontology/schema#";
+            String mts = "http://purl.org/NET/mediatypes/";
 
             String versionIDS = "0";    // current
             Integer versionID = jobState.getVersionID();
@@ -265,17 +267,17 @@ public class HandlerCharacterize extends Handler<JobState>
             String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
                         profileState.getTargetStorage().getNodeID() + "/" +
                         URLEncoder.encode(objectIDS, "utf-8");
-            String systemJhove2URI = objectURI + "/" + versionIDS + "/system/" + metadataFile.getName();
+            String systemJhove2URI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + metadataFile.getName(), "utf-8");
 
             model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
                 ResourceFactory.createResource(systemJhove2URI)));
             model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemJhove2URI),
                 ResourceFactory.createProperty(mrt + "metadataSchema"),
-                ResourceFactory.createPlainLiteral("JHOVE2")));
+                ResourceFactory.createResource(msc + "JHOVE2")));
             model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemJhove2URI),
                 ResourceFactory.createProperty(mrt + "mimeType"),
-                ResourceFactory.createPlainLiteral("text/xml")));
+                ResourceFactory.createResource(model.shortForm(mts + "text/xml"))));
 
             return model;
         } catch (Exception e) {
