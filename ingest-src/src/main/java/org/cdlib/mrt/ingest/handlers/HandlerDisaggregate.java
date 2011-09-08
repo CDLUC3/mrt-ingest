@@ -451,9 +451,9 @@ public class HandlerDisaggregate extends Handler<JobState>
 		if (file.isDirectory()) continue;
 		String component = objectURI + "/" + versionID + "/" +
 			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("producer")), "utf-8");
-                model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+                model.add(ResourceFactory.createResource(objectURI),
                     ResourceFactory.createProperty(ore + "aggregates"),
-                    ResourceFactory.createResource(component)));
+                    ResourceFactory.createResource(component));
 	    }
 
             return model;

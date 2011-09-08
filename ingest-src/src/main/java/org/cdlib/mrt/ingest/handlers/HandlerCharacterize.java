@@ -269,15 +269,15 @@ public class HandlerCharacterize extends Handler<JobState>
                         URLEncoder.encode(objectIDS, "utf-8");
             String systemJhove2URI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + metadataFile.getName(), "utf-8");
 
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(objectURI),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
-                ResourceFactory.createResource(systemJhove2URI)));
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemJhove2URI),
+                ResourceFactory.createResource(systemJhove2URI));
+            model.add(ResourceFactory.createResource(systemJhove2URI),
                 ResourceFactory.createProperty(mrt + "metadataSchema"),
-                ResourceFactory.createResource(msc + "JHOVE2")));
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemJhove2URI),
+                ResourceFactory.createResource(msc + "JHOVE2"));
+            model.add(ResourceFactory.createResource(systemJhove2URI),
                 ResourceFactory.createProperty(mrt + "mimeType"),
-                ResourceFactory.createResource(model.shortForm(mts + "text/xml"))));
+                ResourceFactory.createResource(mts + "text/xml"));
 
             return model;
         } catch (Exception e) {
