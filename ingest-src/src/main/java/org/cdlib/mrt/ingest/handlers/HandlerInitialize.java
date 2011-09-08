@@ -519,7 +519,6 @@ public class HandlerInitialize extends Handler<JobState>
             model.setNsPrefix("mrt", mrt);
             model.setNsPrefix("ore", ore);
             model.setNsPrefix("msc", msc);
-            model.setNsPrefix("mts", mts);
 
 	    String localIdentifier = null;
             try {
@@ -529,79 +528,79 @@ public class HandlerInitialize extends Handler<JobState>
             }
 
 	    // object
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(ore + "aggregates"), 
-		ResourceFactory.createResource(metadataURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(metadataURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(ore + "aggregates"), 
-		ResourceFactory.createResource(membershipURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(membershipURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(ore + "aggregates"), 
-		ResourceFactory.createResource(momURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(momURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(ore + "aggregates"), 
-		ResourceFactory.createResource(ownerURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(ownerURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(ore + "aggregates"), 
-		ResourceFactory.createResource(resourceMapURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(resourceMapURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
-		ResourceFactory.createResource(metadataURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(metadataURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
-		ResourceFactory.createResource(membershipURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(membershipURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
-		ResourceFactory.createResource(momURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(momURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
-		ResourceFactory.createResource(ownerURI)));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+		ResourceFactory.createResource(ownerURI));
+	    model.add(ResourceFactory.createResource(objectURI),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
-		ResourceFactory.createResource(resourceMapURI)));
+		ResourceFactory.createResource(resourceMapURI));
 
 	    // metadata
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(metadataURI),
+	    model.add(ResourceFactory.createResource(metadataURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createResource(msc + "MRT-ingest")));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(metadataURI),
+		ResourceFactory.createResource(msc + "MRT-ingest"));
+	    model.add(ResourceFactory.createResource(metadataURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createResource(model.shortForm(mts + "text/x-anvl"))));
+		ResourceFactory.createResource(mts + "text/x-anvl"));
 
 	    // membership
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(membershipURI),
+	    model.add(ResourceFactory.createResource(membershipURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createResource(msc + "MRT-membership")));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(membershipURI),
+		ResourceFactory.createResource(msc + "MRT-membership"));
+	    model.add(ResourceFactory.createResource(membershipURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createResource(model.shortForm(mts + "text/plain"))));
+		ResourceFactory.createResource(mts + "text/plain"));
 	
 	    // merritt object model
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(momURI),
+	    model.add(ResourceFactory.createResource(momURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createResource(msc + "MRT-MOM")));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(momURI),
+		ResourceFactory.createResource(msc + "MRT-MOM"));
+	    model.add(ResourceFactory.createResource(momURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createResource(model.shortForm(mts + "text/plain"))));
+		ResourceFactory.createResource(mts + "text/plain"));
 	
 	    // ownership
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(ownerURI),
+	    model.add(ResourceFactory.createResource(ownerURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createResource(msc + "MRT-owner")));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(ownerURI),
+		ResourceFactory.createResource(msc + "MRT-owner"));
+	    model.add(ResourceFactory.createResource(ownerURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createResource(model.shortForm(mts + "text/plain"))));
+		ResourceFactory.createResource(mts + "text/plain"));
 	
 	    // resource map
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(resourceMapURI),
+	    model.add(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(mrt + "metadataSchema"), 
-		ResourceFactory.createResource(msc + "MRT-ORE")));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(resourceMapURI),
+		ResourceFactory.createResource(msc + "MRT-ORE"));
+	    model.add(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(mrt + "mimeType"), 
-		ResourceFactory.createResource(model.shortForm(mts + "text/turtle"))));
-	    model.add(ResourceFactory.createStatement(ResourceFactory.createResource(resourceMapURI),
+		ResourceFactory.createResource(mts + "text/turtle"));
+	    model.add(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(ore + "describes"), 
-		ResourceFactory.createResource(objectURI)));
+		ResourceFactory.createResource(objectURI));
 	
             return model;
         } catch (Exception e) {

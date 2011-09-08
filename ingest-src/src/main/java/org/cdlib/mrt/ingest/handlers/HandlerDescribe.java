@@ -431,20 +431,20 @@ public class HandlerDescribe extends Handler<JobState>
                         URLEncoder.encode(objectIDS, "utf-8");
             String systemErcURI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + systemErcFile.getName(), "utf-8");
 
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(objectURI),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
-                ResourceFactory.createResource(systemErcURI)));
+                ResourceFactory.createResource(systemErcURI));
 
 	    // system ERC
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(objectURI),
                 ResourceFactory.createProperty(ore + "aggregates"),
-                ResourceFactory.createResource(systemErcURI)));
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemErcURI),
+                ResourceFactory.createResource(systemErcURI));
+            model.add(ResourceFactory.createResource(systemErcURI),
                 ResourceFactory.createProperty(mrt + "metadataSchema"),
-                ResourceFactory.createResource(msc + "ERC")));
-            model.add(ResourceFactory.createStatement(ResourceFactory.createResource(systemErcURI),
+                ResourceFactory.createResource(msc + "ERC"));
+            model.add(ResourceFactory.createResource(systemErcURI),
                 ResourceFactory.createProperty(mrt + "mimeType"),
-                ResourceFactory.createResource(model.shortForm(mts + "text/x-anvl"))));
+                ResourceFactory.createResource(mts + "text/x-anvl"));
 
 	    // producer ERC
 	    if (producerErcFile.exists()) {
@@ -452,15 +452,15 @@ public class HandlerDescribe extends Handler<JobState>
                 String producerErcURI = objectURI + "/" + versionIDS + "/" + 
 			URLEncoder.encode("producer/" + producerErcFile.getName(), "utf-8");
 
-                model.add(ResourceFactory.createStatement(ResourceFactory.createResource(objectURI),
+                model.add(ResourceFactory.createResource(objectURI),
                     ResourceFactory.createProperty(mrt + "hasMetadata"),
-                    ResourceFactory.createResource(producerErcURI)));
-                model.add(ResourceFactory.createStatement(ResourceFactory.createResource(producerErcURI),
+                    ResourceFactory.createResource(producerErcURI));
+                model.add(ResourceFactory.createResource(producerErcURI),
                     ResourceFactory.createProperty(mrt + "metadataSchema"),
-                    ResourceFactory.createResource(msc + "ERC")));
-                model.add(ResourceFactory.createStatement(ResourceFactory.createResource(producerErcURI),
+                    ResourceFactory.createResource(msc + "ERC"));
+                model.add(ResourceFactory.createResource(producerErcURI),
                     ResourceFactory.createProperty(mrt + "mimeType"),
-                    ResourceFactory.createResource(model.shortForm(mts + "text/x-anvl"))));
+                    ResourceFactory.createResource(mts + "text/x-anvl"));
 	    }
 
             return model;
