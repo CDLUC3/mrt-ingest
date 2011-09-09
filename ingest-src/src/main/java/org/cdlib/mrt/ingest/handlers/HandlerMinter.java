@@ -428,7 +428,7 @@ public class HandlerMinter extends Handler<JobState>
  	    String string = FileManager.get().readWholeFileAsUTF8(mapFile.getAbsolutePath());
 	    if (resetObject) {
             	if (DEBUG) System.out.println("[debug] " + MESSAGE + "assigning objectID");
-		string = string.replaceAll("OID_UNKNOWN", ingestRequest.getJob().getPrimaryID().getValue());
+		string = string.replaceAll("OID_UNKNOWN", URLEncoder.encode(ingestRequest.getJob().getPrimaryID().getValue(), "UTF-8"));
 	    }
 
 	    InputStream inputStream = new ByteArrayInputStream(string.getBytes("UTF-8"));
