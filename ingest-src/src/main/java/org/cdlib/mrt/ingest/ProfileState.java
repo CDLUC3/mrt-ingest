@@ -59,6 +59,7 @@ public class ProfileState
     protected URL objectMinterURL = null;
     protected URL characterizationURL = null;
     protected URL fixityURL = null;
+    protected URL dataONEURL = null;
     protected Vector<Notification> contactsEmail = new Vector();
     protected SortedMap<Integer,HandlerState> ingestHandlers = null;
     protected SortedMap<Integer,HandlerState> queueHandlers = null;
@@ -203,6 +204,14 @@ public class ProfileState
     }
 
     /**
+     * Set dataONE URL
+     * @param URL dataONE URL
+     */
+    public void setDataoneURL(URL dataONEURL) {
+        this.dataONEURL = dataONEURL;
+    }
+
+    /**
      * Get object minter URL
      * @return object minter URL
      */
@@ -224,6 +233,14 @@ public class ProfileState
      */
     public URL getFixityURL() {
         return this.fixityURL; 
+    }
+
+    /**
+     * Get dataONE URL
+     * @return dataONE URL
+     */
+    public URL getDataoneURL() {
+        return this.dataONEURL; 
     }
 
     /**

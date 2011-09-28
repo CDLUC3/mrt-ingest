@@ -74,6 +74,7 @@ public class ProfileUtil
     protected Properties conf = null;
 
     protected static URL url = null;
+    protected static URL storageUrl = null;
     protected static int node;
 
     // extract strings
@@ -91,6 +92,7 @@ public class ProfileUtil
     protected static final String matchObjectMinterURL = "ObjectMinterURL";
     protected static final String matchCharacterizationURL = "CharacterizationURL";
     protected static final String matchFixityURL = "FixityURL";
+    protected static final String matchDataoneURL = "DataoneURL";
     protected static final String matchCollection = "Collection";
     protected static final String matchType = "Type";
     protected static final String matchRole = "Role";
@@ -165,6 +167,14 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("FixityService parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setFixityURL(new URL(value));
+		} else if (key.startsWith(matchDataoneURL)) {
+                    if (DEBUG) System.out.println("[debug] dataONE URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setDataoneURL(new URL(value));
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
 		    profileState.setCollection(value);
@@ -189,7 +199,7 @@ public class ProfileUtil
 		} else if (key.startsWith(matchStorageService)) {
                     if (DEBUG) System.out.println("[debug] storage service: " + value);
                     try {
-                        url = new URL(value);
+                        storageUrl = new URL(value);
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("StorageService parameter in profile is not a valid URL: " + value);
                     }
@@ -235,7 +245,7 @@ public class ProfileUtil
 	     //profileState.setNotification(notification);
 	     profileState.setIngestHandlers(ingestHandlers);
 	     profileState.setQueueHandlers(queueHandlers);
-	     profileState.setTargetStorage(new StoreNode(url, node));
+	     profileState.setTargetStorage(new StoreNode(storageUrl, node));
  
              return profileState;
 
