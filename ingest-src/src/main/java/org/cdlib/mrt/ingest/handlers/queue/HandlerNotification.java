@@ -83,7 +83,11 @@ public class HandlerNotification extends Handler<BatchState>
 
   	    email.setHostName("localhost");	// production machines are SMTP enabled
 	    for (Notification recipient : profileState.getContactsEmail()) {
-  	    	email.addTo(recipient.getContactEmail());
+		try {
+  	    	    email.addTo(recipient.getContactEmail());
+		} catch (Exception e) { 
+		    notify(e.getMessage() + " - " + recipient.getContactEmail(), profileState, ingestRequest); 
+		}
 	    }
   	    email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
             String aggregate = "";
@@ -107,7 +111,11 @@ public class HandlerNotification extends Handler<BatchState>
                     EmailAttachment.ATTACHMENT);
 	    }
   	    email.setMsg("Completion of submission - " + batchState.dump("Notification", false, false));
-  	    email.send();
+	    try {
+  	        email.send();
+	    } catch (Exception e) {
+		// do not fail?
+	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
 
@@ -115,7 +123,9 @@ public class HandlerNotification extends Handler<BatchState>
 	    e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + ": in submission notification: " + e.getMessage();
 	    System.err.println(msg);
-	    throw new TException.GENERAL_EXCEPTION(msg);
+            throw new TException.GENERAL_EXCEPTION(msg);
+
+	    //return new HandlerResult(false, msg, 0);
 	} finally {
 	}
     }
@@ -123,4 +133,32 @@ public class HandlerNotification extends Handler<BatchState>
     public String getName() {
 	return NAME;
     }
+
+    public void notify(String message, ProfileState profileState, IngestRequest ingestRequest) {
+        String server = "";
+        MultiPartEmail email = new MultiPartEmail();
+
+        try {
+            email.setHostName("localhost");     // production machines are SMTP enabled
+            if (profileState.getAdmin() != null) {
+                for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
+                    // admin will receive notifications
+                    String recipient = admin.next();
+                    if (StringUtil.isNotEmpty(recipient)) email.addTo(recipient);
+                }
+            } 
+
+            String ingestServiceName = ingestRequest.getServiceState().getServiceName();
+            if (StringUtil.isNotEmpty(ingestServiceName))
+                if (ingestServiceName.contains("Development")) server = " [Development]";
+                else if (ingestServiceName.contains("Stage")) server = " [Stage]";
+            email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+            email.setSubject("[Warning] Error in user notification" + server);
+            email.setMsg(message);
+            email.send();
+        } catch (Exception e) {};
+
+        return;
+    }
+
 }
