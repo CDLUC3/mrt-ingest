@@ -44,6 +44,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -102,6 +103,7 @@ public class QueueManager
     protected Properties queueProperties = null;
     protected String queueConnectionString = null;
     protected String queueNode = null;
+    protected ArrayList<String> m_admin = new ArrayList<String>(20);
 
     protected boolean debugDump = false;
     protected String ingestFileS = null;	// prop "IngestService"
@@ -171,6 +173,7 @@ public class QueueManager
             String matchIngest = "ingestServicePath";
             String matchQueueService = "QueueService";
             String matchQueueNode = "QueueName";
+            String matchAdmin = "admin";
             String defaultIDKey = "IDDefault";
 	    Integer storageID = null;
 
@@ -195,22 +198,30 @@ public class QueueManager
 		queueProperties.store(out, null);
 		ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
 
-		queueProperties.load(in);	// append
+		ingestProperties.load(in);	// append
 	    } else {
                 throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "IngestService: ingest service path definition not found: " + matchIngest);
 	    }
 
-            Enumeration e = queueProperties.propertyNames();
+	    // Queue and Ingest properties (ingest_info.txt/queue.txt)
+            Enumeration e = ingestProperties.propertyNames();
             while( e.hasMoreElements() ) {
                 key = (String) e.nextElement();
-                value = queueProperties.getProperty(key);
+                value = ingestProperties.getProperty(key);
                 if (key.equals(matchQueueService)) {
 		    this.queueConnectionString = value;
                 }
                 if (key.equals(matchQueueNode)) {
 		    this.queueNode = value;
                 }
-            }
+
+                // admin notification
+                if (key.startsWith(matchAdmin)) {
+                    for (String recipient : value.split(";")) {
+                        m_admin.add((String) recipient);
+                    }
+                }
+	    }
 
         } catch (TException tex) {
 	    throw tex;
@@ -328,6 +339,8 @@ public class QueueManager
 	    // assign profile
 	    profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
 		 ingestRequest.getQueuePath().getParentFile().getParent() + "/profiles");	// two levels down from home
+            if (m_admin != null) profileState.setAdmin(m_admin);
+
 	    if (DEBUG) System.out.println("[debug] "+ profileState.dump("profileState"));
 
 	    batchState.setBatchProfile(profileState);

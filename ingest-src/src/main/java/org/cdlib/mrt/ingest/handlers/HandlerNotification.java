@@ -97,7 +97,9 @@ public class HandlerNotification extends Handler<BatchState>
 
   	    email.setHostName("localhost");	// production machines are SMTP enabled
 	    for (Notification recipient : profileState.getContactsEmail()) {
-  	    	email.addTo(recipient.getContactEmail());
+		try {
+  	    	    email.addTo(recipient.getContactEmail());
+		} catch (Exception e) { }
 	    }
 	    if (profileState.getAdmin() != null) {
 		for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
@@ -136,7 +138,11 @@ public class HandlerNotification extends Handler<BatchState>
 		email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
 			 batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
 		email.setMsg(batchState.dump("Notification Summary", false, false));	// summary only
-  	        email.send();
+		try {
+  	            email.send();
+		} catch (Exception e) {
+		    // do not fail?
+		}
 	    } else {
 	        System.out.println("[info] " + MESSAGE + "batch is not complete.  No notification necessary");
 	    }
