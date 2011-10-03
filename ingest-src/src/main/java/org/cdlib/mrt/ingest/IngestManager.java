@@ -490,6 +490,7 @@ public class IngestManager
 		    } catch (Exception e) {
 		 	e.printStackTrace();
  	                System.err.println("IngestManager [error] accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
+			break;		// prevent looping in recovery
 		    }
 		
 		    Thread.currentThread().sleep(30000);
