@@ -45,6 +45,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 import javax.activation.MimetypesFileTypeMap;
@@ -65,6 +67,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.FileUtil;
@@ -87,12 +90,13 @@ public class HandlerDataONE extends Handler<JobState>
     protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
-    protected boolean notify = false;
+    protected boolean notify = true;
     protected boolean error = false;
 
     private static final String MEMBERNODE = "Merritt";
     private static final String OUTFORMAT = "RDF/XML";
     private static final String OUTPUTRESOURCENAME = "system/mrt-dataone-map.rdf";
+
     private String resourceManifestName = "producer/mrt-dataone-manifest.txt";
     int versionID = 0;	// current version
 
@@ -116,7 +120,9 @@ public class HandlerDataONE extends Handler<JobState>
 	URL dataoneURL = null;
         logger = new TFileLogger("HandlerDataONE", 10, 10);
         File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
+        File metadataFile = new File(systemTargetDir, "mrt-ingest.txt");
         File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
+        jobState.setMetacatStatus("success");	//default
 
 	try {
 	    versionID = jobState.getVersionID();
@@ -170,8 +176,8 @@ public class HandlerDataONE extends Handler<JobState>
 
 	    // submit to D1 member node
             for (int i = 0; true; i++) {
-               createContent = handler.getCreateContent(i);
-	       String outputResourceName = null;
+                createContent = handler.getCreateContent(i);
+	        String outputResourceName = null;
 
                 if (createContent == null) {
 		     if ( ! resourceMapSubmitted ) {
@@ -203,43 +209,73 @@ public class HandlerDataONE extends Handler<JobState>
 	        try {
   	            clientResponse = webResourceCreate.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
 	        } catch (Exception e) {
-		    e.printStackTrace();
-		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": dateONE service: " + dataoneURL + "/create"); 
+		    error = true;
+		    jobState.setMetacatStatus("failure");
+		    String msg = "[error] " + NAME + ": dateONE service: " + dataoneURL + "/create"; 
+		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
 	        }
 	        if (DEBUG) System.out.println("[debug] " + MESSAGE + " ADD response code " + clientResponse.getStatus());
 
 	        if (clientResponse.getStatus() != 200) {
                     try {
-                        TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
-		    } catch (TException te) {
-		        throw te;
+		        error = true;
+		        jobState.setMetacatStatus("failure");
+			String msg = clientResponse.toString();
+		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
                     } catch (Exception e) {
-		        // let's report something
-		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": dataONE service: " + dataoneURL + createContent.getComponentPid()); 
+		        error = true;
+		        jobState.setMetacatStatus("failure");
+			String msg = "[error] " + NAME + ": dataONE service: " + dataoneURL;
+		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
 	            }
+
 		}
 
-		systemMetadataFile.delete();
+	        systemMetadataFile.delete();
+		
             }
 
-	    if (clientResponse == null) 
+	    if (clientResponse == null) {
+		jobState.setMetacatStatus("failure");
 		if (dataONE)
-		    return new HandlerResult(false, "ERROR: dataONE request", 500);
+	    	    // optional handler, do not stop future processing
+		    return new HandlerResult(true, "ERROR: dataONE request", 500);
+	    }
 
 	    return new HandlerResult(true, "SUCCESS: dataONE submission request", clientResponse.getStatus());
 	} catch (TException te) {
+	    error = true;
+	    jobState.setMetacatStatus("failure");
             te.printStackTrace(System.err);
+	    if (DEBUG) System.out.println("[error] " + MESSAGE + te.getDetail());
 
-            return new HandlerResult(false, te.getDetail());
+	    // optional handler, do not stop future processing
+            return new HandlerResult(true, te.getDetail());
 	} catch (Exception e) {
+	    error = true;
+	    jobState.setMetacatStatus("failure");
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "processing dataONE request: " + e.getMessage();
+	    if (DEBUG) System.out.println(msg);
 
-            return new HandlerResult(false, msg);
+	    // optional handler, do not stop future processing
+            return new HandlerResult(true, msg);
 	} finally {
-	     if (error && notify) notify(jobState, profileState, ingestRequest);
-	    clientResponse = null;
+	    if (error) {
+                if (DEBUG) System.out.println("[error] dataONE processing failed: " + jobState.getMetacatStatus());
+	        if (notify) notify(jobState, profileState, ingestRequest);
+	        jobState.setCleanupFlag(false);
+	        clientResponse = null;
+	    }
+	    try {
+                if (dataONE) createMetadata(metadataFile, jobState.getMetacatStatus());
+	    } catch (Exception e) {
+		try {
+                    createMetadata(metadataFile, "failure");
+		} catch (Exception ee) {
+                     if (DEBUG) System.out.println("[error] dataONE unable to update Metadata with D1 status");
+		}
+	    }
 	}
     }
    
@@ -467,7 +503,27 @@ public class HandlerDataONE extends Handler<JobState>
         System.out.println( "[debug] dump resource map - END");
     }
 
- 
+    /**
+     * append results to metadata file
+     *
+     * @param ingestFile metadata file
+     * @param scheme identifier scheme
+     * @param namespace identifier namespace
+     * @param identifier identifier
+     * @return successful in appending metadata
+     */
+    private boolean createMetadata(File ingestFile, String metacatStatus) 
+        throws TException
+    {
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        Map<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
+
+        ingestProperties.put("metacatRegistration", metacatStatus);
+
+        return MetadataUtil.writeMetadataANVL(ingestFile, ingestProperties, true);
+    }
+
+
     protected String getMimetype(File file) {
 	try {
             Magic parser = new Magic() ;

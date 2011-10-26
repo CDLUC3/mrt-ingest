@@ -80,8 +80,10 @@ public class JobState
     protected String misc;
     protected String note;
     protected String queuePriority;
+    protected String metacatStatus = null;		// only if dataONE handler active
     protected boolean shadowARK;
     protected boolean updateFlag;
+    protected boolean cleanup = true;
 
 
     // constructors
@@ -536,6 +538,38 @@ public class JobState
         return updateFlag;
     }
 
+    /**
+     * Set cleanup boolean
+     * @param boolean set cleanup
+     */
+    public void setCleanupFlag(boolean cleanup) {
+        this.cleanup = cleanup;
+    }
+
+    /**
+     * Get cleanup boolean
+     * @return boolean cleanup flag
+     */
+    public boolean getCleanupFlag() {
+        return cleanup;
+    }
+
+    /**
+     * Set Metacat status
+     * @param Metacat status
+     */
+    public void setMetacatStatus(String metacatStatus) {
+        this.metacatStatus = metacatStatus;
+    }
+
+    /**
+     * Get Metacat status
+     * @return String Metacat status
+     */
+    public String getMetacatStatus() {
+        return metacatStatus;
+    }
+
     public void clear() {
         jobID = null;
         jobLabel = null;
@@ -576,6 +610,7 @@ public class JobState
         String objectCreatorS = (objectCreator != null) ? objectCreator : "";
         String objectDateS = (objectDate != null) ? objectDate : "";
         String noteS = (note != null) ? note : "";
+        String metacatStatusS = (metacatStatus != null) ? metacatStatus : "";
         String objectAggregateS = "";
 	try {
             objectAggregateS = objectProfile.getAggregateType();
@@ -601,6 +636,7 @@ public class JobState
             if (StringUtil.isNotEmpty(noteS)) header += indent + " - Note: " + noteS + delimiter;
             if (StringUtil.isNotEmpty(submissionDateS)) header += indent + " - Submission date: " + submissionDateS + delimiter;
             if (StringUtil.isNotEmpty(completionDateS)) header += indent + " - Completion date: " + completionDateS + delimiter;
+            if (StringUtil.isNotEmpty(metacatStatusS)) header += indent + " - Metacat Registration Status: " + metacatStatusS + delimiter;
             if (StringUtil.isNotEmpty(jobStatusS)) header += indent + " - Status: " + jobStatusS + delimiter;
             if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + " - Status message: " + jobStatusMessageS + delimiter;
 	} else if (format.equalsIgnoreCase("CSV")) {
