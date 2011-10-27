@@ -263,7 +263,7 @@ public class HandlerDataONE extends Handler<JobState>
 	} finally {
 	    if (error) {
                 if (DEBUG) System.out.println("[error] dataONE processing failed: " + jobState.getMetacatStatus());
-	        if (notify) notify(jobState, profileState, ingestRequest);
+	        if (notify && dataONE) notify(jobState, profileState, ingestRequest);
 	        jobState.setCleanupFlag(false);
 	        clientResponse = null;
 	    }
