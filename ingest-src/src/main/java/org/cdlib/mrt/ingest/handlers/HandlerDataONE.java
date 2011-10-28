@@ -336,7 +336,7 @@ public class HandlerDataONE extends Handler<JobState>
                 File file = fileNames.get(i);
 
 		// mrt-erc.txt | ERC | <file> | mime/type
-                String line = "mrt-erc.txt" + DELIMITER
+                String line = "DEFAULT" + DELIMITER
                     + "ERC" + DELIMITER
                     + file.getName() + DELIMITER
                     + getMimetype(file) + NL;
