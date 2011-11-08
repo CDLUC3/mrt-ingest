@@ -554,7 +554,7 @@ public class HandlerDataONE extends Handler<JobState>
                 if (ingestServiceName.contains("Development")) server = " [Development]";
                 else if (ingestServiceName.contains("Stage")) server = " [Stage]";
             email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
-            email.setSubject("[Warning] dataONE member node not available" + server);
+            email.setSubject("[Warning] Metacat registration failed " + server);
             email.setMsg(jobState.dump("Job notification", "\t", "\n", null));
             email.send();
 	} catch (Exception e) {};
