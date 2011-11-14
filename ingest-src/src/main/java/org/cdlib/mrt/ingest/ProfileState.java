@@ -60,6 +60,7 @@ public class ProfileState
     protected URL characterizationURL = null;
     protected URL fixityURL = null;
     protected URL dataONEURL = null;
+    protected URL callbackURL = null;
     protected Vector<Notification> contactsEmail = new Vector();
     protected SortedMap<Integer,HandlerState> ingestHandlers = null;
     protected SortedMap<Integer,HandlerState> queueHandlers = null;
@@ -75,6 +76,7 @@ public class ProfileState
     protected Collection admin = null;
     protected String context = null;
     protected String misc = null;
+    protected String callbackFormat = null;
 
     final String[] OBJECTTYPE = { "MRT-curatorial", "MRT-system" };
     final String[] OBJECTROLE = { "MRT-content", "MRT-class" };
@@ -212,6 +214,14 @@ public class ProfileState
     }
 
     /**
+     * Set callback URL
+     * @param URL callback URL
+     */
+    public void setCallbackURL(URL callbackURL) {
+        this.callbackURL = callbackURL;
+    }
+
+    /**
      * Get object minter URL
      * @return object minter URL
      */
@@ -241,6 +251,14 @@ public class ProfileState
      */
     public URL getDataoneURL() {
         return this.dataONEURL; 
+    }
+
+    /**
+     * Get callback URL
+     * @return callback URL
+     */
+    public URL getCallbackURL() {
+        return this.callbackURL; 
     }
 
     /**
@@ -431,6 +449,13 @@ public class ProfileState
         this.misc = misc;
     }
 
+    public String getCallbackFormat() {
+        return callbackFormat;
+    }
+
+    public void setCallbackFormat(String callbackFormat) {
+        this.callbackFormat = callbackFormat;
+    }
     public String dump(String header)
     {
         return header
