@@ -93,12 +93,14 @@ public class ProfileUtil
     protected static final String matchCharacterizationURL = "CharacterizationURL";
     protected static final String matchFixityURL = "FixityURL";
     protected static final String matchDataoneURL = "DataoneURL";
+    protected static final String matchCallbackURL = "CallbackURL";
     protected static final String matchCollection = "Collection";
     protected static final String matchType = "Type";
     protected static final String matchRole = "Role";
     protected static final String matchAggregate = "Aggregate";
     protected static final String matchOwner = "Owner";
     protected static final String matchContext = "Context";
+    protected static final String matchCallbackFormat = "CallbackFormat";
     
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
         throws TException
@@ -175,6 +177,14 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setDataoneURL(new URL(value));
+		} else if (key.startsWith(matchCallbackURL)) {
+                    if (DEBUG) System.out.println("[debug] callback URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setCallbackURL(new URL(value));
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
 		    profileState.setCollection(value);
@@ -236,6 +246,9 @@ public class ProfileUtil
 		} else if (key.startsWith(matchContext)) {
                     if (DEBUG) System.out.println("[debug] context: " + value);
 		    profileState.setContext(value);
+		} else if (key.startsWith(matchCallbackFormat)) {
+                    if (DEBUG) System.out.println("[debug] callback format: " + value);
+		    profileState.setCallbackFormat(value);
 	        } else {
                     if (DEBUG) System.out.println("[debug] could not procces profile parameter: " + key);
 		}
