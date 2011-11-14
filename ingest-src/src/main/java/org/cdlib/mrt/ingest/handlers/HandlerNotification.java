@@ -45,6 +45,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -117,6 +118,13 @@ public class HandlerNotification extends Handler<BatchState>
   	        email.send();
 	    } else if (batchComplete) {
 		// send summary in body and report as attachment
+		String status = "[success]";
+		try {
+ 	            if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+		        status = "[failure]";
+		    }
+		} catch (Exception e) {}
+
 		String aggregate = "";
 		try {
 		   if (StringUtil.isNotEmpty(profileState.getAggregateType()))
@@ -130,7 +138,7 @@ public class HandlerNotification extends Handler<BatchState>
 			else if (ingestServiceName.contains("Stage")) server = " [Stage]";
 		} catch (NullPointerException npe) {}
 
-  	        email.setSubject("Completion of ingest" + server + aggregate);
+  	        email.setSubject(status + " Completion of ingest" + server + aggregate + " [" + batchState.getBatchID().getValue() + "]");
 		// human readable
 		email.attach(new ByteArrayDataSource("Completion of ingest - " + batchState.dump("Notification Report"), "text/plain"),
 			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
