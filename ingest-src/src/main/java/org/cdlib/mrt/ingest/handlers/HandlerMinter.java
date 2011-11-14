@@ -124,6 +124,7 @@ public class HandlerMinter extends Handler<JobState>
 
 	    if (ProfileUtil.isDemoMode(profileState)) {
 	        if (jobState.getPrimaryID() != null) {
+	            System.out.println("[debug] " + MESSAGE + "demo mode detected, resetting primary id.");
 		    jobState.setLocalID(jobState.getPrimaryID().getValue());
 	    	    jobState.setPrimaryID(null);
 		}
