@@ -31,7 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import java.net.URL;
 import java.util.Date;
-import java.util.Vector;
 import java.io.Serializable;
 
 import org.cdlib.mrt.core.DateState;
@@ -47,14 +46,14 @@ public class NotificationState
         implements NotificationStateInf, StateInf, Serializable
 {
 
-    protected Identifier jobID = null;
-    protected String jobLabel = null;
-    protected JobStatusEnum jobStatus = null;
-    protected DateState jobCompletionDate = null;
-    protected URL supportServiceURL = null;
-    protected Identifier objectID = null;
-    protected String objectState = null;
-    protected Integer versionID = null;
+    private Identifier jobID = null;
+    private String jobLabel = null;
+    private JobStatusEnum jobStatus = null;
+    private DateState jobCompletionDate = null;
+    private URL supportServiceURL = null;
+    private Identifier objectID = null;
+    private String objectState = null;
+    private Integer versionID = null;
 
     @Override
     public Identifier getJobID() {

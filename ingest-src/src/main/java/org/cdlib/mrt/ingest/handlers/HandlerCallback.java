@@ -29,14 +29,29 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
+
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.config.ClientConfig; 
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
+import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Iterator;
 
+import java.security.SecureRandom;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.mail.EmailAttachment;
@@ -49,17 +64,21 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
-import org.cdlib.mrt.ingest.utility.StateUtil;
+import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 public class HandlerCallback extends Handler<JobState> {
     
-    StateUtil stateUtil = new StateUtil();
-    String url = null;
-    protected boolean notify = true;
-    protected boolean error = false;
+    FormatterUtil formatterUtil = new FormatterUtil();
+    URL url = null;
+    private boolean notify = true;
+    private boolean error = false;
+    private static final String NAME = "HandlerCallback";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+
 
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
@@ -69,25 +88,60 @@ public class HandlerCallback extends Handler<JobState> {
  
         try {
 
-            // build REST url 
-            url = profileState.getCallbackURL().toString();
-	    try {
-	        formatType = FormatType.valueOf(profileState.getCallbackFormat());
-	    } catch (Exception e) {
-		// default
-	        formatType = FormatType.valueOf("xml");
+            url = new URL(profileState.getCallbackURL().toString());
+	    String credentials = url.getUserInfo();
+	    String protocol = url.getProtocol();
+            Client client = null;
+
+	    // https - trust all certs
+	    if (protocol.equals("https")) {
+                X509TrustManager tm = new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+                    public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                };
+            	if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting SSL protocol");
+		ClientConfig config = new DefaultClientConfig();
+		SSLContext ctx = SSLContext.getInstance("TLS");
+                ctx.init(null, new TrustManager[]{tm}, new SecureRandom());
+   		HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+
+		config.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(
+		    new HostnameVerifier() {
+			@Override
+			public boolean verify(String hostname, SSLSession session) {
+		 	    return true;
+			}
+		}, ctx));
+
+                client = Client.create(config);
+	    } else {
+                client = Client.create();    // reuse?  creation is expensive
 	    }
 
-            Client client = Client.create();    // reuse?  creation is expensive
-            WebResource webResource = client.resource(url);
+	    // HTTP Basic authentication (optional)
+	    if (credentials != null) {
+		try {
+            	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting Basic Authenication parameters");
+		    String[] cred = credentials.split(":");
+		    client.addFilter(new HTTPBasicAuthFilter(cred[0], cred[1]));
+		} catch (Exception e) {
+            	    if (DEBUG) System.out.println("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
+		}
+	    }
+
+            WebResource webResource = client.resource(url.toString());
 
             Form formData = new Form();
-            formData.add("jobstate", stateUtil.doStateFormatting(jobState, formatType));
+            formData.add("jobstate", formatterUtil.doStateFormatting(jobState, profileState.getNotificationFormat()));
 
             // make service request
             try {
                 clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
             } catch (Exception e) {
+		e.printStackTrace();
                 error = true;
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
             }
@@ -123,7 +177,7 @@ public class HandlerCallback extends Handler<JobState> {
                 clientResponse = null;
             }
 
-	    stateUtil = null;
+	    formatterUtil = null;
         }
     }
 

@@ -53,25 +53,26 @@ import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.URLEncoder;
 
 
-
 /**
  * Simple formatting util
  * @author mreyes
  */
-public class StateUtil
+public class FormatterUtil
 {
 
-    protected static final String NAME = "StateUtil";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final String EOL = "%0A";
-    protected static final String NL =  System.getProperty("line.separator");
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Properties ingestProperties = null;
+    private static final String NAME = "FormatterUtil";
+    private static final String MESSAGE = NAME + ": ";
+    private static final String EOL = "%0A";
+    private static final String NL =  System.getProperty("line.separator");
+    private static final boolean DEBUG = true;
+    private static final String SUBJECT_TEMPLATE = "%s%s%s -- %s %s";		// Subject: service [instance]: status -- message: extra;
 
-    public StateUtil() {
-        logger = new TFileLogger("StateUtil", 10, 10);
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Properties ingestProperties = null;
+
+    public FormatterUtil() {
+        logger = new TFileLogger("FormatterUtil", 10, 10);
     }
     
     /**
@@ -100,7 +101,7 @@ public class StateUtil
 
 	    return FileUtil.file2String(file);
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    // e.printStackTrace();
 	    throw e;
 	}
     }
@@ -126,8 +127,53 @@ public class StateUtil
             throw tex;
 
         } catch (Exception ex) {
-            if (DEBUG) System.err.println("getFormatter: stack:" + StringUtil.stackTrace(ex));
+            // if (DEBUG) System.err.println("getFormatter: stack:" + StringUtil.stackTrace(ex));
             throw new TException.REQUEST_ELEMENT_UNSUPPORTED("State formatter type not supported:" + formatS);
+        }
+    }
+
+
+    public static String getSubject(String service, String status, String message) 
+        throws TException
+    {
+        try {
+            return getSubject(service, null, status, message, null);
+        } catch (TException tex) {
+            throw tex;
+        }
+    } 
+
+    public static String getSubject(String service, String status, String message, String extra)
+        throws TException
+    {
+        try {
+           return getSubject(service, null, status, message, extra);
+        } catch (TException tex) {
+            throw tex;
+        }
+    } 
+
+    // Subject: service [instance]: status -- message: extra
+    public static String getSubject(String service, String instance, String status, String message, String extra)
+        throws TException
+    {
+        try {
+
+	    if (instance != null) 
+		instance = " [" + instance + "]: ";
+	    else {
+		instance = "";
+		service += ": ";
+		
+	    }
+
+	    if (message != null) 
+		if (extra != null) message += ":";
+	    if (extra != null) extra += ";";
+
+            return String.format(SUBJECT_TEMPLATE, service, instance, status, message, extra);
+        } catch (Exception ex) {
+            throw new TException.GENERAL_EXCEPTION("Could not create subject line");
         }
     }
 

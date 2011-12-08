@@ -53,25 +53,25 @@ public interface JobStateInf
      * Get batch identifier
      * @return Identifier batch identifier
      */
-    public Identifier getBatchID();
+    public Identifier grabBatchID();
 
     /**
      * Get target storage service
      * @return StoreNode storage service endpoint
      */
-    public StoreNode getTargetStorage();
+    public StoreNode grabTargetStorage();
 
     /**
      * Get object profile
      * @return ProfileState object profile
      */
-    public ProfileState getObjectProfile();
+    public ProfileState grabObjectProfile();
 
     /**
      * Get user agent
      * @return String submitting user agent
      */
-    public String getUserAgent();
+    public String grabUserAgent();
 
     /**
      * Get job submission date-time 
@@ -107,7 +107,7 @@ public interface JobStateInf
      * Get object state
      * @return Object state
      */
-    public String getObjectState();
+    public String grabObjectState();
 
     /**
      * Get object version ID
@@ -155,5 +155,5 @@ public interface JobStateInf
      * Get job queue priority (00-99, 00=highest)
      * @return String priority
      */
-    public String getQueuePriority();
+    public String grabQueuePriority();
 }

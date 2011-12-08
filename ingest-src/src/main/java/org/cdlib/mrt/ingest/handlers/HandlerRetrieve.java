@@ -85,12 +85,12 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerRetrieve extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerRetrieve";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final int THREAD_POOL_SIZE = 4;
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerRetrieve";
+    private static final String MESSAGE = NAME + ": ";
+    private static final int THREAD_POOL_SIZE = 4;
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
      * retrieve data
@@ -238,7 +238,7 @@ public class HandlerRetrieve extends Handler<JobState>
 	    // If updating and we do not have a container
             File existingProducerDir = new File(ingestRequest.getQueuePath() +
                         System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
-            if (jobState.getUpdateFlag() && existingProducerDir.exists()) {
+            if (jobState.grabUpdateFlag() && existingProducerDir.exists()) {
                 System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
                 FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
                 FileUtil.deleteDir(existingProducerDir);

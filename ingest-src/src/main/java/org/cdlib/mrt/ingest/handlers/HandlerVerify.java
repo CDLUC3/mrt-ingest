@@ -52,10 +52,10 @@ import org.cdlib.mrt.utility.TException;
 public class HandlerVerify extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerVerify";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
+    private static final String NAME = "HandlerVerify";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
 
     /**
      * compute/verify checksum

@@ -84,11 +84,11 @@ import org.xml.sax.SAXParseException;
 public class HandlerMinter extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerMinter";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerMinter";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
      * mint object ID
@@ -196,7 +196,7 @@ public class HandlerMinter extends Handler<JobState>
                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
 	    }
 	    // need to update shadow ARK?
-	    if (jobState.getShadowARK()) {
+	    if (jobState.grabShadowARK()) {
 	        returnValue = MintUtil.processObjectID(profileState, jobState, false, true);
 	        if (returnValue.startsWith("ark")) {
 	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);

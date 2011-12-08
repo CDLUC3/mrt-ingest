@@ -45,11 +45,11 @@ public class HandlerState
         implements HandlerStateInf, StateInf, Serializable
 {
 
-    protected String handlerName = null;
-    protected Identifier handlerID = null;
-    protected String handlerDescription = null;
-    protected DateState creationDate = null;
-    protected DateState modificationDate = null;
+    private String handlerName = null;
+    private Identifier handlerID = null;
+    private String handlerDescription = null;
+    private DateState creationDate = null;
+    private DateState modificationDate = null;
 
 
     @Override

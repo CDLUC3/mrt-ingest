@@ -81,13 +81,13 @@ import org.xml.sax.SAXParseException;
 public class HandlerTransfer extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerTransfer";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Integer defaultStorage = null;
-    protected StoreNode storeNode = null;
+    private static final String NAME = "HandlerTransfer";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Integer defaultStorage = null;
+    private StoreNode storeNode = null;
 
     /**
      * Adds a version of requested object to storage service

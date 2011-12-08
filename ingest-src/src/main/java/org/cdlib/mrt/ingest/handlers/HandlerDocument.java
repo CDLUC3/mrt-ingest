@@ -56,12 +56,12 @@ import org.cdlib.mrt.utility.TException;
 public class HandlerDocument extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerDocument";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Integer defaultStorage = null;
+    private static final String NAME = "HandlerDocument";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Integer defaultStorage = null;
 
     /**
      * document handlers used in processing

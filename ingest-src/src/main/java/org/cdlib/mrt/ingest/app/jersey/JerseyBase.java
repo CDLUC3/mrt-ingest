@@ -36,13 +36,12 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.lang.InterruptedException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.Vector;
-
-
 
 import com.sun.jersey.spi.CloseableService;
 import javax.servlet.http.HttpServletRequest;
@@ -59,6 +58,7 @@ import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.formatter.FormatType;
+import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
@@ -273,8 +273,34 @@ public class JerseyBase
             ingestRequest = getFormData(ingestRequest, request, ingestService.getIngestServiceProp() + "/queue", logger);
 	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
             jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
-            StateInf responseState = ingestService.submitPost(ingestRequest);
-            return getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
+            BatchState responseState = ingestService.submitPost(ingestRequest);
+
+            int retryCount = 0;
+	    Response response = null;
+	    while (true) {
+		try {
+                    response = getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
+		    break;
+                } catch (Exception e) {
+		    // For large POST
+                    if (retryCount >= 6) {	// 30 seconds
+                        // We can not wait any longer. Let's return BatchState with current state (may be missing some JobStates)
+                        if (DEBUG) System.out.println("[error] JerseyBase: Truncating BatchState response:" + responseState.getBatchID().getValue());
+                        BatchState batchState = (BatchState) responseState.clone();
+                        response = getStateResponse(batchState, ingestRequest.getResponseForm(), logger, cs, sc);
+                    } else {
+                        if (DEBUG) System.out.println("[error] JerseyBase: Batch State is not yet stable (still adding jobs) " + responseState.getBatchID().getValue() + "  Retrying...");
+		    }
+                    try {
+                        Thread.sleep(1000 * 5);
+                    } catch (InterruptedException ie) {}
+                    retryCount++;       // Poster has not yet finished creating all jobs in batch
+                }
+		finally {
+		}
+	    }
+
+            return response;
 
         } catch (TException tex) {
             return getExceptionResponse(tex, ingestRequest.getResponseForm(), logger);
@@ -317,6 +343,7 @@ public class JerseyBase
             cs.add(jerseyCleanup);
 
         } catch (TException tex) {
+	    tex.printStackTrace();
             throw new JerseyException.INTERNAL_SERVER_ERROR("Could not process this format:" + typeFile.formatType);
         }
         log("getStateResponse:" + typeFile.formatType
@@ -398,13 +425,13 @@ public class JerseyBase
 
         // unique queue directory
         File queueDir = null;
-	if (ingestRequest.getJob().getBatchID() != null) {
+	if (ingestRequest.getJob().grabBatchID() != null) {
 	    // queue processing
-            queueDir = new File(homeDir, ingestRequest.getJob().getBatchID().getValue()); 
+            queueDir = new File(homeDir, ingestRequest.getJob().grabBatchID().getValue()); 
 	} else {
 	    // direct ingest processing.
 	    ingestRequest.getJob().setBatchID(new Identifier(ProfileUtil.DEFAULT_BATCH_ID, Identifier.Namespace.Local));
-            queueDir = new File(homeDir, ingestRequest.getJob().getBatchID().getValue() + FS + 
+            queueDir = new File(homeDir, ingestRequest.getJob().grabBatchID().getValue() + FS + 
 	    ingestRequest.getJob().getJobID().getValue());
 	}
 	if ( ! queueDir.exists()) queueDir.mkdirs();
@@ -434,7 +461,7 @@ public class JerseyBase
 		    if (item.getFieldName().equals("submitter")) {
 		       field = "submitter";
 		       ingestRequest.getJob().setUserAgent(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] submitter: " + ingestRequest.getJob().getUserAgent());
+		       if (DEBUG) System.err.println("[debug] submitter: " + ingestRequest.getJob().grabUserAgent());
 		    } else if (item.getFieldName().equals("object")){
 		       field = "object";
 		       ingestRequest.getJob().setPrimaryID(item.getString("utf-8"));

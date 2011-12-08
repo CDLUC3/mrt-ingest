@@ -40,12 +40,14 @@ import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.ByteArrayDataSource;
 
 import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
+import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -62,10 +64,11 @@ import org.cdlib.mrt.utility.TException;
 public class HandlerNotification extends Handler<BatchState>
 {
 
-    protected static final String NAME = "HandlerNotification";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
+    private static final String NAME = "HandlerNotification";
+    private static final String SERVICE = "Ingest";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
 
     /**
      * notify user(s)
@@ -82,17 +85,20 @@ public class HandlerNotification extends Handler<BatchState>
   	MultiPartEmail email = new MultiPartEmail();
         JobState jobState = ingestRequest.getJob();
 	boolean isBatch = true;
-	boolean batchComplete = true;
+	boolean batchComplete = false;
+        FormatterUtil formatterUtil = new FormatterUtil();
+	FormatType formatType = null;
+
 	try {
 	    // Is this a batch submission?
-	    if (jobState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
+	    if (jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
 		isBatch = false;
 	    }
 
 	    String batchID = batchState.getBatchID().getValue();
             if ( isBatch) {
-                if (BatchState.getBatchCompletion(batchID) != BatchState.getBatchState(batchID).getJobStates().size()) {
-		    batchComplete = false;
+                if (BatchState.getBatchCompletion(batchID) == BatchState.getBatchState(batchID).getJobStates().size()) {
+		    batchComplete = true;
 	        }
 	    }
 
@@ -110,46 +116,61 @@ public class HandlerNotification extends Handler<BatchState>
 		}
 	    }
   	    email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+	    String status = "OK";
+
+	    // instance?
+	    String server = null;
+	    try {
+		String ingestServiceName = ingestRequest.getServiceState().getServiceName();
+		if (StringUtil.isNotEmpty(ingestServiceName))
+		    if (ingestServiceName.contains("Development")) server = "dev";
+		    else if (ingestServiceName.contains("Stage")) server = "stg";
+	    } catch (NullPointerException npe) {}
+
 	    if ( ! isBatch) {
 		jobState = batchState.getJobState(batchState.getJobStates().keySet().iterator().next());	// s/b only one key
 
-  	        email.setSubject("Completion of ingest");
+  	        email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Job Complete", jobState.getJobID().getValue()));
   	        email.setMsg("Completion of ingest - " + jobState.dump("Job notification", "\t", "\n", null));
   	        email.send();
 	    } else if (batchComplete) {
 		// send summary in body and report as attachment
-		String status = "[success]";
 		try {
  	            if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
-		        status = "[failure]";
+		        status = "Fail";
 		    }
 		} catch (Exception e) {}
 
+		// admin object?
 		String aggregate = "";
 		try {
 		   if (StringUtil.isNotEmpty(profileState.getAggregateType()))
-		       aggregate = " [" + profileState.getAggregateType() + "]";
-		} catch (NullPointerException npe) {}
-		String server = "";
-		try {
-		   String ingestServiceName = ingestRequest.getServiceState().getServiceName();
-		   if (StringUtil.isNotEmpty(ingestServiceName))
-			if (ingestServiceName.contains("Development")) server = " [Development]";
-			else if (ingestServiceName.contains("Stage")) server = " [Stage]";
+		       aggregate = "[" + profileState.getAggregateType() + "] ";
 		} catch (NullPointerException npe) {}
 
-  	        email.setSubject(status + " Completion of ingest" + server + aggregate + " [" + batchState.getBatchID().getValue() + "]");
-		// human readable
-		email.attach(new ByteArrayDataSource("Completion of ingest - " + batchState.dump("Notification Report"), "text/plain"),
-			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
+  	        email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Processed", aggregate + batchState.getBatchID().getValue()));
+
 		// Comma delimited
-		email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
-			 batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
+		//email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
+			 //batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
+
+		// attachment: batch state with user defined formatting
+		formatType = profileState.getNotificationFormat();
+		try {
+		    email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, profileState.getNotificationFormat()), formatType.getMimeType()),
+			batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		    // human readable
+		    email.attach(new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"), "text/plain"),
+			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
+		}
+
 		email.setMsg(batchState.dump("Notification Summary", false, false));	// summary only
 		try {
   	            email.send();
 		} catch (Exception e) {
-		    // do not fail?
+		    e.printStackTrace();
 		}
 	    } else {
 	        System.out.println("[info] " + MESSAGE + "batch is not complete.  No notification necessary");
@@ -162,7 +183,8 @@ public class HandlerNotification extends Handler<BatchState>
             String msg = "[error] " + MESSAGE + "in notification: " + e.getMessage();
 	    throw new TException.GENERAL_EXCEPTION(msg);
 	} finally {
-	    // cleanup?
+            formatterUtil = null;
+	    formatType = null;
 	}
     }
 
