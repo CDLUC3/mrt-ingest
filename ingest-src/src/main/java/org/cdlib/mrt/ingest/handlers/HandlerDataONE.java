@@ -85,13 +85,13 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerDataONE extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerDataONE";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected boolean notify = true;
-    protected boolean error = false;
+    private static final String NAME = "HandlerDataONE";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private boolean notify = true;
+    private boolean error = false;
 
     private static final String MEMBERNODE = "Merritt";
     private static final String OUTFORMAT = "RDF/XML";

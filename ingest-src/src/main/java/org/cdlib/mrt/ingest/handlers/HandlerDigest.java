@@ -52,12 +52,12 @@ import org.cdlib.mrt.utility.TException;
 public class HandlerDigest extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerDigest";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Integer defaultStorage = null;
+    private static final String NAME = "HandlerDigest";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Integer defaultStorage = null;
 
     /**
      * create manifest for all queue data
@@ -79,7 +79,7 @@ public class HandlerDigest extends Handler<JobState>
 	    // requires symlink from webapps/ingestqueue to home ingest queue directory
 	    URL link = new URL(ingestRequest.getLink());	
 	    String baseURL = link.getProtocol() + "://" + link.getHost() + ":" + link.getPort() + 
-		 "/ingestqueue/" + ingestRequest.getJob().getBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
+		 "/ingestqueue/" + ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
 
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " baseURL: " + baseURL);
 

@@ -44,9 +44,9 @@ import org.cdlib.mrt.utility.StringUtil;
  */
 public class HandlerResult
 {
-    public boolean success = false;
-    public String description = null;
-    public int returnCode;
+    private boolean success = false;
+    private String description = null;
+    private int returnCode;
 
 
     // Constructors

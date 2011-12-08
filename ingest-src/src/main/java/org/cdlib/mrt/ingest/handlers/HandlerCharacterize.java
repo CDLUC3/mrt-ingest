@@ -101,11 +101,11 @@ import org.xml.sax.SAXParseException;
 public class HandlerCharacterize extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerCharacterize";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerCharacterize";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
      * characterize object components

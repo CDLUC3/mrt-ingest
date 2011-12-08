@@ -45,22 +45,22 @@ import org.cdlib.mrt.utility.TException;
 public class IngestRequest
 {
 
-    protected static final String NAME = "IngestRequest";
-    protected static final String MESSAGE = NAME + ": ";
+    private static final String NAME = "IngestRequest";
+    private static final String MESSAGE = NAME + ": ";
 
-    protected Identifier profile = null;
-    protected int packageSize;
-    protected String note = null;
-    protected String link = null;	// used to expose data to storage service via manifest
+    private Identifier profile = null;
+    private int packageSize;
+    private String note = null;
+    private String link = null;	// used to expose data to storage service via manifest
 
-    protected File queueDir;
+    private File queueDir;
 
-    protected JobState jobState;
-    protected ResponseFormEnum responseForm;
-    protected PackageTypeEnum packageType;
-    protected IngestServiceState serviceState;
-    protected boolean updateFlag;
-    protected boolean synchronousMode;
+    private JobState jobState;
+    private ResponseFormEnum responseForm;
+    private PackageTypeEnum packageType;
+    private IngestServiceState serviceState;
+    private boolean updateFlag;
+    private boolean synchronousMode;
 
     // constructors
     public IngestRequest(){ jobState = new JobState(); }
@@ -267,7 +267,7 @@ public class IngestRequest
 	    object = jobState.getPrimaryID().toString();
 	}
         return header + "INGEST REQUEST:"
-                    + " - user=" + jobState.getUserAgent()
+                    + " - user=" + jobState.grabUserAgent()
                     + " - package=" + jobState.getPackageName()
                     + " - object=" + object
                     ;

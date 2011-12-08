@@ -48,18 +48,18 @@ import org.cdlib.mrt.utility.StringUtil;
  */
 public abstract class Handler<T extends StateInf>
 {
-    protected static final String NAME = "Handler";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
+    private static final String NAME = "Handler";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
         
-    protected String m_checksum = null;
-    protected String m_checksumType = null;
-    protected long m_inputFileSize = 0;
-    protected long m_extractFileSize = 0;
-    protected File m_jhoveFile = null;
-    protected File m_component = null;
-    protected long m_startMS = 0;
-    protected LoggerInf logger = null;
+    private String m_checksum = null;
+    private String m_checksumType = null;
+    private long m_inputFileSize = 0;
+    private long m_extractFileSize = 0;
+    private File m_jhoveFile = null;
+    private File m_component = null;
+    private long m_startMS = 0;
+    private LoggerInf logger = null;
 
 
     /**

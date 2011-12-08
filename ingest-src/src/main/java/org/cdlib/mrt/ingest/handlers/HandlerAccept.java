@@ -62,12 +62,12 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerAccept extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerAccept";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected static final String FS = System.getProperty("file.separator");
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerAccept";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private static final String FS = System.getProperty("file.separator");
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
      * copy package to staging area
@@ -108,7 +108,7 @@ public class HandlerAccept extends Handler<JobState>
 	    }
 
 	    // process update deletions
-	    if (jobState.getUpdateFlag()) {
+	    if (jobState.grabUpdateFlag()) {
                 // process deletions
                 File sourceDelete = new File(ingestRequest.getQueuePath() + FS + "producer" + FS + "mrt-delete.txt");
                 if (sourceDelete.exists()) {

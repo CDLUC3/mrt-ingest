@@ -71,13 +71,13 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerDisaggregate extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerDisaggregate";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final int BUFFERSIZE = 4096;
-    protected static final boolean DEBUG = true;
-    protected static final String FS = System.getProperty("file.separator");
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerDisaggregate";
+    private static final String MESSAGE = NAME + ": ";
+    private static final int BUFFERSIZE = 4096;
+    private static final boolean DEBUG = true;
+    private static final String FS = System.getProperty("file.separator");
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
 
     /**
@@ -132,7 +132,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 
                         // If updating and we have a container
             		File existingProducerDir = new File(ingestRequest.getQueuePath() + FS + ".producer" + FS);
-	    		if (jobState.getUpdateFlag() && existingProducerDir.exists()) {
+	    		if (jobState.grabUpdateFlag() && existingProducerDir.exists()) {
 			    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
 			    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
 			    FileUtil.deleteDir(existingProducerDir);

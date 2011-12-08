@@ -64,13 +64,13 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerDescribe extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerDescribe";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected static final String FS = System.getProperty("file.separator");
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Integer defaultStorage = null;
+    private static final String NAME = "HandlerDescribe";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private static final String FS = System.getProperty("file.separator");
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Integer defaultStorage = null;
 
     /**
      * process metadata
@@ -92,7 +92,7 @@ public class HandlerDescribe extends Handler<JobState>
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
 	    // remove update deletions (reserce file name "mrt-delete.txt")
-	    if (jobState.getUpdateFlag()) {
+	    if (jobState.grabUpdateFlag()) {
 	        String[] deleteLines = FileUtil.getLinesFromFile(new File(systemTargetDir, "mrt-delete.txt"));
 	        if (deleteLines != null) {
 		    for (String deleteLine : deleteLines) {

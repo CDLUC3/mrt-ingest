@@ -74,11 +74,11 @@ public class HandlerInventoryQueue extends Handler<JobState> {
         try {
 
             zooKeeper = 
-                new ZooKeeper(jobState.getMisc(), 10000, new Ignorer());
+                new ZooKeeper(jobState.grabMisc(), 10000, new Ignorer());
             distributedQueue = 
                 new DistributedQueue(zooKeeper, "/inventory", null);
-	    System.out.println("HandlerInventoryQueue submitting URL: " + jobState.getObjectState());
-            submitUrl(jobState.getObjectState().getBytes());
+	    System.out.println("HandlerInventoryQueue submitting URL: " + jobState.grabObjectState());
+            submitUrl(jobState.grabObjectState().getBytes());
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
             return new HandlerResult(true, msg, 0);
