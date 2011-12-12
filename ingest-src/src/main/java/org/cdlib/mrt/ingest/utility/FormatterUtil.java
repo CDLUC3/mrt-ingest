@@ -154,9 +154,10 @@ public class FormatterUtil
     } 
 
     // Subject: service [instance]: status -- message: extra
-    public static String getSubject(String service, String instance, String status, String message, String extra)
+    public static String getSubject(String service, String instance, String status, String message, String... extras)
         throws TException
     {
+	String extra = "";
         try {
 
 	    if (instance != null) 
@@ -168,8 +169,10 @@ public class FormatterUtil
 	    }
 
 	    if (message != null) 
-		if (extra != null) message += ":";
-	    if (extra != null) extra += ";";
+		if (extras != null) message += ":";
+	    if (extras != null) 
+		for (String s : extras)
+		    extra += s + ";";
 
             return String.format(SUBJECT_TEMPLATE, service, instance, status, message, extra);
         } catch (Exception ex) {
