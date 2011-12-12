@@ -130,8 +130,8 @@ public class HandlerNotification extends Handler<BatchState>
 	    if ( ! isBatch) {
 		jobState = batchState.getJobState(batchState.getJobStates().keySet().iterator().next());	// s/b only one key
 
-  	        email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Job Complete", jobState.getJobID().getValue()));
-  	        email.setMsg("Completion of ingest - " + jobState.dump("Job notification", "\t", "\n", null));
+  	        email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Job Processed", jobState.getJobID().getValue()));
+  	        email.setMsg(jobState.dump("", "", "\n", null));
   	        email.send();
 	    } else if (batchComplete) {
 		// send summary in body and report as attachment
@@ -166,7 +166,7 @@ public class HandlerNotification extends Handler<BatchState>
 			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
 		}
 
-		email.setMsg(batchState.dump("Notification Summary", false, false));	// summary only
+		email.setMsg(batchState.dump("", false, false));	// summary only
 		try {
   	            email.send();
 		} catch (Exception e) {

@@ -148,8 +148,9 @@ public class HandlerDataONE extends Handler<JobState>
 		    createResourceManifest(new File(ingestRequest.getQueuePath() + FS + "producer")));
 	    }
 
-            DataOneHandler handler = DataOneHandler.getDataOneHandler( ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, profileState.getOwner(), 
-		jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, dataoneURL, createStorageURL(jobState, profileState), logger);
+            DataOneHandler handler = DataOneHandler.getDataOneHandler(ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, 
+		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, dataoneURL, 
+		createStorageURL(jobState, profileState), logger);
 	    //if (DEBUG) handler.dumpList();
 
 	    // create resource map
