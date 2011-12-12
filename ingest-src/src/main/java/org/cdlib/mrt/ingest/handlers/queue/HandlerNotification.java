@@ -129,7 +129,7 @@ public class HandlerNotification extends Handler<BatchState>
             }
 
             email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued", aggregate + batchState.getBatchID().getValue()));
-  	    email.setMsg("Completion of submission - " + batchState.dump("Notification", false, false));
+  	    email.setMsg(batchState.dump("", false, false));
 
 	    try {
   	        email.send();

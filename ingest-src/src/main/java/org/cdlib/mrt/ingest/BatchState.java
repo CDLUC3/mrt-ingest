@@ -376,7 +376,6 @@ public class BatchState
 	        jobStateS = jobStateS + jobState.dump("", "\t", "\n", null) + "\n";
 	    } else {
 		if (jobonly) {
-	            //header += jobState.dump("", "\t", "\n", "CSV");
 	            header += jobState.dump("");
 		} else {
 		    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) completed++;
@@ -388,15 +387,15 @@ public class BatchState
 	}
 	if (! full)  {
 	    jobStateS = jobStateS + "\n";
-	    jobStateS = jobStateS + "\tNumber of pending job(s): " + pending + "\n";
-	    jobStateS = jobStateS + "\tNumber of completed job(s): " + completed + "\n";
-	    jobStateS = jobStateS + "\tNumber of failed job(s): " + failed + "\n";
+	    jobStateS = jobStateS + "\t:Number of pending job(s): " + pending + "\n";
+	    jobStateS = jobStateS + "\t:Number of completed job(s): " + completed + "\n";
+	    jobStateS = jobStateS + "\t:Number of failed job(s): " + failed + "\n";
 	    jobStateS = jobStateS + "\n";
 	}
 	jobStateS = jobStateS.substring(1, jobStateS.length() - 1 );
 
 	if (! jobonly) {
-            if (StringUtil.isNotEmpty(batchIDS)) header += "\n\n" + "Submission ID: " + batchIDS + "\n";
+            if (StringUtil.isNotEmpty(batchIDS)) header += "" + "Submission ID: " + batchIDS + "\n";
             if (StringUtil.isNotEmpty(batchLabelS)) header += "Batch label: " + batchLabelS + "\n";
             if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
             if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";
