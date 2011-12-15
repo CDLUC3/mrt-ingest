@@ -121,6 +121,11 @@ public class HandlerTransfer extends Handler<JobState>
   	    formData.add("t", "xml");
   	    formData.add("manifest", manifest);
 	    try {
+		if (jobState.getLocalID().getValue().contains("(:unas)")) {
+                    System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
+                    throw new Exception("");	// (:unas) is equivalent to no localID
+		}
+
   	        formData.add("local-identifier", jobState.getLocalID().getValue());
   	        formData.add("local-context", profileState.getOwner());	
 	    } catch (Exception e) {

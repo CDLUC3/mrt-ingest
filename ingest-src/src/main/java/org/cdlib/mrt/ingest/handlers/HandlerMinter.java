@@ -131,7 +131,10 @@ public class HandlerMinter extends Handler<JobState>
 	    }
 
 	    Identifier localID = jobState.getLocalID();
-	    if (localID != null && jobState.getPrimaryID() == null) retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+	    if (localID != null && jobState.getPrimaryID() == null && ! localID.getValue().contains("(:unas)"))	
+		retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+	    else
+		System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
 
 	    if (jobState.getPrimaryID() != null) {
 		if (retrievedObjectID != null) {
