@@ -160,7 +160,7 @@ public class HandlerNotification extends Handler<BatchState>
 		    email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, profileState.getNotificationFormat()), formatType.getMimeType()),
 			batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
 		} catch (Exception e) {
-		    e.printStackTrace();
+	            if (DEBUG) System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
 		    // human readable
 		    email.attach(new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"), "text/plain"),
 			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
@@ -173,7 +173,7 @@ public class HandlerNotification extends Handler<BatchState>
 		    e.printStackTrace();
 		}
 	    } else {
-	        System.out.println("[info] " + MESSAGE + "batch is not complete.  No notification necessary");
+	        if (DEBUG) System.out.println("[info] " + MESSAGE + "batch is not complete.  No notification necessary");
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
