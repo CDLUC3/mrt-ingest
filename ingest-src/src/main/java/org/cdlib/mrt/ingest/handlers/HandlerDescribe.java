@@ -258,7 +258,7 @@ public class HandlerDescribe extends Handler<JobState>
 		}
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
-                        if (localIdentifier != null && ! localIdentifier.contains(value)) {
+                        if (localIdentifier != null && ! localIdentifier.contains(trimRight(trimLeft(value)))) {
                             append = DELIMITER + localIdentifier;
                             jobState.setLocalID(value + append);
 
@@ -523,5 +523,13 @@ public class HandlerDescribe extends Handler<JobState>
     public String getName() {
 	return NAME;
     }
+
+    public String trimLeft(String s) {
+        return s.replaceAll("^\\s+", "");
+    }
+ 
+    public String trimRight(String s) {
+        return s.replaceAll("\\s+$", "");
+    } 
 
 }
