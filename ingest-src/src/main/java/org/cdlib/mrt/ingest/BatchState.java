@@ -70,60 +70,64 @@ public class BatchState
     private boolean completion = false;
     private boolean updateFlag = false;
 
+    // constructors
+    public BatchState () { }
+    public BatchState (Identifier batchID) { this.batchID = batchID; }
+
     public BatchState clone() throws CloneNotSupportedException {  
         BatchState copy = (BatchState) super.clone();  
         return copy;  
     }  
 
-    synchronized public static Map getBatchStates () {
+    public synchronized static Map getBatchStates () {
       return batchStates;
     } 
-    synchronized public static BatchState getBatchState (String id) {
+    public synchronized static BatchState getBatchState (String id) {
       return batchStates.get(id);
     } 
-    synchronized public static void putBatchState (String id, BatchState batchState) {
+    public synchronized static void putBatchState (String id, BatchState batchState) {
       batchStates.put(id, batchState);
     }
-    synchronized public static void removeBatchState (String id) {
+    public synchronized static void removeBatchState (String id) {
       batchStates.remove(id);
     }
 
-    synchronized public static int getBatchReadiness (String id) {
+    public synchronized static int getBatchReadiness (String id) {
       try {
           return batchReadiness.get(id);
       } catch (Exception e) {
 	  return 0;
       }
     } 
-    synchronized public static void putBatchReadiness (String id, int batchReady) {
+    public synchronized static void putBatchReadiness (String id, int batchReady) {
       batchReadiness.put(id, batchReady);
     }
-    synchronized public static void removeBatchReadiness (String id) {
+    public synchronized static void removeBatchReadiness (String id) {
       batchReadiness.remove(id);
     }
 
-    synchronized public static int getBatchCompletion (String id) {
+    public synchronized static int getBatchCompletion (String id) {
       try {
           return batchCompletion.get(id);
       } catch (Exception e) {
 	  return 0;
       }
     } 
-    synchronized public static void putBatchCompletion (String id, int batchComplete) {
+    public synchronized static void putBatchCompletion (String id, int batchComplete) {
       batchCompletion.put(id, batchComplete);
     }
-    synchronized public static void removeBatchCompletion (String id) {
+    public synchronized static void removeBatchCompletion (String id) {
       batchCompletion.remove(id);
     }
 
     // use for shutdown
-    synchronized public static void putQueuePath (String id, String queuePath) {
+    public synchronized static void putQueuePath (String id, String queuePath) {
       batchQueuePath.put(id, queuePath);
     }
-    synchronized public static String getQueuePath (String id) {
+    public synchronized static String getQueuePath (String id) {
       return batchQueuePath.get(id);
     }
-    synchronized public static void removeQueuePath (String id) {
+    public synchronized static void removeQueuePath (String id) {
       batchQueuePath.remove(id);
     }
 

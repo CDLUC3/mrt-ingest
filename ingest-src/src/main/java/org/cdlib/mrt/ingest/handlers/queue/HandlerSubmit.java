@@ -207,7 +207,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    BatchState.putBatchState(batchState.getBatchID().getValue(), batchState);
 	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
 	    BatchState.putBatchCompletion(batchState.getBatchID().getValue(), 0); 	//initialize
-	    //BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
+	    BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
 	    // serialize object to disk
 	    //ProfileUtil.writeTo(batchState, ingestRequest.getQueuePath());
 
