@@ -461,6 +461,7 @@ public class IngestManager
 	        while (BatchState.getBatchReadiness(jobState.grabBatchID().getValue()) != 1) {
 	            System.out.println("[info]" + MESSAGE + "waiting for posting to complete: " + jobState.getJobID());
 
+/*
 		    // are we recovering from a shutdown?
 		    try {
 			synchronized (this) {
@@ -493,6 +494,7 @@ public class IngestManager
  	                System.err.println("IngestManager [error] accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
 			break;		// prevent looping in recovery
 		    }
+*/
 		
 		    Thread.currentThread().sleep(30 * 1000);
 	        }
@@ -531,7 +533,11 @@ public class IngestManager
             		jobState.setJobStatus(JobStatusEnum.FAILED);
 		        batchState.setBatchStatus(BatchStatusEnum.FAILED);
 		    }
-		    batchState = updateBatch(batchState, ingestRequest, jobState);
+		    try {
+		       batchState = updateBatch(batchState, ingestRequest, jobState);
+		    } catch (Exception e) {
+			System.out.println("----> Failed to update batch");
+		    }
 		    stateClass = batchState;
 
 		    BatchState.putBatchCompletion(jobState.grabBatchID().getValue(), 
@@ -672,12 +678,12 @@ public class IngestManager
         try {
             if (jobState.grabBatchID().getValue().equals(ProfileUtil.DEFAULT_BATCH_ID)) {
 		// not a batch
-		batchState = new BatchState();
-		batchState.setBatchID(jobState.grabBatchID());
+		batchState = new BatchState(jobState.grabBatchID());
+		// batchState.setBatchID(jobState.grabBatchID());
 		batchState.addJob(jobState.getJobID().getValue(), jobState);
 	    } else {
 		// update batch object on disk (must be synchronous)
-		batchState = new BatchState();
+		batchState = new BatchState(jobState.grabBatchID());
 
 		// Does not scale!!
 		//batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
@@ -707,6 +713,7 @@ public class IngestManager
 
 	    return batchState;
         } catch (Exception e) {
+	   System.out.println("-> Error updating batch: " + jobState.getJobID().getValue());
            e.printStackTrace(System.err);
 	   throw new Exception(e.getMessage());
         }
