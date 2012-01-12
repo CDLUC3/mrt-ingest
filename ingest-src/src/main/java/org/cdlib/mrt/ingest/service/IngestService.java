@@ -98,7 +98,7 @@ public class IngestService
         throws TException
     {
 	try {
-	    BatchState batchState = ingestManager.updateStatus(ingestRequest.getJob().getBatchID().getValue(), ingestRequest.getJob().getJobID().getValue(), "RESOLVED");
+	    BatchState batchState = ingestManager.updateStatus(ingestRequest.getJob().grabBatchID().getValue(), ingestRequest.getJob().getJobID().getValue(), "RESOLVED");
 	    return batchState;
 	} catch (TException te) {
 	    throw te;

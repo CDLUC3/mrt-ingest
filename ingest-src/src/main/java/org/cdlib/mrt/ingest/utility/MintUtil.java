@@ -97,13 +97,13 @@ import org.xml.sax.SAXParseException;
 public class MintUtil
 {
 
-    protected static final String NAME = "MintUtil";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final String EOL = "%0A";
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Properties ingestProperties = null;
-    protected static final boolean DEBUG = true;
+    private static final String NAME = "MintUtil";
+    private static final String MESSAGE = NAME + ": ";
+    private static final String EOL = "%0A";
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Properties ingestProperties = null;
+    private static final boolean DEBUG = true;
 
     public static Identifier getJobID()
         throws TException
@@ -316,7 +316,7 @@ public class MintUtil
     {
         try {
 	    String md = "";
-	    return jobState.getTargetStorage().getStorageLink().toString() + "/state/" + jobState.getTargetStorage().getNodeID() + "/" + 
+	    return jobState.grabTargetStorage().getStorageLink().toString() + "/state/" + jobState.grabTargetStorage().getNodeID() + "/" + 
 			    URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8");
         } catch (Exception ex) {
             throw new TException.GENERAL_EXCEPTION("error accessing target URL");

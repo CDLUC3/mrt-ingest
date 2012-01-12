@@ -29,13 +29,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
 import java.util.Iterator;
-import java.util.Vector;
 import java.io.Serializable;
+import java.lang.Cloneable;
 import java.net.URL;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
@@ -50,20 +49,20 @@ import org.cdlib.mrt.utility.StringUtil;
  * @author mreyes
  */
 public class BatchState
-        implements BatchStateInf, StateInf, Serializable
+        implements BatchStateInf, StateInf, Serializable, Cloneable
 {
 
-    protected Identifier batchID = null;
-    protected String batchLabel = null;
-    protected ProfileState batchProfile = null;
-    protected String userAgent = null;
-    protected DateState submissionDate = null;
-    protected DateState completionDate = null;
-    protected BatchStatusEnum batchStatus = null;
-    protected String batchStatusMessage = null;
-    protected String queueConnectionString = null;
-    protected String queueNode = null;
-    protected Map<String, JobState> jobStates = new HashMap<String, JobState>();
+    private Identifier batchID = null;
+    private String batchLabel = null;
+    private ProfileState batchProfile = null;
+    private String userAgent = null;
+    private DateState submissionDate = null;
+    private DateState completionDate = null;
+    private BatchStatusEnum batchStatus = null;
+    private String batchStatusMessage = null;
+    private String queueConnectionString = null;
+    private String queueNode = null;
+    private Map<String, JobState> jobStates = new HashMap<String, JobState>();
     private static Map<String, BatchState> batchStates = new HashMap<String, BatchState>();
     private static Map<String, Integer> batchReadiness = new HashMap<String, Integer>();
     private static Map<String, Integer> batchCompletion = new HashMap<String, Integer>();
@@ -71,55 +70,64 @@ public class BatchState
     private boolean completion = false;
     private boolean updateFlag = false;
 
-    synchronized public static Map getBatchStates () {
+    // constructors
+    public BatchState () { }
+    public BatchState (Identifier batchID) { this.batchID = batchID; }
+
+    public BatchState clone() throws CloneNotSupportedException {  
+        BatchState copy = (BatchState) super.clone();  
+        return copy;  
+    }  
+
+    public synchronized static Map getBatchStates () {
       return batchStates;
     } 
-    synchronized public static BatchState getBatchState (String id) {
+    public synchronized static BatchState getBatchState (String id) {
       return batchStates.get(id);
     } 
-    synchronized public static void putBatchState (String id, BatchState batchState) {
+    public synchronized static void putBatchState (String id, BatchState batchState) {
       batchStates.put(id, batchState);
     }
-    synchronized public static void removeBatchState (String id) {
+    public synchronized static void removeBatchState (String id) {
       batchStates.remove(id);
     }
 
-    synchronized public static int getBatchReadiness (String id) {
+    public synchronized static int getBatchReadiness (String id) {
       try {
           return batchReadiness.get(id);
       } catch (Exception e) {
 	  return 0;
       }
     } 
-    synchronized public static void putBatchReadiness (String id, int batchReady) {
+    public synchronized static void putBatchReadiness (String id, int batchReady) {
       batchReadiness.put(id, batchReady);
     }
-    synchronized public static void removeBatchReadiness (String id) {
+    public synchronized static void removeBatchReadiness (String id) {
       batchReadiness.remove(id);
     }
 
-    synchronized public static int getBatchCompletion (String id) {
+    public synchronized static int getBatchCompletion (String id) {
       try {
           return batchCompletion.get(id);
       } catch (Exception e) {
 	  return 0;
       }
     } 
-    synchronized public static void putBatchCompletion (String id, int batchComplete) {
+    public synchronized static void putBatchCompletion (String id, int batchComplete) {
       batchCompletion.put(id, batchComplete);
     }
-    synchronized public static void removeBatchCompletion (String id) {
+    public synchronized static void removeBatchCompletion (String id) {
       batchCompletion.remove(id);
     }
 
     // use for shutdown
-    synchronized public static void putQueuePath (String id, String queuePath) {
+    public synchronized static void putQueuePath (String id, String queuePath) {
       batchQueuePath.put(id, queuePath);
     }
-    synchronized public static String getQueuePath (String id) {
+    public synchronized static String getQueuePath (String id) {
       return batchQueuePath.get(id);
     }
-    synchronized public static void removeQueuePath (String id) {
+    public synchronized static void removeQueuePath (String id) {
       batchQueuePath.remove(id);
     }
 
@@ -224,7 +232,7 @@ public class BatchState
         this.batchStatusMessage = batchStatusMessage;
     }
 
-    public String getTargetQueue()
+    public String grabTargetQueue()
     {
         return this.queueConnectionString;
     }
@@ -237,7 +245,7 @@ public class BatchState
         this.queueConnectionString = queueConnectionString;
     }
 
-    public String getTargetQueueNode()
+    public String grabTargetQueueNode()
     {
         return this.queueNode;
     }
@@ -250,7 +258,7 @@ public class BatchState
         this.queueNode = queueNode;
     }
 
-    public ProfileState getBatchProfile()
+    public ProfileState grabBatchProfile()
     {
         return batchProfile;
     }
@@ -280,8 +288,16 @@ public class BatchState
     }
 
     /**
+     * Set all jobs
+     * @param Job States
+     */
+    public void setJobStates(Map<String, JobState> jobStates) {
+        this.jobStates = jobStates;
+    }
+
+    /**
      * Get all jobs
-     * @return  submitting user agent
+     * @return Job States
      */
     public Map<String, JobState> getJobStates() {
         return this.jobStates;
@@ -304,7 +320,7 @@ public class BatchState
      * Get update boolean
      * @return boolean update flag
      */
-    public boolean getUpdateFlag() {
+    public boolean grabUpdateFlag() {
         return updateFlag;
     }
 
@@ -359,39 +375,39 @@ public class BatchState
 	}
 	Iterator iterator = getJobStates().keySet().iterator();
         while(iterator.hasNext()) {
-            JobState jobState = (JobState) jobStates.get(iterator.next());
+             JobState jobState = (JobState) jobStates.get(iterator.next());
 	    if (full) {
 	        jobStateS = jobStateS + jobState.dump("", "\t", "\n", null) + "\n";
 	    } else {
 		if (jobonly) {
-	            header += jobState.dump("", "\t", "\n", "CSV");
+	            header += jobState.dump("");
 		} else {
 		    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) completed++;
 		    if (jobState.getJobStatus() == JobStatusEnum.FAILED) failed++;
 		    if (jobState.getJobStatus() == JobStatusEnum.PENDING) pending++;
 		}
 	    }
-	    queuePriorityS = jobState.getQueuePriority();
+	    queuePriorityS = jobState.grabQueuePriority();
 	}
 	if (! full)  {
 	    jobStateS = jobStateS + "\n";
-	    jobStateS = jobStateS + "\tNumber of pending job(s): " + pending + "\n";
-	    jobStateS = jobStateS + "\tNumber of completed job(s): " + completed + "\n";
-	    jobStateS = jobStateS + "\tNumber of failed job(s): " + failed + "\n";
+	    jobStateS = jobStateS + "\t:Number of pending job(s): " + pending + "\n";
+	    jobStateS = jobStateS + "\t:Number of completed job(s): " + completed + "\n";
+	    jobStateS = jobStateS + "\t:Number of failed job(s): " + failed + "\n";
 	    jobStateS = jobStateS + "\n";
 	}
 	jobStateS = jobStateS.substring(1, jobStateS.length() - 1 );
 
 	if (! jobonly) {
-            if (StringUtil.isNotEmpty(batchIDS)) header += "\n\n" + " - Submission ID: " + batchIDS + "\n";
-            if (StringUtil.isNotEmpty(batchLabelS)) header += " - Batch label: " + batchLabelS + "\n";
-            if (StringUtil.isNotEmpty(jobStateS)) header += " - Job(s): " + jobStateS + "\n";
-            if (StringUtil.isNotEmpty(userAgentS)) header += " - User agent: " + userAgentS + "\n";
-            if (StringUtil.isNotEmpty(queuePriorityS)) header += " - Queue Priority: " + queuePriorityS + "\n";
-            if (StringUtil.isNotEmpty(submissionDateS)) header += " - Submission date: " + submissionDateS + "\n";
-            if (StringUtil.isNotEmpty(completionDateS)) header += " - Completion date: " + completionDateS + "\n";
-            if (StringUtil.isNotEmpty(batchStatusS)) header += " - Status: " + batchStatusS + "\n";
-            if (StringUtil.isNotEmpty(batchStatusMessageS)) header += " - Status message: " + batchStatusMessageS + "\n";
+            if (StringUtil.isNotEmpty(batchIDS)) header += "" + "Submission ID: " + batchIDS + "\n";
+            if (StringUtil.isNotEmpty(batchLabelS)) header += "Batch label: " + batchLabelS + "\n";
+            if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
+            if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";
+            if (StringUtil.isNotEmpty(queuePriorityS)) header += "Queue Priority: " + queuePriorityS + "\n";
+            if (StringUtil.isNotEmpty(submissionDateS)) header += "Submission date: " + submissionDateS + "\n";
+            if (StringUtil.isNotEmpty(completionDateS)) header += "Completion date: " + completionDateS + "\n";
+            if (StringUtil.isNotEmpty(batchStatusS)) header += "Status: " + batchStatusS + "\n";
+            if (StringUtil.isNotEmpty(batchStatusMessageS)) header += "Status message: " + batchStatusMessageS + "\n";
 	}
 
         return header; 

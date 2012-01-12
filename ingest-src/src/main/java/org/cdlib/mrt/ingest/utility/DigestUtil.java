@@ -60,13 +60,13 @@ import org.cdlib.mrt.utility.TFileLogger;
 public class DigestUtil
 {
 
-    protected static final String NAME = "DigestUtil";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final String EOL = "%0A";
-    protected static final String NL =  System.getProperty("line.separator");
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Properties ingestProperties = null;
+    private static final String NAME = "DigestUtil";
+    private static final String MESSAGE = NAME + ": ";
+    private static final String EOL = "%0A";
+    private static final String NL =  System.getProperty("line.separator");
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Properties ingestProperties = null;
 
     public DigestUtil() {
         logger = new TFileLogger("DigestUtil", 10, 10);

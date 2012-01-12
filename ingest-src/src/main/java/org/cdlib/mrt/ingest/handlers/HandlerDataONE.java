@@ -85,13 +85,13 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerDataONE extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerDataONE";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected boolean notify = true;
-    protected boolean error = false;
+    private static final String NAME = "HandlerDataONE";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private boolean notify = true;
+    private boolean error = false;
 
     private static final String MEMBERNODE = "Merritt";
     private static final String OUTFORMAT = "RDF/XML";
@@ -148,8 +148,9 @@ public class HandlerDataONE extends Handler<JobState>
 		    createResourceManifest(new File(ingestRequest.getQueuePath() + FS + "producer")));
 	    }
 
-            DataOneHandler handler = DataOneHandler.getDataOneHandler( ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, profileState.getOwner(), 
-		jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, dataoneURL, createStorageURL(jobState, profileState), logger);
+            DataOneHandler handler = DataOneHandler.getDataOneHandler(ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, 
+		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, dataoneURL, 
+		createStorageURL(jobState, profileState), logger);
 	    //if (DEBUG) handler.dumpList();
 
 	    // create resource map
@@ -197,7 +198,7 @@ public class HandlerDataONE extends Handler<JobState>
 	    	String id = createContent.getComponentPid();
                 if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + id);
 	    	webResourceCreate = client.resource(dataoneURL + id);
-                System.out.println(createContent.dump("-debug-"));
+                // System.out.println(createContent.dump("-debug-"));
 
                 formDataMultiPart = new FormDataMultiPart();
 		File systemMetadataFile = File.createTempFile("d1-sysmetadata", ".xml");
@@ -206,31 +207,43 @@ public class HandlerDataONE extends Handler<JobState>
 		formDataMultiPart.getBodyParts().add(new FileDataBodyPart("sysmeta", systemMetadataFile));
 
 		// make service request
-	        try {
-  	            clientResponse = webResourceCreate.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
-	        } catch (Exception e) {
-		    error = true;
-		    jobState.setMetacatStatus("failure");
-		    String msg = "[error] " + NAME + ": dateONE service: " + dataoneURL + "/create"; 
-		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
-	        }
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + " ADD response code " + clientResponse.getStatus());
-
-	        if (clientResponse.getStatus() != 200) {
-                    try {
+		int maxTries = 3;
+            	for (int cnt=1; cnt <= maxTries; cnt++) {
+	            try {
+  	                clientResponse = webResourceCreate.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
+	            } catch (Exception e) {
 		        error = true;
 		        jobState.setMetacatStatus("failure");
-			String msg = clientResponse.toString();
-		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
-                    } catch (Exception e) {
-		        error = true;
-		        jobState.setMetacatStatus("failure");
-			String msg = "[error] " + NAME + ": dataONE service: " + dataoneURL;
+		        String msg = "[error] " + NAME + ": dateONE service: " + dataoneURL + "/create"; 
 		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
 	            }
 
-		}
+	            if (clientResponse.getStatus() != 200) {
+			if (cnt == maxTries) {
+                            try {
+		                error = true;
+		                jobState.setMetacatStatus("failure");
+			        String msg = clientResponse.toString();
+		                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
+                            } catch (Exception e) {
+		                error = true;
+		                jobState.setMetacatStatus("failure");
+			        String msg = "[error] " + NAME + ": dataONE service: " + dataoneURL;
+		                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
+	                    }
+			} else {
+	                    if (DEBUG) {
+				System.out.println("[warn] " + MESSAGE + " ADD response code " + clientResponse.getStatus() + " - " + jobState.getJobID().getValue()
+					+ " Attempt: " + cnt + " of " + maxTries);
+			    }
+			    Thread.currentThread().sleep(5 * 1000);	// wait a bit before reattempting
+			}
+		    } else {
+			break;
+		    }
+	        }
 
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + " ADD response code " + clientResponse.getStatus());
 	        systemMetadataFile.delete();
 		
             }

@@ -49,11 +49,11 @@ import org.cdlib.mrt.utility.TException;
 public class HandlerCleanup extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerCleanup";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerCleanup";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
      * remove staging area

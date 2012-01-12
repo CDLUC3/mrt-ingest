@@ -37,11 +37,13 @@ import java.io.StringWriter;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.StateInf;
 
@@ -53,37 +55,37 @@ public class JobState
         implements JobStateInf, StateInf, Serializable
 {
 
-    protected Identifier jobID = null;
-    protected Identifier batchID = null;
-    protected Identifier primaryID = null;
-    protected Identifier localID = null;
-    protected String packageName = null;
-    protected String objectCreator = null;
-    protected String objectTitle = null;
-    protected String objectDate = null;
-    protected String hashValue = null;
-    protected DigestEnum hashAlgorithm;
+    private Identifier jobID = null;
+    private Identifier batchID = null;
+    private Identifier primaryID = null;
+    private Identifier localID = null;
+    private String packageName = null;
+    private String objectCreator = null;
+    private String objectTitle = null;
+    private String objectDate = null;
+    private String hashValue = null;
+    private DigestEnum hashAlgorithm;
 
-    protected String objectState = null;
-    protected String objectNote = null;
-    protected Integer versionID = null;
-    protected String jobLabel = null;
-    protected StoreNode storeNode;
-    protected ProfileState objectProfile = null;
-    protected String userAgent = null;
-    protected DateState submissionDate = null;
-    protected DateState consumptionDate = null;
-    protected DateState completionDate = null;
-    protected JobStatusEnum jobStatus = null;
-    protected String jobStatusMessage = null;
-    protected String objectType;
-    protected String misc;
-    protected String note;
-    protected String queuePriority;
-    protected String metacatStatus = null;		// only if dataONE handler active
-    protected boolean shadowARK;
-    protected boolean updateFlag;
-    protected boolean cleanup = true;
+    private String objectState = null;
+    private String objectNote = null;
+    private Integer versionID = null;
+    private String jobLabel = null;
+    private StoreNode storeNode;
+    private ProfileState objectProfile = null;
+    private String userAgent = null;
+    private DateState submissionDate = null;
+    private DateState consumptionDate = null;
+    private DateState completionDate = null;
+    private JobStatusEnum jobStatus = null;
+    private String jobStatusMessage = null;
+    private String objectType = null;
+    private String misc = null;
+    private String note = null;
+    private String queuePriority = null;
+    private String metacatStatus = null;		// only if dataONE handler active
+    private boolean shadowARK;
+    private boolean updateFlag;
+    private boolean cleanup = true;
 
 
     // constructors
@@ -116,7 +118,7 @@ public class JobState
     }
 
     @Override
-    public Identifier getBatchID() {
+    public Identifier grabBatchID() {
         return batchID;
     }
 
@@ -159,7 +161,7 @@ public class JobState
 
 
     @Override
-    public StoreNode getTargetStorage()
+    public StoreNode grabTargetStorage()	// non-displayable
     {
         return storeNode;
     }
@@ -172,7 +174,7 @@ public class JobState
         this.storeNode = storeNode;
     }
 
-    public ProfileState getObjectProfile()
+    public ProfileState grabObjectProfile()	// non-displayable
     {
         return objectProfile;
     }
@@ -185,7 +187,7 @@ public class JobState
         this.objectProfile = objectProfile;
     }
 
-    public String getUserAgent()
+    public String grabUserAgent()
     {
         return userAgent;
     }
@@ -314,7 +316,7 @@ public class JobState
      * Get object state
      * @return Object state
      */
-    public String getObjectState() {
+    public String grabObjectState() {	// non-displayable
         return objectState;
     }
 
@@ -470,7 +472,7 @@ public class JobState
      * Get misc data
      * @return String misc
      */
-    public String getMisc() {
+    public String grabMisc() {
         return misc;
     }
 
@@ -502,7 +504,7 @@ public class JobState
      * Get job queue priority
      * @return String job queue priority
      */
-    public String getQueuePriority() {
+    public String grabQueuePriority() {		// non-displayable
         return queuePriority;
     }
 
@@ -518,7 +520,7 @@ public class JobState
      * Get shadow ark boolean
      * @return boolean shadow ark
      */
-    public boolean getShadowARK() {
+    public boolean grabShadowARK() {		// non-displayable
         return shadowARK;
     }
 
@@ -534,7 +536,7 @@ public class JobState
      * Get update boolean
      * @return boolean update flag
      */
-    public boolean getUpdateFlag() {
+    public boolean grabUpdateFlag() {		// non-displayable
         return updateFlag;
     }
 
@@ -550,7 +552,7 @@ public class JobState
      * Get cleanup boolean
      * @return boolean cleanup flag
      */
-    public boolean getCleanupFlag() {
+    public boolean grabCleanupFlag() {		// non-displayable
         return cleanup;
     }
 
@@ -583,91 +585,100 @@ public class JobState
 
     public String dump(String header)
     {
-        return this.dump(header, "", "", "");
+        return this.dump(header, "", "", null);
     }
 
-    public String dump(String header, String format)
+    public String dump(String header, FormatType format)
     {
         return this.dump(header, "", "", format);
     }
 
-    public String dump(String header, String indent, String delimiter, String format)
+    public String dump(String header, String indent, String delimiter, FormatType format)
     {
-	// populate entries
-        String jobIDS = (jobID != null) ? jobID.toString() : "";
-        String jobLabelS = (jobLabel != null) ? jobLabel : "";
-        String submissionDateS = (submissionDate != null) ? submissionDate.toString() : "";
-        String completionDateS = (completionDate != null) ? completionDate.toString() : "";
-        String userAgentS = (userAgent != null) ? userAgent : "";
-        String primaryIDS = (primaryID != null) ? primaryID.toString() : "";
-        String localIDS = (localID != null) ? localID.toString() : "";
-        String objectProfileS = (objectProfile != null) ? objectProfile.dump(jobIDS) : "";
-        String versionIDS = (versionID != null) ? versionID.toString() : "";
-        String objectStateS = (objectState != null) ? objectState : "";
-        String jobStatusS = (jobStatus != null) ? jobStatus.toString() : "";
-        String jobStatusMessageS = (jobStatusMessage != null) ? jobStatusMessage.toString() : "";
-        String objectTitleS = (objectTitle != null) ? objectTitle : "";
-        String objectCreatorS = (objectCreator != null) ? objectCreator : "";
-        String objectDateS = (objectDate != null) ? objectDate : "";
-        String noteS = (note != null) ? note : "";
-        String metacatStatusS = (metacatStatus != null) ? metacatStatus : "";
-        String objectAggregateS = "";
+        FormatterUtil formatterUtil = null;
 	try {
-            objectAggregateS = objectProfile.getAggregateType();
-	} catch (NullPointerException npe) {}
-
-	// format (TODO rework)
-	if (StringUtil.isEmpty(format)) {
-	    header += "\n";
-            if (StringUtil.isNotEmpty(jobIDS)) header += indent + " - Job ID: " + jobIDS + delimiter;
-            if (StringUtil.isNotEmpty(jobLabelS)) header += indent + " - Job Label: " + jobLabelS + delimiter;
-            if (StringUtil.isNotEmpty(primaryIDS)) header += indent + " - Primary ID: " + primaryIDS + delimiter;
-            if (StringUtil.isNotEmpty(localIDS)) header += indent + " - Local ID: " + localIDS + delimiter;
-            if (StringUtil.isNotEmpty(versionIDS)) header += indent + " - Version: " + versionIDS + delimiter;
-            if (StringUtil.isNotEmpty(packageName)) header += indent + " - Filename: " + packageName + delimiter;
-            if (StringUtil.isNotEmpty(objectTitleS)) header += indent + " - Object title: " + objectTitleS + delimiter;
-            if (StringUtil.isNotEmpty(objectCreatorS)) header += indent + " - Object creator: " + objectCreatorS + delimiter;
-            if (StringUtil.isNotEmpty(objectDateS)) header += indent + " - Object date: " + objectDateS + delimiter;
-            //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + " - object profile: " + objectProfileS + delimiter;
-	    // show URL if a) demo mode b) system object (for debugging)
-            if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
-		    (StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
-		    header += indent + " - Object state: " + objectStateS + "?t=xhtml" + delimiter;
-            if (StringUtil.isNotEmpty(noteS)) header += indent + " - Note: " + noteS + delimiter;
-            if (StringUtil.isNotEmpty(submissionDateS)) header += indent + " - Submission date: " + submissionDateS + delimiter;
-            if (StringUtil.isNotEmpty(completionDateS)) header += indent + " - Completion date: " + completionDateS + delimiter;
-            if (StringUtil.isNotEmpty(metacatStatusS)) header += indent + " - Metacat Registration Status: " + metacatStatusS + delimiter;
-            if (StringUtil.isNotEmpty(jobStatusS)) header += indent + " - Status: " + jobStatusS + delimiter;
-            if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + " - Status message: " + jobStatusMessageS + delimiter;
-	} else if (format.equalsIgnoreCase("CSV")) {
-	    String[] fields = new String[12];
-            StringWriter stringWriter = new StringWriter();
-            CSVWriter csvWriter = new CSVWriter(stringWriter);
-
-            if (StringUtil.isNotEmpty(jobIDS)) fields[0] = jobIDS;
-            if (StringUtil.isNotEmpty(primaryIDS)) fields[1] = primaryIDS;
-            if (StringUtil.isNotEmpty(localIDS)) fields[2] = localIDS;
-            if (StringUtil.isNotEmpty(versionIDS)) fields[3] = versionIDS;
-            if (StringUtil.isNotEmpty(packageName)) fields[4] = packageName;
-            if (StringUtil.isNotEmpty(objectTitleS)) fields[5] = objectTitleS;
-            if (StringUtil.isNotEmpty(objectCreatorS)) fields[6] = objectCreatorS;
-            if (StringUtil.isNotEmpty(objectDateS)) fields[7] = objectDateS;
-            if (StringUtil.isNotEmpty(submissionDateS)) fields[8] = submissionDateS;
-            if (StringUtil.isNotEmpty(completionDateS)) fields[9] = completionDateS;
-            if (StringUtil.isNotEmpty(jobStatusS)) fields[10] = jobStatusS;
-            if (StringUtil.isNotEmpty(jobStatusMessageS)) fields[11] = jobStatusMessageS;
-            csvWriter.writeNext(fields);
-	    fields = null;
+	    // populate entries
+            String jobIDS = (jobID != null) ? jobID.toString() : "";
+            String jobLabelS = (jobLabel != null) ? jobLabel : "";
+            String submissionDateS = (submissionDate != null) ? submissionDate.toString() : "";
+            String completionDateS = (completionDate != null) ? completionDate.toString() : "";
+            String userAgentS = (userAgent != null) ? userAgent : "";
+            String primaryIDS = (primaryID != null) ? primaryID.toString() : "";
+            String localIDS = (localID != null) ? localID.toString() : "";
+            String objectProfileS = (objectProfile != null) ? objectProfile.dump(jobIDS) : "";
+            String versionIDS = (versionID != null) ? versionID.toString() : "";
+            String objectStateS = (objectState != null) ? objectState : "";
+            String jobStatusS = (jobStatus != null) ? jobStatus.toString() : "";
+            String jobStatusMessageS = (jobStatusMessage != null) ? jobStatusMessage.toString() : "";
+            String objectTitleS = (objectTitle != null) ? objectTitle : "";
+            String objectCreatorS = (objectCreator != null) ? objectCreator : "";
+            String objectDateS = (objectDate != null) ? objectDate : "";
+            String noteS = (note != null) ? note : "";
+            String metacatStatusS = (metacatStatus != null) ? metacatStatus : "";
+            String objectAggregateS = "";
 	    try {
-	        csvWriter.close();
-	    } catch (Exception e) {}
+                objectAggregateS = objectProfile.getAggregateType();
+	    } catch (NullPointerException npe) {}
+    
+	    if (format == null) {		// human readable format
+	        header += "\n";
+                if (StringUtil.isNotEmpty(jobIDS)) header += indent + "Job ID: " + jobIDS + delimiter;
+                if (StringUtil.isNotEmpty(jobLabelS)) header += indent + "Job Label: " + jobLabelS + delimiter;
+                if (StringUtil.isNotEmpty(primaryIDS)) header += indent + "Primary ID: " + primaryIDS + delimiter;
+                if (StringUtil.isNotEmpty(localIDS)) header += indent + "Local ID: " + localIDS + delimiter;
+                if (StringUtil.isNotEmpty(versionIDS)) header += indent + "Version: " + versionIDS + delimiter;
+                if (StringUtil.isNotEmpty(packageName)) header += indent + "Filename: " + packageName + delimiter;
+                if (StringUtil.isNotEmpty(objectTitleS)) header += indent + "Object title: " + objectTitleS + delimiter;
+                if (StringUtil.isNotEmpty(objectCreatorS)) header += indent + "Object creator: " + objectCreatorS + delimiter;
+                if (StringUtil.isNotEmpty(objectDateS)) header += indent + "Object date: " + objectDateS + delimiter;
+                //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + "object profile: " + objectProfileS + delimiter;
+	        // show URL if a) demo mode b) system object (for debugging)
+                if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
+		        (StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
+		        header += indent + "Object state: " + objectStateS + "?t=xhtml" + delimiter;
+                if (StringUtil.isNotEmpty(noteS)) header += indent + "Note: " + noteS + delimiter;
+                if (StringUtil.isNotEmpty(submissionDateS)) header += indent + "Submission date: " + submissionDateS + delimiter;
+                if (StringUtil.isNotEmpty(completionDateS)) header += indent + "Completion date: " + completionDateS + delimiter;
+                if (StringUtil.isNotEmpty(metacatStatusS)) header += indent + "Metacat Registration Status: " + metacatStatusS + delimiter;
+                if (StringUtil.isNotEmpty(jobStatusS)) header += indent + "Status: " + jobStatusS + delimiter;
+                if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + "Status message: " + jobStatusMessageS + delimiter;
+	    //} else if (format.equalsIgnoreCase("CSV")) {
+	        //String[] fields = new String[12];
+                //StringWriter stringWriter = new StringWriter();
+                //CSVWriter csvWriter = new CSVWriter(stringWriter);
+    
+                //if (StringUtil.isNotEmpty(jobIDS)) fields[0] = jobIDS;
+                //if (StringUtil.isNotEmpty(primaryIDS)) fields[1] = primaryIDS;
+                //if (StringUtil.isNotEmpty(localIDS)) fields[2] = localIDS;
+                //if (StringUtil.isNotEmpty(versionIDS)) fields[3] = versionIDS;
+                //if (StringUtil.isNotEmpty(packageName)) fields[4] = packageName;
+                //if (StringUtil.isNotEmpty(objectTitleS)) fields[5] = objectTitleS;
+                //if (StringUtil.isNotEmpty(objectCreatorS)) fields[6] = objectCreatorS;
+                //if (StringUtil.isNotEmpty(objectDateS)) fields[7] = objectDateS;
+                //if (StringUtil.isNotEmpty(submissionDateS)) fields[8] = submissionDateS;
+                //if (StringUtil.isNotEmpty(completionDateS)) fields[9] = completionDateS;
+                //if (StringUtil.isNotEmpty(jobStatusS)) fields[10] = jobStatusS;
+                //if (StringUtil.isNotEmpty(jobStatusMessageS)) fields[11] = jobStatusMessageS;
+                //csvWriter.writeNext(fields);
+	        //fields = null;
+	        //try {
+	            //csvWriter.close();
+	        //} catch (Exception e) {}
+    
+	        //header = stringWriter.toString();
+	    } else {	// state formatter
+		try {
+                    formatterUtil = new FormatterUtil();
+	            return formatterUtil.doStateFormatting(this, format);
+		} catch (Exception e) { return null; }
+	    }
 
-	    header = stringWriter.toString();
-	} else {
-	    // unsupported
-	    header = null;
-	}
-
-	return header;
+	    return header;
+	} catch (Exception e) {} 
+	finally 
+        {
+	    formatterUtil = null;
+        }
+	return null;
     }
 }

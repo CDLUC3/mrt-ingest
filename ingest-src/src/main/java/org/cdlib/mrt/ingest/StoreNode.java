@@ -43,8 +43,8 @@ public class StoreNode
  	implements StateInf, Serializable
 {
 
-    protected URL storageLink = null;
-    protected int nodeID; 
+    private URL storageLink = null;
+    private int nodeID; 
 
     /**
      * Get base URL to remote node

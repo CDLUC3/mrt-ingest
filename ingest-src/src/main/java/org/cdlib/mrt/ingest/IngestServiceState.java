@@ -44,21 +44,21 @@ import org.cdlib.mrt.utility.TException;
 public class IngestServiceState
         implements IngestServiceStateInf, StateInf
 {
-    protected static final String NAME = "IngestServiceState";
-    protected static final String MESSAGE = NAME + ": ";
+    private static final String NAME = "IngestServiceState";
+    private static final String MESSAGE = NAME + ": ";
 
-    protected String serviceName = null;
-    protected String serviceID = null;
-    protected String serviceVersion = null;
-    protected String serviceCustomerSupport = null;
-    protected Vector<StorageURL> storageInstances = new Vector<StorageURL>(10);
-    protected String queueInstance = null;
-    protected DateState creationDateTime = null;
-    protected DateState modificationDateTime = null;
-    protected DateState lastIngestDateTime = null;
-    protected URL accessServiceURL;
-    protected URL supportServiceURL;
-    protected String commands = null;
+    private String serviceName = null;
+    private String serviceID = null;
+    private String serviceVersion = null;
+    private String serviceCustomerSupport = null;
+    private Vector<StorageURL> storageInstances = new Vector<StorageURL>(10);
+    private String queueInstance = null;
+    private DateState creationDateTime = null;
+    private DateState modificationDateTime = null;
+    private DateState lastIngestDateTime = null;
+    private URL accessServiceURL;
+    private URL supportServiceURL;
+    private String commands = null;
 
     public IngestServiceState()
             throws TException
