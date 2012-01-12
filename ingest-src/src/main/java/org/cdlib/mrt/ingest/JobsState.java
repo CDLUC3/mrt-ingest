@@ -45,8 +45,8 @@ public class JobsState
         implements JobsStateInf, StateInf, Serializable
 {
 
-    protected String ingestServer = null;
-    protected ArrayList<JobState> jobsState = new ArrayList(5); 
+    private String ingestServer = null;
+    private ArrayList<JobState> jobsState = new ArrayList(5); 
 
     /**
      * Set server

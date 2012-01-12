@@ -79,13 +79,13 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerInitialize extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerInitialize";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected static final int BUFFERSIZE = 4096;
-    protected static final String FS = System.getProperty("file.separator");
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerInitialize";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private static final int BUFFERSIZE = 4096;
+    private static final String FS = System.getProperty("file.separator");
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
 
 
@@ -107,7 +107,7 @@ public class HandlerInitialize extends Handler<JobState>
 	    if (! targetDir.exists()) targetDir.mkdirs();
 
 	    // grab existing data if this is an update
-	    if (jobState.getUpdateFlag()) {
+	    if (jobState.grabUpdateFlag()) {
 		if (updateProcess(jobState, profileState, ingestRequest)) {
 	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Extracting previous version for update process");
 		} else {
@@ -376,10 +376,10 @@ public class HandlerInitialize extends Handler<JobState>
 	
 	ingestProperties.put("ingest", ingestRequest.getServiceState().getServiceName());
 	ingestProperties.put("submissionDate", jobState.getSubmissionDate().toString());
-	ingestProperties.put("batch", jobState.getBatchID().getValue());
+	ingestProperties.put("batch", jobState.grabBatchID().getValue());
 	ingestProperties.put("job", jobState.getJobID().getValue());
-	if (StringUtil.isNotEmpty(jobState.getUserAgent())) {
-	    ingestProperties.put("userAgent", jobState.getUserAgent());
+	if (StringUtil.isNotEmpty(jobState.grabUserAgent())) {
+	    ingestProperties.put("userAgent", jobState.grabUserAgent());
 	}
 	ingestProperties.put("file", jobState.getPackageName());
 	ingestProperties.put("type", ingestRequest.getPackageType().getValue());

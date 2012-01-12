@@ -31,7 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Vector;
 import java.io.Serializable;
 import java.net.URL;
 

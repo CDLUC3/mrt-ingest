@@ -54,11 +54,11 @@ import org.cdlib.mrt.utility.TException;
 public class MetadataUtil
 {
 
-    protected static final String NAME = "MetadataUtil";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected static final String DELIMITER = "\t";
-    protected LoggerInf logger = null;
+    private static final String NAME = "MetadataUtil";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private static final String DELIMITER = "\t";
+    private LoggerInf logger = null;
 
     /**
      * write metadata to anvl file

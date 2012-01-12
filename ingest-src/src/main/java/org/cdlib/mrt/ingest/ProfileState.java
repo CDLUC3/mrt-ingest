@@ -38,6 +38,7 @@ import java.io.Serializable;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.StateInf;
@@ -50,31 +51,39 @@ public class ProfileState
         implements ProfileStateInf, StateInf, Serializable
 {
 
-    protected Identifier profileID = null;
-    protected String profileDescription = null;
-    protected StoreNode storeNode = null;
-    protected URL accessURL = null;
-    protected String contentModel = null;
-    protected String scheme = null;
-    protected URL objectMinterURL = null;
-    protected URL characterizationURL = null;
-    protected URL fixityURL = null;
-    protected URL dataONEURL = null;
-    protected Vector<Notification> contactsEmail = new Vector();
-    protected SortedMap<Integer,HandlerState> ingestHandlers = null;
-    protected SortedMap<Integer,HandlerState> queueHandlers = null;
-    protected DateState creationDate = null;
-    protected DateState modificationDate = null;
-    protected Identifier.Namespace objectScheme = null;
-    protected String objectNamespace = null;
-    protected Vector<String> collection = new Vector();
-    protected String objectType = null;
-    protected String objectRole = null;
-    protected String aggregateType = null;
-    protected String owner = null;
-    protected Collection admin = null;
-    protected String context = null;
-    protected String misc = null;
+    private static final String NAME = "ProfileState";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+
+
+    private Identifier profileID = null;
+    private String profileDescription = null;
+    private StoreNode storeNode = null;
+    private URL accessURL = null;
+    private String contentModel = null;
+    private String scheme = null;
+    private URL objectMinterURL = null;
+    private URL characterizationURL = null;
+    private URL fixityURL = null;
+    private URL dataONEURL = null;
+    private URL callbackURL = null;
+    private Vector<Notification> contactsEmail = new Vector();
+    private SortedMap<Integer,HandlerState> ingestHandlers = null;
+    private SortedMap<Integer,HandlerState> queueHandlers = null;
+    private DateState creationDate = null;
+    private DateState modificationDate = null;
+    private Identifier.Namespace objectScheme = null;
+    private String objectNamespace = null;
+    private Vector<String> collection = new Vector();
+    private String objectType = null;
+    private String objectRole = null;
+    private String aggregateType = null;
+    private String owner = null;
+    private Collection admin = null;
+    private String context = null;
+    private String misc = null;
+    //private FormatType notificationFormat = FormatType.anvl;		// default
+    private FormatType notificationFormat = null;		// default
 
     final String[] OBJECTTYPE = { "MRT-curatorial", "MRT-system" };
     final String[] OBJECTROLE = { "MRT-content", "MRT-class" };
@@ -212,6 +221,14 @@ public class ProfileState
     }
 
     /**
+     * Set callback URL
+     * @param URL callback URL
+     */
+    public void setCallbackURL(URL callbackURL) {
+        this.callbackURL = callbackURL;
+    }
+
+    /**
      * Get object minter URL
      * @return object minter URL
      */
@@ -241,6 +258,14 @@ public class ProfileState
      */
     public URL getDataoneURL() {
         return this.dataONEURL; 
+    }
+
+    /**
+     * Get callback URL
+     * @return callback URL
+     */
+    public URL getCallbackURL() {
+        return this.callbackURL; 
     }
 
     /**
@@ -431,6 +456,20 @@ public class ProfileState
         this.misc = misc;
     }
 
+    public FormatType getNotificationFormat() {
+        return notificationFormat;
+    }
+
+    public void setNotificationFormat(String notificationFormat) {
+        try {
+            this.notificationFormat = FormatType.valueOf(notificationFormat);
+        } catch (Exception e) {
+            // default
+	    e.printStackTrace();
+            if (DEBUG) System.out.println("[warn] ProfileState: Could not assign format type: " + notificationFormat);
+            this.notificationFormat = null;
+        }
+    }
     public String dump(String header)
     {
         return header

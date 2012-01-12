@@ -52,18 +52,18 @@ public class QueueEntryState
         implements QueueEntryStateInf, StateInf, Serializable
 {
 
-    protected String id = null;
-    protected String status = null;
-    protected String date = null;
-    protected String batchID = null;
-    protected String jobID = null;
-    protected String name = null;
-    protected String user = null;
-    protected String profile = null;
-    protected String objectCreator = null;
-    protected String objectTitle = null;
-    protected String objectDate = null;
-    protected String localID = null;
+    private String id = null;
+    private String status = null;
+    private String date = null;
+    private String batchID = null;
+    private String jobID = null;
+    private String name = null;
+    private String user = null;
+    private String profile = null;
+    private String objectCreator = null;
+    private String objectTitle = null;
+    private String objectDate = null;
+    private String localID = null;
 
     /**
      * Set entry ID

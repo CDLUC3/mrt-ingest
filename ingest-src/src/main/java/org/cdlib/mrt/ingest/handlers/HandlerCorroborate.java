@@ -66,13 +66,13 @@ import org.cdlib.mrt.utility.TFileLogger;
 public class HandlerCorroborate extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerCorroborate";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Integer defaultStorage = null;
-    protected String manifestName = "mrt-manifest.txt";
+    private static final String NAME = "HandlerCorroborate";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Integer defaultStorage = null;
+    private String manifestName = "mrt-manifest.txt";
 
     /**
      * validate manifest

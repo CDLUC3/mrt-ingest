@@ -94,19 +94,19 @@ import org.cdlib.mrt.utility.TException;
 public class QueueManager
 {
 
-    protected static final String NAME = "QueueManager";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Properties ingestProperties = null;
-    protected Properties queueProperties = null;
-    protected String queueConnectionString = null;
-    protected String queueNode = null;
-    protected ArrayList<String> m_admin = new ArrayList<String>(20);
+    private static final String NAME = "QueueManager";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Properties ingestProperties = null;
+    private Properties queueProperties = null;
+    private String queueConnectionString = null;
+    private String queueNode = null;
+    private ArrayList<String> m_admin = new ArrayList<String>(20);
 
-    protected boolean debugDump = false;
-    protected String ingestFileS = null;	// prop "IngestService"
+    private boolean debugDump = false;
+    private String ingestFileS = null;	// prop "IngestService"
 
     public Properties getQueueServiceProps() {
         return queueProperties;
@@ -330,10 +330,10 @@ public class QueueManager
 	    batchState.clear();
 	    batchState.setTargetQueue(queueConnectionString);
 	    batchState.setTargetQueueNode(queueNode);
-	    batchState.setUserAgent(ingestRequest.getJob().getUserAgent());
+	    batchState.setUserAgent(ingestRequest.getJob().grabUserAgent());
 	    batchState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 	    batchState.setBatchStatus(BatchStatusEnum.QUEUED);
-	    batchState.setBatchID(ingestRequest.getJob().getBatchID());
+	    batchState.setBatchID(ingestRequest.getJob().grabBatchID());
             batchState.setUpdateFlag(ingestRequest.getUpdateFlag());
 
 	    // assign profile

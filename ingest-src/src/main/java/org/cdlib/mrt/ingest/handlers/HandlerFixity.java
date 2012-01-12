@@ -91,13 +91,13 @@ import org.xml.sax.SAXParseException;
 public class HandlerFixity extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerFixity";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected boolean notify = true;	// notify admins if failure
-    protected boolean error = false;
+    private static final String NAME = "HandlerFixity";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private boolean notify = true;	// notify admins if failure
+    private boolean error = false;
 
     /**
      * Adds an item of requested object to ingest service

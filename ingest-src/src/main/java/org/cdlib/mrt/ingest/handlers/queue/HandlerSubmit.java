@@ -106,17 +106,17 @@ public class HandlerSubmit extends Handler<BatchState>
 
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(batchState.getTargetQueue(), 10000, new Ignorer());
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), 10000, new Ignorer());
 	    String priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
 	    System.out.println("[info] queue priority: " + priority);
-            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.getTargetQueueNode(), priority, null);	// default priority
+            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority, null);	// default priority
 
 	    // common across all jobs in batch
 	    properties.put("batchID", batchState.getBatchID().getValue());
 	    properties.put("profile", ingestRequest.getProfile().getValue());
 	    properties.put("type", ingestRequest.getPackageType().getValue());
-	    if (StringUtil.isNotEmpty(ingestRequest.getJob().getUserAgent()))
-	        properties.put("submitter", ingestRequest.getJob().getUserAgent());
+	    if (StringUtil.isNotEmpty(ingestRequest.getJob().grabUserAgent()))
+	        properties.put("submitter", ingestRequest.getJob().grabUserAgent());
 	    properties.put("queuePriority", priority);
 	    // optional input parameters
 	    if (StringUtil.isNotEmpty(ingestRequest.getResponseForm()))
@@ -175,7 +175,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	    properties.put("type", jobState.getObjectType());
 		} catch (Exception e) { }
 		try {
-	    	    properties.put("update", new Boolean (jobState.getUpdateFlag()));
+	    	    properties.put("update", new Boolean (jobState.grabUpdateFlag()));
 		} catch (Exception e) {
 		    // default
 	    	    properties.put("update", new Boolean(false));
@@ -207,12 +207,13 @@ public class HandlerSubmit extends Handler<BatchState>
 	    BatchState.putBatchState(batchState.getBatchID().getValue(), batchState);
 	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
 	    BatchState.putBatchCompletion(batchState.getBatchID().getValue(), 0); 	//initialize
-	    //BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
+	    BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
 	    // serialize object to disk
 	    //ProfileUtil.writeTo(batchState, ingestRequest.getQueuePath());
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (Exception e) {
+	    e.printStackTrace();
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();
 	    System.err.println(msg);
             return new HandlerResult(false, msg, 10);

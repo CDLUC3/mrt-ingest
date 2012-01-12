@@ -74,7 +74,6 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
-import java.util.Vector;
 
 /**
  * Consume queue data and submit to ingest service
@@ -521,7 +520,7 @@ class ConsumeData implements Runnable
 	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));
 	    ingestRequest.setUpdateFlag(((Boolean) p.get("update")).booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
-			"queue" + FS + ingestRequest.getJob().getBatchID().getValue() + FS + 
+			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
             new File(ingestRequest.getQueuePath(), "system").mkdir();
             new File(ingestRequest.getQueuePath(), "producer").mkdir();

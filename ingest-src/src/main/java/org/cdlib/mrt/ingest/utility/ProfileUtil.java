@@ -43,7 +43,6 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Vector;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
@@ -65,40 +64,42 @@ import org.cdlib.mrt.utility.TException;
 public class ProfileUtil
 {
 
-    protected static final String NAME = "ProfileUtil";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = false;
-    protected static final int MAX_HANDLERS = 20;
+    private static final String NAME = "ProfileUtil";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = false;
+    private static final int MAX_HANDLERS = 20;
     public static final String DEFAULT_BATCH_ID = "JOB_ONLY";
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
-    protected static URL url = null;
-    protected static URL storageUrl = null;
-    protected static int node;
+    private static URL url = null;
+    private static URL storageUrl = null;
+    private static int node;
 
     // extract strings
-    protected static final String matchProfileID = "ProfileID";
-    protected static final String matchProfileDescription = "ProfileDescription";
-    protected static final String matchIdentifierScheme = "Identifier-scheme";
-    protected static final String matchIdentifierNamespace = "Identifier-namespace";
-    protected static final String matchNotification = "Notification";
-    protected static final String matchHandlerIngest = "Handler.";
-    protected static final String matchHandlerQueue = "HandlerQueue.";
-    protected static final String matchStorageService = "StorageService";
-    protected static final String matchStorageNode = "StorageNode";
-    protected static final String matchCreationDate = "CreationDate";
-    protected static final String matchModificationDate = "ModificationDate";
-    protected static final String matchObjectMinterURL = "ObjectMinterURL";
-    protected static final String matchCharacterizationURL = "CharacterizationURL";
-    protected static final String matchFixityURL = "FixityURL";
-    protected static final String matchDataoneURL = "DataoneURL";
-    protected static final String matchCollection = "Collection";
-    protected static final String matchType = "Type";
-    protected static final String matchRole = "Role";
-    protected static final String matchAggregate = "Aggregate";
-    protected static final String matchOwner = "Owner";
-    protected static final String matchContext = "Context";
+    private static final String matchProfileID = "ProfileID";
+    private static final String matchProfileDescription = "ProfileDescription";
+    private static final String matchIdentifierScheme = "Identifier-scheme";
+    private static final String matchIdentifierNamespace = "Identifier-namespace";
+    private static final String matchNotification = "Notification.";
+    private static final String matchHandlerIngest = "Handler.";
+    private static final String matchHandlerQueue = "HandlerQueue.";
+    private static final String matchStorageService = "StorageService";
+    private static final String matchStorageNode = "StorageNode";
+    private static final String matchCreationDate = "CreationDate";
+    private static final String matchModificationDate = "ModificationDate";
+    private static final String matchObjectMinterURL = "ObjectMinterURL";
+    private static final String matchCharacterizationURL = "CharacterizationURL";
+    private static final String matchFixityURL = "FixityURL";
+    private static final String matchDataoneURL = "DataoneURL";
+    private static final String matchCallbackURL = "CallbackURL";
+    private static final String matchCollection = "Collection.";
+    private static final String matchType = "Type";
+    private static final String matchRole = "Role";
+    private static final String matchAggregate = "Aggregate";
+    private static final String matchOwner = "Owner";
+    private static final String matchContext = "Context";
+    private static final String matchNotificationFormat = "NotificationFormat";
     
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
         throws TException
@@ -175,6 +176,14 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setDataoneURL(new URL(value));
+		} else if (key.startsWith(matchCallbackURL)) {
+                    if (DEBUG) System.out.println("[debug] callback URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setCallbackURL(new URL(value));
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
 		    profileState.setCollection(value);
@@ -236,13 +245,14 @@ public class ProfileUtil
 		} else if (key.startsWith(matchContext)) {
                     if (DEBUG) System.out.println("[debug] context: " + value);
 		    profileState.setContext(value);
+		} else if (key.startsWith(matchNotificationFormat)) {
+                    if (DEBUG) System.out.println("[debug] notification format: " + value);
+		    profileState.setNotificationFormat(value);
 	        } else {
                     if (DEBUG) System.out.println("[debug] could not procces profile parameter: " + key);
 		}
 	     }
 
-	     // notification.setContactEmail(contactsEmail);
-	     //profileState.setNotification(notification);
 	     profileState.setIngestHandlers(ingestHandlers);
 	     profileState.setQueueHandlers(queueHandlers);
 	     profileState.setTargetStorage(new StoreNode(storageUrl, node));

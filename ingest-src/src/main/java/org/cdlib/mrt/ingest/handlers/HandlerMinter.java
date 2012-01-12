@@ -84,11 +84,11 @@ import org.xml.sax.SAXParseException;
 public class HandlerMinter extends Handler<JobState>
 {
 
-    protected static final String NAME = "HandlerMinter";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
+    private static final String NAME = "HandlerMinter";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
      * mint object ID
@@ -124,13 +124,17 @@ public class HandlerMinter extends Handler<JobState>
 
 	    if (ProfileUtil.isDemoMode(profileState)) {
 	        if (jobState.getPrimaryID() != null) {
+	            System.out.println("[debug] " + MESSAGE + "demo mode detected, resetting primary id.");
 		    jobState.setLocalID(jobState.getPrimaryID().getValue());
 	    	    jobState.setPrimaryID(null);
 		}
 	    }
 
 	    Identifier localID = jobState.getLocalID();
-	    if (localID != null && jobState.getPrimaryID() == null) retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+	    if (localID != null && jobState.getPrimaryID() == null && ! localID.getValue().contains("(:unas)"))	
+		retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+	    else
+		System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
 
 	    if (jobState.getPrimaryID() != null) {
 		if (retrievedObjectID != null) {
@@ -195,7 +199,7 @@ public class HandlerMinter extends Handler<JobState>
                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
 	    }
 	    // need to update shadow ARK?
-	    if (jobState.getShadowARK()) {
+	    if (jobState.grabShadowARK()) {
 	        returnValue = MintUtil.processObjectID(profileState, jobState, false, true);
 	        if (returnValue.startsWith("ark")) {
 	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);

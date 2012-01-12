@@ -55,9 +55,9 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobStateInf;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
-import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -76,20 +76,20 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class IngestManager
 {
 
-    protected static final String NAME = "IngestManager";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-    protected LoggerInf logger = null;
-    protected Properties conf = null;
-    protected Properties ingestProperties = null;
-    protected Integer defaultStorage = null;
-    protected URL ingestLink = null;
-    protected boolean debugDump = false;
-    protected Hashtable<Integer, URL> m_store = new Hashtable<Integer, URL>(20);
-    protected Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
-    protected ArrayList<String> m_admin = new ArrayList<String>(20);
-    protected String m_ezid = null;
-    protected String ingestFileS = null;	// prop "IngestService"
+    private static final String NAME = "IngestManager";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
+    private Properties ingestProperties = null;
+    private Integer defaultStorage = null;
+    private URL ingestLink = null;
+    private boolean debugDump = false;
+    private Hashtable<Integer, URL> m_store = new Hashtable<Integer, URL>(20);
+    private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
+    private ArrayList<String> m_admin = new ArrayList<String>(20);
+    private String m_ezid = null;
+    private String ingestFileS = null;	// prop "IngestService"
 
     public String getIngestServiceProp() {
         return ingestFileS;
@@ -377,7 +377,7 @@ public class IngestManager
 	    } 
             BatchState batchState = BatchState.getBatchState(batchID);
 
-            HashMap<String, JobState> jobStates = (HashMap)  batchState.getJobStates();
+            Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
             JobState jobStateTemp = (JobState) jobStates.get(jobID);
             System.out.println("[info]" + MESSAGE + "updating job: " + jobStateTemp.getJobID());
 
@@ -457,32 +457,34 @@ public class IngestManager
 	    }
 
 	    // wait until posting completes a) only for very large batches b) recovering after shutdown
-	    if ( ! jobState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-		// int cnt = 0;
-	        while (BatchState.getBatchReadiness(jobState.getBatchID().getValue()) != 1) {
+	    if ( ! jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
+	        while (BatchState.getBatchReadiness(jobState.grabBatchID().getValue()) != 1) {
 	            System.out.println("[info]" + MESSAGE + "waiting for posting to complete: " + jobState.getJobID());
 
+/*
 		    // are we recovering from a shutdown?
 		    try {
-		        if (BatchState.getBatchStates().size() == 0) {
-			    synchronized (this) {
+			synchronized (this) {
+		            if (BatchState.getBatchStates().size() == 0) {
 		                if (BatchState.getBatchStates().size() == 0) {	// in case two objects pending, only let one through
 		                    System.out.println("IngestManager [info] Accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
 			            BatchState batchState = new BatchState();
 			            batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
-			            BatchState.putBatchState(jobState.getBatchID().getValue(), batchState);
+			            BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
 			     
 			            System.out.println(batchState.dump("------> recovering from shutdown"));
 			            int completed = 0;
+
 			            iterator = batchState.getJobStates().keySet().iterator();
 		                    while(iterator.hasNext()) {
 			                JobState jobStateTemp = (JobState) batchState.getJobState((String) iterator.next());
                 		        if (jobStateTemp.getJobStatus() != JobStatusEnum.PENDING) completed++;
             		            }
 
+
 			            System.out.println("-------> number of completed jobs: " + completed);
-			            BatchState.putBatchCompletion(jobState.getBatchID().getValue(), completed);
-			            BatchState.putBatchReadiness(jobState.getBatchID().getValue(), 1);
+			            BatchState.putBatchCompletion(jobState.grabBatchID().getValue(), completed);
+			            BatchState.putBatchReadiness(jobState.grabBatchID().getValue(), 1);
 			            break;
 		                }
 		            }
@@ -492,8 +494,9 @@ public class IngestManager
  	                System.err.println("IngestManager [error] accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
 			break;		// prevent looping in recovery
 		    }
+*/
 		
-		    Thread.currentThread().sleep(30000);
+		    Thread.currentThread().sleep(30 * 1000);
 	        }
 	    }
 
@@ -515,14 +518,14 @@ public class IngestManager
             	    throw new TException.INVALID_CONFIGURATION("[error] Could not find handler: " + handlerS);
 		}
 		StateInf stateClass = jobState;
-	  	if (isError && (! handler.getName().equals("HandlerNotification"))) {
+	  	if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.HandlerNotification.class)) {
 		    System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 		    continue;
 		}
-		if (handler.getName().equals("HandlerNotification")) {
+                if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerNotification.class) {
 		    if ( ! isError) {
-	    	        jobState.setObjectState(jobState.getTargetStorage().getStorageLink().toString() + "/state/" +
-			    jobState.getTargetStorage().getNodeID() + "/" + 
+	    	        jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/" +
+			    jobState.grabTargetStorage().getNodeID() + "/" + 
 			    URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
 		        batchState.setBatchStatus(BatchStatusEnum.COMPLETED);
 			batchState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
@@ -530,17 +533,25 @@ public class IngestManager
             		jobState.setJobStatus(JobStatusEnum.FAILED);
 		        batchState.setBatchStatus(BatchStatusEnum.FAILED);
 		    }
-		    batchState = updateBatch(batchState, ingestRequest, jobState);
+		    try {
+		       batchState = updateBatch(batchState, ingestRequest, jobState);
+		    } catch (Exception e) {
+			System.out.println("----> Failed to update batch");
+		    }
 		    stateClass = batchState;
 
-		    BatchState.putBatchCompletion(jobState.getBatchID().getValue(), 
-			BatchState.getBatchCompletion(jobState.getBatchID().getValue()) + 1);           // increment
+		    BatchState.putBatchCompletion(jobState.grabBatchID().getValue(), 
+			BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1);           // increment
 
 		}
+                if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerCallback.class) {
+		    // stateClass = batchState;
+		}
+
 		try {
                     if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue.class) {
 	    		if ( ! batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-			    jobState.setMisc(batchState.getTargetQueue());
+			    jobState.setMisc(batchState.grabTargetQueue());
 			} else {
 			    // not a batch
 			    jobState.setMisc(getProps(ingestRequest, "queue.txt").getProperty("QueueService"));
@@ -568,8 +579,8 @@ public class IngestManager
             } 	// end for 
 
 	    if (jobState.getPrimaryID() != null) {
-	        jobState.setObjectState(jobState.getTargetStorage().getStorageLink().toString() + "/state/" +
-			jobState.getTargetStorage().getNodeID() + "/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
+	        jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/" +
+			jobState.grabTargetStorage().getNodeID() + "/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
 	    }
 
 	    // batch complete?
@@ -577,12 +588,14 @@ public class IngestManager
 		try {
                     if (BatchState.getBatchCompletion(batchState.getBatchID().getValue()) == BatchState.getBatchState(batchState.getBatchID().getValue()).getJobStates().size()) {
                         if (DEBUG) System.out.println("[debug] " + MESSAGE + ": Batch is complete.");
-		        BatchState.removeBatchState(jobState.getBatchID().getValue());
-		        BatchState.removeBatchReadiness(jobState.getBatchID().getValue());
-		        BatchState.removeBatchCompletion(jobState.getBatchID().getValue());
-		        BatchState.removeQueuePath(jobState.getBatchID().getValue());
+		        BatchState.removeBatchState(jobState.grabBatchID().getValue());
+		        BatchState.removeBatchReadiness(jobState.grabBatchID().getValue());
+		        BatchState.removeBatchCompletion(jobState.grabBatchID().getValue());
+		        BatchState.removeQueuePath(jobState.grabBatchID().getValue());
 	            }
-		} catch (Exception e) {}	// ignore
+		} catch (Exception e) {
+		    // ignore threads that may get here late
+		}
 	    }
 
             return jobState;
@@ -663,21 +676,20 @@ public class IngestManager
     {
 	BatchState batchState = null;
         try {
-            if (jobState.getBatchID().getValue().equals(ProfileUtil.DEFAULT_BATCH_ID)) {
+            if (jobState.grabBatchID().getValue().equals(ProfileUtil.DEFAULT_BATCH_ID)) {
 		// not a batch
-		batchState = new BatchState();
-		batchState.setBatchID(jobState.getBatchID());
+		batchState = new BatchState(jobState.grabBatchID());
+		// batchState.setBatchID(jobState.grabBatchID());
 		batchState.addJob(jobState.getJobID().getValue(), jobState);
 	    } else {
 		// update batch object on disk (must be synchronous)
-		batchState = new BatchState();
+		batchState = new BatchState(jobState.grabBatchID());
 
 		// Does not scale!!
 		//batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
-		batchState = BatchState.getBatchState(jobState.getBatchID().getValue());
-		//} 
-		
-		batchState.setBatchID(jobState.getBatchID());
+
+		batchState = BatchState.getBatchState(jobState.grabBatchID().getValue());
+		batchState.setBatchID(jobState.grabBatchID());
 
 		// remove old job and replace w/ new
 		Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
@@ -692,13 +704,16 @@ public class IngestManager
 		}
 		batchState.setCompletionDate(sourceBatchState.getCompletionDate());
 		batchState.setBatchLabel(sourceBatchState.getBatchLabel());
+
 		// Does not scale!!
                 //ProfileUtil.writeTo(batchState, ingestRequest.getQueuePath().getParentFile());
-		BatchState.putBatchState(jobState.getBatchID().getValue(), batchState);
+		BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
 	    }
+
 
 	    return batchState;
         } catch (Exception e) {
+	   System.out.println("-> Error updating batch: " + jobState.getJobID().getValue());
            e.printStackTrace(System.err);
 	   throw new Exception(e.getMessage());
         }

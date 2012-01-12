@@ -104,7 +104,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 			System.out.println("[info] " + MESSAGE + "job parm specified, no unpacking needed: " + fileS);
 			System.out.println("[info] " + MESSAGE + "batchID: " + batchState.getBatchID().getValue());
 			JobState jobState = createJob(file, queueDir);
-			jobState.setUpdateFlag(batchState.getUpdateFlag());
+			jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
 			if (fileS.equals(ingestRequest.getJob().getPackageName())) 
 			    jobState.setPackageName(ingestRequest.getJob().getPackageName());
@@ -179,7 +179,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	        String fileName = fileComponent.getIdentifier();
 	        if (StringUtil.isEmpty(fileName)) fileName = fileComponent.getURL().getFile().replace("/", "");
 		JobState jobState = createJob(fileComponent.getURL(), fileName, queueDir);
-		jobState.setUpdateFlag(batchState.getUpdateFlag());
+		jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
 		// particulars are housed in object manifest file
 		jobState.setPackageName(fileName);
