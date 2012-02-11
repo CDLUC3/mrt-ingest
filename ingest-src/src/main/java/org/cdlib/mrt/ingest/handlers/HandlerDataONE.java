@@ -198,7 +198,7 @@ public class HandlerDataONE extends Handler<JobState>
 	    	// String id = URLEncoder.encode(createContent.getComponentPid(), "UTF-8");
 	    	String id = createContent.getComponentPid();
                 if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + id);
-	    	webResourceCreate = client.resource(dataoneURL.toString());
+	    	webResourceCreate = client.resource(dataoneURL + id);
                 // System.out.println(createContent.dump("-debug-"));
 
                 formDataMultiPart = new FormDataMultiPart();
