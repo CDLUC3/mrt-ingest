@@ -37,6 +37,7 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
+import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 
 import java.io.File;
@@ -197,7 +198,7 @@ public class HandlerDataONE extends Handler<JobState>
 	    	// String id = URLEncoder.encode(createContent.getComponentPid(), "UTF-8");
 	    	String id = createContent.getComponentPid();
                 if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + id);
-	    	webResourceCreate = client.resource(dataoneURL + id);
+	    	webResourceCreate = client.resource(dataoneURL.toString());
                 // System.out.println(createContent.dump("-debug-"));
 
                 formDataMultiPart = new FormDataMultiPart();
@@ -205,6 +206,7 @@ public class HandlerDataONE extends Handler<JobState>
 		FileUtil.string2File(systemMetadataFile, createContent.getCreateSystemMetadata());
 		formDataMultiPart.getBodyParts().add(new FileDataBodyPart("object", createContent.getCreateFile()));
 		formDataMultiPart.getBodyParts().add(new FileDataBodyPart("sysmeta", systemMetadataFile));
+		formDataMultiPart.getBodyParts().add(new FormDataBodyPart("pid", id));
 
 		// make service request
 		int maxTries = 3;
