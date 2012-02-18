@@ -130,6 +130,9 @@ public class HandlerCallback extends Handler<JobState> {
 		} catch (Exception e) {
             	    if (DEBUG) System.out.println("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
 		}
+		// remove credential from URL 
+		String urlString = url.toString();
+		url = new URL(urlString.replaceFirst(credentials + "@", ""));
 	    }
 
             WebResource webResource = client.resource(url.toString());
