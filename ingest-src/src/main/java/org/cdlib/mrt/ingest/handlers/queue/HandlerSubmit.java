@@ -57,6 +57,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
@@ -141,6 +142,7 @@ public class HandlerSubmit extends Handler<BatchState>
 
 	        JobState jobState = (JobState) jobStates.get(iterator.next());
 
+		jobState.setBatchID(batchState.getBatchID());
 		properties.put("jobID", jobState.getJobID().getValue());	// overwrite if exists
 		properties.put("filename", jobState.getPackageName());
 		try {
@@ -200,6 +202,10 @@ public class HandlerSubmit extends Handler<BatchState>
                 bos.close();
 
 		jobState.setJobStatus(JobStatusEnum.PENDING);
+
+	        // create status if necessary
+	        if (profileState.getStatusURL() != null)
+		    JSONUtil.updateJobState(profileState, jobState);
 	    }
 
 	    // global
