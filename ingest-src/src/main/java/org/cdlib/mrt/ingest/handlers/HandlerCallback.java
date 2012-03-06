@@ -137,12 +137,11 @@ public class HandlerCallback extends Handler<JobState> {
 
             WebResource webResource = client.resource(url.toString());
 
-            Form formData = new Form();
-            formData.add("jobstate", formatterUtil.doStateFormatting(jobState, profileState.getNotificationFormat()));
+            String jobStateString = formatterUtil.doStateFormatting(jobState, profileState.getNotificationFormat());
 
             // make service request
             try {
-                clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
+                clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, jobStateString);
             } catch (Exception e) {
 		e.printStackTrace();
                 error = true;
