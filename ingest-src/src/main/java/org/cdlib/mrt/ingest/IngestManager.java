@@ -57,6 +57,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
@@ -403,12 +404,13 @@ public class IngestManager
         throws Exception
     {
 	ProfileState profileState = null;
+	JobState jobState = null;
         try {
 	    // add service state properties (ingest-info.txt) to ingest request
 	    ingestRequest.setServiceState(getServiceState());
 
 	    // assign preliminary job info
-            JobState jobState = ingestRequest.getJob();
+            jobState = ingestRequest.getJob();
 	    jobState.setUpdateFlag(ingestRequest.getUpdateFlag());
 	    jobState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 
@@ -598,6 +600,10 @@ public class IngestManager
 		}
 	    }
 
+            // update status if necessary
+            if (profileState.getStatusURL() != null)
+                JSONUtil.updateJobState(profileState, jobState);
+
             return jobState;
           
         } catch (TException me) {
@@ -609,6 +615,11 @@ public class IngestManager
         } finally {
 	    // if (profileState != null) profileState.getIngestHandlers().clear();
 	    // this is causing a java.util.ConcurrentModificationException in notification handler
+
+            // update status if necessary
+            if (profileState.getStatusURL() != null)
+                JSONUtil.updateJobState(profileState, jobState);
+
 	}
     }
 

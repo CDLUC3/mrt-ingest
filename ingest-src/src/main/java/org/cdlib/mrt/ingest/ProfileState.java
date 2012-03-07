@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.SortedMap;
 import java.util.Vector;
+import java.io.File;
 import java.io.Serializable;
 
 import org.cdlib.mrt.core.DateState;
@@ -67,6 +68,8 @@ public class ProfileState
     private URL fixityURL = null;
     private URL dataONEURL = null;
     private URL callbackURL = null;
+    private URL statusURL = null;
+    private File statusView = null;
     private Vector<Notification> contactsEmail = new Vector();
     private SortedMap<Integer,HandlerState> ingestHandlers = null;
     private SortedMap<Integer,HandlerState> queueHandlers = null;
@@ -229,6 +232,23 @@ public class ProfileState
     }
 
     /**
+     * Set status URL
+     * @param URL status URL
+     */
+    public void setStatusURL(URL statusURL) {
+        this.statusURL = statusURL;
+    }
+
+    /**
+     * Set status view
+     * @param File status view
+     */
+    public void setStatusView(File statusView) {
+        this.statusView = statusView;
+    }
+
+    /**
+    /**
      * Get object minter URL
      * @return object minter URL
      */
@@ -268,6 +288,23 @@ public class ProfileState
         return this.callbackURL; 
     }
 
+    /**
+     * Get status URL
+     * @return status URL
+     */
+    public URL getStatusURL() {
+        return this.statusURL; 
+    }
+
+    /**
+     * Get status view
+     * @return status view as string
+     */
+    public File getStatusView() {
+        return this.statusView; 
+    }
+
+    /**
     /**
      * Set access URL
      * @param URL access URL

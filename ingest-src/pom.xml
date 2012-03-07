@@ -29,6 +29,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <merritt-core.version>1.0-SNAPSHOT</merritt-core.version>
   </properties>
 
   <build>
@@ -45,6 +46,7 @@
   </plugins>
   </build>
 
+
   <dependencies>
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
@@ -54,7 +56,7 @@
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
           <artifactId>mrt-core</artifactId>
-          <version>1.0-SNAPSHOT</version>
+          <version>${merritt-core.version}</version>
       </dependency>
       <dependency>
            <groupId>com.sun.jersey.contribs</groupId>

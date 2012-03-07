@@ -47,6 +47,7 @@ import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
+import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -517,6 +518,7 @@ class ConsumeData implements Runnable
 	    ingestRequest.getJob().setBatchID(new Identifier(p.getProperty("batchID")));
 	    ingestRequest.getJob().setJobID(new Identifier(p.getProperty("jobID")));
 	    ingestRequest.getJob().setLocalID(p.getProperty("localID"));
+	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));
 	    ingestRequest.setUpdateFlag(((Boolean) p.get("update")).booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
