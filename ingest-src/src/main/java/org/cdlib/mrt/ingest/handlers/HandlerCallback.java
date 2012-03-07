@@ -130,16 +130,18 @@ public class HandlerCallback extends Handler<JobState> {
 		} catch (Exception e) {
             	    if (DEBUG) System.out.println("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
 		}
+		// remove credential from URL 
+		String urlString = url.toString();
+		url = new URL(urlString.replaceFirst(credentials + "@", ""));
 	    }
 
             WebResource webResource = client.resource(url.toString());
 
-            Form formData = new Form();
-            formData.add("jobstate", formatterUtil.doStateFormatting(jobState, profileState.getNotificationFormat()));
+            String jobStateString = formatterUtil.doStateFormatting(jobState, profileState.getNotificationFormat());
 
             // make service request
             try {
-                clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
+                clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, jobStateString);
             } catch (Exception e) {
 		e.printStackTrace();
                 error = true;

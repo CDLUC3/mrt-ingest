@@ -93,6 +93,8 @@ public class ProfileUtil
     private static final String matchFixityURL = "FixityURL";
     private static final String matchDataoneURL = "DataoneURL";
     private static final String matchCallbackURL = "CallbackURL";
+    private static final String matchStatusURL = "StatusURL";
+    private static final String matchStatusView = "StatusView";
     private static final String matchCollection = "Collection.";
     private static final String matchType = "Type";
     private static final String matchRole = "Role";
@@ -173,7 +175,7 @@ public class ProfileUtil
                     try {
                         url = new URL(value);
                     } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
+                        throw new TException.INVALID_CONFIGURATION("Fixity parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setDataoneURL(new URL(value));
 		} else if (key.startsWith(matchCallbackURL)) {
@@ -184,6 +186,23 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setCallbackURL(new URL(value));
+		} else if (key.startsWith(matchStatusURL)) {
+                    if (DEBUG) System.out.println("[debug] status URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("StatusURL parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setStatusURL(new URL(value));
+		} else if (key.startsWith(matchStatusView)) {
+		    File statusView = null;
+                    if (DEBUG) System.out.println("[debug] status View: " + value);
+                    try {
+                         statusView = new File(ingestDir, value);
+                    } catch (Exception ex) {
+                        throw new TException.INVALID_CONFIGURATION("StatusView file not found: " + statusView.toString());
+                    }
+		    profileState.setStatusView(statusView);
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
 		    profileState.setCollection(value);
