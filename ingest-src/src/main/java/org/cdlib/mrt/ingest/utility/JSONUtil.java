@@ -45,6 +45,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import java.security.SecureRandom;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.MediaType;
 
 import org.cdlib.mrt.formatter.FormatType;
@@ -121,11 +130,42 @@ public class JSONUtil
         ClientResponse clientResponse = null;
         WebResource webResource = null;
         FormatType formatType = null;
-        Client client = Client.create();
+        Client client = null;
 
 	try {
+
 	    // define db ID
             url = new URL(profileState.getStatusURL().toString() + "/" + jobState.grabBatchID().getValue().toString());
+            String credentials = url.getUserInfo();
+            String protocol = url.getProtocol();
+
+            // https - trust all certs
+            if (protocol.equals("https")) {
+                X509TrustManager tm = new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+                    public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                };
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting SSL protocol");
+                ClientConfig config = new DefaultClientConfig();
+                SSLContext ctx = SSLContext.getInstance("TLS");
+                ctx.init(null, new TrustManager[]{tm}, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+
+                config.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(
+                    new HostnameVerifier() {
+                        @Override
+                        public boolean verify(String hostname, SSLSession session) {
+                            return true;
+                        }
+                }, ctx));
+
+                client = Client.create(config);
+            } else {
+                client = Client.create();    // reuse?  creation is expensive
+            }
 
 	    // create DB
             try {
