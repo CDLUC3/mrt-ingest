@@ -39,6 +39,7 @@ import com.sun.jersey.api.representation.Form;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -56,14 +57,19 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.mail.EmailAttachment;
+import org.apache.commons.mail.MultiPartEmail;
+
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.JobState;
+import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.json.JSONObject;
+
 
 /**
  * simple json tools and couchDB interface routines
@@ -167,6 +173,23 @@ public class JSONUtil
                 client = Client.create();    // reuse?  creation is expensive
             }
 
+            // HTTP Basic authentication (optional)
+            if (credentials != null) {
+                try {
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting Basic Authenication parameters");
+                    String[] cred = credentials.split(":");
+                    client.addFilter(new HTTPBasicAuthFilter(cred[0], java.net.URLDecoder.decode(cred[1])));
+                } catch (Exception e) {
+		    e.printStackTrace();
+                    if (DEBUG) System.out.println("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
+                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
+                    throw new TException.REQUEST_INVALID(e.getMessage());
+                }
+                // remove credential from URL 
+                String urlString = url.toString();
+                url = new URL(urlString.replaceFirst(credentials + "@", ""));
+            }
+
 	    // create DB
             try {
                 webResource = client.resource(url.toString());
@@ -195,7 +218,15 @@ public class JSONUtil
                     clientResponse = webResource.header("If-Match", etag).delete(ClientResponse.class);
 		    deleteResponse = clientResponse.getStatus();
                     if (DEBUG) System.out.println("[debug] " + MESSAGE + " document delete: " + clientResponse.toString());
-                } catch (Exception ignore) { /* may not exist */ }
+                } catch (com.sun.jersey.api.client.ClientHandlerException che) { 
+		    che.printStackTrace();
+                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
+                    throw new TException.REQUEST_INVALID(che.getMessage());
+                } catch (Exception e) { 
+                     e.printStackTrace();
+                    // let's report something
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Deleting previous versions: " + url);
+		}
 	    }
 
 	    // create document
@@ -242,7 +273,8 @@ public class JSONUtil
 	    return true;
 
 	} catch (Exception e) { 
-	    e.printStackTrace();
+            if (DEBUG) System.out.println("[error] " + MESSAGE + " Error posting data to istatus: " + url.toString());
+	    // e.printStackTrace();
 	    return false; 
 	}
     }
@@ -266,6 +298,34 @@ public class JSONUtil
 	}
 
 	return jobStateString;
+    }
+
+   public static void notify(JobState jobState, ProfileState profileState, IngestRequest ingestRequest) {
+        String server = "";
+        String owner = "";
+        MultiPartEmail email = new MultiPartEmail();
+
+        try {
+            email.setHostName("localhost");     // production machines are SMTP enabled
+            if (profileState.getAdmin() != null) {
+                for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
+                    // admin will receive notifications
+                    String recipient = admin.next();
+                    if (StringUtil.isNotEmpty(recipient)) email.addTo(recipient);
+                }
+            }
+            String ingestServiceName = ingestRequest.getServiceState().getServiceName();
+            if (StringUtil.isNotEmpty(ingestServiceName))
+                if (ingestServiceName.contains("Development")) server = " [Development]";
+                else if (ingestServiceName.contains("Stage")) server = " [Stage]";
+            if (StringUtil.isNotEmpty(profileState.getContext())) owner = " [owner: " + profileState.getContext() + "]";
+            email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+            email.setSubject("[Warning] Istatus request failed " + server + owner);
+            email.setMsg(jobState.dump("Job notification", "\t", "\n", null));
+            email.send();
+        } catch (Exception e) { e.printStackTrace(); }
+
+        return;
     }
 
 }
