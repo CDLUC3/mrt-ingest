@@ -35,10 +35,13 @@ import com.hp.hpl.jena.vocabulary.*;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
 import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
+import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,6 +54,17 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 import javax.activation.MimetypesFileTypeMap;
+import javax.ws.rs.core.MediaType;
+
+import java.security.SecureRandom;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.MediaType;
 
 // mime-type
@@ -171,10 +185,41 @@ public class HandlerDataONE extends Handler<JobState>
 	    
 	    // web client setup
             CreateContent createContent = null;
-	    Client client = Client.create();
     	    WebResource webResourceCreate = null;
             FormDataMultiPart formDataMultiPart = null;
 	    boolean resourceMapSubmitted = false;
+
+            // https - trust all certs
+            String credentials = dataoneURL.getUserInfo();
+            String protocol = dataoneURL.getProtocol();
+            Client client = null;
+
+            if (protocol.equals("https")) {
+                X509TrustManager tm = new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+                    public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                };
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting SSL protocol");
+                ClientConfig config = new DefaultClientConfig();
+                SSLContext ctx = SSLContext.getInstance("TLS");
+                ctx.init(null, new TrustManager[]{tm}, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+
+                config.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(
+                    new HostnameVerifier() {
+                        @Override
+                        public boolean verify(String hostname, SSLSession session) {
+                            return true;
+                        }
+                }, ctx));
+
+                client = Client.create(config);
+            } else {
+                client = Client.create();    // reuse?  creation is expensive
+            }
 
 	    // submit to D1 member node
             for (int i = 0; true; i++) {
