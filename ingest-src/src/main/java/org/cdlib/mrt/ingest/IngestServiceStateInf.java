@@ -54,6 +54,12 @@ public interface IngestServiceStateInf
     public String getServiceID();
 
     /**
+     * Get Ingest Target identifier
+     * @return String ingest Target identifier
+     */
+    public String getTargetID();
+
+    /**
      * Get Service Version
      * @return String service Version
      */
