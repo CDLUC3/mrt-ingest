@@ -158,7 +158,7 @@ public class HandlerMinter extends Handler<JobState>
 	    }
 
 	    if (mint) {
-	        returnValue = MintUtil.processObjectID(profileState, jobState, mint);
+	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, mint);
 		if (profileState.getIdentifierScheme() ==  Identifier.Namespace.ARK) {
 		    assignedObjectID = returnValue;
 	            jobState.setPrimaryID(assignedObjectID);
@@ -193,14 +193,14 @@ public class HandlerMinter extends Handler<JobState>
 	    }
 
 	    // update metadata (ERC, target URL and context)
-	    returnValue = MintUtil.processObjectID(profileState, jobState, false);
+	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
 	    if (! returnValue.startsWith("ark")) {
 	        System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
 	    }
 	    // need to update shadow ARK?
 	    if (jobState.grabShadowARK()) {
-	        returnValue = MintUtil.processObjectID(profileState, jobState, false, true);
+	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false, true);
 	        if (returnValue.startsWith("ark")) {
 	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
                	    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
