@@ -190,8 +190,9 @@ public class MintUtil
 	        System.err.println("[warning] " + MESSAGE + "No group found. Thus no group info in EZID target URL");
 	    try {
 		// e.g. http://merritt.cdlib.org/m/{objectID}
+		// Need to double encode the id, as EZID will HEX percent decode
 		target = "_target: " + ingestRequest.getServiceState().getTargetID() + "/m/" +
-			URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8");
+			URLEncoder.encode(URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8"), "UTF-8");
 	        System.out.println("[info] " + MESSAGE + "Target url: " + target);
 	    } catch (Exception e) { }
 
