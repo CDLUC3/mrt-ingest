@@ -37,6 +37,7 @@ import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.QueueState;
@@ -74,6 +75,15 @@ public interface IngestServiceInf
      * @throws TException Exception condition during storage service procssing
      */
     public BatchState updatePost (IngestRequest ingestRequest)
+    throws TException;
+
+    /**
+     * Request identifier
+     * @param ingestRequest request
+     * @return IdentifierState information 
+     * @throws TException Exception condition during storage service procssing
+     */
+    public IdentifierState requestIdentifier (IngestRequest ingestRequest)
     throws TException;
 
     /**

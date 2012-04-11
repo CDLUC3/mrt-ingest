@@ -51,6 +51,7 @@ import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
+import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobStateInf;
 import org.cdlib.mrt.ingest.ProfileState;
@@ -58,6 +59,7 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
+import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
@@ -739,6 +741,40 @@ public class IngestManager
 	   throw new Exception(e.getMessage());
         }
     }
+
+
+    public IdentifierState requestIdentifier(IngestRequest ingestRequest)
+        throws TException
+    {
+        ProfileState profileState = null;
+        JobState jobState = null;
+
+        try {
+
+            profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
+                 ingestRequest.getQueuePath().getParentFile().getParentFile().getParent() + "/profiles");       // three levels down from home
+            if (m_ezid != null) profileState.setMisc(m_ezid);
+
+            jobState = ingestRequest.getJob();
+
+            String id = MintUtil.processObjectID(profileState, jobState, ingestRequest, true);
+System.out.println("------------------------------------------------------------");
+System.out.println(id);
+System.out.println("------------------------------------------------------------");
+
+            IdentifierState identifierState = new IdentifierState(id);
+            return identifierState;
+
+        } catch (TException te) {
+            throw te;
+        } catch (Exception ex) {
+            System.out.println(StringUtil.stackTrace(ex));
+            logger.logError(MESSAGE + "Exception:" + ex, 0);
+            throw new TException.GENERAL_EXCEPTION(
+                    MESSAGE + "Exception:" + ex);
+        }
+    }
+
 
     protected static Object createObject(String className) {
         Object object = null;

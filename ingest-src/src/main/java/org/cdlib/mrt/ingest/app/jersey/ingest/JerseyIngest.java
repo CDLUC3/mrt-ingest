@@ -252,4 +252,33 @@ public class JerseyIngest extends JerseyBase
         return submit(ingestRequest, request, cs, sc);
     }
 
+
+    // Request an ID
+    // passthru to EZID service.  Make as thin as possible
+    @POST
+    @Path("request-identifier")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)	// profile id, requester, metadata
+    public Response requestIdentifier(
+	    @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        log("processing request-identifier");
+
+	// Accept is overridden by responseForm form parm
+	String responseForm = "";
+	try {
+	    responseForm = processFormatType(request.getHeader("Accept"), "");
+	} catch (Exception e) {}
+	if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+	IngestRequest ingestRequest = new IngestRequest();
+        ingestRequest.setResponseForm(responseForm);
+        ingestRequest.getJob().setPrimaryID(null);
+
+System.out.println("-------------------------------------------------- JerseyIngest ---------------------------");
+        return requestIdentifier(ingestRequest, request, cs, sc);
+    }
+
 }
