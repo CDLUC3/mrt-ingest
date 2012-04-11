@@ -32,16 +32,19 @@ package org.cdlib.mrt.ingest.service;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.Properties;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.JobsState;
+import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.utility.LoggerInf;
+import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 /**
@@ -72,8 +75,10 @@ public class IngestService
 	    JobState jobState = ingestManager.submit(ingestRequest);
 	    return jobState;
 	} catch (TException te) {
+	    te.printStackTrace();
 	    throw te;
 	} catch (Exception e) {
+	    e.printStackTrace();
 	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
 	}
     }
@@ -86,6 +91,7 @@ public class IngestService
 	    BatchState batchState = queueManager.submit(ingestRequest);
 	    return batchState;
 	} catch (TException te) {
+	    te.printStackTrace();
 	    throw te;
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -101,6 +107,7 @@ public class IngestService
 	    BatchState batchState = ingestManager.updateStatus(ingestRequest.getJob().grabBatchID().getValue(), ingestRequest.getJob().getJobID().getValue(), "RESOLVED");
 	    return batchState;
 	} catch (TException te) {
+	    te.printStackTrace();
 	    throw te;
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -147,4 +154,3 @@ public class IngestService
         return queueManager.getQueueServiceProps();
     }
 }
-

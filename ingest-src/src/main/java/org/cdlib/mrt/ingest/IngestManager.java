@@ -291,9 +291,8 @@ public class IngestManager
             return ingestState;
 
           
-        } catch (TException me) {
-            throw me;
-            
+        } catch (TException te) {
+            throw te;
         } catch (Exception ex) {
             System.out.println(StringUtil.stackTrace(ex));
             logger.logError(MESSAGE + "Exception:" + ex, 0);
@@ -417,8 +416,6 @@ public class IngestManager
 	    // assign profile
 	    profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
 		 ingestRequest.getQueuePath().getParentFile().getParentFile().getParent() + "/profiles");	// three levels down from home
-	    if (DEBUG) System.out.println("[debug] "+ profileState.dump("profileState"));
-	    jobState.setObjectProfile(profileState);
 
 	    String profileStorageURL = profileState.getTargetStorage().getStorageLink().toString();
 	    // valid profile storage URL?
@@ -445,18 +442,20 @@ public class IngestManager
 	    } else {
 		String msg = MESSAGE + "Exception: Profile storage node is not supported: " + profileStorageURL;
                 //throw new TException.INVALID_CONFIGURATION(msg);
-                System.err.println("[warning]" + msg);
+                System.err.println("[warn]" + msg);
 	    }
 
 	    if (m_admin != null) profileState.setAdmin(m_admin);
 	    if (m_ezid != null) profileState.setMisc(m_ezid);
 
-	    jobState.setObjectProfile(profileState);
 	    if (profileState.getAccessURL() != null) {
 	        jobState.setTargetStorage(new StoreNode(profileState.getAccessURL(), profileState.getTargetStorage().getNodeID()));
 	    } else {
 	        jobState.setTargetStorage(profileState.getTargetStorage());
 	    }
+
+	    if (DEBUG) System.out.println("[debug] "+ profileState.dump("profileState"));
+	    jobState.setObjectProfile(profileState);
 
 	    // wait until posting completes a) only for very large batches b) recovering after shutdown
 	    if ( ! jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
@@ -618,9 +617,10 @@ public class IngestManager
 	    // this is causing a java.util.ConcurrentModificationException in notification handler
 
             // update status if necessary
-            if (profileState.getStatusURL() != null)
-                JSONUtil.updateJobState(profileState, jobState);
-
+	    try {
+                if (profileState.getStatusURL() != null)
+                    JSONUtil.updateJobState(profileState, jobState);
+	    } catch (Exception e) { /* ignore */ }
 	}
     }
 
@@ -629,6 +629,7 @@ public class IngestManager
     {
         String SERVICENAME = "name";
         String SERVICEID = "identifier";
+        String TARGETID = "target";
         String SERVICEDESCRIPTION = "description";
         String SERVICESCHEME = "service-scheme";
         // String SERVICECUST = "customer-support";
@@ -649,6 +650,14 @@ public class IngestManager
         } else {
 	    throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is missing from ingest-info.txt");
 	}
+
+        String targetIDS = ingestProperties.getProperty(TARGETID);
+        if (targetIDS == null) {
+            targetIDS = "http://merritt.cdlib.org"; 	//default
+	    if (DEBUG) System.err.println(MESSAGE + "[warn] " + TARGETID + " parameter is missing from ingest-info.txt");
+	    if (DEBUG) System.err.println(MESSAGE + "[warn] " + TARGETID + " using default value: " + targetIDS);
+	}
+        ingestState.setTargetID(targetIDS);
 
         String serviceScehmeS = ingestProperties.getProperty(SERVICESCHEME);
         if (serviceScehmeS != null) {

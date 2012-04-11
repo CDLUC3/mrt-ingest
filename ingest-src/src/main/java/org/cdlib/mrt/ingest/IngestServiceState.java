@@ -49,6 +49,7 @@ public class IngestServiceState
 
     private String serviceName = null;
     private String serviceID = null;
+    private String targetID = null;
     private String serviceVersion = null;
     private String serviceCustomerSupport = null;
     private Vector<StorageURL> storageInstances = new Vector<StorageURL>(10);
@@ -89,6 +90,19 @@ public class IngestServiceState
      */
     public void setServiceID(String serviceID) {
         this.serviceID = serviceID;
+    }
+
+    @Override
+    public String getTargetID() {
+        return targetID;
+    }
+
+    /**
+     * Set Target identifier (used for permalink w/ EZID)
+     * @param String Target identifier
+     */
+    public void setTargetID(String targetID) {
+        this.targetID = targetID;
     }
 
     @Override
