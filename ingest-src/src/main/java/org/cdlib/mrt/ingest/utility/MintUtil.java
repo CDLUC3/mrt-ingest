@@ -76,6 +76,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 
 import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
@@ -131,13 +132,13 @@ public class MintUtil
 	}
     }
 
-    public static String processObjectID(ProfileState profileState, JobState jobState, boolean mint)
+    public static String processObjectID(ProfileState profileState, JobState jobState, IngestRequest ingestRequest, boolean mint)
         throws TException
     {
-	return processObjectID(profileState, jobState, mint, false);
+	return processObjectID(profileState, jobState, ingestRequest, mint, false);
     }
 
-    public static String processObjectID(ProfileState profileState, JobState jobState, boolean mint, boolean shadow)
+    public static String processObjectID(ProfileState profileState, JobState jobState, IngestRequest ingestRequest, boolean mint, boolean shadow)
         throws TException
     {
 	// EZID implemntation.
@@ -188,9 +189,11 @@ public class MintUtil
 	    if (StringUtil.isEmpty(group))
 	        System.err.println("[warning] " + MESSAGE + "No group found. Thus no group info in EZID target URL");
 	    try {
-		// e.g. http://merritt.cdlib.org/object?object=ark%3A%2F99999%2Ffk40v8k3k&group=ark:/13030/fk4...
-		target = "_target: " + "http://merritt.cdlib.org/object?object=" + 
-			URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8") + escape(group);
+		// e.g. http://merritt.cdlib.org/m/{objectID}
+		// Need to double encode the id, as EZID will HEX percent decode
+		target = "_target: " + ingestRequest.getServiceState().getTargetID() + "/m/" +
+			URLEncoder.encode(URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8"), "UTF-8");
+	        System.out.println("[info] " + MESSAGE + "Target url: " + target);
 	    } catch (Exception e) { }
 
 	    // Is context available?
