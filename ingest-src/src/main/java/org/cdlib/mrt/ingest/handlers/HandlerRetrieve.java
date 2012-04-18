@@ -220,8 +220,8 @@ public class HandlerRetrieve extends Handler<JobState>
 			    break;
 			}
 			if (fileComponent.getIdentifier() == null) {
-			    fileComponent.setIdentifier(fileComponent.getURL().getFile());
-		            if (DEBUG) System.out.println("[info] No filename provided.  Using URL name:" + fileComponent.getIdentifier());
+			    fileComponent.setIdentifier(fileComponent.getURL().getPath());
+		            if (DEBUG) System.out.println("[info] No filename provided.  Using URL name: " + fileComponent.getIdentifier());
 			}
 
 			try {
