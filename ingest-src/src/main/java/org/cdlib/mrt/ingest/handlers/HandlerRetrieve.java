@@ -219,6 +219,10 @@ public class HandlerRetrieve extends Handler<JobState>
 		            if (DEBUG) System.out.println("[info] No checksum provided: " + fileComponent.getIdentifier());
 			    break;
 			}
+			if (fileComponent.getIdentifier() == null) {
+			    fileComponent.setIdentifier(fileComponent.getURL().getPath());
+		            if (DEBUG) System.out.println("[info] No filename provided.  Using URL name: " + fileComponent.getIdentifier());
+			}
 
 			try {
 			    digestUtil.doFileFixity(new File(targetDir, fileComponent.getIdentifier()), fileComponent);
