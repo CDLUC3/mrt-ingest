@@ -84,6 +84,7 @@ public class JobState
 	private String queuePriority = null;
 	private String metacatStatus = null;		// only if dataONE handler active
 	private String ercData = null;			// EZID pass-thru
+	private String altNotification = null;		// EZID pass-thru notificaton
 	private boolean shadowARK;
 	private boolean updateFlag;
 	private boolean cleanup = true;
@@ -551,11 +552,28 @@ public class JobState
 
     /**
      * Get erc data
-     * @return String er data
+     * @return String erc data
      */
     public String grabERC() {		// non-displayable
         return ercData;
     }
+
+    /**
+     * Set EZID passthru notification.
+     * @param String set altNotification
+     */
+    public void setAltNotification(String altNotification) {
+        this.altNotification = altNotification;
+    }
+
+    /**
+     * Get EZID passthru notification.
+     * @return String alternateNotification
+     */
+    public String grabAltNotification() {		// non-displayable
+        return altNotification;
+    }
+
     /**
      * Set cleanup boolean
      * @param boolean set cleanup

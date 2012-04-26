@@ -132,6 +132,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	        properties.put("objectID", ingestRequest.getJob().getPrimaryID().getValue());
 	    if (ingestRequest.getJob().getLocalID() != null)
 	        properties.put("localID", ingestRequest.getJob().getLocalID().getValue());
+	    if (ingestRequest.getJob().grabAltNotification() != null)
+	        properties.put("notification", ingestRequest.getJob().grabAltNotification());
 
 	    // for all jobs in batch
 	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
