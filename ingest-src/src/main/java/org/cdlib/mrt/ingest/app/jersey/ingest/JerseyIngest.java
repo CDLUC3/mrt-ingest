@@ -252,4 +252,28 @@ public class JerseyIngest extends JerseyBase
         return submit(ingestRequest, request, cs, sc);
     }
 
+
+    // Request an ID
+    // passthru to EZID service.  Make as thin as possible
+    @POST
+    @Path("request-identifier")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)	// profile id, requester, metadata
+    public Response requestIdentifier(
+	    @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        log("processing request-identifier");
+
+	// Default
+	String responseForm = "anvl";
+
+	IngestRequest ingestRequest = new IngestRequest();
+        ingestRequest.setResponseForm(responseForm);
+        ingestRequest.getJob().setPrimaryID(null);
+
+        return requestIdentifier(ingestRequest, request, cs, sc);
+    }
+
 }
