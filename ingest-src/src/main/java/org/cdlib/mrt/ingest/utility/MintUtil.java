@@ -279,6 +279,8 @@ public class MintUtil
         throws TException
     {
         try {
+	    if (StringUtil.isNotEmpty(jobState.grabERC())) return jobState.grabERC();
+
 	    String md = "";
 	    try {
 		md += "who: " + escape(jobState.getObjectCreator()) + EOL;

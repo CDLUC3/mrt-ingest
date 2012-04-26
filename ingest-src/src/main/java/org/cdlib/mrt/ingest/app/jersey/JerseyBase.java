@@ -303,8 +303,6 @@ public class JerseyBase
         throws TException
     {
         try {
-System.out.println("-------------------------------------------------- JerseyBASE ---------------------------");
-
             StateInf responseState = ingestService.requestIdentifier(ingestRequest);
 
             return responseState;
@@ -589,6 +587,9 @@ System.out.println("-------------------------------------------------- JerseyBAS
 		    } else if (item.getFieldName().equals("note")){
 		       field = "note";
 		       ingestRequest.getJob().setNote(item.getString("utf-8"));
+		    } else if (item.getFieldName().equals("erc")){
+		       field = "erc";
+		       ingestRequest.getJob().setERC(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("responseForm")) {
 		       field = "responseForm";
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));

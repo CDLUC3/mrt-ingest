@@ -758,9 +758,6 @@ public class IngestManager
             jobState = ingestRequest.getJob();
 
             String id = MintUtil.processObjectID(profileState, jobState, ingestRequest, true);
-System.out.println("------------------------------------------------------------");
-System.out.println(id);
-System.out.println("------------------------------------------------------------");
 
             IdentifierState identifierState = new IdentifierState(id);
             return identifierState;

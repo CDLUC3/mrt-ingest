@@ -55,374 +55,375 @@ public class JobState
         implements JobStateInf, StateInf, Serializable
 {
 
-    private Identifier jobID = null;
-    private Identifier batchID = null;
-    private Identifier primaryID = null;
-    private Identifier localID = null;
-    private String packageName = null;
-    private String objectCreator = null;
-    private String objectTitle = null;
-    private String objectDate = null;
-    private String hashValue = null;
-    private DigestEnum hashAlgorithm;
+	private Identifier jobID = null;
+	private Identifier batchID = null;
+	private Identifier primaryID = null;
+	private Identifier localID = null;
+	private String packageName = null;
+	private String objectCreator = null;
+	private String objectTitle = null;
+	private String objectDate = null;
+	private String hashValue = null;
+	private DigestEnum hashAlgorithm;
 
-    private String objectState = null;
-    private String objectNote = null;
-    private Integer versionID = null;
-    private String jobLabel = null;
-    private StoreNode storeNode;
-    private ProfileState objectProfile = null;
-    private String userAgent = null;
-    private DateState submissionDate = null;
-    private DateState consumptionDate = null;
-    private DateState completionDate = null;
-    private JobStatusEnum jobStatus = null;
-    private String jobStatusMessage = null;
-    private String objectType = null;
-    private String misc = null;
-    private String note = null;
-    private String queuePriority = null;
-    private String metacatStatus = null;		// only if dataONE handler active
-    private boolean shadowARK;
-    private boolean updateFlag;
-    private boolean cleanup = true;
-
-
-    // constructors
-   public JobState(){}
-   public JobState(String user, String packageName, String algorithm, String value, String primaryID,
-		String objectCreator, String objectTitle, String objectDate, String note) {
-       this.packageName = packageName;
-       this.objectCreator = objectCreator;
-       this.objectTitle = objectTitle;
-       this.objectDate = objectDate;
-       this.note = note;
-       this.hashValue = value;
-       this.userAgent = user;
-       this.setPrimaryID(primaryID);
-       this.setHashAlgorithm(algorithm);
-       this.setShadowARK(false);
-   }
-
-    @Override
-    public Identifier getJobID() {
-        return jobID;
-    }
-
-    /**
-     * Set job identifier
-     * @param Identifier job identifier
-     */
-    public void setJobID(Identifier jobID) {
-        this.jobID = jobID;
-    }
-
-    @Override
-    public Identifier grabBatchID() {
-        return batchID;
-    }
-
-    /**
-     * Set batch identifier
-     * @param Identifier batch identifier
-     */
-    public void setBatchID(Identifier batchID) {
-        this.batchID = batchID;
-    }
-
-    public String getJobLabel() {
-        return jobLabel;
-    }
-
-    /**
-     * Set job label
-     * @param String job label
-     */
-    public void setJobLabel(String jobLabel) {
-        this.jobLabel = jobLabel;
-    }
-
-    /**
-     * Get package name
-     * @return Submission package
-     */
-    public String getPackageName() {
-        return packageName;
-    }
-
-    /**
-     * Set package name
-     * @param String Submission package
-     */
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
-    }
+	private String objectState = null;
+	private String objectNote = null;
+	private Integer versionID = null;
+	private String jobLabel = null;
+	private StoreNode storeNode;
+	private ProfileState objectProfile = null;
+	private String userAgent = null;
+	private DateState submissionDate = null;
+	private DateState consumptionDate = null;
+	private DateState completionDate = null;
+	private JobStatusEnum jobStatus = null;
+	private String jobStatusMessage = null;
+	private String objectType = null;
+	private String misc = null;
+	private String note = null;
+	private String queuePriority = null;
+	private String metacatStatus = null;		// only if dataONE handler active
+	private String ercData = null;			// EZID pass-thru
+	private boolean shadowARK;
+	private boolean updateFlag;
+	private boolean cleanup = true;
 
 
+	// constructors
+	public JobState(){}
+	public JobState(String user, String packageName, String algorithm, String value, String primaryID,
+			String objectCreator, String objectTitle, String objectDate, String note) {
+		this.packageName = packageName;
+		this.objectCreator = objectCreator;
+		this.objectTitle = objectTitle;
+		this.objectDate = objectDate;
+		this.note = note;
+		this.hashValue = value;
+		this.userAgent = user;
+		this.setPrimaryID(primaryID);
+		this.setHashAlgorithm(algorithm);
+		this.setShadowARK(false);
+	}
 
-    @Override
-    public StoreNode grabTargetStorage()	// non-displayable
-    {
-        return storeNode;
-    }
+	@Override
+		public Identifier getJobID() {
+			return jobID;
+		}
 
-    /**
-     * Set storage service state
-     * @param StoreNode target storage service and node
-     */
-    public void setTargetStorage(StoreNode storeNode) {
-        this.storeNode = storeNode;
-    }
+	/**
+	 * Set job identifier
+	 * @param Identifier job identifier
+	 */
+	public void setJobID(Identifier jobID) {
+		this.jobID = jobID;
+	}
 
-    public ProfileState grabObjectProfile()	// non-displayable
-    {
-        return objectProfile;
-    }
+	@Override
+		public Identifier grabBatchID() {
+			return batchID;
+		}
 
-    /**
-     * Set object profile
-     * @param ProfileState profile declares the type of digital object
-     */
-    public void setObjectProfile(ProfileState objectProfile) {
-        this.objectProfile = objectProfile;
-    }
+	/**
+	 * Set batch identifier
+	 * @param Identifier batch identifier
+	 */
+	public void setBatchID(Identifier batchID) {
+		this.batchID = batchID;
+	}
 
-    public String grabUserAgent()
-    {
-        return userAgent;
-    }
+	public String getJobLabel() {
+		return jobLabel;
+	}
 
-    /**
-     * Set user agent
-     * @param String submitting user agent
-     */
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
+	/**
+	 * Set job label
+	 * @param String job label
+	 */
+	public void setJobLabel(String jobLabel) {
+		this.jobLabel = jobLabel;
+	}
 
-    @Override
-    public DateState getSubmissionDate() {
-        return submissionDate;
-    }
+	/**
+	 * Get package name
+	 * @return Submission package
+	 */
+	public String getPackageName() {
+		return packageName;
+	}
 
-    /**
-     * Set submission date-time
-     * @param DateState submission date-time
-     */
-    public void setSubmissionDate(DateState submissionDate) {
-        this.submissionDate = submissionDate;
-    }
+	/**
+	 * Set package name
+	 * @param String Submission package
+	 */
+	public void setPackageName(String packageName) {
+		this.packageName = packageName;
+	}
 
-    @Override
-    public DateState getConsumptionDate() {
-        return consumptionDate;
-    }
 
-    /**
-     * Set consumption date-time
-     * @param DateState consumption date-time
-     */
-    public void setConsumptionDate(DateState consumptionDate) {
-        this.consumptionDate = consumptionDate;
-    }
 
-    @Override
-    public DateState getCompletionDate() {
-        return completionDate;
-    }
+	@Override
+		public StoreNode grabTargetStorage()	// non-displayable
+		{
+			return storeNode;
+		}
 
-    /**
-     * Set completion date-time
-     * @param DateState completion date-time
-     */
-    public void setCompletionDate(DateState completionDate) {
-        this.completionDate = completionDate;
-    }
+	/**
+	 * Set storage service state
+	 * @param StoreNode target storage service and node
+	 */
+	public void setTargetStorage(StoreNode storeNode) {
+		this.storeNode = storeNode;
+	}
 
-    /**
-     * get status
-     * @return jobStatus
-     */
-    public JobStatusEnum getJobStatus()
-    {
-        return jobStatus;
-    }
+	public ProfileState grabObjectProfile()	// non-displayable
+	{
+		return objectProfile;
+	}
 
-    /**
-     * Set job status
-     * @param JobStatus currrent job status
-     */
-    public void setJobStatus(JobStatusEnum jobStatus) {
-        this.jobStatus = jobStatus;
-    }
+	/**
+	 * Set object profile
+	 * @param ProfileState profile declares the type of digital object
+	 */
+	public void setObjectProfile(ProfileState objectProfile) {
+		this.objectProfile = objectProfile;
+	}
 
-    /**
-     * get status message
-     * @return jobStatus
-     */
-    public String getJobStatusMessage()
-    {
-        return jobStatusMessage;
-    }
+	public String grabUserAgent()
+	{
+		return userAgent;
+	}
 
-    /**
-     * Set status message
-     * @param String job status message
-     */
-    public void setJobStatusMessage(String jobStatusMessage) {
-        this.jobStatusMessage = jobStatusMessage;
-    }
+	/**
+	 * Set user agent
+	 * @param String submitting user agent
+	 */
+	public void setUserAgent(String userAgent) {
+		this.userAgent = userAgent;
+	}
 
-    /**
-     * Get primary identifier
-     * @return Identifier primary identifier
-     */
-    public Identifier getPrimaryID() {
-        return primaryID;
-    }
+	@Override
+		public DateState getSubmissionDate() {
+			return submissionDate;
+		}
 
-    /**
-     * Set primary identifier
-     * @param String primary identifier
-     */
-    public void setPrimaryID(String primaryID) {
-        try {
-           this.primaryID = new Identifier(primaryID);        // default ARK namespace
-        } catch (Exception e) {
-	   this.primaryID = null;
-        }
-    }
+	/**
+	 * Set submission date-time
+	 * @param DateState submission date-time
+	 */
+	public void setSubmissionDate(DateState submissionDate) {
+		this.submissionDate = submissionDate;
+	}
 
-    /**
-     * Get local identifier
-     * @return Identifier local identifier
-     */
-    public Identifier getLocalID() {
-        return localID;
-    }
+	@Override
+		public DateState getConsumptionDate() {
+			return consumptionDate;
+		}
 
-    /**
-     * Set local identifier
-     * @param String local identifier
-     */
-    public void setLocalID(String localID) {
-        try {
-           this.localID = new Identifier(localID, Identifier.Namespace.Local);  // default Local namespace
-        } catch (Exception e) {
-        }
-    }
+	/**
+	 * Set consumption date-time
+	 * @param DateState consumption date-time
+	 */
+	public void setConsumptionDate(DateState consumptionDate) {
+		this.consumptionDate = consumptionDate;
+	}
 
-    /**
-     * Get object state
-     * @return Object state
-     */
-    public String grabObjectState() {	// non-displayable
-        return objectState;
-    }
+	@Override
+		public DateState getCompletionDate() {
+			return completionDate;
+		}
 
-    /**
-     * Set object state
-     * @param String Object state
-     */
-    public void setObjectState(String objectState) {
-        this.objectState = objectState;
-    }
+	/**
+	 * Set completion date-time
+	 * @param DateState completion date-time
+	 */
+	public void setCompletionDate(DateState completionDate) {
+		this.completionDate = completionDate;
+	}
 
-    /**
-     * Get version ID
-     * @return Integer version identifier
-     */
-    public Integer getVersionID() {
-        return versionID;
-    }
+	/**
+	 * get status
+	 * @return jobStatus
+	 */
+	public JobStatusEnum getJobStatus()
+	{
+		return jobStatus;
+	}
 
-    /**
-     * Set version ID
-     * @param Integer version identifier
-     */
-    public void setVersionID(Integer versionID) {
-        this.versionID = versionID;
-    }
+	/**
+	 * Set job status
+	 * @param JobStatus currrent job status
+	 */
+	public void setJobStatus(JobStatusEnum jobStatus) {
+		this.jobStatus = jobStatus;
+	}
 
-    /**
-     * Get hash algorithm
-     * @return Package message digest algorithm
-     */
-    public String getHashAlgorithm() {
-        return hashAlgorithm.getValue();
-    }
+	/**
+	 * get status message
+	 * @return jobStatus
+	 */
+	public String getJobStatusMessage()
+	{
+		return jobStatusMessage;
+	}
 
-    /**
-     * Set hash algorithm
-     * @param String Package message digest algorithm
-     */
-    public void setHashAlgorithm(String hashAlgorithm) {
-        try {
-            this.hashAlgorithm = DigestEnum.setDigest(hashAlgorithm.toUpperCase());
-        } catch (Exception e) {
-            this.hashAlgorithm = null;      // reported downstream
-        }
-    }
+	/**
+	 * Set status message
+	 * @param String job status message
+	 */
+	public void setJobStatusMessage(String jobStatusMessage) {
+		this.jobStatusMessage = jobStatusMessage;
+	}
 
-    /**
-     * Get hash value
-     * @return Package hexadecimal message digest value
-     */
-    public String getHashValue() {
-        return hashValue;
-    }
+	/**
+	 * Get primary identifier
+	 * @return Identifier primary identifier
+	 */
+	public Identifier getPrimaryID() {
+		return primaryID;
+	}
 
-    /**
-     * Set hash value
-     * @param String Package hexadecimal message digest value
-     */
-    public void setHashValue(String hashValue) {
-        this.hashValue = hashValue;
-    }
+	/**
+	 * Set primary identifier
+	 * @param String primary identifier
+	 */
+	public void setPrimaryID(String primaryID) {
+		try {
+			this.primaryID = new Identifier(primaryID);        // default ARK namespace
+		} catch (Exception e) {
+			this.primaryID = null;
+		}
+	}
 
-    /**
-     * Get content creator
-     * @return Object Dublin Kernel "who" element
-     */
-    public String getObjectCreator() {
-        return objectCreator;
-    }
+	/**
+	 * Get local identifier
+	 * @return Identifier local identifier
+	 */
+	public Identifier getLocalID() {
+		return localID;
+	}
 
-   /**
-     * Set content creator
-     * @param String Object Dublin Kernel "who" element
-     */
-    public void setObjectCreator(String objectCreator) {
-        this.objectCreator = objectCreator;
-    }
+	/**
+	 * Set local identifier
+	 * @param String local identifier
+	 */
+	public void setLocalID(String localID) {
+		try {
+			this.localID = new Identifier(localID, Identifier.Namespace.Local);  // default Local namespace
+		} catch (Exception e) {
+		}
+	}
 
-    /**
-     * Get content title
-     * @return Object Dublin Kernel "what" element
-     */
-    public String getObjectTitle() {
-        return objectTitle;
-    }
+	/**
+	 * Get object state
+	 * @return Object state
+	 */
+	public String grabObjectState() {	// non-displayable
+		return objectState;
+	}
 
-    /**
-     * Set content title
-     * @param String Object Dublin Kernel "what" element
-     */
-    public void setObjectTitle(String objectTitle) {
-        this.objectTitle = objectTitle;
-    }
+	/**
+	 * Set object state
+	 * @param String Object state
+	 */
+	public void setObjectState(String objectState) {
+		this.objectState = objectState;
+	}
 
-    /**
-     * Get content date
-     * @return Object Dublin Kernel "when" element
-     */
-    public String getObjectDate() {
-        return objectDate;
-    }
+	/**
+	 * Get version ID
+	 * @return Integer version identifier
+	 */
+	public Integer getVersionID() {
+		return versionID;
+	}
 
-    /**
-     * Set content date
-     * @param String Object Dublin Kernel "when" element
+	/**
+	 * Set version ID
+	 * @param Integer version identifier
+	 */
+	public void setVersionID(Integer versionID) {
+		this.versionID = versionID;
+	}
+
+	/**
+	 * Get hash algorithm
+	 * @return Package message digest algorithm
+	 */
+	public String getHashAlgorithm() {
+		return hashAlgorithm.getValue();
+	}
+
+	/**
+	 * Set hash algorithm
+	 * @param String Package message digest algorithm
+	 */
+	public void setHashAlgorithm(String hashAlgorithm) {
+		try {
+			this.hashAlgorithm = DigestEnum.setDigest(hashAlgorithm.toUpperCase());
+		} catch (Exception e) {
+			this.hashAlgorithm = null;      // reported downstream
+		}
+	}
+
+	/**
+	 * Get hash value
+	 * @return Package hexadecimal message digest value
+	 */
+	public String getHashValue() {
+		return hashValue;
+	}
+
+	/**
+	 * Set hash value
+	 * @param String Package hexadecimal message digest value
+	 */
+	public void setHashValue(String hashValue) {
+		this.hashValue = hashValue;
+	}
+
+	/**
+	 * Get content creator
+	 * @return Object Dublin Kernel "who" element
+	 */
+	public String getObjectCreator() {
+		return objectCreator;
+	}
+
+	/**
+	 * Set content creator
+	 * @param String Object Dublin Kernel "who" element
+	 */
+	public void setObjectCreator(String objectCreator) {
+		this.objectCreator = objectCreator;
+	}
+
+	/**
+	 * Get content title
+	 * @return Object Dublin Kernel "what" element
+	 */
+	public String getObjectTitle() {
+		return objectTitle;
+	}
+
+	/**
+	 * Set content title
+	 * @param String Object Dublin Kernel "what" element
+	 */
+	public void setObjectTitle(String objectTitle) {
+		this.objectTitle = objectTitle;
+	}
+
+	/**
+	 * Get content date
+	 * @return Object Dublin Kernel "when" element
+	 */
+	public String getObjectDate() {
+		return objectDate;
+	}
+
+	/**
+	 * Set content date
+	 * @param String Object Dublin Kernel "when" element
      */
     public void setObjectDate(String objectDate) {
         this.objectDate = objectDate;
@@ -540,6 +541,21 @@ public class JobState
         return updateFlag;
     }
 
+    /**
+     * Set erc data. EZID passthru
+     * @param String set ERC data
+     */
+    public void setERC(String ercData) {
+        this.ercData = ercData;
+    }
+
+    /**
+     * Get erc data
+     * @return String er data
+     */
+    public String grabERC() {		// non-displayable
+        return ercData;
+    }
     /**
      * Set cleanup boolean
      * @param boolean set cleanup

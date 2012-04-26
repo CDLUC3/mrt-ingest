@@ -266,18 +266,13 @@ public class JerseyIngest extends JerseyBase
     {
         log("processing request-identifier");
 
-	// Accept is overridden by responseForm form parm
-	String responseForm = "";
-	try {
-	    responseForm = processFormatType(request.getHeader("Accept"), "");
-	} catch (Exception e) {}
-	if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+	// Default
+	String responseForm = "anvl";
 
 	IngestRequest ingestRequest = new IngestRequest();
         ingestRequest.setResponseForm(responseForm);
         ingestRequest.getJob().setPrimaryID(null);
 
-System.out.println("-------------------------------------------------- JerseyIngest ---------------------------");
         return requestIdentifier(ingestRequest, request, cs, sc);
     }
 
