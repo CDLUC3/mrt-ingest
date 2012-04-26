@@ -590,6 +590,9 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("erc")){
 		       field = "erc";
 		       ingestRequest.getJob().setERC(item.getString("utf-8"));
+		    } else if (item.getFieldName().equals("notification")){
+		       field = "notification";
+		       ingestRequest.getJob().setAltNotification(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("responseForm")) {
 		       field = "responseForm";
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));
