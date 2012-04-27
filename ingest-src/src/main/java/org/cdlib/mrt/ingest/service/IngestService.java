@@ -37,6 +37,7 @@ import java.util.Properties;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.QueueState;
@@ -74,6 +75,23 @@ public class IngestService
 	try {
 	    JobState jobState = ingestManager.submit(ingestRequest);
 	    return jobState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+    @Override
+    public IdentifierState requestIdentifier(IngestRequest ingestRequest)
+        throws TException
+    {
+	try {
+	    IdentifierState identifierState = ingestManager.requestIdentifier(ingestRequest);
+	    return identifierState;
+
 	} catch (TException te) {
 	    te.printStackTrace();
 	    throw te;
