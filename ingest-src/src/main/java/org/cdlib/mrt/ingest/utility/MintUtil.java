@@ -204,7 +204,7 @@ public class MintUtil
 
 	    httpCommand = new HttpPost(url);
 	    httpCommand.addHeader("Content-Type", "text/plain");
-	    if (! shadow) httpCommand.setEntity(new StringEntity("erc: " + getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
+	    if (! shadow) httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
 	    else httpCommand.setEntity(new StringEntity(target, "UTF-8"));
 
             String responseBody = null;
@@ -279,6 +279,8 @@ public class MintUtil
         throws TException
     {
         try {
+	    if (StringUtil.isNotEmpty(jobState.grabERC())) return jobState.grabERC();
+
 	    String md = "";
 	    try {
 		md += "who: " + escape(jobState.getObjectCreator()) + EOL;
@@ -296,7 +298,7 @@ public class MintUtil
 		md += "where: " + escape(jobState.getLocalID().getValue()) + EOL;
 	    } catch (Exception e) {}
 
-            return md;
+            return "erc: " + md;
         } catch (Exception ex) {
             throw new TException.GENERAL_EXCEPTION("error processing metadata");
         }

@@ -59,6 +59,7 @@ import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
@@ -216,6 +217,46 @@ public class JerseyBase
         }
     }
 
+
+    /**
+     * Request an ID
+     * @param ingestRequest complete request information
+     * @param request http request information
+     * @param sc ServletConfig used to get system configuration
+     * @return formatted version state information
+     * @throws TException processing exception
+     */
+    public Response requestIdentifier(IngestRequest ingestRequest, HttpServletRequest request, CloseableService cs, ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = defaultLogger;
+        try {
+	    ingestRequest.getJob().setJobID(MintUtil.getJobID());
+            log("requestIdentifer entered:"
+                    + " - ingestRequest=" + ingestRequest.dump("requestIdentifier")
+                    + " - request=" + request.toString()
+                    );
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            ingestRequest = getFormData(ingestRequest, request, ingestService.getIngestServiceProp() + "/queue", logger);
+	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
+            jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
+
+            StateInf responseState = requestIdentifier(ingestRequest, ingestService, logger);
+
+            return getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
+
+        } catch (TException tex) {
+            return getExceptionResponse(tex, ingestRequest.getResponseForm(), logger);
+
+        } catch (Exception ex) {
+            System.err.println("TRACE:" + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+
+    /**
     /**
      * Add an object to this ingest service
      * @param ingestRequest request information
@@ -246,6 +287,33 @@ public class JerseyBase
         }
     }
 
+
+    /**
+    /**
+     * request id from ide service
+     * @param ingestRequest request information
+     * @param sc ServletConfig used to get system configuration
+     * @return version state information for added item
+     * @throws TException processing exception
+     */
+    protected StateInf requestIdentifier(
+            IngestRequest ingestRequest,
+            IngestServiceInf ingestService,
+            LoggerInf logger)
+        throws TException
+    {
+        try {
+            StateInf responseState = ingestService.requestIdentifier(ingestRequest);
+
+            return responseState;
+
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            if (DEBUG) System.err.println("TRACE:" + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
 
     /**
      * Submit an object to queue service
@@ -519,6 +587,12 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("note")){
 		       field = "note";
 		       ingestRequest.getJob().setNote(item.getString("utf-8"));
+		    } else if (item.getFieldName().equals("erc")){
+		       field = "erc";
+		       ingestRequest.getJob().setERC(item.getString("utf-8"));
+		    } else if (item.getFieldName().equals("notification")){
+		       field = "notification";
+		       ingestRequest.getJob().setAltNotification(item.getString("utf-8"));
 		    } else if (item.getFieldName().equals("responseForm")) {
 		       field = "responseForm";
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));
