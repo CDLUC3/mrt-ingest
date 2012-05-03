@@ -235,7 +235,7 @@ public class MintUtil
 	            System.out.println("[info] " + MESSAGE + "could not update, attempting to create: " + url);
 	            httpCommand = new HttpPut(url);
 	    	    httpCommand.addHeader("Content-Type", "text/plain");
-	            httpCommand.setEntity(new StringEntity("erc: " + getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
+	            httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
 
 		    try {
                 	httpResponse = httpClient.execute(httpCommand);
