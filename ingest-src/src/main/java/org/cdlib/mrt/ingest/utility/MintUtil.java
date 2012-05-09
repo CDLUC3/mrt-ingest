@@ -222,7 +222,7 @@ public class MintUtil
 	    if (responseBody.startsWith("success")) {
                 System.out.println("[info] " + MESSAGE + responseBody);
                 System.out.println("[info] " + MESSAGE + url);
-                System.out.println("[info] " + MESSAGE +  "erc: " + getMetadata(jobState));
+                System.out.println("[info] " + MESSAGE +  getMetadata(jobState));
                 System.out.println("[info] " + MESSAGE + context);
                 System.out.println("[info] " + MESSAGE + target);
 	    }
