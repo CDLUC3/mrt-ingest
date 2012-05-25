@@ -36,6 +36,8 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -102,13 +104,15 @@ public class HandlerTransfer extends Handler<JobState>
     {
 
   	ClientResponse clientResponse = null;
+	String action = "/add/";
 
 	try {
 
 	    storeNode = profileState.getTargetStorage();
 
 	    // build REST url 
-	    String url = storeNode.getStorageLink().toString() + "/add/" + storeNode.getNodeID() + 
+	    if (jobState.grabUpdateFlag()) action = "/update/";
+	    String url = storeNode.getStorageLink().toString() + action + storeNode.getNodeID() + 
 			"/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
 	    Client client = Client.create();	// reuse?  creation is expensive
 	    WebResource webResource = client.resource(url);
@@ -120,9 +124,17 @@ public class HandlerTransfer extends Handler<JobState>
 	    Form formData = new Form();
   	    formData.add("t", "xml");
   	    formData.add("manifest", manifest);
+            if (jobState.grabUpdateFlag()) {
+            	File deleteFile = new File(ingestRequest.getQueuePath(), "system/mrt-delete.txt");
+		if (deleteFile.exists()) {
+	            if (DEBUG) System.out.println("[debug] " + MESSAGE + " delete file found: " + deleteFile.getName());
+  	    	    formData.add("delete", processDeleteFile(deleteFile));
+		}
+
+	    }
 	    try {
 		if (jobState.getLocalID().getValue().contains("(:unas)")) {
-                    System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
                     throw new Exception("");	// (:unas) is equivalent to no localID
 		}
 
@@ -139,15 +151,19 @@ public class HandlerTransfer extends Handler<JobState>
 	    }
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());
 
-	    jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
-	    jobState.setVersionID(getVersionID(clientResponse.getEntity(String.class)));
-
 	    if (clientResponse.getStatus() != 200) {
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
-                    TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+		    if (clientResponse.getStatus() != 400) {
+                        TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = 
+			    clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
+                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+		    } else {
+			// mrt-delete.txt processing error
+                        TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
+                        throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+		    }
                 } catch (TException te) {
                     throw te;
                 } catch (Exception e) {
@@ -155,6 +171,10 @@ public class HandlerTransfer extends Handler<JobState>
                     throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
                 }
 	    }
+
+	    jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
+	    jobState.setVersionID(getVersionID(clientResponse.getEntity(String.class)));
+
 	    return new HandlerResult(true, "SUCCESS: transfer", clientResponse.getStatus());
 	} catch (TException te) {
 	    te.printStackTrace();
@@ -169,6 +189,37 @@ public class HandlerTransfer extends Handler<JobState>
 	}
     }
    
+
+    /**
+     * Make sure that delete file is property formatted
+     *
+     * @param deleteFile delete file
+     * @return String delete file as string 
+     */
+    private String processDeleteFile(File deleteFile) {
+	try {
+	    FileInputStream fstream = new FileInputStream(deleteFile);
+	    DataInputStream in = new DataInputStream(fstream);
+	    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+	    String strLine = null;
+	    String strFile = "";
+	    while ((strLine = br.readLine()) != null)   {
+	    	// Line By Line
+		if (! strLine.startsWith("producer/")) {
+		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "prepending \"producer/\" to delete entry: " + strLine);
+		    strLine = "producer/" + strLine; 
+		}
+		strFile += strLine + "\n";
+	}
+
+	    return strFile;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    return null;
+	}
+    }
+
+
     /**
      * Create a string that will define the value for a manifest based storage service call
      *
@@ -182,7 +233,6 @@ public class HandlerTransfer extends Handler<JobState>
 	    te.printStackTrace();
 	    return null;
 	}
-
     }
 
     /**

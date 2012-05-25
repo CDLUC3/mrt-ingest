@@ -412,7 +412,6 @@ public class IngestManager
 
 	    // assign preliminary job info
             jobState = ingestRequest.getJob();
-	    jobState.setUpdateFlag(ingestRequest.getUpdateFlag());
 	    jobState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 
 	    // assign profile

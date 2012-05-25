@@ -46,12 +46,6 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathExpression;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
@@ -80,16 +74,12 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
-
-import org.w3c.dom.Document;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 /**
  * Simple minter dedicated for ingest
@@ -357,77 +347,6 @@ public class MintUtil
         } catch (Exception ex) {
             ex.printStackTrace();
             return null;
-        }
-    }
-
-    public static String fetchPrimaryID(ProfileState profileState, String localID)
-        throws TException
-    {
-
-        ClientResponse clientResponse = null;
-        try {
-
-	    String primaryID = null;
-            StoreNode storeNode = profileState.getTargetStorage();
-
-            // build REST url
-            String url = storeNode.getStorageLink().toString() + "/primary/" + storeNode.getNodeID() + "/" + 
-			URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" +
-			URLEncoder.encode(localID,  "utf-8") + "?t=xml";
-            if (DEBUG) System.out.println("[debug] LocalID/PrimaryID fetch URL: " + url);
-            Client client = Client.create();    // reuse?  creation is expensive
-            WebResource webResource = client.resource(url);
-
-            // make service request
-            clientResponse = webResource.get(ClientResponse.class);
-	    int status = clientResponse.getStatus();
-   	    String response = null;
- 
-	    if (status != 200) {
-                try {
-                    // most likely exception
-                    // can only call once, as stream is not reset
-                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
-                    throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
-                } catch (TException te) {
-                    throw te;
-                } catch (Exception e) {
-                    // let's report something
-                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
-                }
-	    } else {
-   	        response = clientResponse.getEntity(String.class);
-	    }
-
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            domFactory.setNamespaceAware(true);
-            domFactory.setExpandEntityReferences(true);
-
-            DocumentBuilder builder = domFactory.newDocumentBuilder();
-            builder.setErrorHandler(null);
-            Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("//*[local-name()='primaryIdentifier']");
-
-            String xpathS = (String) expr.evaluate(document);
-            if (StringUtil.isNotEmpty(xpathS)) {
-                if (DEBUG) System.out.println("[debug] primary ID: " + xpathS);
-                primaryID = xpathS;
-            } else {
-                if (DEBUG) System.out.println("[debug] Can not determine primary ID");
-		primaryID = null;
-            }
-            return primaryID;
-
-        } catch (TException te) {
-	    throw te;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to map localID. " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-            try {
-            } catch (Exception e) {}
         }
     }
 

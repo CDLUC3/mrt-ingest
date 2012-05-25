@@ -47,6 +47,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -107,17 +108,6 @@ public class HandlerAccept extends Handler<JobState>
 		}
 	    }
 
-	    // process update deletions
-	    if (jobState.grabUpdateFlag()) {
-                // process deletions
-                File sourceDelete = new File(ingestRequest.getQueuePath() + FS + "producer" + FS + "mrt-delete.txt");
-                if (sourceDelete.exists()) {
-                    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Found deletion file, moving into system dir");
-                    File targetDelete = new File(ingestRequest.getQueuePath() + FS + "system" + FS + "mrt-delete.txt");
-                    sourceDelete.renameTo(targetDelete);
-                }
-	    }
-
             // update resource map if necessary
             if (packageType == PackageTypeEnum.file) {
                 System.out.println("[info] " + MESSAGE + "file parm specified, updating resource map.");
@@ -153,8 +143,8 @@ public class HandlerAccept extends Handler<JobState>
             if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath() + " - " + sourceDir.getAbsolutePath());
 
             Model model = updateModel(profileState, ingestRequest, mapFile, sourceDir);
-            if (DEBUG) dumpModel(model);
-            writeModel(model, mapFile);
+            if (DEBUG) ResourceMapUtil.dumpModel(model);
+            ResourceMapUtil.writeModel(model, mapFile);
 
             return true;
         } catch (Exception e) {
@@ -215,54 +205,6 @@ public class HandlerAccept extends Handler<JobState>
             throw new TException.GENERAL_EXCEPTION(msg);
         }
 
-    }
-
-    public static void writeModel(Model model, File mapFile)
-        throws TException
-    {
-        FileOutputStream fos = null;
-        try {
-            String [] formats = { "RDF/XML", "RDF/XML-ABBREV", "N-TRIPLE", "TURTLE", "TTL", "N3"};
-            String format = formats[4]; // Turtle
-
-            fos = new FileOutputStream(mapFile);
-            model.write(fos, format);
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to write resource map: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-            try {
-                fos.flush();
-            } catch (Exception e) {}
-        }
-    }
-
-    public static void dumpModel(Model model)
-    {
-        System.out.println( "[debug] dump resource map - START");
-
-        // list the statements in the graph
-        StmtIterator iter = model.listStatements();
-
-        // print out the predicate, subject and object of each statement
-        while (iter.hasNext()) {
-            Statement stmt      = iter.nextStatement();         // get next statement
-            Resource  subject   = stmt.getSubject();   // get the subject
-            Property  predicate = stmt.getPredicate(); // get the predicate
-            RDFNode   object    = stmt.getObject();    // get the object
-
-            System.out.print(subject.toString());
-            System.out.print(" " + predicate.toString() + " ");
-            if (object instanceof Resource) {
-                System.out.print(object.toString());
-            } else {
-                // object is a literal
-                System.out.print(" \"" + object.toString() + "\"");
-            }
-            System.out.println(" .");
-        }
-        System.out.println( "[debug] dump resource map - END");
     }
 
 

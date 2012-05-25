@@ -40,9 +40,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.cdlib.mrt.cloud.VersionMap;
+import org.cdlib.mrt.cloud.ManifestXML;
+import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
@@ -50,6 +54,8 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.StorageUtil;
+import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -71,6 +77,7 @@ public class HandlerDescribe extends Handler<JobState>
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
+    private File systemTargetDir = null;
 
     /**
      * process metadata
@@ -85,28 +92,24 @@ public class HandlerDescribe extends Handler<JobState>
     {
 
 	try {
-            File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
+            systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File producerTargetDir = new File(ingestRequest.getQueuePath(), "producer");
             File systemErcFile = new File(systemTargetDir, "mrt-erc.txt");
             File producerErcFile = new File(producerTargetDir, "mrt-erc.txt");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
-	    // remove update deletions (reserce file name "mrt-delete.txt")
-	    if (jobState.grabUpdateFlag()) {
-	        String[] deleteLines = FileUtil.getLinesFromFile(new File(systemTargetDir, "mrt-delete.txt"));
-	        if (deleteLines != null) {
-		    for (String deleteLine : deleteLines) {
-        	    	if (DEBUG) System.out.println("[debug] " + MESSAGE + "Processing deletion entry: " + deleteLine);
-			File deleteFile = new File(producerTargetDir + FS + deleteLine);
-		        if (deleteFile.exists()) {
-        	    	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Deleting file: " + deleteFile.getAbsolutePath());
-			    deleteFile.delete();
-			}
-		    }
-
-	        }
-	    }
-
+            // save deletion file
+            if (jobState.grabUpdateFlag()) {
+                // process deletions
+                File sourceDelete = new File(ingestRequest.getQueuePath() + FS + "producer" + FS + "mrt-delete.txt");
+                if (sourceDelete.exists()) {
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Found deletion file, moving into system dir");
+                    File targetDelete = new File(ingestRequest.getQueuePath() + FS + "system" + FS + "mrt-delete.txt");
+                    if (! sourceDelete.renameTo(targetDelete)) {
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Could not rename deletion file");
+		    } 
+                }
+            }
 
 	    Map<String, String> producerERC = null;
 	    if (producerErcFile.exists()) {
@@ -256,11 +259,13 @@ public class HandlerDescribe extends Handler<JobState>
 		    }
 
 		}
+		// local ID in ERC file?
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
                         if (localIdentifier != null && ! localIdentifier.contains(trimRight(trimLeft(value)))) {
                             append = DELIMITER + localIdentifier;
                             jobState.setLocalID(value + append);
+	    		    if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
 
                             try {
                                 int i = arrayWhere.indexOf("(:unas)");
@@ -268,6 +273,16 @@ public class HandlerDescribe extends Handler<JobState>
                                 arrayWhere.add(value + append);
                             } catch (Exception ee) {}
 			}
+		    } catch (Exception e) {}
+		} 
+		// primary ID in ERC file?
+	        if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
+		    try {
+			// Only update if empty
+                        if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) { 
+                            jobState.setPrimaryID(value);
+	    		    if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
+		        }
 		    } catch (Exception e) {}
 		} 
 	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
@@ -384,10 +399,12 @@ public class HandlerDescribe extends Handler<JobState>
             if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
 
             Model model = updateModel(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile);
-            if (DEBUG) dumpModel(model);
-            writeModel(model, mapFile);
+            if (DEBUG) ResourceMapUtil.dumpModel(model);
+            ResourceMapUtil.writeModel(model, mapFile);
 
             return true;
+        } catch (TException te) {
+	    throw te;
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to update resource map: " + e.getMessage();
@@ -463,6 +480,52 @@ public class HandlerDescribe extends Handler<JobState>
                     ResourceFactory.createResource(mts + "text/x-anvl"));
 	    }
 
+	    // ---------------------------IMPORTANT---------------------------------------
+	    // At this point we know the primaryID.  
+	    // If the is an update, let's perform the task HandlerDisaggregate should have done.
+	    // This is done here since we may not know primary ID at that early time.
+	    // ---------------------------IMPORTANT---------------------------------------
+	    if (jobState.grabUpdateFlag()) {
+
+        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "Object *update* requested.");
+	        String storageManifest = StorageUtil.getStorageManifest(profileState, jobState.getPrimaryID().getValue());
+		if (storageManifest == null) {
+        	    if (DEBUG) System.out.println("[warn] " + MESSAGE + "No previous version exists for update reqeust.");
+		} else {
+		    VersionMap versionMap = StorageUtil.getVersionMap(jobState.getPrimaryID().getValue(), storageManifest);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating with latest version: " + versionMap.getVersionCount());
+
+		    // Latest version.  Alternative to "0", which is not currently supported
+    		    List<FileComponent> fileComponents = versionMap.getVersionComponents(versionMap.getVersionCount());
+		    if (fileComponents == null) throw new Exception("Could not retrieve most recent component list");
+		    for (FileComponent fileComponent: fileComponents) {
+			String fileName = fileComponent.getIdentifier();
+			if (fileName.startsWith("producer/")) {
+			    String component = objectURI + "/" + versionIDS + "/" + URLEncoder.encode(fileName, "utf-8");
+	                    model.add(ResourceFactory.createResource(objectURI),
+                    	        ResourceFactory.createProperty(ore + "aggregates"),
+                    	        ResourceFactory.createResource(component));
+
+		            System.out.println(MESSAGE + "Adding previous version component: " + component);
+			}
+		    }
+		}
+	
+	        // process deletions
+                String[] deleteLines = FileUtil.getLinesFromFile(new File(systemTargetDir, "mrt-delete.txt"));
+                if (deleteLines != null) {
+                    for (String deleteLine : deleteLines) {
+	                String component = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("producer/" + deleteLine, "utf-8");
+	                Statement statement = model.createStatement(ResourceFactory.createResource(objectURI), 
+		            ResourceFactory.createProperty(ore + "aggregates"),
+                            ResourceFactory.createResource(component));
+    
+		        model.remove(statement);
+		        System.out.println(MESSAGE + "Removing previous version : " + statement.toString());
+		    }
+	        }
+	    }
+
             return model;
         } catch (Exception e) {
             e.printStackTrace();
@@ -472,54 +535,6 @@ public class HandlerDescribe extends Handler<JobState>
 
     }
 
-    public static void writeModel(Model model, File mapFile)
-        throws TException
-    {
-        FileOutputStream fos = null;
-        try {
-            String [] formats = { "RDF/XML", "RDF/XML-ABBREV", "N-TRIPLE", "TURTLE", "TTL", "N3"};
-            String format = formats[4]; // Turtle
-
-            fos = new FileOutputStream(mapFile);
-            model.write(fos, format);
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to write resource map: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-            try {
-                fos.flush();
-            } catch (Exception e) {}
-        }
-    }
-
-    public static void dumpModel(Model model)
-    {
-        System.out.println( "[debug] dump resource map - START");
-
-        // list the statements in the graph
-        StmtIterator iter = model.listStatements();
-
-        // print out the predicate, subject and object of each statement
-        while (iter.hasNext()) {
-            Statement stmt      = iter.nextStatement();         // get next statement
-            Resource  subject   = stmt.getSubject();   // get the subject
-            Property  predicate = stmt.getPredicate(); // get the predicate
-            RDFNode   object    = stmt.getObject();    // get the object
-
-            System.out.print(subject.toString());
-            System.out.print(" " + predicate.toString() + " ");
-            if (object instanceof Resource) {
-                System.out.print(object.toString());
-            } else {
-                // object is a literal
-                System.out.print(" \"" + object.toString() + "\"");
-            }
-            System.out.println(" .");
-        }
-        System.out.println( "[debug] dump resource map - END");
-    }
-   
     public String getName() {
 	return NAME;
     }

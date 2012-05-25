@@ -61,7 +61,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
-import org.cdlib.mrt.ingest.utility.MintUtil;
+import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.FileUtil;
@@ -107,7 +107,8 @@ public class HandlerInitialize extends Handler<JobState>
 	    if (! targetDir.exists()) targetDir.mkdirs();
 
 	    // grab existing data if this is an update
-	    if (jobState.grabUpdateFlag()) {
+	    //if (jobState.grabUpdateFlag()) {
+	    if (false) {
 		if (updateProcess(jobState, profileState, ingestRequest)) {
 	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Extracting previous version for update process");
 		} else {
@@ -217,7 +218,7 @@ public class HandlerInitialize extends Handler<JobState>
         try {
 	    String retrievedObjectID = null;
             Identifier localID = jobState.getLocalID();
-            if (localID != null && jobState.getPrimaryID() == null) retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+            if (localID != null && jobState.getPrimaryID() == null) retrievedObjectID = StorageUtil.fetchPrimaryID(profileState, localID.getValue());
             if (retrievedObjectID != null) {
                 jobState.setPrimaryID(retrievedObjectID);
                 System.out.println("[debug] " + MESSAGE + "Primary ID found from local ID: " + retrievedObjectID + " --- " + localID);
