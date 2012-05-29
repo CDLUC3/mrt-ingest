@@ -511,10 +511,6 @@ public class IngestManager
 	    BatchState batchState = new BatchState();
 	    HandlerResult handlerResult = null;
 
-            // update persistent URL if necessary
-            jobState.setPersistentURL(profileState.getObjectMinterURL().getProtocol() + "://" +
-		profileState.getObjectMinterURL().getHost() + "/" + jobState.getPrimaryID());
-
 	    // call appropriate handlers
 	    SortedMap sortedMap = Collections.synchronizedSortedMap(new TreeMap());    // thread-safe
             sortedMap = profileState.getIngestHandlers();
@@ -550,7 +546,11 @@ public class IngestManager
 		    BatchState.putBatchCompletion(jobState.grabBatchID().getValue(), 
 			BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1);           // increment
 
+            	    // update persistent URL if necessary
+            	    jobState.setPersistentURL(profileState.getObjectMinterURL().getProtocol() + "://" +
+		        profileState.getObjectMinterURL().getHost() + "/" + jobState.getPrimaryID());
 		}
+
                 if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerCallback.class) {
 		    // stateClass = batchState;
 		}
