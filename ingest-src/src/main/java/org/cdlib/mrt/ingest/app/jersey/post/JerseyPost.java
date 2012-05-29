@@ -210,7 +210,7 @@ public class JerseyPost extends JerseyBase
     // Update object 
     // No object ID supplied in URL
     @POST
-    @Path("update")
+    @Path("{request: submit|update}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
     public Response update(
 	    @Context HttpServletRequest request,
@@ -239,7 +239,7 @@ public class JerseyPost extends JerseyBase
     // Update object 
     // Object ID supplied in URL
     @POST
-    @Path("update/{scheme}/{shoulder}/{objectid}")
+    @Path("{request: submit|update}/{scheme}/{shoulder}/{objectid}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
     public Response update(
             @PathParam("scheme") String scheme,
@@ -271,7 +271,7 @@ public class JerseyPost extends JerseyBase
     // Submit entire object 
     // No object ID supplied in URL
     @POST
-    @Path("submit")
+    @Path("add")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
     public Response submit(
 	    @Context HttpServletRequest request,
@@ -299,7 +299,7 @@ public class JerseyPost extends JerseyBase
     // Submit entire object 
     // Object ID supplied in URL
     @POST
-    @Path("submit/{scheme}/{shoulder}/{objectid}")
+    @Path("add/{scheme}/{shoulder}/{objectid}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
     public Response submit(
             @PathParam("scheme") String scheme,
