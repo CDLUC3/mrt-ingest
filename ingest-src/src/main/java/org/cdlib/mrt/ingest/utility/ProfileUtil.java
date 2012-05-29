@@ -153,7 +153,12 @@ public class ProfileUtil
 		    profileState.setContactsEmail(new Notification(value));
 		} else if (key.startsWith(matchObjectMinterURL)) {
                     if (DEBUG) System.out.println("[debug] object minter URL: " + value);
-		    profileState.setObjectMinterURL(new URL(value));
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("Mint Service parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setObjectMinterURL(url);
 		} else if (key.startsWith(matchCharacterizationURL)) {
                     if (DEBUG) System.out.println("[debug] characterization URL: " + value);
                     try {
@@ -161,7 +166,7 @@ public class ProfileUtil
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("CharacterizationService parameter in profile is not a valid URL: " + value);
                     }
-		    profileState.setCharacterizationURL(new URL(value));
+		    profileState.setCharacterizationURL(url);
 		} else if (key.startsWith(matchFixityURL)) {
                     if (DEBUG) System.out.println("[debug] fixity URL: " + value);
                     try {
@@ -169,7 +174,7 @@ public class ProfileUtil
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("FixityService parameter in profile is not a valid URL: " + value);
                     }
-		    profileState.setFixityURL(new URL(value));
+		    profileState.setFixityURL(url);
 		} else if (key.startsWith(matchDataoneURL)) {
                     if (DEBUG) System.out.println("[debug] dataONE URL: " + value);
                     try {
@@ -177,7 +182,7 @@ public class ProfileUtil
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("Fixity parameter in profile is not a valid URL: " + value);
                     }
-		    profileState.setDataoneURL(new URL(value));
+		    profileState.setDataoneURL(url);
 		} else if (key.startsWith(matchCallbackURL)) {
                     if (DEBUG) System.out.println("[debug] callback URL: " + value);
                     try {
@@ -185,7 +190,7 @@ public class ProfileUtil
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
                     }
-		    profileState.setCallbackURL(new URL(value));
+		    profileState.setCallbackURL(url);
 		} else if (key.startsWith(matchStatusURL)) {
                     if (DEBUG) System.out.println("[debug] status URL: " + value);
                     try {
@@ -193,7 +198,7 @@ public class ProfileUtil
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("StatusURL parameter in profile is not a valid URL: " + value);
                     }
-		    profileState.setStatusURL(new URL(value));
+		    profileState.setStatusURL(url);
 		} else if (key.startsWith(matchStatusView)) {
 		    File statusView = null;
                     if (DEBUG) System.out.println("[debug] status View: " + value);
