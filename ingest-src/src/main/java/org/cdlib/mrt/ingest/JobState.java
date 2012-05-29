@@ -85,6 +85,7 @@ public class JobState
 	private String metacatStatus = null;		// only if dataONE handler active
 	private String ercData = null;			// EZID pass-thru
 	private String altNotification = null;		// EZID pass-thru notificaton
+	private String persistentURL = null;		// EZID binding persistent URL
 	private boolean shadowARK;
 	private boolean updateFlag;
 	private boolean cleanup = true;
@@ -606,6 +607,22 @@ public class JobState
         return metacatStatus;
     }
 
+    /**
+     * Set persistent URL
+     * @param URL
+     */
+    public void setPersistentURL(String persistentURL) {
+        this.persistentURL = persistentURL;
+    }
+
+    /**
+     * Get persistent URL
+     * @return String URL
+     */
+    public String getPersistentURL() {
+        return persistentURL;
+    }
+
     public void clear() {
         jobID = null;
         jobLabel = null;
@@ -649,6 +666,7 @@ public class JobState
             String objectDateS = (objectDate != null) ? objectDate : "";
             String noteS = (note != null) ? note : "";
             String metacatStatusS = (metacatStatus != null) ? metacatStatus : "";
+            String persistentURLS = (persistentURL != null) ? persistentURL : "";
             String objectAggregateS = "";
 	    try {
                 objectAggregateS = objectProfile.getAggregateType();
@@ -674,6 +692,7 @@ public class JobState
                 if (StringUtil.isNotEmpty(submissionDateS)) header += indent + "Submission date: " + submissionDateS + delimiter;
                 if (StringUtil.isNotEmpty(completionDateS)) header += indent + "Completion date: " + completionDateS + delimiter;
                 if (StringUtil.isNotEmpty(metacatStatusS)) header += indent + "Metacat Registration Status: " + metacatStatusS + delimiter;
+                if (StringUtil.isNotEmpty(persistentURLS)) header += indent + "Persistent URL: " + persistentURLS + delimiter;
                 if (StringUtil.isNotEmpty(jobStatusS)) header += indent + "Status: " + jobStatusS + delimiter;
                 if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + "Status message: " + jobStatusMessageS + delimiter;
 	    //} else if (format.equalsIgnoreCase("CSV")) {

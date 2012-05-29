@@ -511,6 +511,10 @@ public class IngestManager
 	    BatchState batchState = new BatchState();
 	    HandlerResult handlerResult = null;
 
+            // update persistent URL if necessary
+            jobState.setPersistentURL(profileState.getObjectMinterURL().getProtocol() + "://" +
+		profileState.getObjectMinterURL().getHost() + "/" + jobState.getPrimaryID());
+
 	    // call appropriate handlers
 	    SortedMap sortedMap = Collections.synchronizedSortedMap(new TreeMap());    // thread-safe
             sortedMap = profileState.getIngestHandlers();
