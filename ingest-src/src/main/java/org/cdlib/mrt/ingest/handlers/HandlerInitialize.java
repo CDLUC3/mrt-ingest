@@ -107,24 +107,14 @@ public class HandlerInitialize extends Handler<JobState>
 	    if (! targetDir.exists()) targetDir.mkdirs();
 
 	    // grab existing data if this is an update
-	    //if (jobState.grabUpdateFlag()) {
-	    if (false) {
+	    if (jobState.grabUpdateFlag()) {
 		if (updateProcess(jobState, profileState, ingestRequest)) {
 	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Extracting previous version for update process");
 		} else {
-	            throw new TException.GENERAL_EXCEPTION("[error] " + 
-			MESSAGE + ": Unable to update object.  Object does not exist.");
+	            // throw new TException.GENERAL_EXCEPTION("[error] " + 
+			// MESSAGE + ": Unable to update object.  Object does not exist.");
+	            if (DEBUG) System.out.println("[warn] " + MESSAGE + "Unable to update object.  Object does not exist.");
 		}
-
-	        // process now if batch of file or single file
-        	PackageTypeEnum packageType = ingestRequest.getPackageType();
-                File existingProducerDir = new File(ingestRequest.getQueuePath() + FS + ".producer" + FS);
-                if (existingProducerDir.exists() && 
-			(packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.file)) {
-                    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
-                    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
-                    FileUtil.deleteDir(existingProducerDir);
-                }
 	    }
 
 	    // metadata file in ANVL format
@@ -297,8 +287,9 @@ public class HandlerInitialize extends Handler<JobState>
 			File newFile = new File(keepFile.getAbsolutePath().substring(0, idx + keepFileString.length()));
 			if (newFile.exists()) {
                     	    if (DEBUG) System.out.println("[info] " + MESSAGE + "retaining file : " + newFile.getAbsolutePath());
+			    // OLD UPDATE LOGIC - OBSOLETE
 			    String hidden = "";
-			    if (keepFileString.equals("producer" + FS)) hidden = ".";		// hide producer data for later processing
+			    // if (keepFileString.equals("producer" + FS)) hidden = ".";		// hide producer data for later processing
 			    File targetDir = new File(ingestRequest.getQueuePath() + FS + hidden + keepFileString);
 			    if (! targetDir.isDirectory() && ! targetDir.isHidden()) targetDir = targetDir.getParentFile();
 			    if (! targetDir.exists()) targetDir.mkdirs();

@@ -131,14 +131,6 @@ public class HandlerDisaggregate extends Handler<JobState>
 			}
 		        file.delete();
 
-                        // If updating and we have a container
-            		File existingProducerDir = new File(ingestRequest.getQueuePath() + FS + ".producer" + FS);
-	    		if (jobState.grabUpdateFlag() && existingProducerDir.exists()) {
-			    System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
-			    FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
-			    FileUtil.deleteDir(existingProducerDir);
-	    		}
-
 	    	} else if (packageType == PackageTypeEnum.file) {
 			System.out.println("[info] " + MESSAGE + "file parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";

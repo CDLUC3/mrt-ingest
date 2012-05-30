@@ -130,13 +130,14 @@ public class HandlerMinter extends Handler<JobState>
 		try {
 		    System.out.println("[debug] " + MESSAGE + "No Metadata found.  Using previous versions'");
 		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
-	    	    if (previousSystemErcFile.exists()) {
+	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
                 	Map<String, String> previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
            		// erc file in ANVL format
            		readERC(jobState, previousSystemERC, false);	// Do not update where!
-            }
+            	    } else {
+		        System.out.println("[info] " + MESSAGE + "No previous version exists'");
+		    }
 		} catch (Exception e) {
-		    e.printStackTrace();
 		    System.out.println("[warn] " + MESSAGE + "Error populating metadata w/ previous version");
 		}
 
