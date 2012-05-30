@@ -93,7 +93,8 @@ public class StorageUtil
 
         try {
 	    File manifestFile = getStorageFile(profileState, objectID, null);
-	    return FileUtil.file2String(manifestFile);
+	    if (manifestFile == null) return null;
+	    else return FileUtil.file2String(manifestFile);
 
 	} catch (TException tex) {
 	    throw tex;

@@ -240,16 +240,6 @@ public class HandlerRetrieve extends Handler<JobState>
 	        }
 	    }
 
-	    // If updating and we do not have a container
-            File existingProducerDir = new File(ingestRequest.getQueuePath() +
-                        System.getProperty("file.separator") + ".producer" + System.getProperty("file.separator"));
-            if (jobState.grabUpdateFlag() && existingProducerDir.exists()) {
-                System.out.println("[debug] " + MESSAGE + "Found existing producer data, processing.");
-                FileUtil.updateDirectory(existingProducerDir, new File(ingestRequest.getQueuePath(), "producer"));
-                FileUtil.deleteDir(existingProducerDir);
-            }
-
-
             // metadata file in ANVL format
             File ingestFile = new File(systemTargetDir, "mrt-ingest.txt");
             if ( ! createMetadata(ingestFile, status)) {
