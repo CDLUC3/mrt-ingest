@@ -421,6 +421,11 @@ public class MintUtil
 
         } catch (TException te) {
 	    throw te;
+        } catch (com.sun.jersey.api.client.ClientHandlerException che) {
+            che.printStackTrace();
+            String msg = "[error] " + MESSAGE + "Could not connect to Storage service: " 
+	 	+ profileState.getTargetStorage().getStorageLink().toString() + " --- " + che.getMessage();
+            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to map localID. " + e.getMessage();
