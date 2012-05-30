@@ -527,6 +527,8 @@ public class HandlerDescribe extends Handler<JobState>
 	    }
 
             return model;
+        } catch (TException te) {
+	    throw te;
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to update model: " + e.getMessage();

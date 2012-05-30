@@ -136,7 +136,13 @@ public class StorageUtil
             // make service request
             try {
                 clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).get(ClientResponse.class);
+            } catch (com.sun.jersey.api.client.ClientHandlerException che) {
+                che.printStackTrace();
+                String msg = "[error] " + MESSAGE + "Could not connect to Storage service: " 
+	 	    + profileState.getTargetStorage().getStorageLink().toString() + " --- " + che.getMessage();
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
             } catch (Exception e) {
+		e.printStackTrace();
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + storageURL);
             }
 
@@ -279,6 +285,11 @@ public class StorageUtil
 
         } catch (TException te) {
 	    throw te;
+        } catch (com.sun.jersey.api.client.ClientHandlerException che) {
+            che.printStackTrace();
+            String msg = "[error] " + MESSAGE + "Could not connect to Storage service: " 
+	        + profileState.getTargetStorage().getStorageLink().toString() + " --- " + che.getMessage();
+            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to map localID. " + e.getMessage();
