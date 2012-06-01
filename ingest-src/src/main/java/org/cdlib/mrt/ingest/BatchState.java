@@ -399,7 +399,7 @@ public class BatchState
 	jobStateS = jobStateS.substring(1, jobStateS.length() - 1 );
 
 	if (! jobonly) {
-            if (StringUtil.isNotEmpty(batchIDS)) header += "" + "Submission ID: " + batchIDS + "\n";
+            if (StringUtil.isNotEmpty(batchIDS)) header += "\n" + "Submission ID: " + batchIDS + "\n";
             if (StringUtil.isNotEmpty(batchLabelS)) header += "Batch label: " + batchLabelS + "\n";
             if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
             if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";

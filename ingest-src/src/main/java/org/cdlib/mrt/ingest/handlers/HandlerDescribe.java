@@ -256,11 +256,12 @@ public class HandlerDescribe extends Handler<JobState>
 		    }
 
 		}
+ 		// local ID in ERC file?
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
                         if (localIdentifier != null && ! localIdentifier.contains(trimRight(trimLeft(value)))) {
                             append = DELIMITER + localIdentifier;
-                            jobState.setLocalID(value + append);
+                            jobState.setLocalID(trimLeft(trimRight(value)) + append);
 
                             try {
                                 int i = arrayWhere.indexOf("(:unas)");
@@ -270,6 +271,16 @@ public class HandlerDescribe extends Handler<JobState>
 			}
 		    } catch (Exception e) {}
 		} 
+ 		// primary ID in ERC file?
+ 	        if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
+ 		    try {
+ 			// Only update if empty
+                         if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) { 
+                             jobState.setPrimaryID(trimLeft(trimRight(value)));
+ 	    		    if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
+ 		        }
+ 		    } catch (Exception e) {e.printStackTrace();}
+		}
 	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
 		    // let other ERC data through 
 		    ercProperties.put(key, value);
