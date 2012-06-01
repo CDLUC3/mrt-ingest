@@ -384,7 +384,24 @@ public class HandlerMinter extends Handler<JobState>
 		    if (objectDate != null) append = DELIMITER + objectDate;
 		    jobState.setObjectDate(value + append);
 		}
-                if (key.matches("where") && ! value.contains("ark:")) jobState.setLocalID(value);
+                // local ID in ERC file? 
+                if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
+                    try {
+                        if (localIdentifier != null && ! localIdentifier.contains("(:unas)")) {
+                            jobState.setLocalID(trimLeft(trimRight(value)));
+                        }
+                    } catch (Exception e) {}
+                }
+                // primary ID in ERC file?
+                if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
+                    try {
+                        // Only update if empty
+                         if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) {
+                             jobState.setPrimaryID(trimLeft(trimRight(value)));
+                            if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
+                        }
+                    } catch (Exception e) {e.printStackTrace();}
+                }
             }
         } else {
             if (DEBUG) System.out.println("No additional ERC metadata found");
@@ -512,6 +529,14 @@ public class HandlerMinter extends Handler<JobState>
             System.out.println(" .");
         }
         System.out.println( "[debug] dump resource map - END");
+    }
+
+    public String trimLeft(String s) {
+        return s.replaceAll("^\\s+", "");
+    }
+
+    public String trimRight(String s) {
+        return s.replaceAll("\\s+$", "");
     }
 
     public String getName() {
