@@ -271,7 +271,7 @@ public class JerseyPost extends JerseyBase
     // Submit entire object 
     // No object ID supplied in URL
     @POST
-    @Path("add")
+    @Path("{request: add}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
     public Response submit(
 	    @Context HttpServletRequest request,
@@ -299,7 +299,7 @@ public class JerseyPost extends JerseyBase
     // Submit entire object 
     // Object ID supplied in URL
     @POST
-    @Path("add/{scheme}/{shoulder}/{objectid}")
+    @Path("{request: add}/{scheme}/{shoulder}/{objectid}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
     public Response submit(
             @PathParam("scheme") String scheme,
