@@ -416,12 +416,32 @@ public class HandlerMinter extends Handler<JobState>
 	    	        haveMetadata = true;
 		    }
 		}
-                if (key.matches("where") && ! value.contains("ark:")) 
-		    if (jobState.getLocalID() != null && jobState.getLocalID().getValue().contains("(:unas)"))
-		        if (! noUpdateIDs) jobState.setLocalID(trimLeft(trimRight(value)));
-                if (key.matches("where") && value.contains("ark:")) 
-		    if (jobState.getPrimaryID() != null && jobState.getPrimaryID().getValue().contains("(:unas)"))
-		        if (! noUpdateIDs) jobState.setPrimaryID(trimLeft(trimRight(value)));
+                // local ID in ERC file?
+                if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
+                    value = trimLeft(trimRight(value));
+                    try {
+                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
+                            jobState.setLocalID(value);
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        } else if (! localIdentifier.contains(value)) {
+                            append = DELIMITER + localIdentifier;
+                            jobState.setLocalID(value + append);
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        }
+                    } catch (Exception e) {}
+                }
+                // primary ID in ERC file?
+                if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
+                    try {
+                        // Only update if empty
+                         if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) {
+                            if (! noUpdateIDs) {
+                                jobState.setPrimaryID(trimLeft(trimRight(value)));
+                                if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
+			    }
+                        }
+                    } catch (Exception e) {e.printStackTrace();}
+                }
             }
         } else {
             if (DEBUG) System.out.println("No additional ERC metadata found");
