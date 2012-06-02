@@ -262,17 +262,23 @@ public class HandlerDescribe extends Handler<JobState>
 		// local ID in ERC file?
 	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
 		    try {
-                        if (localIdentifier != null && ! localIdentifier.contains(trimRight(trimLeft(value)))) {
+                        append = "";
+			value = trimLeft(trimRight(value));
+                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
+                            jobState.setLocalID(value);
+	    		    if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        } else if (! localIdentifier.contains(value)) {
                             append = DELIMITER + localIdentifier;
                             jobState.setLocalID(value + append);
 	    		    if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+			} 
 
-                            try {
-                                int i = arrayWhere.indexOf("(:unas)");
-                                if (i >= 0) arrayWhere.remove(i);
-                                arrayWhere.add(value + append);
-                            } catch (Exception ee) {}
-			}
+                        try {
+                            int i = arrayWhere.indexOf("(:unas)");
+                            if (i >= 0) arrayWhere.remove(i);
+			    // check if already exists
+                            if (arrayWhere.indexOf(value) < 0 ) arrayWhere.add(value + append);
+                        } catch (Exception ee) {}
 		    } catch (Exception e) {}
 		} 
 		// primary ID in ERC file?
@@ -295,6 +301,8 @@ public class HandlerDescribe extends Handler<JobState>
 	}
 
 	// update jobState/citation file with existing system values
+	// -- obsolete -- this file should not exist with new update() logic
+	// -- keep for refernce only
 	if (systemERC != null) {
 	    Iterator systemERCitr = systemERC.keySet().iterator();
 	    while (systemERCitr.hasNext()) {
@@ -356,20 +364,28 @@ public class HandlerDescribe extends Handler<JobState>
 		        jobState.setObjectDate(value);
 		    }
 		}
-	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
-		    try {
-		        if (localIdentifier != null && ! localIdentifier.contains(value)) {
-			    append = DELIMITER + localIdentifier;
-		            jobState.setLocalID(value + append);
+                // local ID in ERC file?
+                if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
+                    try {
+                        append = "";
+                        value = trimLeft(trimRight(value));
+                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
+                            jobState.setLocalID(value);
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        } else if (! localIdentifier.contains(value)) {
+                            append = DELIMITER + localIdentifier;
+                            jobState.setLocalID(value + append);
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        }
 
-			    try {
-		                int i = arrayWhere.indexOf("(:unas)");
-		                if (i >= 0) arrayWhere.remove(i);
-		                arrayWhere.add(value + append);
-			    } catch (Exception ee) {}
-			}
-		    } catch (Exception e) {}
-		}
+                        try {
+                            int i = arrayWhere.indexOf("(:unas)");
+                            if (i >= 0) arrayWhere.remove(i);
+                            // check if already exists
+                            if (arrayWhere.indexOf(value) < 0 ) arrayWhere.add(value + append);
+                        } catch (Exception ee) {}
+                    } catch (Exception e) {}
+                }
 	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
 		    // let other ERC data through 
 		    ercProperties.put(key, value);
