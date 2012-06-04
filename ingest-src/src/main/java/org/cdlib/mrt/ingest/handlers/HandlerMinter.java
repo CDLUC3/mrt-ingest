@@ -361,7 +361,7 @@ public class HandlerMinter extends Handler<JobState>
      * @param noUpdateIDs do not populate any ID fields (not needed for update)
      * @return boolean do we have necessary ERC data (who/what/where).  Needed for update request
      */
-    private boolean readERC(JobState jobState, Map producerERC, boolean noUpdateIDs)
+    private boolean readERC(JobState jobState, Map producerERC, boolean updateIDs)
         throws TException
     {
 	boolean haveMetadata = false;
@@ -371,14 +371,14 @@ public class HandlerMinter extends Handler<JobState>
         String primaryIdentifier = null;
         String localIdentifier = null;
         try {
-            if (! noUpdateIDs) primaryIdentifier = jobState.getPrimaryID().getValue();
+            if (updateIDs) primaryIdentifier = jobState.getPrimaryID().getValue();
         } catch (Exception e) {
-            if (! noUpdateIDs) primaryIdentifier = "(:unas)";
+            if (updateIDs) primaryIdentifier = "(:unas)";
         }
         try {
-             if (! noUpdateIDs) localIdentifier = jobState.getLocalID().getValue();
+             if (updateIDs) localIdentifier = jobState.getLocalID().getValue();
         } catch (Exception e) {
-            if (! noUpdateIDs) localIdentifier = "(:unas)";
+            if (updateIDs) localIdentifier = "(:unas)";
         }
 
         // update jobState if necessary
@@ -435,7 +435,7 @@ public class HandlerMinter extends Handler<JobState>
                     try {
                         // Only update if empty
                          if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) {
-                            if (! noUpdateIDs) {
+                            if (updateIDs) {
                                 jobState.setPrimaryID(trimLeft(trimRight(value)));
                                 if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
 			    }
