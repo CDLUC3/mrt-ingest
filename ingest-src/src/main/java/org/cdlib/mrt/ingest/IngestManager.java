@@ -546,7 +546,7 @@ public class IngestManager
 			BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1);           // increment
 
             	    // update persistent URL if necessary
-            	    jobState.setPersistentURL(profileState.getObjectMinterURL().getProtocol() + "://" +
+            	    jobState.setPersistentURL("http://" +
 		        profileState.getObjectMinterURL().getHost() + "/" + jobState.getPrimaryID());
 		}
 
