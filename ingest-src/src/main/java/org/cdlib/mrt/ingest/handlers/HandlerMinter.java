@@ -63,6 +63,8 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
+import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -115,12 +117,31 @@ public class HandlerMinter extends Handler<JobState>
 
 	    // Need to read mrt-erc.txt data if available.
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results? 
+	    boolean haveMetadata = false;
 	    File producerErcFile = new File(ingestRequest.getQueuePath(), "producer/mrt-erc.txt");
 	    if (producerErcFile.exists()) {
                 Map<String, String> producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
            	// erc file in ANVL format
-           	readERC(jobState, producerERC);
+           	haveMetadata = readERC(jobState, producerERC, true);
             }
+
+	    // At this point we'll need to populate who/what/where with previous version
+	    if (jobState.grabUpdateFlag() && ! haveMetadata) {
+		try {
+		    System.out.println("[debug] " + MESSAGE + "No Metadata found.  Using previous versions'");
+		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
+	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
+                	Map<String, String> previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
+           		// erc file in ANVL format
+           		readERC(jobState, previousSystemERC, false);	// Do not update where!
+            	    } else {
+		        System.out.println("[info] " + MESSAGE + "No previous version exists'");
+		    }
+		} catch (Exception e) {
+		    System.out.println("[warn] " + MESSAGE + "Error populating metadata w/ previous version");
+		}
+
+	    }
 
 	    if (ProfileUtil.isDemoMode(profileState)) {
 	        if (jobState.getPrimaryID() != null) {
@@ -132,7 +153,7 @@ public class HandlerMinter extends Handler<JobState>
 
 	    Identifier localID = jobState.getLocalID();
 	    if (localID != null && jobState.getPrimaryID() == null && ! localID.getValue().contains("(:unas)"))	
-		retrievedObjectID = MintUtil.fetchPrimaryID(profileState, localID.getValue());
+		retrievedObjectID = StorageUtil.fetchPrimaryID(profileState, localID.getValue());
 	    else
 		System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
 
@@ -337,25 +358,27 @@ public class HandlerMinter extends Handler<JobState>
      *
      * @param JobState populate metadata fields if necessary
      * @param producerERC producer supplied metadata
-     * @return successful in creating erc file
+     * @param noUpdateIDs do not populate any ID fields (not needed for update)
+     * @return boolean do we have necessary ERC data (who/what/where).  Needed for update request
      */
-    private void readERC(JobState jobState, Map producerERC)
+    private boolean readERC(JobState jobState, Map producerERC, boolean updateIDs)
         throws TException
     {
+	boolean haveMetadata = false;
         String objectCreator = jobState.getObjectCreator();
         String objectTitle = jobState.getObjectTitle();
         String objectDate = jobState.getObjectDate();
         String primaryIdentifier = null;
         String localIdentifier = null;
         try {
-            primaryIdentifier = jobState.getPrimaryID().getValue();
+            if (updateIDs) primaryIdentifier = jobState.getPrimaryID().getValue();
         } catch (Exception e) {
-            primaryIdentifier = "(:unas)";
+            if (updateIDs) primaryIdentifier = "(:unas)";
         }
         try {
-             localIdentifier = jobState.getLocalID().getValue();
+             if (updateIDs) localIdentifier = jobState.getLocalID().getValue();
         } catch (Exception e) {
-            localIdentifier = "(:unas)";
+            if (updateIDs) localIdentifier = "(:unas)";
         }
 
         // update jobState if necessary
@@ -372,23 +395,59 @@ public class HandlerMinter extends Handler<JobState>
                 String append = "";
                 if (key.matches("who")) {
 		    if (objectCreator != null) append = DELIMITER + objectCreator;
-		    jobState.setObjectCreator(value + append);
+		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
+		        jobState.setObjectCreator(trimLeft(trimRight(value)) + append);
+	    	        haveMetadata = true;
+		    }
 		}
                 append = "";
                 if (key.matches("what")) {
 		    if (objectTitle != null) append = DELIMITER + objectTitle;
-		    jobState.setObjectTitle(value + append);
+		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
+		        jobState.setObjectTitle(trimLeft(trimRight(value)) + append);
+	    	        haveMetadata = true;
+		    }
 		}
                 append = "";
                 if (key.matches("when")) {
 		    if (objectDate != null) append = DELIMITER + objectDate;
-		    jobState.setObjectDate(value + append);
+		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
+		        jobState.setObjectDate(trimLeft(trimRight(value)) + append);
+	    	        haveMetadata = true;
+		    }
 		}
-                if (key.matches("where") && ! value.contains("ark:")) jobState.setLocalID(value);
+                // local ID in ERC file?
+                if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
+                    value = trimLeft(trimRight(value));
+                    try {
+                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
+                            jobState.setLocalID(value);
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        } else if (! localIdentifier.contains(value)) {
+                            append = DELIMITER + localIdentifier;
+                            jobState.setLocalID(value + append);
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
+                        }
+                    } catch (Exception e) {}
+                }
+                // primary ID in ERC file?
+                if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
+                    try {
+                        // Only update if empty
+                         if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) {
+                            if (updateIDs) {
+                                jobState.setPrimaryID(trimLeft(trimRight(value)));
+                                if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
+			    }
+                        }
+                    } catch (Exception e) {e.printStackTrace();}
+                }
             }
         } else {
             if (DEBUG) System.out.println("No additional ERC metadata found");
         }
+
+	return haveMetadata;
     }
 
 
@@ -408,8 +467,8 @@ public class HandlerMinter extends Handler<JobState>
             if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
 
             Model model = updateModel(profileState, ingestRequest, mapFile, resetObject);
-            if (DEBUG) dumpModel(model);
-            writeModel(model, mapFile);
+            if (DEBUG) ResourceMapUtil.dumpModel(model);
+            ResourceMapUtil.writeModel(model, mapFile);
 
             return true;
         } catch (Exception e) {
@@ -466,52 +525,12 @@ public class HandlerMinter extends Handler<JobState>
 
     }
 
-    public static void writeModel(Model model, File mapFile)
-        throws TException
-    {
-        FileOutputStream fos = null;
-        try {
-            String [] formats = { "RDF/XML", "RDF/XML-ABBREV", "N-TRIPLE", "TURTLE", "TTL", "N3"};
-            String format = formats[4]; // Turtle
-
-            fos = new FileOutputStream(mapFile);
-            model.write(fos, format);
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to write resource map: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-            try {
-                fos.flush();
-            } catch (Exception e) {}
-        }
+    public String trimLeft(String s) {
+        return s.replaceAll("^\\s+", "");
     }
 
-    public static void dumpModel(Model model)
-    {
-        System.out.println( "[debug] dump resource map - START");
-
-        // list the statements in the graph
-        StmtIterator iter = model.listStatements();
-
-        // print out the predicate, subject and object of each statement
-        while (iter.hasNext()) {
-            Statement stmt      = iter.nextStatement();         // get next statement
-            Resource  subject   = stmt.getSubject();   // get the subject
-            Property  predicate = stmt.getPredicate(); // get the predicate
-            RDFNode   object    = stmt.getObject();    // get the object
-
-            System.out.print(subject.toString());
-            System.out.print(" " + predicate.toString() + " ");
-            if (object instanceof Resource) {
-                System.out.print(object.toString());
-            } else {
-                // object is a literal
-                System.out.print(" \"" + object.toString() + "\"");
-            }
-            System.out.println(" .");
-        }
-        System.out.println( "[debug] dump resource map - END");
+    public String trimRight(String s) {
+        return s.replaceAll("\\s+$", "");
     }
 
     public String getName() {

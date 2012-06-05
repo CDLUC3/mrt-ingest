@@ -412,7 +412,6 @@ public class IngestManager
 
 	    // assign preliminary job info
             jobState = ingestRequest.getJob();
-	    jobState.setUpdateFlag(ingestRequest.getUpdateFlag());
 	    jobState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 
 	    // assign profile
@@ -547,7 +546,7 @@ public class IngestManager
 			BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1);           // increment
 
             	    // update persistent URL if necessary
-            	    jobState.setPersistentURL(profileState.getObjectMinterURL().getProtocol() + "://" +
+            	    jobState.setPersistentURL("http://" +
 		        profileState.getObjectMinterURL().getHost() + "/" + jobState.getPrimaryID());
 		}
 

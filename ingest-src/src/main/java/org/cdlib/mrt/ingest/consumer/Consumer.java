@@ -523,7 +523,7 @@ class ConsumeData implements Runnable
 	    } catch (Exception e) {}
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));
-	    ingestRequest.setUpdateFlag(((Boolean) p.get("update")).booleanValue());
+	    ingestRequest.getJob().setUpdateFlag(((Boolean) p.get("update")).booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
