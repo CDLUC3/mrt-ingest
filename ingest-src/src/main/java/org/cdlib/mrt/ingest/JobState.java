@@ -35,6 +35,7 @@ import java.util.Date;
 import java.io.Serializable;
 import java.io.StringWriter;
 
+import org.cdlib.mrt.cloud.VersionMap;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
@@ -89,6 +90,7 @@ public class JobState
 	private boolean shadowARK;
 	private boolean updateFlag;
 	private boolean cleanup = true;
+	private VersionMap versionMap = null;		// storage manifest 
 
 
 	// constructors
@@ -590,6 +592,23 @@ public class JobState
     public boolean grabCleanupFlag() {		// non-displayable
         return cleanup;
     }
+
+    /**
+     * Set version map (storage manifest)
+     * @param versionmap 
+     */
+    public void setVersionMap(VersionMap versionMap) {
+        this.versionMap = versionMap;
+    }
+
+    /**
+     * Get version map (storage manifest)
+     * @return versionmap
+     */
+    public VersionMap grabVersionMap() {          // non-displayable
+        return versionMap;
+    }
+
 
     /**
      * Set Metacat status
