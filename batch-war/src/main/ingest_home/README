@@ -1,0 +1,10 @@
+Example Ingest configuration files
+
+Usage
+-----
+Modify to taste, then rename with ".example" removed.
+
+Running under Tomcat
+--------------------
+- queue.txt, stores.txt and ingest-info.txt modifications will require a Tomcat restart
+- profiles modifications will be processed w/o a Tomcat restart
