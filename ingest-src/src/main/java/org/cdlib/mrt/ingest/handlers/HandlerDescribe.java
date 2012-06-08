@@ -96,6 +96,7 @@ public class HandlerDescribe extends Handler<JobState>
             File producerTargetDir = new File(ingestRequest.getQueuePath(), "producer");
             File systemErcFile = new File(systemTargetDir, "mrt-erc.txt");
             File producerErcFile = new File(producerTargetDir, "mrt-erc.txt");
+            File producerDCFile = new File(producerTargetDir, "mrt-dc.xml");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
             // save deletion file
@@ -123,7 +124,7 @@ public class HandlerDescribe extends Handler<JobState>
             }
 
             // update resource map
-            if (! updateResourceMap(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile)) {
+            if (! updateResourceMap(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, producerDCFile)) {
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to update map file w/ ERC reference: " + systemErcFile.getAbsolutePath());
             }
@@ -212,6 +213,8 @@ public class HandlerDescribe extends Handler<JobState>
 	    arrayWhere.add("(:unas)");
 
 	// update jobState/citation file with producer supplied values
+/*
+Now done in HandlerMinter
 	if (producerERC != null) {
 	    Iterator producerERCitr = producerERC.keySet().iterator();
 	    while (producerERCitr.hasNext()) {
@@ -394,6 +397,7 @@ public class HandlerDescribe extends Handler<JobState>
 	} else {
 	    if (DEBUG) System.out.println("No additional system ERC metadata found");
 	}
+*/
 
         ercProperties.put("where", arrayWhere);
         return MetadataUtil.writeMetadataANVL(systemErcFile, ercProperties, false);
@@ -409,12 +413,12 @@ public class HandlerDescribe extends Handler<JobState>
      * @return successful in updating resource map
      */
     private boolean updateResourceMap(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		File systemErcFile, File producerErcFile)
+		File systemErcFile, File producerErcFile, File producerDCFile)
         throws TException {
         try {
             if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
 
-            Model model = updateModel(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile);
+            Model model = updateModel(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, producerDCFile);
             if (DEBUG) ResourceMapUtil.dumpModel(model);
             ResourceMapUtil.writeModel(model, mapFile);
 
@@ -431,7 +435,7 @@ public class HandlerDescribe extends Handler<JobState>
     }
 
     public Model updateModel(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		File systemErcFile, File producerErcFile)
+		File systemErcFile, File producerErcFile, File producerDCFile)
         throws Exception
     {
         try {
@@ -494,6 +498,23 @@ public class HandlerDescribe extends Handler<JobState>
                 model.add(ResourceFactory.createResource(producerErcURI),
                     ResourceFactory.createProperty(mrt + "mimeType"),
                     ResourceFactory.createResource(mts + "text/x-anvl"));
+	    }
+
+	    // producer DC
+	    if (producerDCFile.exists()) {
+        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC data: " + producerDCFile.getAbsolutePath());
+                String producerDCURI = objectURI + "/" + versionIDS + "/" + 
+			URLEncoder.encode("producer/" + producerDCFile.getName(), "utf-8");
+
+                model.add(ResourceFactory.createResource(objectURI),
+                    ResourceFactory.createProperty(mrt + "hasMetadata"),
+                    ResourceFactory.createResource(producerDCURI));
+                model.add(ResourceFactory.createResource(producerDCURI),
+                    ResourceFactory.createProperty(mrt + "metadataSchema"),
+                    ResourceFactory.createResource(msc + "DC"));
+                model.add(ResourceFactory.createResource(producerDCURI),
+                    ResourceFactory.createProperty(mrt + "mimeType"),
+                    ResourceFactory.createResource(mts + "text/xml"));
 	    }
 
 	    // ---------------------------IMPORTANT---------------------------------------

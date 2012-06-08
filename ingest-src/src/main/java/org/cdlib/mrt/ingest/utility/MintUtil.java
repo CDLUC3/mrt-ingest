@@ -192,7 +192,11 @@ public class MintUtil
 	        context = "mrt.creator: " + escape(profileState.getContext());
 	    } catch (Exception e) { }
 
-	    httpCommand = new HttpPost(url);
+	    try {
+	        httpCommand = new HttpPost(url);
+	    } catch (java.lang.IllegalArgumentException iae) {
+		throw new TException.INVALID_OR_MISSING_PARM("Target hostname or primary ID not valid: " + url);
+	    }
 	    httpCommand.addHeader("Content-Type", "text/plain");
 	    if (! shadow) httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
 	    else httpCommand.setEntity(new StringEntity(target, "UTF-8"));

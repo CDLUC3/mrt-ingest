@@ -43,9 +43,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.cdlib.mrt.utility.DOMParser;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * simple metadata tool
@@ -133,6 +140,12 @@ public class MetadataUtil
 		if (dcPattern.matcher(line).matches()) {
 		    tokens = splitPattern.split(line, 2);
 		    System.out.println("Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+
+                    // a little hack to process local/primary IDs
+                    if (tokens[0].matches("where")) {
+                        if (tokens[1].contains("ark:/")) tokens[0] = "where-primary";
+                        else tokens[0] = "where-local";
+                    }
 		    if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
 		        linkedHashMap.put(tokens[0], tokens[1]);
 		    }
@@ -182,14 +195,84 @@ public class MetadataUtil
                 }
             }
 
-        } catch (Exception e) {
-        }
+        } 
+	catch (Exception e) { }
         finally {
-            try {
-            } catch (Exception e) {
-            }
+            try { } 
+	    catch (Exception e) { }
         }
         return linkedHashMap;
+    }
+
+    /**
+     * read DC xml file
+     *
+     * @param merritt DC source file (usually "mrt-dc.xml")
+     * @return properties map of properties
+     */
+    public static Map<String, String> readDublinCoreXML(File DCFile)
+        throws TException
+    {
+
+	String DC_DELIMITER = "; ";
+
+        Map linkedHashMap = new LinkedHashMap();
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream(DCFile);
+	    Document document = DOMParser.doParse(fileInputStream, null);
+
+	    System.out.println("Root element :" + document.getDocumentElement().getNodeName());
+	    NodeList nodeList = document.getFirstChild().getChildNodes();
+ 
+	    for (int temp = 0; temp < nodeList.getLength(); temp++) {
+		Node node = nodeList.item(temp);
+		if (node.getNodeType() == Node.ELEMENT_NODE) {
+		    Element element = (Element) node;
+ 
+		    String key = element.getTagName();
+		    String value = element.getTextContent();
+		    if (validDC(key)) {
+		        if (DEBUG) System.out.println("[info] processing DC element: " + key + " - " + value);
+			// a little hack to process local/primary IDs
+			if (key.matches("dc.identifier")) {
+			    if (value.contains("ark:/")) key = "dc.identifier-primary";
+			    else key = "dc.identifier-local";
+			}
+                        if (linkedHashMap.containsValue(key))
+			    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
+			else
+			    linkedHashMap.put(key, value);
+
+		    } else {
+		        System.out.println("[warn] DC element not recognized: " + key);
+		    }
+	        }
+	    }
+
+        } catch (TException te) { 
+            throw new TException.INVALID_OR_MISSING_PARM("[error] " +
+                MESSAGE + ": unable to process mrt-dc.xml: " + te.getDetail());
+        } catch (Exception e) { 
+            throw new TException.GENERAL_EXCEPTION("[error] " +
+                MESSAGE + ": unable to process mrt-dc.xml: " + DCFile.getName());
+        } finally {
+            try { } 
+	    catch (Exception e) { }
+        }
+        return linkedHashMap;
+    }
+
+ 
+    private static boolean validDC(String dcString) {
+	String[] dcKeys = {"dc:title", "dc:creator", "dc:subject", "dc:description", "dc:publisher", "dc:contributor",
+	    "dc:date", "dc:type", "dc:identifier", "dc:relation", "dc:coverage", "dc:rights"};
+
+	for (int i=dcKeys.length-1; 0 <= i; i--) {
+	    if (dcKeys[i].equals(dcString)) return true;
+	}
+
+	return false;
     }
 
 }

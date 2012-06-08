@@ -114,15 +114,24 @@ public class HandlerMinter extends Handler<JobState>
 	    String assignedObjectID = null;
 	    String retrievedObjectID = null;
 	    boolean mint = true;
+	    boolean haveMetadata = false;
+
+	    // Need to read mrt-dc.xml data if available.
+	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results?
+	    File producerDCFile = new File(ingestRequest.getQueuePath(), "producer/mrt-dc.xml");
+	    if (producerDCFile.exists()) {
+                Map<String, String> producerDC = MetadataUtil.readDublinCoreXML(producerDCFile);
+		// overwrite Form or Manifest parameters
+           	haveMetadata = updateMetadata(jobState, producerDC, true);
+            }
 
 	    // Need to read mrt-erc.txt data if available.
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results? 
-	    boolean haveMetadata = false;
 	    File producerErcFile = new File(ingestRequest.getQueuePath(), "producer/mrt-erc.txt");
 	    if (producerErcFile.exists()) {
                 Map<String, String> producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
-           	// erc file in ANVL format
-           	haveMetadata = readERC(jobState, producerERC, true);
+		// overwrite Form or Manifest parameters or DC data
+           	haveMetadata = updateMetadata(jobState, producerERC, true);
             }
 
 	    // At this point we'll need to populate who/what/where with previous version
@@ -133,7 +142,7 @@ public class HandlerMinter extends Handler<JobState>
 	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
                 	Map<String, String> previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
            		// erc file in ANVL format
-           		readERC(jobState, previousSystemERC, false);	// Do not update where!
+           		updateMetadata(jobState, previousSystemERC, false);	// Do not update where!
             	    } else {
 		        System.out.println("[info] " + MESSAGE + "No previous version exists'");
 		    }
@@ -354,93 +363,85 @@ public class HandlerMinter extends Handler<JobState>
     }
 
     /**
-     * create citation file
+     * update job state w/ metadata
      *
      * @param JobState populate metadata fields if necessary
-     * @param producerERC producer supplied metadata
+     * @param producerData producer supplied metadata
      * @param noUpdateIDs do not populate any ID fields (not needed for update)
      * @return boolean do we have necessary ERC data (who/what/where).  Needed for update request
      */
-    private boolean readERC(JobState jobState, Map producerERC, boolean updateIDs)
+    private boolean updateMetadata(JobState jobState, Map producerData, boolean updateIDs)
         throws TException
     {
 	boolean haveMetadata = false;
         String objectCreator = jobState.getObjectCreator();
         String objectTitle = jobState.getObjectTitle();
         String objectDate = jobState.getObjectDate();
-        String primaryIdentifier = null;
-        String localIdentifier = null;
+        String objectPrimaryIdentifier = null;
+        String objectLocalIdentifier = null;
         try {
-            if (updateIDs) primaryIdentifier = jobState.getPrimaryID().getValue();
+            if (updateIDs) objectPrimaryIdentifier = jobState.getPrimaryID().getValue();
         } catch (Exception e) {
-            if (updateIDs) primaryIdentifier = "(:unas)";
+            objectPrimaryIdentifier = "(:unas)";
         }
         try {
-             if (updateIDs) localIdentifier = jobState.getLocalID().getValue();
+             if (updateIDs) objectLocalIdentifier = jobState.getLocalID().getValue();
         } catch (Exception e) {
-            if (updateIDs) localIdentifier = "(:unas)";
+            objectLocalIdentifier = "(:unas)";
         }
 
         // update jobState if necessary
-        if (producerERC != null) {
-            Iterator producerERCitr = producerERC.keySet().iterator();
-            while (producerERCitr.hasNext()) {
-                String key = (String) producerERCitr.next();
-                String value = (String) producerERC.get(key);
+        if (producerData != null) {
+            Iterator producerDataItr = producerData.keySet().iterator();
+            while (producerDataItr.hasNext()) {
+                String key = (String) producerDataItr.next();
+                String value = (String) producerData.get(key);
 
-		// Only update localID, as all other fields are populated in HandlerDescribe
-                // ercProperties.put(key, value);
-                final String DELIMITER = " ; ";
 
-                String append = "";
-                if (key.matches("who")) {
-		    if (objectCreator != null) append = DELIMITER + objectCreator;
+                final String DELIMITER = "; ";
+                if (key.matches("who") || key.matches("dc.creator")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-		        jobState.setObjectCreator(trimLeft(trimRight(value)) + append);
+			// overwrite existing value
+		        jobState.setObjectCreator(trimLeft(trimRight(value)));
+			if (DEBUG) System.out.println("[info] found creator in metadata file: " + value);
 	    	        haveMetadata = true;
 		    }
 		}
-                append = "";
-                if (key.matches("what")) {
-		    if (objectTitle != null) append = DELIMITER + objectTitle;
+                if (key.matches("what") ||  key.matches("dc.title")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-		        jobState.setObjectTitle(trimLeft(trimRight(value)) + append);
+			// overwrite existing value
+		        jobState.setObjectTitle(trimLeft(trimRight(value)));
+			if (DEBUG) System.out.println("[info] found title in metadata file: " + value);
 	    	        haveMetadata = true;
 		    }
 		}
-                append = "";
-                if (key.matches("when")) {
-		    if (objectDate != null) append = DELIMITER + objectDate;
+                if (key.matches("when") ||  key.matches("dc.date")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-		        jobState.setObjectDate(trimLeft(trimRight(value)) + append);
+			// overwrite existing value
+		        jobState.setObjectDate(trimLeft(trimRight(value)));
+			if (DEBUG) System.out.println("[info] found date in metadata file: " + value);
 	    	        haveMetadata = true;
 		    }
 		}
-                // local ID in ERC file?
-                if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
-                    value = trimLeft(trimRight(value));
-                    try {
-                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
-                            jobState.setLocalID(value);
-                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
-                        } else if (! localIdentifier.contains(value)) {
-                            append = DELIMITER + localIdentifier;
-                            jobState.setLocalID(value + append);
-                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
-                        }
-                    } catch (Exception e) {}
+                // local ID processing
+                if (key.matches("where-local") || key.matches("dc.identifier-local")) {
+                    if (! trimLeft(trimRight(value)).contains("(:unas)")) {
+			// overwrite existing value
+			if (updateIDs) {
+                            jobState.setLocalID(trimLeft(trimRight(value)));
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in metadata file: " + value);
+			}
+		    }
                 }
-                // primary ID in ERC file?
-                if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
-                    try {
-                        // Only update if empty
-                         if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) {
-                            if (updateIDs) {
-                                jobState.setPrimaryID(trimLeft(trimRight(value)));
-                                if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
-			    }
-                        }
-                    } catch (Exception e) {e.printStackTrace();}
+                // primary ID processing
+                if (key.matches("where-primary") || key.matches("dc.identifier-primary")) {
+                    if (! trimLeft(trimRight(value)).contains("(:unas)")) {
+			// overwrite existing value
+			if (updateIDs) {
+                            jobState.setPrimaryID(trimLeft(trimRight(value)));
+                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in metadata file: " + value);
+			}
+		    }
                 }
             }
         } else {
