@@ -239,12 +239,11 @@ public class HandlerDataONE extends Handler<JobState>
 		    }
 		}
 
-	        //client = Client.create();
-		// URL encoding the ID causes error w/ latest Metacat
-	    	// String id = URLEncoder.encode(createContent.getComponentPid(), "UTF-8");
 	    	String id = createContent.getComponentPid();
-                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + id);
-	    	webResourceCreate = client.resource(dataoneURL + id);
+		// Whitespace is not supported by D1 
+	    	String spacelessID = translateWhiteSpace(createContent.getComponentPid());
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + spacelessID);
+	    	webResourceCreate = client.resource(dataoneURL + spacelessID);
                 // System.out.println(createContent.dump("-debug-"));
 
                 formDataMultiPart = new FormDataMultiPart();
@@ -576,6 +575,10 @@ public class HandlerDataONE extends Handler<JobState>
 	} catch (Exception e) {};
 
         return;
+    }
+
+    private String translateWhiteSpace(String inputString) {
+	return inputString.replaceAll(" ", "_");
     }
 }
 
