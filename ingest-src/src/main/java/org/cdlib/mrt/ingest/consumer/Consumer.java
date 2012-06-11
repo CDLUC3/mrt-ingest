@@ -331,7 +331,7 @@ class ConsumerDaemon implements Runnable
                 // Let's check to see if we are on hold
                 if (onHold()) {
 		    try {
-                        distributedQueue.peek(); 	// prevent timeout
+                        distributedQueue.peek();
                         System.out.println(MESSAGE + "detected 'on hold' condition");
 		    } catch (ConnectionLossException cle) {
 			System.err.println("[warn] " + MESSAGE + "Queueing service is down.");
