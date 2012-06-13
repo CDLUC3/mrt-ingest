@@ -639,6 +639,22 @@ public class JerseyBase
 		}
 		ingestRequest.getJob().setPackageName(fileName);
 
+		// Simplified ingest code
+		if (ingestRequest.getPackageType() == null) {
+		    if (DEBUG) System.out.println("[info] No file type found.  Let's look at filename for clues.");
+		    if (fileName.endsWith(".gz") || fileName.endsWith(".tar") || fileName.endsWith(".zip") || fileName.endsWith(".bz")) {
+			ingestRequest.setPackageType("container");
+		        if (DEBUG) System.out.println("[info] Found container extension.  Assume batch manifest");
+		    } else 
+		    if (fileName.endsWith(".checkm")) {
+			ingestRequest.setPackageType("batchManifest");	// what about object Manifest??
+		        if (DEBUG) System.out.println("[info] Found checkm extension.  Assume batch manifest");
+		    } else {
+			ingestRequest.setPackageType("file");
+		        if (DEBUG) System.out.println("[info] Unrecognized extenstion.  Assume file");
+		    }
+		}
+
             	if (DEBUG) System.out.println("extracting file: " + fileName);
 		File uploadedFile = new File(queueDir, fileName);
 		if (uploadedFile.exists()) {
