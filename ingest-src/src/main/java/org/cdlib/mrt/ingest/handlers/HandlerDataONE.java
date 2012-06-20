@@ -43,9 +43,13 @@ import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
@@ -139,6 +143,9 @@ public class HandlerDataONE extends Handler<JobState>
         File metadataFile = new File(systemTargetDir, "mrt-ingest.txt");
         File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
         jobState.setMetacatStatus("success");	//default
+        File tmpFile = null;
+
+	boolean REMOVE_ERC_FORMAT_ID = true;	// CN does not yet support this format ID
 
 	try {
 	    versionID = jobState.getVersionID();
@@ -163,6 +170,12 @@ public class HandlerDataONE extends Handler<JobState>
 		FileUtil.string2File(resourceManifest, 
 		    createResourceManifest(new File(ingestRequest.getQueuePath() + FS + "producer")));
 	    }
+
+	    if (REMOVE_ERC_FORMAT_ID) {
+                tmpFile = File.createTempFile("dataone", ".txt", new File(ingestRequest.getQueuePath() + FS + "producer"));
+		resourceManifestName = removeERC(resourceManifest, tmpFile);
+	    }
+
 
             DataOneHandler handler = DataOneHandler.getDataOneHandler(ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, 
 		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, dataoneURL, 
@@ -321,6 +334,9 @@ public class HandlerDataONE extends Handler<JobState>
 	    // optional handler, do not stop future processing
             return new HandlerResult(true, msg);
 	} finally {
+	    try {
+	        if (tmpFile != null) tmpFile.delete();	
+	    } catch (Exception e) {}
 	    if (error) {
                 if (DEBUG) System.out.println("[error] dataONE processing failed: " + jobState.getMetacatStatus());
 	        if (notify && dataONE) notify(jobState, profileState, ingestRequest);
@@ -354,6 +370,33 @@ public class HandlerDataONE extends Handler<JobState>
 	} catch (Exception e) { 
 	    e.printStackTrace();
             if (DEBUG) System.out.println("[warn] " + MESSAGE + " Could not create storage URL");
+	    return null; 
+	}
+    }
+
+    private String removeERC(File dataoneManifest, File tempFile) {
+	try {
+	    BufferedReader oldD1 = new BufferedReader(new FileReader(dataoneManifest));  
+	    FileWriter fileWriter = new FileWriter(tempFile);
+	    PrintWriter newD1 = new PrintWriter(fileWriter);
+
+	    String line = null;  
+
+	    while ((line = oldD1.readLine()) != null) {  
+	        if (! line.startsWith("mrt-erc.txt")) 
+	  	    newD1.println(line); 
+		else
+		    if (DEBUG) System.out.println("[info] " + MESSAGE + " Removing ERC entry from dataone manifest: " + line);
+	    } 
+
+
+	    newD1.close();
+
+	    return tempFile.getAbsolutePath().substring(tempFile.getAbsolutePath().indexOf("producer/"));
+
+	} catch (Exception e) { 
+	    e.printStackTrace();
+            if (DEBUG) System.out.println("[warn] " + MESSAGE + " Could not modify dataone manifest (removing ERC entries");
 	    return null; 
 	}
     }
