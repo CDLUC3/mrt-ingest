@@ -38,6 +38,7 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.InterruptedException;
 import java.net.URI;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,14 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+
+import org.cdlib.mrt.core.FileComponent;
+import org.cdlib.mrt.core.Manifest;
+import org.cdlib.mrt.core.ManifestRowAbs;
+import org.cdlib.mrt.core.ManifestRowBatch;
+import org.cdlib.mrt.core.ManifestRowIngest;
+import org.cdlib.mrt.core.ManifestRowInf;
+import org.cdlib.mrt.core.MessageDigest;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatterAbs;
@@ -639,22 +648,6 @@ public class JerseyBase
 		}
 		ingestRequest.getJob().setPackageName(fileName);
 
-		// Simplified ingest code
-		if (ingestRequest.getPackageType() == null) {
-		    if (DEBUG) System.out.println("[info] No file type found.  Let's look at filename for clues.");
-		    if (fileName.endsWith(".gz") || fileName.endsWith(".tar") || fileName.endsWith(".zip") || fileName.endsWith(".bz")) {
-			ingestRequest.setPackageType("container");
-		        if (DEBUG) System.out.println("[info] Found container extension.");
-		    } else 
-		    if (fileName.endsWith(".checkm")) {
-			ingestRequest.setPackageType("batchManifest");	// what about object Manifest??
-		        if (DEBUG) System.out.println("[info] Found checkm extension.  Assume batch manifest");
-		    } else {
-			ingestRequest.setPackageType("file");
-		        if (DEBUG) System.out.println("[info] Unrecognized extenstion.  Assume file package type");
-		    }
-		}
-
             	if (DEBUG) System.out.println("extracting file: " + fileName);
 		File uploadedFile = new File(queueDir, fileName);
 		if (uploadedFile.exists()) {
@@ -670,6 +663,36 @@ public class JerseyBase
 		} catch (Exception e) {
             	   throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + e);
 		}
+
+		// Simplified ingest code
+		if (ingestRequest.getPackageType() == null) {
+		    if (DEBUG) System.out.println("[info] No file type found.  Let's do our best to determine.");
+		    if (fileName.endsWith(".gz") || fileName.endsWith(".tar") || fileName.endsWith(".zip") || fileName.endsWith(".bz")
+			    || fileName.endsWith(".tgz") || fileName.endsWith(".bz2")) {
+			ingestRequest.setPackageType("container");
+		        if (DEBUG) System.out.println("[info] Found container extension.");
+		    } else {
+		        String manifestType = null;
+		        manifestType = determineBatchManifest(new File(queueDir, fileName));
+			
+			if (manifestType == null) {
+		            if (DEBUG) System.out.println("[info] File NOT a batch manifest.");
+		            manifestType = determineObjectManifest(new File(queueDir, fileName));
+			    if (manifestType == null) {
+		        	if (DEBUG) System.out.println("[info] File NOT an object manifest.");
+			    }
+			}
+
+		        if (manifestType != null) {
+		            if (DEBUG) System.out.println("[info] Found checkm manifest.  Type is: " + manifestType);
+			    ingestRequest.setPackageType(manifestType);
+		    	} else {
+			    ingestRequest.setPackageType("file");
+		            if (DEBUG) System.out.println("[info] Unrecognized file.  Assume type is file");
+			}
+		    }
+		}
+
     	   }
 	}
 
@@ -689,6 +712,78 @@ public class JerseyBase
 
     }
 
+    /**
+     * return manifest type
+     * @param postedFile pathname of uploaded file
+     */
+    protected String determineBatchManifest(File manifestFile)
+    {
+	String manifestType = null;
+        try {
+            if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
+
+            Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", -100, -100), ManifestRowAbs.ManifestType.batch);
+            Enumeration en = manifest.getRows(manifestFile);
+            ManifestRowBatch manifestRow = null;
+	    String profile = null;
+            while (en.hasMoreElements()) {
+            	manifestRow = (ManifestRowBatch) en.nextElement();
+	        profile = manifestRow.getProfile();
+
+		if (profile != null) {
+		    if (profile.endsWith("single-file-batch-manifest")) manifestType = "batchManifestFile";
+		    else if (profile.endsWith("container-batch-manifest")) manifestType = "batchManifestContainer";
+		    else if (profile.endsWith("batch-manifest")) manifestType = "batchManifest";
+		}
+
+		break;
+	    }
+
+	    return manifestType;
+
+        } catch (Exception ex) {
+	    // ex.printStackTrace();
+            if (DEBUG) System.out.println("[warn] Could not determine if file is manifest: " + manifestFile.getName());
+	    return manifestType;
+        }
+    }
+
+
+    /**
+     * return manifest type
+     * @param postedFile pathname of uploaded file
+     */
+    protected String determineObjectManifest(File manifestFile)
+    {
+	String manifestType = null;
+        try {
+            if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
+
+            Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", 10, 10), ManifestRowAbs.ManifestType.ingest);
+            Enumeration en = manifest.getRows(manifestFile);
+            ManifestRowIngest manifestRow = null;
+	    String profile = null;
+            while (en.hasMoreElements()) {
+            	manifestRow = (ManifestRowIngest) en.nextElement();
+	        profile = manifestRow.getProfile();
+
+		if (profile != null) {
+		    if (profile.endsWith("ingest-manifest")) manifestType = "manifest";
+		}
+
+		break;
+	    }
+
+	    return manifestType;
+
+        } catch (Exception ex) {
+	    // ex.printStackTrace();
+            if (DEBUG) System.out.println("[warn] Could not determine if file is manifest: " + manifestFile.getName());
+	    return manifestType;
+        }
+    }
+
+    /**
     /**
      * return integer if valid or exception if not
      * @param header exception header
