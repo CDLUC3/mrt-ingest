@@ -257,7 +257,7 @@ public class HandlerDataONE extends Handler<JobState>
 	    	String spacelessID = translateWhiteSpace(createContent.getComponentPid());
                 if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + spacelessID);
 	    	webResourceCreate = client.resource(dataoneURL + spacelessID);
-                // System.out.println(createContent.dump("-debug-"));
+                if (DEBUG) System.out.println(createContent.dump("-METADATA-"));
 
                 formDataMultiPart = new FormDataMultiPart();
 		File systemMetadataFile = File.createTempFile("d1-sysmetadata", ".xml");
