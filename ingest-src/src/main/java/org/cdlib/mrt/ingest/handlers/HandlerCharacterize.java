@@ -121,6 +121,19 @@ public class HandlerCharacterize extends Handler<JobState>
     {
 
 	try {
+	    URL url = profileState.getCharacterizationURL();
+	    try {
+	        if (StringUtil.isEmpty(url.toString())) {
+	            System.err.println("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
+	    	    return new HandlerResult(true, "SUCCESS: " + NAME + " Skipping characterized");
+		} else {
+		    if (DEBUG) System.out.println("[debug] " + MESSAGE + " found Char. URL: " + url.toString());
+		}
+	    } catch (java.lang.NullPointerException npe) {
+	        System.err.println("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
+	        return new HandlerResult(true, "SUCCESS: " + NAME + " Skipping characterized");
+	    }
+
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File metadataFile = new File(systemTargetDir, "mrt-jhove2.xml");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
@@ -136,16 +149,6 @@ public class HandlerCharacterize extends Handler<JobState>
 		if (fileName.startsWith("mrt-")) continue;
 		if (DEBUG) System.out.println("[debug] " + MESSAGE + " processing file: " + fileName);
 
-		URL url = profileState.getCharacterizationURL();
-		try {
-		    if (StringUtil.isEmpty(url.toString())) {
-	                System.err.println("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
-	    	        return new HandlerResult(true, "SUCCESS: " + NAME + " Skipping characterized");
-		    }
-		} catch (java.lang.NullPointerException npe) {
-	            System.err.println("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
-	    	    return new HandlerResult(true, "SUCCESS: " + NAME + " Skipping characterized");
-		}
 		String response = characterize(url, fileName);
 
 		if (StringUtil.isEmpty(response)) {
@@ -167,10 +170,8 @@ public class HandlerCharacterize extends Handler<JobState>
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " object components characterized");
 	} catch (TException te) {
-            //te.printStackTrace(System.err);
             return new HandlerResult(true, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-            // e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "error in characterization: " + e.getMessage();
             return new HandlerResult(true, msg);
         } finally {
