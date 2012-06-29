@@ -85,6 +85,7 @@ public class ProfileState
     private Collection admin = null;
     private String context = null;
     private String misc = null;
+    private String dataoneNodeID = null;
     //private FormatType notificationFormat = FormatType.anvl;		// default
     private FormatType notificationFormat = null;		// default
 
@@ -491,6 +492,14 @@ public class ProfileState
 
     public void setMisc(String misc) {
         this.misc = misc;
+    }
+
+    public String getDataoneNodeID() {
+        return dataoneNodeID;
+    }
+
+    public void setDataoneNodeID(String dataoneNodeID) {
+        this.dataoneNodeID = dataoneNodeID;
     }
 
     public FormatType getNotificationFormat() {
