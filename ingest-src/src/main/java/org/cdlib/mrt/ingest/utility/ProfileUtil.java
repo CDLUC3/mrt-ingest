@@ -92,6 +92,7 @@ public class ProfileUtil
     private static final String matchCharacterizationURL = "CharacterizationURL";
     private static final String matchFixityURL = "FixityURL";
     private static final String matchDataoneURL = "DataoneURL";
+    private static final String matchCoordinatingNodeURL = "CoordinatingNodeURL";
     private static final String matchDataoneNodeID = "DataoneNodeID";
     private static final String matchCallbackURL = "CallbackURL";
     private static final String matchStatusURL = "StatusURL";
@@ -177,13 +178,21 @@ public class ProfileUtil
                     }
 		    profileState.setFixityURL(url);
 		} else if (key.startsWith(matchDataoneURL)) {
-                    if (DEBUG) System.out.println("[debug] dataONE URL: " + value);
+                    if (DEBUG) System.out.println("[debug] dataONE member node URL: " + value);
                     try {
                         url = new URL(value);
                     } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("Fixity parameter in profile is not a valid URL: " + value);
+                        throw new TException.INVALID_CONFIGURATION("Dataone MN parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setDataoneURL(url);
+		} else if (key.startsWith(matchCoordinatingNodeURL)) {
+                    if (DEBUG) System.out.println("[debug] dataONE coordinating node URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("Dataone CN parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setCoordinatingNodeURL(url);
 		} else if (key.startsWith(matchCallbackURL)) {
                     if (DEBUG) System.out.println("[debug] callback URL: " + value);
                     try {

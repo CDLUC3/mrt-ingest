@@ -137,7 +137,8 @@ public class HandlerDataONE extends Handler<JobState>
     {
 
   	ClientResponse clientResponse = null;
-	URL dataoneURL = null;
+	URL dataoneURL = null;		// member node
+	URL coordinatingNodeURL = null;
 	String dataoneNodeID = null;
         logger = new TFileLogger("HandlerDataONE", 10, 10);
         File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
@@ -169,8 +170,15 @@ public class HandlerDataONE extends Handler<JobState>
 	    try {
 	        dataoneURL = profileState.getDataoneURL();
 	    } catch (Exception e) {
-		throw new TException.REQUEST_ELEMENT_UNSUPPORTED("[error] " + NAME + ": No dataONE service url specified.");
+		throw new TException.REQUEST_ELEMENT_UNSUPPORTED("[error] " + NAME + ": No dataONE member node url specified.");
 	    }
+	    // coordinating node
+	    try {
+	        coordinatingNodeURL = profileState.getCoordinatingNodeURL();
+	    } catch (Exception e) {
+		throw new TException.REQUEST_ELEMENT_UNSUPPORTED("[error] " + NAME + ": No dataONE coordinating node url specified.");
+	    }
+
 
 	    // d1 resource manifest processing
 	    File resourceManifest = new File(ingestRequest.getQueuePath() + FS + resourceManifestName);
@@ -189,7 +197,7 @@ public class HandlerDataONE extends Handler<JobState>
 
 
             DataOneHandler handler = DataOneHandler.getDataOneHandler(ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, 
-		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, dataoneURL, 
+		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, coordinatingNodeURL, 
 		createStorageURL(jobState, profileState), logger);
 	    //if (DEBUG) handler.dumpList();
 

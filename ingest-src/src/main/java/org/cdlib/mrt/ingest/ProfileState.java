@@ -67,6 +67,7 @@ public class ProfileState
     private URL characterizationURL = null;
     private URL fixityURL = null;
     private URL dataONEURL = null;
+    private URL coordinatingNodeURL = null;
     private URL callbackURL = null;
     private URL statusURL = null;
     private File statusView = null;
@@ -217,11 +218,19 @@ public class ProfileState
     }
 
     /**
-     * Set dataONE URL
-     * @param URL dataONE URL
+     * Set dataONE member node URL
+     * @param URL dataONE MN URL
      */
     public void setDataoneURL(URL dataONEURL) {
         this.dataONEURL = dataONEURL;
+    }
+
+    /**
+     * Set dataONE coordinating node URL
+     * @param URL dataONE CN URL
+     */
+    public void setCoordinatingNodeURL(URL coordinatingNodeURL) {
+        this.coordinatingNodeURL = coordinatingNodeURL;
     }
 
     /**
@@ -274,11 +283,19 @@ public class ProfileState
     }
 
     /**
-     * Get dataONE URL
-     * @return dataONE URL
+     * Get dataONE member node URL
+     * @return dataONE MN URL
      */
     public URL getDataoneURL() {
         return this.dataONEURL; 
+    }
+
+    /**
+     * Get dataONE coordinating node URL
+     * @return dataONE CN URL
+     */
+    public URL getCoordinatingNodeURL() {
+        return this.coordinatingNodeURL; 
     }
 
     /**
