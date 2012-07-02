@@ -271,11 +271,9 @@ public class HandlerDataONE extends Handler<JobState>
 		    }
 		}
 
-	    	String id = createContent.getComponentPid();
-		// Whitespace is not supported by D1 
-	    	String spacelessID = translateWhiteSpace(createContent.getComponentPid());
-                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + spacelessID);
-	    	webResourceCreate = client.resource(dataoneURL + spacelessID);
+	    	String id = translateWhiteSpace(createContent.getComponentPid()); 	// Whitespace is not supported by D1 
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + id);
+	    	webResourceCreate = client.resource(dataoneURL + id);
                 if (DEBUG) System.out.println(createContent.dump("-METADATA-"));
 
                 formDataMultiPart = new FormDataMultiPart();
