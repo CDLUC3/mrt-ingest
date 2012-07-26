@@ -78,7 +78,10 @@ public class HandlerDigest extends Handler<JobState>
 
 	    // requires symlink from webapps/ingestqueue to home ingest queue directory
 	    URL link = new URL(ingestRequest.getLink());	
-	    String baseURL = link.getProtocol() + "://" + link.getHost() + ":" + link.getPort() + 
+	    String port = "";
+	    String path = link.getPath();
+	    if (link.getPort() != -1) port = ":" + link.getPort();
+	    String baseURL = link.getProtocol() + "://" + link.getHost() + port + path +
 		 "/ingestqueue/" + ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
 
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " baseURL: " + baseURL);
