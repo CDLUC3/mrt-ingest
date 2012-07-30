@@ -87,6 +87,7 @@ public class ProfileState
     private String context = null;
     private String misc = null;
     private String dataoneNodeID = null;
+    private String ezidCoowner = null;
     //private FormatType notificationFormat = FormatType.anvl;		// default
     private FormatType notificationFormat = null;		// default
 
@@ -521,6 +522,14 @@ public class ProfileState
 
     public FormatType getNotificationFormat() {
         return notificationFormat;
+    }
+
+    public String getEzidCoowner() {
+        return ezidCoowner;
+    }
+
+    public void setEzidCoowner(String ezidCoowner) {
+        this.ezidCoowner = ezidCoowner;
     }
 
     public void setNotificationFormat(String notificationFormat) {
