@@ -198,7 +198,6 @@ public class IngestRequest
             this.notificationFormat = FormatType.valueOf(notificationFormat);
         } catch (Exception e) {
             // default
-            e.printStackTrace();
             if (DEBUG) System.out.println("[warn] IngestRequest: Could not assign format type: " + notificationFormat);
             this.notificationFormat = null;
         }

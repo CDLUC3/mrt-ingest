@@ -142,7 +142,7 @@ public class HandlerSubmit extends Handler<BatchState>
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
 	    try {
 	        properties.put("notificationFormat", formatType.toString());
-	    } catch (Exception e) { e.printStackTrace(); }
+	    } catch (Exception e) { }
 
 	    // for all jobs in batch
 	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
