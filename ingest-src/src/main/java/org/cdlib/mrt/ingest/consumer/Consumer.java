@@ -518,9 +518,14 @@ class ConsumeData implements Runnable
 	    ingestRequest.getJob().setBatchID(new Identifier(p.getProperty("batchID")));
 	    ingestRequest.getJob().setJobID(new Identifier(p.getProperty("jobID")));
 	    ingestRequest.getJob().setLocalID(p.getProperty("localID"));
+
+	    try {
+	        ingestRequest.setNotificationFormat(p.getProperty("notificationFormat"));
+	    } catch (Exception e) { } 	// assigned with null value
 	    try {
 	        ingestRequest.getJob().setAltNotification(p.getProperty("notification"));
 	    } catch (Exception e) {}
+
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));
 	    ingestRequest.getJob().setUpdateFlag(((Boolean) p.get("update")).booleanValue());

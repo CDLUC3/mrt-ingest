@@ -88,7 +88,6 @@ public class ProfileState
     private String misc = null;
     private String dataoneNodeID = null;
     private String ezidCoowner = null;
-    //private FormatType notificationFormat = FormatType.anvl;		// default
     private FormatType notificationFormat = null;		// default
 
     final String[] OBJECTTYPE = { "MRT-curatorial", "MRT-system" };
@@ -542,6 +541,7 @@ public class ProfileState
             this.notificationFormat = null;
         }
     }
+
     public String dump(String header)
     {
         return header

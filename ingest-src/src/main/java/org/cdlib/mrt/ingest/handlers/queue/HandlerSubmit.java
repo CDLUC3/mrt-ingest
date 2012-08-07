@@ -53,6 +53,7 @@ import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
 import org.cdlib.mrt.core.ManifestRowInf;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.BatchState;
@@ -98,6 +99,7 @@ public class HandlerSubmit extends Handler<BatchState>
     {
 
 	File file = null;
+        FormatType formatType = null;
 	String status = null;
         Properties properties = new Properties();
         ZooKeeper zooKeeper = null;
@@ -134,6 +136,13 @@ public class HandlerSubmit extends Handler<BatchState>
 	        properties.put("localID", ingestRequest.getJob().getLocalID().getValue());
 	    if (ingestRequest.getJob().grabAltNotification() != null)
 	        properties.put("notification", ingestRequest.getJob().grabAltNotification());
+
+            // attachment: batch state with user defined formatting
+            if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
+            else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
+	    try {
+	        properties.put("notificationFormat", formatType.toString());
+	    } catch (Exception e) { e.printStackTrace(); }
 
 	    // for all jobs in batch
 	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();

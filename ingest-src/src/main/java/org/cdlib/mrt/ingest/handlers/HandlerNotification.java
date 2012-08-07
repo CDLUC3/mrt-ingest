@@ -162,10 +162,12 @@ public class HandlerNotification extends Handler<BatchState>
 		//email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
 			 //batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
 
-		// attachment: batch state with user defined formatting
-		formatType = profileState.getNotificationFormat();
+                // attachment: batch state with user defined formatting
+                if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
+                else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
+
 		try {
-		    email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, profileState.getNotificationFormat()), formatType.getMimeType()),
+		    email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
 			batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
 		} catch (Exception e) {
 	            if (DEBUG) System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
