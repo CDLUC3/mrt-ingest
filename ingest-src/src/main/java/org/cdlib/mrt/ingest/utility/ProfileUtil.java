@@ -103,6 +103,7 @@ public class ProfileUtil
     private static final String matchAggregate = "Aggregate";
     private static final String matchOwner = "Owner";
     private static final String matchContext = "Context";
+    private static final String matchEzidCoowner = "EZID_co-owner";
     private static final String matchNotificationFormat = "NotificationFormat";
     
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
@@ -282,6 +283,9 @@ public class ProfileUtil
 		} else if (key.startsWith(matchDataoneNodeID)) {
                     if (DEBUG) System.out.println("[debug] dataoneNodeID: " + value);
 		    profileState.setDataoneNodeID(value);
+		} else if (key.startsWith(matchEzidCoowner)) {
+                    if (DEBUG) System.out.println("[debug] EZID co-owner found: " + value);
+		    profileState.setEzidCoowner(value);
 		} else if (key.startsWith(matchNotificationFormat)) {
                     if (DEBUG) System.out.println("[debug] notification format: " + value);
 		    profileState.setNotificationFormat(value);

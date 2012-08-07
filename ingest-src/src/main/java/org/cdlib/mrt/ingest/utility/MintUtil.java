@@ -192,13 +192,20 @@ public class MintUtil
 	        context = "mrt.creator: " + escape(profileState.getContext());
 	    } catch (Exception e) { }
 
+	    // Is co-owner available?
+	    String coowner = "";
+	    try {
+		if (profileState.getEzidCoowner() != null)
+	            coowner = "\n" + "_coowners: " + profileState.getEzidCoowner();
+	    } catch (Exception e) { }
+
 	    try {
 	        httpCommand = new HttpPost(url);
 	    } catch (java.lang.IllegalArgumentException iae) {
 		throw new TException.INVALID_OR_MISSING_PARM("Target hostname or primary ID not valid: " + url);
 	    }
 	    httpCommand.addHeader("Content-Type", "text/plain");
-	    if (! shadow) httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
+	    if (! shadow) httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target + coowner, "UTF-8"));
 	    else httpCommand.setEntity(new StringEntity(target, "UTF-8"));
 
             String responseBody = null;

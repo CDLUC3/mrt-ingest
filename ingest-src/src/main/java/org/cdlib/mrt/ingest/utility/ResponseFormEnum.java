@@ -42,12 +42,15 @@ public enum ResponseFormEnum {
 
         anvl("state", "txt", "text/x-anvl"),
         json("state", "json", "application/json"),
+        json2("state", "json", "application/json"),
         serial("state", "ser", "application/x-java-serialized-object"),
         octet("file", "txt", "application/octet-stream"),
         tar("archive", "tar", "application/x-tar"),
         targz("archive", "tar.gz", "application/x-tar-gz"),
         txt("file", "txt", "plain/text"),
         xml("state", "xml", "text/xml"),
+        rdf("state", "xml", "application/rdf+xml"),
+        turtle("state", "ttl", "text/turtle"),
  	xhtml("state", "xhtml", "application/xhtml+xml"),
         zip("archive", "zip", "application/zip");
 

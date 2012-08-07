@@ -80,10 +80,10 @@ public class HandlerNotification extends Handler<BatchState>
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, BatchState batchState) 
 	throws TException 
     {
-  	MultiPartEmail email = new MultiPartEmail();
+   MultiPartEmail email = new MultiPartEmail();
         FormatterUtil formatterUtil = new FormatterUtil();
         FormatType formatType = null;
-       String batchID = batchState.getBatchID().getValue();
+        String batchID = batchState.getBatchID().getValue();
 
 	try {
 
@@ -117,9 +117,11 @@ public class HandlerNotification extends Handler<BatchState>
             } catch (NullPointerException npe) {}
 
             // attachment: batch state with user defined formatting
-            formatType = profileState.getNotificationFormat();
+            if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
+            else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();	// POST parm overrides profile parm
+
             try {
-                email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, profileState.getNotificationFormat()), formatType.getMimeType()),
+                email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
                     batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
             } catch (Exception e) {
                 if (DEBUG) System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
