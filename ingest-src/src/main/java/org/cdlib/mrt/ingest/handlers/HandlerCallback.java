@@ -137,7 +137,19 @@ public class HandlerCallback extends Handler<JobState> {
 
             WebResource webResource = client.resource(url.toString());
 
-            String jobStateString = formatterUtil.doStateFormatting(jobState, profileState.getNotificationFormat());
+            if (ingestRequest.getNotificationFormat() != null) {
+		// POST parm overrides profile parm
+		formatType = ingestRequest.getNotificationFormat();
+            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format set as a POST parameter: " + formatType);
+            } else if (profileState.getNotificationFormat() != null) {
+		formatType = profileState.getNotificationFormat();     
+            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format set as a Profile parameter: " + formatType);
+	    } else {
+		formatType = FormatType.valueOf("xml");		// default
+            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format not set.  Default: " + formatType);
+	    }
+
+            String jobStateString = formatterUtil.doStateFormatting(jobState, formatType);
 
             // make service request
             try {

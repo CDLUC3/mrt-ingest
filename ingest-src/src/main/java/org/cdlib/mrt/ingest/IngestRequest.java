@@ -32,6 +32,7 @@ package org.cdlib.mrt.ingest;
 import java.io.File;
 
 import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
@@ -47,6 +48,7 @@ public class IngestRequest
 
     private static final String NAME = "IngestRequest";
     private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
 
     private Identifier profile = null;
     private int packageSize;
@@ -57,6 +59,7 @@ public class IngestRequest
 
     private JobState jobState;
     private ResponseFormEnum responseForm;
+    private FormatType notificationFormat = null; 
     private PackageTypeEnum packageType;
     private IngestServiceState serviceState;
     private boolean updateFlag;
@@ -176,6 +179,29 @@ public class IngestRequest
      */
     public void setResponseForm(String responseForm) {
         this.responseForm = ResponseFormEnum.setResponseForm(responseForm);
+    }
+
+    /**
+     * Get notification form
+     * @return notification form
+     */
+    public FormatType getNotificationFormat() {
+        return notificationFormat;
+    }
+
+    /**
+     * Set notification form
+     * @param String notification form
+     */
+    public void setNotificationFormat(String notificationFormat) {
+        try {
+            this.notificationFormat = FormatType.valueOf(notificationFormat);
+        } catch (Exception e) {
+            // default
+            e.printStackTrace();
+            if (DEBUG) System.out.println("[warn] IngestRequest: Could not assign format type: " + notificationFormat);
+            this.notificationFormat = null;
+        }
     }
 
     /**

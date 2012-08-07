@@ -608,6 +608,12 @@ public class JerseyBase
 
             	       ingestRequest.setResponseForm(responseForm);
 		       if (DEBUG) System.err.println("[debug] response form: " + ingestRequest.getResponseForm());
+		    } else if (item.getFieldName().equals("notificationFormat")) {
+		       field = "notificationFormat";
+        	       String notificationForm = item.getString("utf-8");
+
+            	       ingestRequest.setNotificationFormat(notificationForm);
+		       if (DEBUG) System.err.println("[debug] notificationFormat: " + ingestRequest.getNotificationFormat());
 		    } else if (item.getFieldName().equals("synchronousMode")) {
 		       field = "synchronousMode";
 		       if (item.getString("utf-8").matches("true")) {
