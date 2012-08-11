@@ -423,6 +423,16 @@ public class HandlerMinter extends Handler<JobState>
 	    	        haveMetadata = true;
 		    }
 		}
+                if (key.matches("dc.format")) {
+		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
+			// do not overwrite existing value (POST parm)
+		        if (jobState.getDCformat() == null) {
+			    jobState.setDCformat(trimLeft(trimRight(value)));
+			    if (DEBUG) System.out.println("[info] found DC format in metadata file: " + value);
+			}
+	    	        haveMetadata = true;
+		    }
+		}
                 // local ID processing
                 if (key.matches("where-local") || key.matches("dc.identifier-local")) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {

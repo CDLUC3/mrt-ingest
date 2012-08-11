@@ -523,6 +523,9 @@ class ConsumeData implements Runnable
 	        ingestRequest.setNotificationFormat(p.getProperty("notificationFormat"));
 	    } catch (Exception e) { } 	// assigned with null value
 	    try {
+	        ingestRequest.setResourceType(p.getProperty("resourceType"));
+	    } catch (Exception e) {}
+	    try {
 	        ingestRequest.getJob().setAltNotification(p.getProperty("notification"));
 	    } catch (Exception e) {}
 

@@ -614,6 +614,78 @@ public class JerseyBase
 
             	       ingestRequest.setNotificationFormat(notificationForm);
 		       if (DEBUG) System.err.println("[debug] notificationFormat: " + ingestRequest.getNotificationFormat());
+		    } else if (item.getFieldName().equals("DC.contributor")) {
+		       field = "DC.contributor";
+        	       String DCcontributor = item.getString("utf-8");
+
+            	       ingestRequest.setDCcontributor(DCcontributor);
+		       if (DEBUG) System.err.println("[debug] DC.contributor: " + ingestRequest.getDCcontributor());
+		    } else if (item.getFieldName().equals("DC.coverage")) {
+		       field = "DC.coverage";
+        	       String DCcoverage = item.getString("utf-8");
+
+            	       ingestRequest.setDCcoverage(DCcoverage);
+		       if (DEBUG) System.err.println("[debug] DC.coverage: " + ingestRequest.getDCcoverage());
+		    } else if (item.getFieldName().equals("DC.description")) {
+		       field = "DC.description";
+        	       String DCdescription = item.getString("utf-8");
+
+            	       ingestRequest.setDCdescription(DCdescription);
+		       if (DEBUG) System.err.println("[debug] DC.description: " + ingestRequest.getDCdescription());
+		    } else if (item.getFieldName().equals("DC.format")) {
+		       field = "DC.format";
+        	       String DCformat = item.getString("utf-8");
+
+            	       ingestRequest.setDCformat(DCformat);
+		       if (DEBUG) System.err.println("[debug] DC.format: " + ingestRequest.getDCformat());
+		    } else if (item.getFieldName().equals("DC.language")) {
+		       field = "DC.language";
+        	       String DClanguage = item.getString("utf-8");
+
+            	       ingestRequest.setDClanguage(DClanguage);
+		       if (DEBUG) System.err.println("[debug] DC.language: " + ingestRequest.getDClanguage());
+		    } else if (item.getFieldName().equals("DC.publisher")) {
+		       field = "DC.publisher";
+        	       String DCpublisher = item.getString("utf-8");
+
+            	       ingestRequest.setDCpublisher(DCpublisher);
+		       if (DEBUG) System.err.println("[debug] DC.publisher: " + ingestRequest.getDCpublisher());
+		    } else if (item.getFieldName().equals("DC.relation")) {
+		       field = "DC.relation";
+        	       String DCrelation = item.getString("utf-8");
+
+            	       ingestRequest.setDCrelation(DCrelation);
+		       if (DEBUG) System.err.println("[debug] DC.relation: " + ingestRequest.getDCrelation());
+		    } else if (item.getFieldName().equals("DC.rights")) {
+		       field = "DC.rights";
+        	       String DCrights = item.getString("utf-8");
+
+            	       ingestRequest.setDCrights(DCrights);
+		       if (DEBUG) System.err.println("[debug] DC.rights: " + ingestRequest.getDCrights());
+		    } else if (item.getFieldName().equals("DC.source")) {
+		       field = "DC.source";
+        	       String DCsource = item.getString("utf-8");
+
+            	       ingestRequest.setDCsource(DCsource);
+		       if (DEBUG) System.err.println("[debug] DC.source: " + ingestRequest.getDCsource());
+		    } else if (item.getFieldName().equals("DC.subject")) {
+		       field = "DC.subject";
+        	       String DCsubject = item.getString("utf-8");
+
+            	       ingestRequest.setDCsubject(DCsubject);
+		       if (DEBUG) System.err.println("[debug] DC.subject: " + ingestRequest.getDCsubject());
+		    } else if (item.getFieldName().equals("DC.type")) {
+		       field = "DC.type";
+        	       String DCtype = item.getString("utf-8");
+
+            	       ingestRequest.setDCtype(DCtype);
+		       if (DEBUG) System.err.println("[debug] DC.type: " + ingestRequest.getDCtype());
+		    } else if (item.getFieldName().equals("DataCite.resourceType")) {
+		       field = "DataCite.resourceType";
+        	       String resourceType = item.getString("utf-8");
+
+            	       ingestRequest.setResourceType(resourceType);
+		       if (DEBUG) System.err.println("[debug] resourceType: " + ingestRequest.getResourceType());
 		    } else if (item.getFieldName().equals("synchronousMode")) {
 		       field = "synchronousMode";
 		       if (item.getString("utf-8").matches("true")) {

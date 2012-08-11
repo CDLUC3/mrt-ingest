@@ -265,8 +265,9 @@ public class MetadataUtil
 
  
     private static boolean validDC(String dcString) {
-	String[] dcKeys = {"dc:title", "dc:creator", "dc:subject", "dc:description", "dc:publisher", "dc:contributor",
-	    "dc:date", "dc:type", "dc:identifier", "dc:relation", "dc:coverage", "dc:rights"};
+	String[] dcKeys = {"dc:contributor", "dc:coverage", "dc:creator", "dc:date", "dc:description", "dc:format",
+	    "dc:identifier", "dc:language", "dc:publisher", "dc:relation", "dc:rights", "dc:source", "dc:subject",
+	    "dc:title", "dc:type"};
 
 	for (int i=dcKeys.length-1; 0 <= i; i--) {
 	    if (dcKeys[i].equals(dcString)) return true;
