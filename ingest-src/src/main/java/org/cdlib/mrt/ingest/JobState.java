@@ -64,6 +64,22 @@ public class JobState
 	private String objectCreator = null;
 	private String objectTitle = null;
 	private String objectDate = null;
+	// http://dublincore.org/documents/dces/
+	private String DCcontributor = null;
+	private String DCcoverage = null;
+	private String DCcreator = null;
+	private String DCdate = null;
+	private String DCdescription = null;
+	private String DCformat = null;
+	private String DCidentifier = null;
+	private String DClanguage = null;
+	private String DCpublisher = null;
+	private String DCrelation = null;
+	private String DCrights = null;
+	private String DCsource = null;
+	private String DCsubject = null;
+	private String DCtitle = null;
+	private String DCtype = null;
 	private String hashValue = null;
 	private DigestEnum hashAlgorithm;
 
@@ -425,9 +441,9 @@ public class JobState
 		return objectDate;
 	}
 
-	/**
-	 * Set content date
-	 * @param String Object Dublin Kernel "when" element
+    /**
+     * Set content date
+     * @param String Object Dublin Kernel "when" element
      */
     public void setObjectDate(String objectDate) {
         this.objectDate = objectDate;
@@ -463,6 +479,22 @@ public class JobState
      */
     public String getObjectType() {
         return objectType;
+    }
+
+    /**
+     * Set DC format
+     * @param String dublin core format
+     */
+    public void setDCformat(String DCformat) {
+        this.DCformat = DCformat;
+    }
+
+    /**
+     * Get DC format
+     * @return String dublin core format
+     */
+    public String getDCformat() {
+        return DCformat;
     }
 
     /**

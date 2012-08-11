@@ -143,6 +143,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	    try {
 	        properties.put("notificationFormat", formatType.toString());
 	    } catch (Exception e) { }
+	    if (ingestRequest.getResourceType() != null)
+	        properties.put("resourceType", ingestRequest.getResourceType());
 
 	    // for all jobs in batch
 	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
