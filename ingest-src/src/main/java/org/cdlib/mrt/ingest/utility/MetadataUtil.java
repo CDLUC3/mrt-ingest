@@ -252,15 +252,41 @@ public class MetadataUtil
 
         } catch (TException te) { 
             throw new TException.INVALID_OR_MISSING_PARM("[error] " +
-                MESSAGE + ": unable to process mrt-dc.xml: " + te.getDetail());
+                MESSAGE + ": unable to read mrt-dc.xml: " + te.getDetail());
         } catch (Exception e) { 
             throw new TException.GENERAL_EXCEPTION("[error] " +
-                MESSAGE + ": unable to process mrt-dc.xml: " + DCFile.getName());
+                MESSAGE + ": unable to read mrt-dc.xml: " + DCFile.getName());
         } finally {
             try { } 
 	    catch (Exception e) { }
         }
         return linkedHashMap;
+    }
+
+
+    /**
+     * write DC xml file
+     *
+     * @param map defining Dublin Core
+     * @param merritt DC source file (usually "mrt-dc.xml")
+     * @return properties map of properties
+     */
+    public static void writeDublinCoreXML(Map<String, String> linkedHashMap, File DCFile)
+        throws TException
+    {
+        try {
+	    Document document = DOMParser.doParse(null, null);
+
+        } catch (TException te) { 
+            throw new TException.INVALID_OR_MISSING_PARM("[error] " +
+                MESSAGE + ": unable to write mrt-dc.xml: " + te.getDetail());
+        } catch (Exception e) { 
+            throw new TException.GENERAL_EXCEPTION("[error] " +
+                MESSAGE + ": unable to write mrt-dc.xml: " + DCFile.getName());
+        } finally {
+            try { } 
+	    catch (Exception e) { }
+        }
     }
 
  

@@ -204,7 +204,7 @@ public class IngestRequest
      * Get resource type (datacite requirement)
      * @return resource type
      */
-    public String getResourceType() {
+    public String getDataCiteResourceType() {
 	try {
             return resourceType.getValue();
 	} catch (NullPointerException npe) { return null; }
@@ -217,7 +217,7 @@ public class IngestRequest
     public String getDCcontributor() { return DCcontributor; }
     public String getDCcoverage()    { return DCcoverage; }
     public String getDCcreator()     { return DCcreator; }
-    public String getDCdate()        { return DCcreator; }
+    public String getDCdate()        { return DCdate; }
     public String getDCdescription() { return DCdescription; }
     public String getDCformat()      { return DCformat; }
     public String getDCidentifier()  { return DCidentifier; }
@@ -254,7 +254,7 @@ public class IngestRequest
      * Set response form
      * @param String response form
      */
-    public void setResourceType(String resourceType) {
+    public void setDataCiteResourceType(String resourceType) {
         this.resourceType = ResourceTypeEnum.setResourceType(resourceType);
     }
 

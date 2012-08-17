@@ -64,7 +64,8 @@ public class JobState
 	private String objectCreator = null;
 	private String objectTitle = null;
 	private String objectDate = null;
-	// http://dublincore.org/documents/dces/
+
+	// Optional Dublin Core (http://dublincore.org/documents/dces)
 	private String DCcontributor = null;
 	private String DCcoverage = null;
 	private String DCcreator = null;
@@ -80,9 +81,9 @@ public class JobState
 	private String DCsubject = null;
 	private String DCtitle = null;
 	private String DCtype = null;
+
 	private String hashValue = null;
 	private DigestEnum hashAlgorithm;
-
 	private String objectState = null;
 	private String objectNote = null;
 	private Integer versionID = null;
@@ -482,22 +483,6 @@ public class JobState
     }
 
     /**
-     * Set DC format
-     * @param String dublin core format
-     */
-    public void setDCformat(String DCformat) {
-        this.DCformat = DCformat;
-    }
-
-    /**
-     * Get DC format
-     * @return String dublin core format
-     */
-    public String getDCformat() {
-        return DCformat;
-    }
-
-    /**
      * Set misc data
      * @param String misc
      */
@@ -674,6 +659,48 @@ public class JobState
         return persistentURL;
     }
 
+    /**
+     * Get DC elements
+     * @return DC element
+     */
+    public String getDCcontributor() { return DCcontributor; }
+    public String getDCcoverage()    { return DCcoverage; }
+    public String getDCcreator()     { return DCcreator; }
+    public String getDCdate()        { return DCdate; }
+    public String getDCdescription() { return DCdescription; }
+    public String getDCformat()      { return DCformat; }
+    public String getDCidentifier()  { return DCidentifier; }
+    public String getDClanguage()    { return DClanguage; }
+    public String getDCpublisher()   { return DCpublisher; }
+    public String getDCrelation()    { return DCrelation; }
+    public String getDCrights()      { return DCrights; }
+    public String getDCsource()      { return DCsource; }
+    public String getDCsubject()     { return DCsubject; }
+    public String getDCtitle()       { return DCtitle; }
+    public String getDCtype()        { return DCtype; }
+
+
+    /**
+     * Set DC elements
+     * @param String DC element
+     */
+    public void setDCcontributor(String DCcontributor) { this.DCcontributor = DCcontributor; }
+    public void setDCcoverage(String DCcoverage) { this.DCcoverage = DCcoverage; }
+    public void setDCcreator(String DCcreator) { this.DCcreator = DCcreator; }
+    public void setDCdate(String DCdate) { this.DCdate = DCdate; }
+    public void setDCdescription(String DCdescription) { this.DCdescription = DCdescription; }
+    public void setDCformat(String DCformat) { this.DCformat = DCformat; }
+    public void setDCidentifier(String DCidentifier) { this.DCidentifier = DCidentifier; }
+    public void setDClanguage(String DClanguage) { this.DClanguage = DClanguage; }
+    public void setDCpublisher(String DCpublisher) { this.DCpublisher = DCpublisher; }
+    public void setDCrelation(String DCrelation) { this.DCrelation = DCrelation; }
+    public void setDCrights(String DCrights) { this.DCrights = DCrights; }
+    public void setDCsource(String DCsource) { this.DCsource = DCsource; }
+    public void setDCsubject(String DCsubject) { this.DCsubject = DCsubject; }
+    public void setDCtitle(String DCtitle) { this.DCtitle = DCtitle; }
+    public void setDCtype(String DCtype) { this.DCtype = DCtype; }
+
+ 
     public void clear() {
         jobID = null;
         jobLabel = null;
@@ -746,6 +773,23 @@ public class JobState
                 if (StringUtil.isNotEmpty(persistentURLS)) header += indent + "Persistent URL: " + persistentURLS + delimiter;
                 if (StringUtil.isNotEmpty(jobStatusS)) header += indent + "Status: " + jobStatusS + delimiter;
                 if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + "Status message: " + jobStatusMessageS + delimiter;
+
+		// Dublin Core (optional)
+                if (StringUtil.isNotEmpty(DCcontributor)) header += indent + "Dublin Core contributor: " + DCcontributor + delimiter;
+                if (StringUtil.isNotEmpty(DCcoverage)) header += indent + "Dublin Core coverage: " + DCcoverage + delimiter;
+                if (StringUtil.isNotEmpty(DCcreator)) header += indent + "Dublin Core creator: " + DCcreator + delimiter;
+                if (StringUtil.isNotEmpty(DCdate)) header += indent + "Dublin Core date: " + DCdate + delimiter;
+                if (StringUtil.isNotEmpty(DCdescription)) header += indent + "Dublin Core description: " + DCdescription + delimiter;
+                if (StringUtil.isNotEmpty(DCformat)) header += indent + "Dublin Core format: " + DCformat + delimiter;
+                if (StringUtil.isNotEmpty(DCidentifier)) header += indent + "Dublin Core identifier: " + DCidentifier + delimiter;
+                if (StringUtil.isNotEmpty(DClanguage)) header += indent + "Dublin Core language: " + DClanguage + delimiter;
+                if (StringUtil.isNotEmpty(DCpublisher)) header += indent + "Dublin Core publisher: " + DCpublisher + delimiter;
+                if (StringUtil.isNotEmpty(DCrelation)) header += indent + "Dublin Core relation: " + DCrelation + delimiter;
+                if (StringUtil.isNotEmpty(DCrights)) header += indent + "Dublin Core rights: " + DCrights + delimiter;
+                if (StringUtil.isNotEmpty(DCsubject)) header += indent + "Dublin Core subject: " + DCsubject + delimiter;
+                if (StringUtil.isNotEmpty(DCtitle)) header += indent + "Dublin Core title: " + DCtitle + delimiter;
+                if (StringUtil.isNotEmpty(DCtype)) header += indent + "Dublin Core type: " + DCtype + delimiter;
+
 	    //} else if (format.equalsIgnoreCase("CSV")) {
 	        //String[] fields = new String[12];
                 //StringWriter stringWriter = new StringWriter();
