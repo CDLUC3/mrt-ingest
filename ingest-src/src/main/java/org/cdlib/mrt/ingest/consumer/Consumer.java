@@ -523,11 +523,43 @@ class ConsumeData implements Runnable
 	        ingestRequest.setNotificationFormat(p.getProperty("notificationFormat"));
 	    } catch (Exception e) { } 	// assigned with null value
 	    try {
-	        ingestRequest.setResourceType(p.getProperty("resourceType"));
+	        ingestRequest.setDataCiteResourceType(p.getProperty("DataCiteResourceType"));
 	    } catch (Exception e) {}
 	    try {
 	        ingestRequest.getJob().setAltNotification(p.getProperty("notification"));
 	    } catch (Exception e) {}
+
+            // process Dublin Core (optional)
+            if (p.getProperty("DCcontributor") != null)
+                ingestRequest.getJob().setDCcontributor(p.getProperty("DCcontributor"));
+            if (p.getProperty("DCcoverage") != null)
+                ingestRequest.getJob().setDCcoverage(p.getProperty("DCcoverage"));
+            if (p.getProperty("DCcreator") != null)
+                ingestRequest.getJob().setDCcreator(p.getProperty("DCcreator"));
+            if (p.getProperty("DCdate") != null)
+                ingestRequest.getJob().setDCdate(p.getProperty("DCdate"));
+            if (p.getProperty("DCdescription") != null)
+                ingestRequest.getJob().setDCdescription(p.getProperty("DCdescription"));
+            if (p.getProperty("DCformat") != null)
+                ingestRequest.getJob().setDCformat(p.getProperty("DCformat"));
+            if (p.getProperty("DCidentifier") != null)
+                ingestRequest.getJob().setDCidentifier(p.getProperty("DCidentifier"));
+            if (p.getProperty("DClanguage") != null)
+                ingestRequest.getJob().setDClanguage(p.getProperty("DClanguage"));
+            if (p.getProperty("DCpublisher") != null)
+                ingestRequest.getJob().setDCpublisher(p.getProperty("DCpublisher"));
+            if (p.getProperty("DCrelation") != null)
+                ingestRequest.getJob().setDCrelation(p.getProperty("DCrelation"));
+            if (p.getProperty("DCrights") != null)
+                ingestRequest.getJob().setDCrights(p.getProperty("DCrights"));
+            if (p.getProperty("DCsource") != null)
+                ingestRequest.getJob().setDCsource(p.getProperty("DCsource"));
+            if (p.getProperty("DCsubject") != null)
+                ingestRequest.getJob().setDCsubject(p.getProperty("DCsubject"));
+            if (p.getProperty("DCtitle") != null)
+                ingestRequest.getJob().setDCtitle(p.getProperty("DCtitle"));
+            if (p.getProperty("DCtype") != null)
+                ingestRequest.getJob().setDCtype(p.getProperty("DCtype"));
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));

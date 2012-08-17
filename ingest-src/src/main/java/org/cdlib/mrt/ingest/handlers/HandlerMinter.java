@@ -122,7 +122,7 @@ public class HandlerMinter extends Handler<JobState>
 	    if (producerDCFile.exists()) {
                 Map<String, String> producerDC = MetadataUtil.readDublinCoreXML(producerDCFile);
 		// overwrite Form or Manifest parameters
-           	haveMetadata = updateMetadata(jobState, producerDC, true);
+           	haveMetadata = updateMetadata(jobState, producerDC, true, false);
             }
 
 	    // Need to read mrt-erc.txt data if available.
@@ -362,6 +362,13 @@ public class HandlerMinter extends Handler<JobState>
         return MetadataUtil.writeMetadataANVL(momFile, momProperties, false);
     }
 
+    private boolean updateMetadata(JobState jobState, Map producerData, boolean updateIDs)
+        throws TException
+    {
+	// default is to overwrite previous jobState values
+        return updateMetadata(jobState, producerData, updateIDs, true);
+    }
+
     /**
      * update job state w/ metadata
      *
@@ -370,7 +377,7 @@ public class HandlerMinter extends Handler<JobState>
      * @param noUpdateIDs do not populate any ID fields (not needed for update)
      * @return boolean do we have necessary ERC data (who/what/where).  Needed for update request
      */
-    private boolean updateMetadata(JobState jobState, Map producerData, boolean updateIDs)
+    private boolean updateMetadata(JobState jobState, Map producerData, boolean updateIDs, boolean overwrite)
         throws TException
     {
 	boolean haveMetadata = false;
@@ -401,38 +408,111 @@ public class HandlerMinter extends Handler<JobState>
                 final String DELIMITER = "; ";
                 if (key.matches("who") || key.matches("dc.creator")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-			// overwrite existing value
-		        jobState.setObjectCreator(trimLeft(trimRight(value)));
-			if (DEBUG) System.out.println("[info] found creator in metadata file: " + value);
-	    	        haveMetadata = true;
+			if (overwrite || objectCreator == null || objectCreator.equals("(:unas)")) {
+			    // overwrite existing value
+		            jobState.setObjectCreator(trimLeft(trimRight(value)));
+			    if (DEBUG) System.out.println("[info] found creator in metadata file: " + value);
+	    	            haveMetadata = true;
+			}
 		    }
 		}
                 if (key.matches("what") ||  key.matches("dc.title")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-			// overwrite existing value
-		        jobState.setObjectTitle(trimLeft(trimRight(value)));
-			if (DEBUG) System.out.println("[info] found title in metadata file: " + value);
-	    	        haveMetadata = true;
+			if (overwrite || objectTitle == null || objectTitle.equals("(:unas)")) {
+			    // overwrite existing value
+		            jobState.setObjectTitle(trimLeft(trimRight(value)));
+			    if (DEBUG) System.out.println("[info] found title in metadata file: " + value);
+	    	            haveMetadata = true;
+			}
 		    }
 		}
                 if (key.matches("when") ||  key.matches("dc.date")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-			// overwrite existing value
-		        jobState.setObjectDate(trimLeft(trimRight(value)));
-			if (DEBUG) System.out.println("[info] found date in metadata file: " + value);
-	    	        haveMetadata = true;
-		    }
-		}
-                if (key.matches("dc.format")) {
-		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
-			// do not overwrite existing value (POST parm)
-		        if (jobState.getDCformat() == null) {
-			    jobState.setDCformat(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] found DC format in metadata file: " + value);
+			if (overwrite || objectDate == null || objectDate.equals("(:unas)")) {
+			    // overwrite existing value
+		            jobState.setObjectDate(trimLeft(trimRight(value)));
+			    if (DEBUG) System.out.println("[info] found date in metadata file: " + value);
+	    	            haveMetadata = true;
 			}
-	    	        haveMetadata = true;
 		    }
 		}
+
+		if (key.matches("dc.contributor")) {
+		    jobState.setDCcontributor(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.contributor in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.coverage")) {
+		    jobState.setDCcoverage(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.coverage in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.creator")) {
+		    jobState.setDCcreator(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.creator in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.date")) {
+		    jobState.setDCdate(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.date in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.description")) {
+		    jobState.setDCdescription(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.description in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.format")) {
+		    jobState.setDCformat(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.format in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.identifier")) {
+		    jobState.setDCidentifier(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.identifier in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.language")) {
+		    jobState.setDClanguage(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.language in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.publisher")) {
+		    jobState.setDCpublisher(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.publisher in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.relation")) {
+		    jobState.setDCrelation(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.relation in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.rights")) {
+		    jobState.setDCrights(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.rights in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.source")) {
+		    jobState.setDCsource(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.source in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.subject")) {
+		    jobState.setDCsubject(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.subject in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.title")) {
+		    jobState.setDCtitle(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.title in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+		if (key.matches("dc.type")) {
+		    jobState.setDCtype(trimLeft(trimRight(value)));
+		    if (DEBUG) System.out.println("[info] found dc.type in metadata file: " + value);
+	    	    haveMetadata = true;
+		}
+
                 // local ID processing
                 if (key.matches("where-local") || key.matches("dc.identifier-local")) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {

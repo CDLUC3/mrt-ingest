@@ -684,8 +684,8 @@ public class JerseyBase
 		       field = "DataCite.resourceType";
         	       String resourceType = item.getString("utf-8");
 
-            	       ingestRequest.setResourceType(resourceType);
-		       if (DEBUG) System.err.println("[debug] resourceType: " + ingestRequest.getResourceType());
+            	       ingestRequest.setDataCiteResourceType(resourceType);
+		       if (DEBUG) System.err.println("[debug] DataCite.resourceType: " + ingestRequest.getDataCiteResourceType());
 		    } else if (item.getFieldName().equals("synchronousMode")) {
 		       field = "synchronousMode";
 		       if (item.getString("utf-8").matches("true")) {

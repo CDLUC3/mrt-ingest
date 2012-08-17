@@ -335,8 +335,8 @@ public class MintUtil
 		md.add("datacite.publisher: " + escape(profileState.getOwner()));
 	    } catch (Exception e) {}
 	    try {
-		if (ingestRequest.getResourceType() != null) 
-		    md.add("datacite.resourcetype: " + escape(ingestRequest.getResourceType()));
+		if (ingestRequest.getDataCiteResourceType() != null) 
+		    md.add("datacite.resourcetype: " + escape(ingestRequest.getDataCiteResourceType()));
 		else
 		    md.add("datacite.resourcetype: " + escape(createResourceType(jobState).toString()));
 	    } catch (TException te) { 
