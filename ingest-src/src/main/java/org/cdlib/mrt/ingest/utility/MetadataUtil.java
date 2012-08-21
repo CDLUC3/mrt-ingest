@@ -224,7 +224,6 @@ public class MetadataUtil
      * @return properties map of properties
      */
     public static Map<String, String> readDublinCoreXML(File DCFile)
-        throws TException
     {
 
 	String DC_DELIMITER = "; ";
@@ -259,17 +258,13 @@ public class MetadataUtil
 			    linkedHashMap.put(key, value);
 			}
 		    } else {
-		        System.out.println("[warn] " + NAME + " DC element not recognized: " + key);
+		        if (DEBUG) System.out.println("[warn] " + NAME + " DC element not recognized: " + key);
 		    }
 	        }
 	    }
 
-        } catch (TException te) { 
-            throw new TException.INVALID_OR_MISSING_PARM("[error] " +
-                MESSAGE + ": unable to read mrt-dc.xml: " + te.getDetail());
         } catch (Exception e) { 
-            throw new TException.GENERAL_EXCEPTION("[error] " +
-                MESSAGE + ": unable to read mrt-dc.xml: " + DCFile.getName());
+            if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-dc.xml: " + DCFile.getName());
         } finally {
             try { } 
 	    catch (Exception e) { }

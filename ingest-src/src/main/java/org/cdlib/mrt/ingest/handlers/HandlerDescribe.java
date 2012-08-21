@@ -124,7 +124,7 @@ public class HandlerDescribe extends Handler<JobState>
                     + MESSAGE + ": unable to create ERC file: " + systemErcFile.getAbsolutePath());
             }
 
-            // Dublin Core file in XML format
+            // Dublin Core file in XML format (system/mrt-dc.xml)
             if ( ! createDC(jobState, (LinkedHashMap) MetadataUtil.readDublinCoreXML(producerDCFile), systemDCFile)) {
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to create Dublin Core file: " + systemDCFile.getAbsolutePath());
