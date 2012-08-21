@@ -308,9 +308,22 @@ public class MetadataUtil
 	    while (iterator.hasNext()) {
 		String key = (String) iterator.next();
 		String value = (String) linkedHashMap.get(key);
-		for (String entry : (String []) value.split(";")) {
+        	if ( ! validDC(key)) {
+	            System.out.println("[warn] " + NAME + " DC element not recognized: " + key);
+		    continue;
+	        }
+
+		if (key.equals("dc.subject") || key.equals("dc.creator") || key.equals("dc.relation")) {
+		    // repeatable
+		    for (String entry : (String []) value.split(";")) {
+			Element element = doc.createElement("dc:" + key.toLowerCase().replace("dc.", ""));
+	    	        element.setTextContent(XMLUtil.encodeValue(entry));
+		        rootElement.appendChild(element);
+		    }
+		} else {
+		    // non repeatable
 		    Element element = doc.createElement("dc:" + key.toLowerCase().replace("dc.", ""));
-	    	    element.setTextContent(XMLUtil.encodeValue(entry));
+	    	    element.setTextContent(XMLUtil.encodeValue(value));
 		    rootElement.appendChild(element);
 		}
 	    }

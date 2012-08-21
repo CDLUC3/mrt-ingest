@@ -763,20 +763,21 @@ public class JobState
                 if (StringUtil.isNotEmpty(objectDateS)) header += indent + "Object date: " + objectDateS + delimiter;
 
 		// Dublin Core (optional)
-                if (StringUtil.isNotEmpty(DCcontributor)) header += indent + "Dublin Core contributor: " + DCcontributor + delimiter;
-                if (StringUtil.isNotEmpty(DCcoverage)) header += indent + "Dublin Core coverage: " + DCcoverage + delimiter;
-                if (StringUtil.isNotEmpty(DCcreator)) header += indent + "Dublin Core creator: " + DCcreator + delimiter;
-                if (StringUtil.isNotEmpty(DCdate)) header += indent + "Dublin Core date: " + DCdate + delimiter;
-                if (StringUtil.isNotEmpty(DCdescription)) header += indent + "Dublin Core description: " + DCdescription + delimiter;
-                if (StringUtil.isNotEmpty(DCformat)) header += indent + "Dublin Core format: " + DCformat + delimiter;
-                if (StringUtil.isNotEmpty(DCidentifier)) header += indent + "Dublin Core identifier: " + DCidentifier + delimiter;
-                if (StringUtil.isNotEmpty(DClanguage)) header += indent + "Dublin Core language: " + DClanguage + delimiter;
-                if (StringUtil.isNotEmpty(DCpublisher)) header += indent + "Dublin Core publisher: " + DCpublisher + delimiter;
-                if (StringUtil.isNotEmpty(DCrelation)) header += indent + "Dublin Core relation: " + DCrelation + delimiter;
-                if (StringUtil.isNotEmpty(DCrights)) header += indent + "Dublin Core rights: " + DCrights + delimiter;
-                if (StringUtil.isNotEmpty(DCsubject)) header += indent + "Dublin Core subject: " + DCsubject + delimiter;
-                if (StringUtil.isNotEmpty(DCtitle)) header += indent + "Dublin Core title: " + DCtitle + delimiter;
-                if (StringUtil.isNotEmpty(DCtype)) header += indent + "Dublin Core type: " + DCtype + delimiter;
+                if (StringUtil.isNotEmpty(DCcontributor)) header += indent + "DC contributor: " + DCcontributor + delimiter;
+                if (StringUtil.isNotEmpty(DCcoverage)) header += indent + "DC coverage: " + DCcoverage + delimiter;
+                if (StringUtil.isNotEmpty(DCcreator)) header += indent + "DC creator: " + DCcreator + delimiter;
+                if (StringUtil.isNotEmpty(DCdate)) header += indent + "DC date: " + DCdate + delimiter;
+                if (StringUtil.isNotEmpty(DCdescription)) header += indent + "DC description: " + DCdescription + delimiter;
+                if (StringUtil.isNotEmpty(DCformat)) header += indent + "DC format: " + DCformat + delimiter;
+                if (StringUtil.isNotEmpty(DCidentifier)) header += indent + "DC identifier: " + DCidentifier + delimiter;
+                if (StringUtil.isNotEmpty(DClanguage)) header += indent + "DC language: " + DClanguage + delimiter;
+                if (StringUtil.isNotEmpty(DCpublisher)) header += indent + "DC publisher: " + DCpublisher + delimiter;
+                if (StringUtil.isNotEmpty(DCrelation)) header += indent + "DC relation: " + DCrelation + delimiter;
+                if (StringUtil.isNotEmpty(DCrights)) header += indent + "DC rights: " + DCrights + delimiter;
+                if (StringUtil.isNotEmpty(DCsubject)) header += indent + "DC subject: " + DCsubject + delimiter;
+                if (StringUtil.isNotEmpty(DCtitle)) header += indent + "DC title: " + DCtitle + delimiter;
+                if (StringUtil.isNotEmpty(DCtype)) header += indent + "DC type: " + DCtype + delimiter;
+
                 //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + "object profile: " + objectProfileS + delimiter;
 	        // show URL if a) demo mode b) system object (for debugging)
                 if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
