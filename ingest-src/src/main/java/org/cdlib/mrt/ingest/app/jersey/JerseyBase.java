@@ -626,6 +626,18 @@ public class JerseyBase
 
             	       ingestRequest.setDCcoverage(DCcoverage);
 		       if (DEBUG) System.err.println("[debug] DC.coverage: " + ingestRequest.getDCcoverage());
+		    } else if (item.getFieldName().equals("DC.creator")) {
+		       field = "DC.creator";
+        	       String DCcreator = item.getString("utf-8");
+
+            	       ingestRequest.setDCcreator(DCcreator);
+		       if (DEBUG) System.err.println("[debug] DC.creator: " + ingestRequest.getDCcreator());
+		    } else if (item.getFieldName().equals("DC.date")) {
+		       field = "DC.date";
+        	       String DCdate = item.getString("utf-8");
+
+            	       ingestRequest.setDCdate(DCdate);
+		       if (DEBUG) System.err.println("[debug] DC.date: " + ingestRequest.getDCdate());
 		    } else if (item.getFieldName().equals("DC.description")) {
 		       field = "DC.description";
         	       String DCdescription = item.getString("utf-8");
@@ -638,6 +650,12 @@ public class JerseyBase
 
             	       ingestRequest.setDCformat(DCformat);
 		       if (DEBUG) System.err.println("[debug] DC.format: " + ingestRequest.getDCformat());
+		    } else if (item.getFieldName().equals("DC.identifier")) {
+		       field = "DC.identifier";
+        	       String DCidentifier = item.getString("utf-8");
+
+            	       ingestRequest.setDCidentifier(DCidentifier);
+		       if (DEBUG) System.err.println("[debug] DC.identifier: " + ingestRequest.getDCidentifier());
 		    } else if (item.getFieldName().equals("DC.language")) {
 		       field = "DC.language";
         	       String DClanguage = item.getString("utf-8");
@@ -674,6 +692,12 @@ public class JerseyBase
 
             	       ingestRequest.setDCsubject(DCsubject);
 		       if (DEBUG) System.err.println("[debug] DC.subject: " + ingestRequest.getDCsubject());
+		    } else if (item.getFieldName().equals("DC.title")) {
+		       field = "DC.title";
+        	       String DCtitle = item.getString("utf-8");
+
+            	       ingestRequest.setDCtitle(DCtitle);
+		       if (DEBUG) System.err.println("[debug] DC.title: " + ingestRequest.getDCtitle());
 		    } else if (item.getFieldName().equals("DC.type")) {
 		       field = "DC.type";
         	       String DCtype = item.getString("utf-8");

@@ -44,10 +44,23 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+ 
 import org.cdlib.mrt.utility.DOMParser;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.URLEncoder;
+import org.cdlib.mrt.utility.XMLUtil;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -139,7 +152,7 @@ public class MetadataUtil
 	    while ((line = fileBuffer.readLine()) != null) {
 		if (dcPattern.matcher(line).matches()) {
 		    tokens = splitPattern.split(line, 2);
-		    System.out.println("Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+		    System.out.println("[info] " + NAME + " Found ANVL data: " + tokens[0] + " - " + tokens[1]);
 
                     // a little hack to process local/primary IDs
                     if (tokens[0].matches("where")) {
@@ -150,7 +163,7 @@ public class MetadataUtil
 		        linkedHashMap.put(tokens[0], tokens[1]);
 		    }
 		} else {
-		    System.out.println("No match: " + line);
+		    System.out.println("[warn] " + NAME + "No match: " + line);
 		}
 	    }
 
@@ -186,12 +199,12 @@ public class MetadataUtil
             while ((line = fileBuffer.readLine()) != null) {
                 if (dcPattern.matcher(line).matches()) {
                     tokens = splitPattern.split(line, 2);
-                    System.out.println("Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+                    System.out.println("[info] " + NAME + "Found ANVL data: " + tokens[0] + " - " + tokens[1]);
                     if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
                         linkedHashMap.put(tokens[0], tokens[1]);
                     }
                 } else {
-                    System.out.println("No match: " + line);
+                    System.out.println("[warn] " + NAME + "No match: " + line);
                 }
             }
 
@@ -222,7 +235,7 @@ public class MetadataUtil
             fileInputStream = new FileInputStream(DCFile);
 	    Document document = DOMParser.doParse(fileInputStream, null);
 
-	    System.out.println("Root element :" + document.getDocumentElement().getNodeName());
+	    System.out.println("[info] " + NAME + "Root element :" + document.getDocumentElement().getNodeName());
 	    NodeList nodeList = document.getFirstChild().getChildNodes();
  
 	    for (int temp = 0; temp < nodeList.getLength(); temp++) {
@@ -230,22 +243,23 @@ public class MetadataUtil
 		if (node.getNodeType() == Node.ELEMENT_NODE) {
 		    Element element = (Element) node;
  
-		    String key = element.getTagName();
+		    String key = element.getTagName().replace(':', '.');
 		    String value = element.getTextContent();
 		    if (validDC(key)) {
-		        if (DEBUG) System.out.println("[info] processing DC element: " + key + " - " + value);
 			// a little hack to process local/primary IDs
 			if (key.matches("dc.identifier")) {
+		            if (DEBUG) System.out.println("[info] " + NAME + " processing DC element: " + key + " - " + value);
 			    if (value.contains("ark:/")) key = "dc.identifier-primary";
 			    else key = "dc.identifier-local";
-			}
-                        if (linkedHashMap.containsValue(key))
+			} else if (linkedHashMap.containsKey(key)) {
+		            if (DEBUG) System.out.println("[info] " + NAME + " appending DC element: " + key + " - " + value);
 			    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
-			else
+			} else {
+		            if (DEBUG) System.out.println("[info] " + NAME + " processing DC element: " + key + " - " + value);
 			    linkedHashMap.put(key, value);
-
+			}
 		    } else {
-		        System.out.println("[warn] DC element not recognized: " + key);
+		        System.out.println("[warn] " + NAME + " DC element not recognized: " + key);
 		    }
 	        }
 	    }
@@ -269,17 +283,46 @@ public class MetadataUtil
      *
      * @param map defining Dublin Core
      * @param merritt DC source file (usually "mrt-dc.xml")
-     * @return properties map of properties
+     * @return creation/upgrade status
      */
     public static void writeDublinCoreXML(Map<String, String> linkedHashMap, File DCFile)
         throws TException
     {
-        try {
-	    Document document = DOMParser.doParse(null, null);
+	String DC_DELIMITER = ";";
 
-        } catch (TException te) { 
-            throw new TException.INVALID_OR_MISSING_PARM("[error] " +
-                MESSAGE + ": unable to write mrt-dc.xml: " + te.getDetail());
+        try {
+	    DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+	    DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+ 
+	    // root element
+	    Document doc = docBuilder.newDocument();
+	    Element rootElement = doc.createElement("DublinCore");
+	    doc.appendChild(rootElement);
+
+	    // namespace
+	    rootElement.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+	    rootElement.setAttribute("xmlns:dc", "http://purl.org/dc/elements/1.1/");
+
+	    // iterate over elements
+            Iterator iterator = linkedHashMap.keySet().iterator();
+	    while (iterator.hasNext()) {
+		String key = (String) iterator.next();
+		String value = (String) linkedHashMap.get(key);
+		for (String entry : (String []) value.split(";")) {
+		    Element element = doc.createElement("dc:" + key.toLowerCase().replace("dc.", ""));
+	    	    element.setTextContent(XMLUtil.encodeValue(entry));
+		    rootElement.appendChild(element);
+		}
+	    }
+ 
+	    // write the content into xml file
+	    TransformerFactory transformerFactory = TransformerFactory.newInstance();
+	    Transformer transformer = transformerFactory.newTransformer();
+	    DOMSource source = new DOMSource(doc);
+	    StreamResult result = new StreamResult(DCFile);
+	    // StreamResult result = new StreamResult(System.out);		// Output to console for testing
+	    transformer.transform(source, result);
+ 
         } catch (Exception e) { 
             throw new TException.GENERAL_EXCEPTION("[error] " +
                 MESSAGE + ": unable to write mrt-dc.xml: " + DCFile.getName());
@@ -287,13 +330,15 @@ public class MetadataUtil
             try { } 
 	    catch (Exception e) { }
         }
+
+	return;
     }
 
  
     private static boolean validDC(String dcString) {
-	String[] dcKeys = {"dc:contributor", "dc:coverage", "dc:creator", "dc:date", "dc:description", "dc:format",
-	    "dc:identifier", "dc:language", "dc:publisher", "dc:relation", "dc:rights", "dc:source", "dc:subject",
-	    "dc:title", "dc:type"};
+	String[] dcKeys = {"dc.contributor", "dc.coverage", "dc.creator", "dc.date", "dc.description", "dc.format",
+	    "dc.identifier", "dc.language", "dc.publisher", "dc.relation", "dc.rights", "dc.source", "dc.subject",
+	    "dc.title", "dc.type"};
 
 	for (int i=dcKeys.length-1; 0 <= i; i--) {
 	    if (dcKeys[i].equals(dcString)) return true;

@@ -411,7 +411,7 @@ public class HandlerMinter extends Handler<JobState>
 			if (overwrite || objectCreator == null || objectCreator.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectCreator(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] found creator in metadata file: " + value);
+			    if (DEBUG && key.matches("who")) System.out.println("[info] " + NAME + " found creator in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
@@ -421,7 +421,7 @@ public class HandlerMinter extends Handler<JobState>
 			if (overwrite || objectTitle == null || objectTitle.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectTitle(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] found title in metadata file: " + value);
+			    if (DEBUG && key.matches("what")) System.out.println("[info] " + NAME + " found title in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
@@ -431,7 +431,7 @@ public class HandlerMinter extends Handler<JobState>
 			if (overwrite || objectDate == null || objectDate.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectDate(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] found date in metadata file: " + value);
+			    if (DEBUG && key.matches("when")) System.out.println("[info] " + NAME + " found date in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
@@ -439,77 +439,77 @@ public class HandlerMinter extends Handler<JobState>
 
 		if (key.matches("dc.contributor")) {
 		    jobState.setDCcontributor(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.contributor in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.contributor in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.coverage")) {
 		    jobState.setDCcoverage(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.coverage in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.coverage in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.creator")) {
 		    jobState.setDCcreator(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.creator in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.creator in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.date")) {
 		    jobState.setDCdate(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.date in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.date in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.description")) {
 		    jobState.setDCdescription(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.description in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.description in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.format")) {
 		    jobState.setDCformat(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.format in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.format in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.identifier")) {
 		    jobState.setDCidentifier(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.identifier in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.identifier in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.language")) {
 		    jobState.setDClanguage(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.language in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.language in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.publisher")) {
 		    jobState.setDCpublisher(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.publisher in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.publisher in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.relation")) {
 		    jobState.setDCrelation(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.relation in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.relation in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.rights")) {
 		    jobState.setDCrights(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.rights in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.rights in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.source")) {
 		    jobState.setDCsource(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.source in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.source in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.subject")) {
 		    jobState.setDCsubject(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.subject in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.subject in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.title")) {
 		    jobState.setDCtitle(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.title in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.title in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.type")) {
 		    jobState.setDCtype(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] found dc.type in metadata file: " + value);
+		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.type in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 
@@ -519,7 +519,7 @@ public class HandlerMinter extends Handler<JobState>
 			// overwrite existing value
 			if (updateIDs) {
                             jobState.setLocalID(trimLeft(trimRight(value)));
-                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in metadata file: " + value);
+                            if (DEBUG) System.out.println("[info]" + NAME + " Found local ID in metadata file: " + value);
 			}
 		    }
                 }
@@ -529,13 +529,13 @@ public class HandlerMinter extends Handler<JobState>
 			// overwrite existing value
 			if (updateIDs) {
                             jobState.setPrimaryID(trimLeft(trimRight(value)));
-                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in metadata file: " + value);
+                            if (DEBUG) System.out.println("[info]" + NAME + " Found local ID in metadata file: " + value);
 			}
 		    }
                 }
             }
         } else {
-            if (DEBUG) System.out.println("No additional ERC metadata found");
+            if (DEBUG) System.out.println("[info]" + NAME + " No additional ERC metadata found");
         }
 
 	return haveMetadata;
