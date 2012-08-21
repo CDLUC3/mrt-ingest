@@ -761,18 +761,6 @@ public class JobState
                 if (StringUtil.isNotEmpty(objectTitleS)) header += indent + "Object title: " + objectTitleS + delimiter;
                 if (StringUtil.isNotEmpty(objectCreatorS)) header += indent + "Object creator: " + objectCreatorS + delimiter;
                 if (StringUtil.isNotEmpty(objectDateS)) header += indent + "Object date: " + objectDateS + delimiter;
-                //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + "object profile: " + objectProfileS + delimiter;
-	        // show URL if a) demo mode b) system object (for debugging)
-                if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
-		        (StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
-		        header += indent + "Object state: " + objectStateS + "?t=xhtml" + delimiter;
-                if (StringUtil.isNotEmpty(noteS)) header += indent + "Note: " + noteS + delimiter;
-                if (StringUtil.isNotEmpty(submissionDateS)) header += indent + "Submission date: " + submissionDateS + delimiter;
-                if (StringUtil.isNotEmpty(completionDateS)) header += indent + "Completion date: " + completionDateS + delimiter;
-                if (StringUtil.isNotEmpty(metacatStatusS)) header += indent + "Metacat Registration Status: " + metacatStatusS + delimiter;
-                if (StringUtil.isNotEmpty(persistentURLS)) header += indent + "Persistent URL: " + persistentURLS + delimiter;
-                if (StringUtil.isNotEmpty(jobStatusS)) header += indent + "Status: " + jobStatusS + delimiter;
-                if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + "Status message: " + jobStatusMessageS + delimiter;
 
 		// Dublin Core (optional)
                 if (StringUtil.isNotEmpty(DCcontributor)) header += indent + "Dublin Core contributor: " + DCcontributor + delimiter;
@@ -789,6 +777,18 @@ public class JobState
                 if (StringUtil.isNotEmpty(DCsubject)) header += indent + "Dublin Core subject: " + DCsubject + delimiter;
                 if (StringUtil.isNotEmpty(DCtitle)) header += indent + "Dublin Core title: " + DCtitle + delimiter;
                 if (StringUtil.isNotEmpty(DCtype)) header += indent + "Dublin Core type: " + DCtype + delimiter;
+                //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + "object profile: " + objectProfileS + delimiter;
+	        // show URL if a) demo mode b) system object (for debugging)
+                if ((StringUtil.isNotEmpty(objectStateS) && ProfileUtil.isDemoMode(objectProfile)) || 
+		        (StringUtil.isNotEmpty(objectStateS) && ! ProfileUtil.isDemoMode(objectProfile) && StringUtil.isNotEmpty(objectAggregateS)))
+		        header += indent + "Object state: " + objectStateS + "?t=xhtml" + delimiter;
+                if (StringUtil.isNotEmpty(noteS)) header += indent + "Note: " + noteS + delimiter;
+                if (StringUtil.isNotEmpty(submissionDateS)) header += indent + "Submission date: " + submissionDateS + delimiter;
+                if (StringUtil.isNotEmpty(completionDateS)) header += indent + "Completion date: " + completionDateS + delimiter;
+                if (StringUtil.isNotEmpty(metacatStatusS)) header += indent + "Metacat Registration Status: " + metacatStatusS + delimiter;
+                if (StringUtil.isNotEmpty(persistentURLS)) header += indent + "Persistent URL: " + persistentURLS + delimiter;
+                if (StringUtil.isNotEmpty(jobStatusS)) header += indent + "Status: " + jobStatusS + delimiter;
+                if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + "Status message: " + jobStatusMessageS + delimiter;
 
 	    //} else if (format.equalsIgnoreCase("CSV")) {
 	        //String[] fields = new String[12];

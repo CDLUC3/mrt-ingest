@@ -97,6 +97,7 @@ public class HandlerDescribe extends Handler<JobState>
             File systemErcFile = new File(systemTargetDir, "mrt-erc.txt");
             File producerErcFile = new File(producerTargetDir, "mrt-erc.txt");
             File producerDCFile = new File(producerTargetDir, "mrt-dc.xml");
+            File systemDCFile = new File(systemTargetDir, "mrt-dc.xml");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
             // save deletion file
@@ -121,6 +122,12 @@ public class HandlerDescribe extends Handler<JobState>
             if ( ! createERC(jobState, systemErcFile, producerERC)) {
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to create ERC file: " + systemErcFile.getAbsolutePath());
+            }
+
+            // Dublin Core file in XML format
+            if ( ! createDC(jobState, (LinkedHashMap) MetadataUtil.readDublinCoreXML(producerDCFile), systemDCFile)) {
+                throw new TException.GENERAL_EXCEPTION("[error] "
+                    + MESSAGE + ": unable to create Dublin Core file: " + systemDCFile.getAbsolutePath());
             }
 
             // update resource map
@@ -401,6 +408,239 @@ Now done in HandlerMinter
 
         ercProperties.put("where", arrayWhere);
         return MetadataUtil.writeMetadataANVL(systemErcFile, ercProperties, false);
+    }
+
+
+    /**
+     * create/merge dublin core file
+     *
+     * @param JobState populate metadata fields if necessary. (input)
+     * @param DCFile dublin core file. (input)
+     * @param producerDC producer supplied DC metadata. (output)
+     * @return successful in creating DC file
+     */
+    private boolean createDC(JobState jobState, Map producerDC, File systemDCFile)
+        throws TException
+    {
+	final String DC_DELIMITER = "; ";
+	String value = null;
+
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating/updating dublin core: " + systemDCFile.getAbsolutePath());
+	try {
+	    value = jobState.getDCcontributor();
+	    if (value != null) {
+		String key = "dc.contributor";
+		if (producerDC.containsKey(key)) {
+		    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCcoverage();
+	    if (value != null) {
+		String key = "dc.coverage";
+		if (producerDC.containsKey(key)) {
+		    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCcreator();
+	    if (value != null) {
+		String key = "dc.creator";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCdate();
+	    if (value != null) {
+		String key = "dc.date";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+		        producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCdescription();
+	    if (value != null) {
+		String key = "dc.description";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+		        producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCformat();
+	    if (value != null) {
+		String key = "dc.format";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+		        producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCidentifier();
+	    if (value != null) {
+		String key = "dc.identifier";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDClanguage();
+	    if (value != null) {
+		String key = "dc.language";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCpublisher();
+	    if (value != null) {
+		String key = "dc.publisher";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCrelation();
+	    if (value != null) {
+		String key = "dc.relation";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCsource();
+	    if (value != null) {
+		String key = "dc.source";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCsubject();
+	    if (value != null) {
+		String key = "dc.subject";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCtitle();
+	    if (value != null) {
+		String key = "dc.title";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+	try {
+	    value = jobState.getDCtype();
+	    if (value != null) {
+		String key = "dc.type";
+		if (producerDC.containsKey(key)) {
+                    if (! ((String) producerDC.get(key)).contains(value)) {
+			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
+                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		    }
+		} else {
+		    producerDC.put(key, value);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+		}
+	    }
+	} catch (Exception e) { }
+
+	try {
+	    MetadataUtil.writeDublinCoreXML(producerDC, systemDCFile);
+	    return true;
+	} catch (Exception e) { e.printStackTrace(); return false; }
     }
 
 
