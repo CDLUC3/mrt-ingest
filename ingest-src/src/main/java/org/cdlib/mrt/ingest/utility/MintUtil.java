@@ -37,6 +37,8 @@ import com.sun.jersey.api.representation.Form;
 
 import java.io.ByteArrayInputStream;
 import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.net.URL;
@@ -74,6 +76,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.ResourceTypeEnum;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
@@ -196,7 +199,7 @@ public class MintUtil
 	    String coowner = "";
 	    try {
 		if (profileState.getEzidCoowner() != null)
-	            coowner = "\n" + "_coowners: " + profileState.getEzidCoowner();
+	            coowner = "\n" + "_coowners: " + profileState.getEzidCoowner() + "\n";
 	    } catch (Exception e) { }
 
 	    try {
@@ -205,8 +208,16 @@ public class MintUtil
 		throw new TException.INVALID_OR_MISSING_PARM("Target hostname or primary ID not valid: " + url);
 	    }
 	    httpCommand.addHeader("Content-Type", "text/plain");
-	    if (! shadow) httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target + coowner, "UTF-8"));
-	    else httpCommand.setEntity(new StringEntity(target, "UTF-8"));
+	    if (! shadow) {
+		String stringEntity = null;
+		stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + coowner;
+		if (profileState.getIdentifierScheme() == Identifier.Namespace.DOI) {
+	            for (String dataCite : getDataCiteMetadata(ingestRequest, profileState, jobState)) {
+		        stringEntity = stringEntity + dataCite + "\n";
+		    }
+		}
+		httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
+	    } else { httpCommand.setEntity(new StringEntity(target, "UTF-8")); }
 
             String responseBody = null;
 	    HttpResponse httpResponse = null;
@@ -305,16 +316,80 @@ public class MintUtil
         }
     }
 
+    private static List<String> getDataCiteMetadata(IngestRequest ingestRequest, ProfileState profileState, JobState jobState)
+        throws TException
+    {
+        try {
+
+	    List<String> md = new ArrayList();
+	    try {
+		md.add("datacite.creator: " + escape(jobState.getObjectCreator()));
+	    } catch (Exception e) {}
+	    try {
+		md.add("datacite.title: " + escape(jobState.getObjectTitle()));
+	    } catch (Exception e) {}
+	    try {
+		md.add("datacite.publicationyear: " + escape(jobState.getObjectDate()));
+	    } catch (Exception e) {}
+	    try {
+		md.add("datacite.publisher: " + escape(profileState.getOwner()));
+	    } catch (Exception e) {}
+	    try {
+		if (ingestRequest.getDataCiteResourceType() != null) 
+		    md.add("datacite.resourcetype: " + escape(ingestRequest.getDataCiteResourceType()));
+		else
+		    md.add("datacite.resourcetype: " + escape(createResourceType(jobState).toString()));
+	    } catch (TException te) { 
+		throw te;
+	    } catch (Exception e) {}
+
+            return md;
+        } catch (TException te) { 
+	    throw te; 
+        } catch (Exception ex) {
+            throw new TException.GENERAL_EXCEPTION("error processing datacite metadata");
+        }
+    }
+
+
     private static String escape(String input)
         throws TException
     {
         try {
-		return input.replaceAll("%", "%25").replaceAll("\n", "%0A").replaceAll("\r", "%0D").replaceAll(":", "%3A");
+	    return input.replaceAll("%", "%25").replaceAll("\n", "%0A").replaceAll("\r", "%0D").replaceAll(":", "%3A");
         } catch (Exception ex) {
             throw new TException.GENERAL_EXCEPTION("escaping ERC metadata");
         }
     }
 
+
+    private static ResourceTypeEnum createResourceType(JobState jobState)
+        throws TException
+    {
+	String DCformat = null;
+	String resourceType = null;
+        try {
+	    // map mimetype to DataCite resource type
+	    DCformat = jobState.getDCformat();
+
+	    if (DCformat.startsWith("application/")) resourceType = "Dataset";
+	    if (DCformat.startsWith("audio/"))resourceType = "Sound";
+	    if (DCformat.startsWith("example/")) resourceType = "Text";
+	    if (DCformat.startsWith("image/")) resourceType = "Image";
+	    if (DCformat.startsWith("message/")) resourceType = "Text";
+	    if (DCformat.startsWith("model/")) resourceType = "Model";
+	    if (DCformat.startsWith("multipart/")) resourceType = "Collection";
+	    if (DCformat.startsWith("text/")) resourceType = "Text";
+	    if (DCformat.startsWith("video/")) resourceType = "Film";
+
+	    if (resourceType != null) 
+		return ResourceTypeEnum.setResourceType(resourceType);
+	    else 
+		throw new Exception();
+        } catch (Exception ex) {
+            throw new TException.GENERAL_EXCEPTION("mapping mimetype to DataCite resource type: " + DCformat);
+        }
+    }
 
 
     private static String getTargetURL(JobState jobState)

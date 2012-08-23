@@ -143,6 +143,40 @@ public class HandlerSubmit extends Handler<BatchState>
 	    try {
 	        properties.put("notificationFormat", formatType.toString());
 	    } catch (Exception e) { }
+	    if (ingestRequest.getDataCiteResourceType() != null)
+	        properties.put("DataCiteResourceType", ingestRequest.getDataCiteResourceType());
+
+	    // process Dublin Core (optional)
+	    if (ingestRequest.getDCcontributor() != null)
+	        properties.put("DCcontributor", ingestRequest.getDCcontributor());
+	    if (ingestRequest.getDCcoverage() != null)
+	        properties.put("DCcoverage", ingestRequest.getDCcoverage());
+	    if (ingestRequest.getDCcreator() != null)
+	        properties.put("DCcreator", ingestRequest.getDCcreator());
+	    if (ingestRequest.getDCdate() != null)
+	        properties.put("DCdate", ingestRequest.getDCdate());
+	    if (ingestRequest.getDCdescription() != null)
+	        properties.put("DCdescription", ingestRequest.getDCdescription());
+	    if (ingestRequest.getDCformat() != null)
+	        properties.put("DCformat", ingestRequest.getDCformat());
+	    if (ingestRequest.getDCidentifier() != null)
+	        properties.put("DCidentifier", ingestRequest.getDCidentifier());
+	    if (ingestRequest.getDClanguage() != null)
+	        properties.put("DClanguage", ingestRequest.getDClanguage());
+	    if (ingestRequest.getDCpublisher() != null)
+	        properties.put("DCpublisher", ingestRequest.getDCpublisher());
+	    if (ingestRequest.getDCrelation() != null)
+	        properties.put("DCrelation", ingestRequest.getDCrelation());
+	    if (ingestRequest.getDCrights() != null)
+	        properties.put("DCrights", ingestRequest.getDCrights());
+	    if (ingestRequest.getDCsource() != null)
+	        properties.put("DCsource", ingestRequest.getDCsource());
+	    if (ingestRequest.getDCsubject() != null)
+	        properties.put("DCsubject", ingestRequest.getDCsubject());
+	    if (ingestRequest.getDCtitle() != null)
+	        properties.put("DCtitle", ingestRequest.getDCtitle());
+	    if (ingestRequest.getDCtype() != null)
+	        properties.put("DCtype", ingestRequest.getDCtype());
 
 	    // for all jobs in batch
 	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();

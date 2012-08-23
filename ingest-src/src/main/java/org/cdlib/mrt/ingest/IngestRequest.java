@@ -37,6 +37,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ResponseFormEnum;
+import org.cdlib.mrt.ingest.utility.ResourceTypeEnum;
 import org.cdlib.mrt.utility.TException;
 
 /**
@@ -59,6 +60,24 @@ public class IngestRequest
 
     private JobState jobState;
     private ResponseFormEnum responseForm;
+    private ResourceTypeEnum resourceType;
+    // http://dublincore.org/documents/dces/
+    private String DCcontributor = null;
+    private String DCcoverage = null;
+    private String DCcreator = null;
+    private String DCdate = null;
+    private String DCdescription = null;
+    private String DCformat = null;
+    private String DCidentifier = null;
+    private String DClanguage = null;
+    private String DCpublisher = null;
+    private String DCrelation = null;
+    private String DCrights = null;
+    private String DCsource = null;
+    private String DCsubject = null;
+    private String DCtitle = null;
+    private String DCtype = null;
+
     private FormatType notificationFormat = null; 
     private PackageTypeEnum packageType;
     private IngestServiceState serviceState;
@@ -179,6 +198,64 @@ public class IngestRequest
      */
     public void setResponseForm(String responseForm) {
         this.responseForm = ResponseFormEnum.setResponseForm(responseForm);
+    }
+
+    /**
+     * Get resource type (datacite requirement)
+     * @return resource type
+     */
+    public String getDataCiteResourceType() {
+	try {
+            return resourceType.getValue();
+	} catch (NullPointerException npe) { return null; }
+    }
+
+    /**
+     * Get DC elements
+     * @return DC element
+     */
+    public String getDCcontributor() { return DCcontributor; }
+    public String getDCcoverage()    { return DCcoverage; }
+    public String getDCcreator()     { return DCcreator; }
+    public String getDCdate()        { return DCdate; }
+    public String getDCdescription() { return DCdescription; }
+    public String getDCformat()      { return DCformat; }
+    public String getDCidentifier()  { return DCidentifier; }
+    public String getDClanguage()    { return DClanguage; }
+    public String getDCpublisher()   { return DCpublisher; }
+    public String getDCrelation()    { return DCrelation; }
+    public String getDCrights()      { return DCrights; }
+    public String getDCsource()      { return DCsource; }
+    public String getDCsubject()     { return DCsubject; }
+    public String getDCtitle()       { return DCtitle; }
+    public String getDCtype()        { return DCtype; }
+
+    /**
+     * Set DC elements
+     * @param String DC element
+     */
+    public void setDCcontributor(String DCcontributor) { this.DCcontributor = DCcontributor; }
+    public void setDCcoverage(String DCcoverage) { this.DCcoverage = DCcoverage; }
+    public void setDCcreator(String DCcreator) { this.DCcreator = DCcreator; }
+    public void setDCdate(String DCdate) { this.DCdate = DCdate; }
+    public void setDCdescription(String DCdescription) { this.DCdescription = DCdescription; }
+    public void setDCformat(String DCformat) { this.DCformat = DCformat; }
+    public void setDCidentifier(String DCidentifier) { this.DCidentifier = DCidentifier; }
+    public void setDClanguage(String DClanguage) { this.DClanguage = DClanguage; }
+    public void setDCpublisher(String DCpublisher) { this.DCpublisher = DCpublisher; }
+    public void setDCrelation(String DCrelation) { this.DCrelation = DCrelation; }
+    public void setDCrights(String DCrights) { this.DCrights = DCrights; }
+    public void setDCsource(String DCsource) { this.DCsource = DCsource; }
+    public void setDCsubject(String DCsubject) { this.DCsubject = DCsubject; }
+    public void setDCtitle(String DCtitle) { this.DCtitle = DCtitle; }
+    public void setDCtype(String DCtype) { this.DCtype = DCtype; }
+
+    /**
+     * Set response form
+     * @param String response form
+     */
+    public void setDataCiteResourceType(String resourceType) {
+        this.resourceType = ResourceTypeEnum.setResourceType(resourceType);
     }
 
     /**
