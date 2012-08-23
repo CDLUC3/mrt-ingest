@@ -196,7 +196,7 @@ public class MintUtil
 	    } catch (Exception e) { }
 
 	    // Is co-owner available?
-	    String coowner = "";
+	    String coowner = "\n";
 	    try {
 		if (profileState.getEzidCoowner() != null)
 	            coowner = "\n" + "_coowners: " + profileState.getEzidCoowner() + "\n";
