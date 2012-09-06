@@ -245,12 +245,7 @@ public class MetadataUtil
 		    String key = element.getTagName().replace(':', '.');
 		    String value = element.getTextContent();
 		    if (validDC(key)) {
-			// a little hack to process local/primary IDs
-			if (key.matches("dc.identifier")) {
-		            if (DEBUG) System.out.println("[info] " + NAME + " processing DC element: " + key + " - " + value);
-			    if (value.contains("ark:/")) key = "dc.identifier-primary";
-			    else key = "dc.identifier-local";
-			} else if (linkedHashMap.containsKey(key)) {
+			if (linkedHashMap.containsKey(key)) {
 		            if (DEBUG) System.out.println("[info] " + NAME + " appending DC element: " + key + " - " + value);
 			    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
 			} else {
@@ -308,7 +303,7 @@ public class MetadataUtil
 		    continue;
 	        }
 
-		if (key.equals("dc.subject") || key.equals("dc.creator") || key.equals("dc.relation")) {
+		if (key.equals("dc.subject") || key.equals("dc.creator") || key.equals("dc.relation") || key.equals("dc.identifier")) {
 		    // repeatable
 		    for (String entry : (String []) value.split(";")) {
 			Element element = doc.createElement("dc:" + key.toLowerCase().replace("dc.", ""));
