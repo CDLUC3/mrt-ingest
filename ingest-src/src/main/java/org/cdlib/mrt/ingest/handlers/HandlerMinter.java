@@ -514,7 +514,7 @@ public class HandlerMinter extends Handler<JobState>
 		}
 
                 // local ID processing
-                if (key.matches("where-local") || key.matches("dc.identifier-local")) {
+                if (key.matches("where-local") || key.matches("dc.identifier")) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {
 			// overwrite existing value
 			if (updateIDs) {
@@ -524,7 +524,7 @@ public class HandlerMinter extends Handler<JobState>
 		    }
                 }
                 // primary ID processing
-                if (key.matches("where-primary") || key.matches("dc.identifier-primary")) {
+                if (key.matches("where-primary")) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {
 			// overwrite existing value
 			if (updateIDs) {
