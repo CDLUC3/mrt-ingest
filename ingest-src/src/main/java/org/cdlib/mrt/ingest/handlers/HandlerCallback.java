@@ -74,7 +74,7 @@ public class HandlerCallback extends Handler<JobState> {
     FormatterUtil formatterUtil = new FormatterUtil();
     URL url = null;
     private boolean notify = true;
-    private boolean error = true;
+    private boolean error = false;
     private static final String NAME = "HandlerCallback";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
