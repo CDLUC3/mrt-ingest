@@ -372,20 +372,26 @@ public class MintUtil
 	    // map mimetype to DataCite resource type
 	    DCformat = jobState.getDCformat();
 
-	    if (DCformat.startsWith("application/")) resourceType = "Dataset";
-	    if (DCformat.startsWith("audio/"))resourceType = "Sound";
-	    if (DCformat.startsWith("example/")) resourceType = "Text";
-	    if (DCformat.startsWith("image/")) resourceType = "Image";
-	    if (DCformat.startsWith("message/")) resourceType = "Text";
-	    if (DCformat.startsWith("model/")) resourceType = "Model";
-	    if (DCformat.startsWith("multipart/")) resourceType = "Collection";
-	    if (DCformat.startsWith("text/")) resourceType = "Text";
-	    if (DCformat.startsWith("video/")) resourceType = "Film";
+	    try {
+	        if (DCformat.startsWith("application/")) resourceType = "Dataset";
+	        if (DCformat.startsWith("audio/"))resourceType = "Sound";
+	        if (DCformat.startsWith("example/")) resourceType = "Text";
+	        if (DCformat.startsWith("image/")) resourceType = "Image";
+	        if (DCformat.startsWith("message/")) resourceType = "Text";
+	        if (DCformat.startsWith("model/")) resourceType = "Model";
+	        if (DCformat.startsWith("multipart/")) resourceType = "Collection";
+	        if (DCformat.startsWith("text/")) resourceType = "Text";
+	        if (DCformat.startsWith("video/")) resourceType = "Film";
+	    } catch (Exception e) {
+		if (DEBUG) System.out.println("[WARN] " + MESSAGE + "No valid DC Format specified");
+	    }
 
-	    if (resourceType != null) 
-		return ResourceTypeEnum.setResourceType(resourceType);
-	    else 
-		throw new Exception();
+	    if (resourceType == null) {
+		resourceType = "Dataset";
+		if (DEBUG) System.out.println("[INFO] " + MESSAGE + 
+		    "Could not determing datacite resource type. Using default: " + resourceType);
+	    }
+	    return ResourceTypeEnum.setResourceType(resourceType);
         } catch (Exception ex) {
             throw new TException.GENERAL_EXCEPTION("mapping mimetype to DataCite resource type: " + DCformat);
         }
