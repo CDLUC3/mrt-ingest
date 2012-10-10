@@ -275,7 +275,13 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    } else if (name.endsWith("bz2")) {
 		fileIn = new FileInputStream(container);
 		String newName = getOutputName(container, name);
-		File file = new File (container.getParent() + "/" + newName);
+
+                // is this a tar file?
+                // if so then do not move to target just yet.
+                String isTar = "/producer/";
+                if (newName.endsWith(".tar")) isTar = "/";
+
+		File file = new File (container.getParent() + isTar + newName);
 		fileOut = new FileOutputStream(file);
                 if (DEBUG) System.out.println("[info] " + MESSAGE + "creating bzip2 entry: " + file.getAbsolutePath());
 		bzIn = new BZip2CompressorInputStream(fileIn);
@@ -286,6 +292,9 @@ public class HandlerDisaggregate extends Handler<JobState>
 		}
 		fileOut.close();
 		bzIn.close();
+
+		container.delete();
+		container = new File(container.getParent() + "/" + file.getName());
 
 	    // zip
 	    } else if (name.toLowerCase().endsWith("zip")) {
