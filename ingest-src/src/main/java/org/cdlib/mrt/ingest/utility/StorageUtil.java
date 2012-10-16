@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.Vector;
 import java.net.URL;
 import java.util.List;
 
@@ -69,6 +70,8 @@ import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -238,7 +241,7 @@ public class StorageUtil
             String url = storeNode.getStorageLink().toString() + "/primary/" + storeNode.getNodeID() + "/" + 
 			URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" +
 			URLEncoder.encode(localID,  "utf-8") + "?t=xml";
-            if (DEBUG) System.out.println("[debug] LocalID/PrimaryID fetch URL: " + url);
+            if (DEBUG) System.out.println("[debug] PrimaryID fetch URL: " + url);
             Client client = Client.create();    // reuse?  creation is expensive
             WebResource webResource = client.resource(url);
 
@@ -300,4 +303,84 @@ public class StorageUtil
         }
     }
 
+    public static String fetchLocalID(ProfileState profileState, String primaryID)
+        throws TException
+    {
+
+        ClientResponse clientResponse = null;
+        try {
+
+	    //Vector localIDs = null;
+	    String localIDs = null;
+            StoreNode storeNode = profileState.getTargetStorage();
+
+            // build REST url
+            String url = storeNode.getStorageLink().toString() + "/local/" + storeNode.getNodeID() + "/" + 
+			URLEncoder.encode(primaryID,  "utf-8") + "?t=xml";
+            if (DEBUG) System.out.println("[debug] LocalID fetch URL from storage db: " + url);
+            Client client = Client.create();    // reuse?  creation is expensive
+            WebResource webResource = client.resource(url);
+
+            // make service request
+            clientResponse = webResource.get(ClientResponse.class);
+	    int status = clientResponse.getStatus();
+   	    String response = null;
+ 
+	    if (status != 200) {
+                try {
+                    // most likely exception
+                    // can only call once, as stream is not reset
+                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
+                    throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+                } catch (TException te) {
+                    throw te;
+                } catch (Exception e) {
+                    // let's report something
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
+                }
+	    } else {
+   	        response = clientResponse.getEntity(String.class);
+	    }
+
+            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+            domFactory.setNamespaceAware(true);
+            domFactory.setExpandEntityReferences(true);
+
+            DocumentBuilder builder = domFactory.newDocumentBuilder();
+            builder.setErrorHandler(null);
+            Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            XPathExpression expr = xpath.compile("//*[local-name()='localID']");
+
+ 	    NodeList nl = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+    	    int i = 0;
+    	    for (i = 0; i < nl.getLength(); i++) {
+		Node n = nl.item(i);
+		String localid = n.getTextContent();
+		if (StringUtil.isNotEmpty(localid)) {
+                    if (DEBUG) System.out.println("[debug] LocalID found (storage db): " + localid);
+		    if (localIDs == null) localIDs = localid;
+		    else localIDs += "; " + localid;
+		}
+    	    }
+
+	    if (StringUtil.isEmpty(localIDs)) if (DEBUG) System.out.println("[debug] Can not determine local ID");
+            return localIDs;
+
+        } catch (TException te) {
+	    throw te;
+        } catch (com.sun.jersey.api.client.ClientHandlerException che) {
+            che.printStackTrace();
+            String msg = "[error] " + MESSAGE + "Could not connect to Storage service: " 
+	        + profileState.getTargetStorage().getStorageLink().toString() + " --- " + che.getMessage();
+            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+            String msg = "[error] " + MESSAGE + "failed to map primaryID to localID. " + e.getMessage();
+            throw new TException.GENERAL_EXCEPTION(msg);
+        } finally {
+            try {
+            } catch (Exception e) {}
+        }
+    }
 }
