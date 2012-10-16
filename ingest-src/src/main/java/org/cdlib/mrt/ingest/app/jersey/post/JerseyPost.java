@@ -250,7 +250,7 @@ public class JerseyPost extends JerseyBase
             @Context ServletConfig sc)
         throws TException
     {
-        log("processing submit (ID, multi-part)");
+        log("processing update (ID, multi-part)");
 
         // Accept is overridden by responseForm form parm
         String responseForm = "";
