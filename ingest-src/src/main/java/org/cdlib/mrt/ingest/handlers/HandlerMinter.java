@@ -113,6 +113,7 @@ public class HandlerMinter extends Handler<JobState>
 	    String returnValue = null;
 	    String assignedObjectID = null;
 	    String retrievedObjectID = null;
+	    String retrievedLocalID = null;
 	    boolean mint = true;
 	    boolean haveMetadata = false;
 
@@ -133,24 +134,6 @@ public class HandlerMinter extends Handler<JobState>
 		// overwrite Form or Manifest parameters or DC data
            	haveMetadata = updateMetadata(jobState, producerERC, true);
             }
-
-	    // At this point we'll need to populate who/what/where with previous version
-	    if (jobState.grabUpdateFlag() && ! haveMetadata) {
-		try {
-		    System.out.println("[debug] " + MESSAGE + "No Metadata found.  Using previous versions'");
-		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
-	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
-                	Map<String, String> previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
-           		// erc file in ANVL format
-           		updateMetadata(jobState, previousSystemERC, false);	// Do not update where!
-            	    } else {
-		        System.out.println("[info] " + MESSAGE + "No previous version exists'");
-		    }
-		} catch (Exception e) {
-		    System.out.println("[warn] " + MESSAGE + "Error populating metadata w/ previous version");
-		}
-
-	    }
 
 	    if (ProfileUtil.isDemoMode(profileState)) {
 	        if (jobState.getPrimaryID() != null) {
@@ -214,6 +197,53 @@ public class HandlerMinter extends Handler<JobState>
 		    }
 		}
 
+	    }
+
+	    // At this point we'll need to populate primary/local ID with previous version
+	    if (jobState.grabUpdateFlag()) {
+		// populate metadata
+		try {
+		    System.out.println("[debug] " + MESSAGE + "Update specified, let's update primary/local IDs'");
+		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
+	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
+                	Map<String, String> previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
+           		// erc file in ANVL format
+           		updateMetadata(jobState, previousSystemERC, true, false);	// update IDs only
+            	    } else {
+		        System.out.println("[info] " + MESSAGE + "No previous version exists'");
+		    }
+		} catch (Exception e) {
+		    System.out.println("[warn] " + MESSAGE + "Error populating metadata w/ previous version");
+		}
+
+		// populate local ID
+		try {
+		    try {
+		        retrievedLocalID = StorageUtil.fetchLocalID(profileState, jobState.getPrimaryID().getValue());
+		    } catch (NullPointerException npe) {
+		    }
+		    if (retrievedLocalID != null) {
+		        System.out.println("[info] " + MESSAGE + "Found previous local ID (storage db): " + retrievedLocalID);
+		        System.out.println("[info] " + MESSAGE + "Appending to current local ID: " + jobState.getLocalID());
+		        if (jobState.getLocalID() == null) {
+			    jobState.setLocalID(retrievedLocalID);
+			} else {
+	                    for (String lid : retrievedLocalID.split(";")) {
+				if (! jobState.getLocalID().getValue().contains(lid)) {
+				    // append
+			            jobState.setLocalID(jobState.getLocalID() + "; " + retrievedLocalID);
+				} else {
+		        	    System.out.println("[warn] " + MESSAGE + "Local ID already contains: " + lid);
+				}
+			    }
+			}
+		        System.out.println("[info] " + MESSAGE + "Local ID now set to: " + jobState.getLocalID());
+		    } else {
+		        System.out.println("[warn] " + MESSAGE + "Could not retrieve local ID.");
+		    }
+		} catch (Exception e) {
+		    System.out.println("[warn] " + MESSAGE + "Error populating local ID w/ previous version");
+		}
 	    }
 
 	    // At this point we have a primary identifer.  Make sure it is an ARK.
@@ -514,22 +544,33 @@ public class HandlerMinter extends Handler<JobState>
 		}
 
                 // local ID processing
-                if (key.matches("where-local") || key.matches("dc.identifier")) {
+                if (key.matches("where-local") || key.matches("dc.identifier") || (key.matches("where:") && ! value.contains("ark:/"))) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {
-			// overwrite existing value
+			// append existing local ID values
 			if (updateIDs) {
+			    String currentLocalID = jobState.getLocalID().getValue();
+			    if (currentLocalID != null) {
+                                for (String lid : currentLocalID.split(";")) {
+                                    if (! value.contains(lid)) {
+                                        // append
+                                        value += "; " + lid;
+                                    } else {
+                                        System.out.println("[warn] " + MESSAGE + "Previous version extracted Local ID already contains: " + lid);
+                                    }
+                                }
+			    } 
                             jobState.setLocalID(trimLeft(trimRight(value)));
-                            if (DEBUG) System.out.println("[info]" + NAME + " Found local ID in metadata file: " + value);
+                            if (DEBUG) System.out.println("[info]" + MESSAGE + "Found local ID(s) in metadata file: " + value);
 			}
 		    }
                 }
                 // primary ID processing
-                if (key.matches("where-primary")) {
+                if (key.matches("where-primary") || (key.matches("where:") && value.contains("ark:/"))) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {
-			// overwrite existing value
+			// overwrite existing primary ID (should never be different)
 			if (updateIDs) {
                             jobState.setPrimaryID(trimLeft(trimRight(value)));
-                            if (DEBUG) System.out.println("[info]" + NAME + " Found local ID in metadata file: " + value);
+                            if (DEBUG) System.out.println("[info]" + NAME + " Found primary ID in metadata file: " + value);
 			}
 		    }
                 }
