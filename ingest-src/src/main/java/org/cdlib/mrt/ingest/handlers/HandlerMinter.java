@@ -548,7 +548,10 @@ public class HandlerMinter extends Handler<JobState>
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {
 			// append existing local ID values
 			if (updateIDs) {
-			    String currentLocalID = jobState.getLocalID().getValue();
+			    String currentLocalID = null;
+			    try {
+			        currentLocalID = jobState.getLocalID().getValue();
+			    } catch (NullPointerException npe) {}
 			    if (currentLocalID != null) {
                                 for (String lid : currentLocalID.split(";")) {
                                     if (! value.contains(lid)) {
