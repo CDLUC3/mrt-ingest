@@ -110,7 +110,7 @@ public class HandlerInitialize extends Handler<JobState>
 	    if (jobState.grabUpdateFlag()) {
 	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Request for UPDATE");
 	    } else {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Request for UPDATE");
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Request for ADD");
 	    }
 
 	    // metadata file in ANVL format
