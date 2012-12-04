@@ -31,6 +31,7 @@ package org.cdlib.mrt.ingest.handlers;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Properties;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -45,12 +46,14 @@ import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.DistributedQueue.Ignorer;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.ZooCodeUtil;
 
 public class HandlerInventoryQueue extends Handler<JobState> {
     private ZooKeeper zooKeeper;
     private DistributedQueue distributedQueue;
+    private Properties prop = null;
     
-    public void submitUrl (byte[] bytes) throws KeeperException, InterruptedException {
+    public void submit (byte[] bytes) throws KeeperException, InterruptedException {
         int retryCount = 0;
         while (true) {
             try {
@@ -72,15 +75,23 @@ public class HandlerInventoryQueue extends Handler<JobState> {
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
         try {
-
+	    // 4Store
             zooKeeper = 
                 new ZooKeeper(jobState.grabMisc(), 10000, new Ignorer());
             distributedQueue = 
                 new DistributedQueue(zooKeeper, "/inventory", null);
-	    System.out.println("HandlerInventoryQueue submitting URL: " + jobState.grabObjectState());
-            submitUrl(jobState.grabObjectState().getBytes());
+	    System.out.println("HandlerInventoryQueue submitting URL [4Store]: " + jobState.grabObjectState());
+            submit(jobState.grabObjectState().getBytes());
+
+	    // MySQL
+            distributedQueue = 
+                new DistributedQueue(zooKeeper, "/inv", null);
+	    prop = getInventoryProps(profileState, jobState);
+	    System.out.println("HandlerInventoryQueue submitting properties [MySQL]: " + prop.toString());
+            submit(ZooCodeUtil.encodeItem(prop));
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
+	
             return new HandlerResult(true, msg, 0);
         } catch (IOException ex) {
             String msg = 
@@ -99,9 +110,26 @@ public class HandlerInventoryQueue extends Handler<JobState> {
                 //String.format("WARNING: %s %s.", getName(), ex);
             //return new HandlerResult(true, msg, 0);
         } finally {
+	    prop = null;
             try { zooKeeper.close(); }
             catch (Exception ex) {}
         }
+    }
+
+    private Properties getInventoryProps(ProfileState profileState, JobState jobState)
+    {
+        Properties prop = new Properties();
+
+        prop.setProperty("profile", profileState.getProfileID().getValue());
+        prop.setProperty("batch_id", jobState.grabBatchID().getValue());
+        prop.setProperty("job_id", jobState.getJobID().getValue());
+        prop.setProperty("user_agent", "unknown");
+        prop.setProperty("submitted_date_time", jobState.getSubmissionDate().toString());
+        prop.setProperty("current_version_number", jobState.getVersionID().toString());
+        prop.setProperty("fileid", jobState.getPackageName());
+        prop.setProperty("storage_url", jobState.grabObjectState());
+
+        return prop;
     }
 
     public String getName() {
