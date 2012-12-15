@@ -36,12 +36,14 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 
 import java.io.ByteArrayInputStream;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -321,27 +323,42 @@ public class MintUtil
     {
         try {
 
+	    String dataCiteMetadata = null;
 	    List<String> md = new ArrayList();
-	    try {
-		md.add("datacite.creator: " + escape(jobState.getObjectCreator()));
-	    } catch (Exception e) {}
-	    try {
-		md.add("datacite.title: " + escape(jobState.getObjectTitle()));
-	    } catch (Exception e) {}
-	    try {
-		md.add("datacite.publicationyear: " + escape(jobState.getObjectDate()));
-	    } catch (Exception e) {}
-	    try {
-		md.add("datacite.publisher: " + escape(profileState.getOwner()));
-	    } catch (Exception e) {}
-	    try {
-		if (ingestRequest.getDataCiteResourceType() != null) 
-		    md.add("datacite.resourcetype: " + escape(ingestRequest.getDataCiteResourceType()));
-		else
-		    md.add("datacite.resourcetype: " + escape(createResourceType(jobState).toString()));
-	    } catch (TException te) { 
-		throw te;
-	    } catch (Exception e) {}
+
+	    if ((dataCiteMetadata = jobState.grabDataCiteMetadata()) != null) {
+		md.add("datacite: " + escape(dataCiteMetadata));
+	    } else {
+	        try {
+		    if (jobState.getObjectCreator() == null) 
+		        md.add("datacite.creator: " + escape("unknown"));
+		    else
+		        md.add("datacite.creator: " + escape(jobState.getObjectCreator()));
+	        } catch (Exception e) {}
+	        try {
+		    if (jobState.getObjectTitle() == null) 
+		        md.add("datacite.title: " + escape("unknown"));
+		    else
+		        md.add("datacite.title: " + escape(jobState.getObjectTitle()));
+	        } catch (Exception e) {}
+	        try {
+		    if (jobState.getObjectDate() == null) 
+			md.add("datacite.publicationyear: " + escape(getCurrentYear()));
+		    else 
+			md.add("datacite.publicationyear: " + escape(jobState.getObjectDate()));
+	        } catch (Exception e) {}
+	        try {
+		    md.add("datacite.publisher: " + escape(profileState.getOwner()));
+	        } catch (Exception e) {}
+	        try {
+		    if (ingestRequest.getDataCiteResourceType() != null) 
+		        md.add("datacite.resourcetype: " + escape(ingestRequest.getDataCiteResourceType()));
+		    else
+		        md.add("datacite.resourcetype: " + escape(createResourceType(jobState).toString()));
+	        } catch (TException te) { 
+	            throw te;
+	        } catch (Exception e) {}
+	    }
 
             return md;
         } catch (TException te) { 
@@ -442,4 +459,11 @@ public class MintUtil
         }
     }
 
+
+    private static String getCurrentYear() {
+        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy");
+        Date now = new Date();
+        String strDate = sdfDate.format(now);
+        return strDate;
+    }
 }
