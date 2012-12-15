@@ -126,6 +126,18 @@ public class HandlerMinter extends Handler<JobState>
            	haveMetadata = updateMetadata(jobState, producerDC, true, false);
             }
 
+	    // Need to read mrt-datacite.xml data if available.
+	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results?
+	    File producerDataCiteFile = new File(ingestRequest.getQueuePath(), "producer/mrt-datacite.xml");
+	    if (producerDataCiteFile.exists()) {
+                Map<String, String> producerDataCite = MetadataUtil.readDataCiteXML(producerDataCiteFile);
+		// overwrite Form or Manifest parameters
+           	haveMetadata = updateMetadata(jobState, producerDataCite, true, false);
+
+		// save datacite content for EZID
+		jobState.setDataCiteMetadata(FileUtil.file2String(producerDataCiteFile));
+            }
+
 	    // Need to read mrt-erc.txt data if available.
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results? 
 	    File producerErcFile = new File(ingestRequest.getQueuePath(), "producer/mrt-erc.txt");
@@ -252,16 +264,18 @@ public class HandlerMinter extends Handler<JobState>
                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Primary ID is not an ARK: " + jobState.getPrimaryID().getValue());
 	    }
 
-	    // update metadata (ERC, target URL and context)
-	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
-	    if (! returnValue.startsWith("ark")) {
-	        System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
-               	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
-	    }
-	    // need to update shadow ARK?
+	    // perform updates
 	    if (jobState.grabShadowARK()) {
+	        // need to update shadow ARK?
 	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false, true);
 	        if (returnValue.startsWith("ark")) {
+	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
+               	    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
+	        }
+	    } else {
+	        // update metadata (ERC, target URL and context)
+	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
+	        if (! returnValue.startsWith("ark")) {
 	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
                	    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
 	        }
