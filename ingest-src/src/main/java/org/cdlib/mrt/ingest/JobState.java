@@ -82,6 +82,8 @@ public class JobState
 	private String DCtitle = null;
 	private String DCtype = null;
 
+	private String DataCiteMetadata = null;
+
 	private String hashValue = null;
 	private DigestEnum hashAlgorithm;
 	private String objectState = null;
@@ -496,6 +498,22 @@ public class JobState
      */
     public String grabMisc() {
         return misc;
+    }
+
+    /**
+     * Set DataCite metadata
+     * @param String DataCite metadata
+     */
+    public void setDataCiteMetadata(String dataCiteMetadata) {
+        this.DataCiteMetadata = dataCiteMetadata;
+    }
+
+    /**
+     * Get DataCite Metadata
+     * @return String DataCite Metadata
+     */
+    public String grabDataCiteMetadata() {
+        return DataCiteMetadata;
     }
 
     /**

@@ -51,9 +51,15 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
  
 import org.cdlib.mrt.utility.DOMParser;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -350,4 +356,77 @@ public class MetadataUtil
 	return false;
     }
 
+
+    /**
+     * read DataCite xml file
+     *
+     * @param merritt DataCite source file (usually "mrt-datacite.xml")
+     * @return properties map of properties
+     */
+    public static Map<String, String> readDataCiteXML(File DataCiteFile)
+    {
+
+	String DC_DELIMITER = "; ";
+
+        Map linkedHashMap = new LinkedHashMap();
+        FileInputStream fileInputStream = null;
+        try {
+	    String key = null;
+	    String value = null;
+            fileInputStream = new FileInputStream(DataCiteFile);
+	    Document document = DOMParser.doParse(fileInputStream, null);
+
+	    key = "datacite.creator";
+	    XPathFactory xpathFactory = XPathFactory.newInstance();
+	    XPath xpath = xpathFactory.newXPath();
+	    XPathExpression expr = xpath.compile("/*[local-name()='resource']/*[local-name()='creators']/*[local-name()='creator']/*[local-name()='creatorName']");
+	    NodeList nodeList = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+
+	    for (int i=0; i < nodeList.getLength(); i++) {
+		Node node = nodeList.item(i);
+		value = node.getTextContent();
+
+		if (linkedHashMap.containsKey(key)) {
+		    if (DEBUG) System.out.println("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
+		    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
+		} else {
+		    if (DEBUG) System.out.println("[info] " + NAME + " processing DataCite element: " + key + " - " + value);
+		    linkedHashMap.put(key, value);
+		}
+
+	    }
+
+	    key = "datacite.title";
+	    expr = xpath.compile("/*[local-name()='resource']/*[local-name()='titles']/*[local-name()='title']");
+	    nodeList = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+
+	    for (int i=0; i < nodeList.getLength(); i++) {
+		Node node = nodeList.item(i);
+		value = node.getTextContent();
+
+		if (linkedHashMap.containsKey(key)) {
+		    if (DEBUG) System.out.println("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
+		    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
+		} else {
+		    if (DEBUG) System.out.println("[info] " + NAME + " processing DataCite element: " + key + " - " + value);
+		    linkedHashMap.put(key, value);
+		}
+
+	    }
+
+	    key = "datacite.publicationyear";
+	    expr = xpath.compile("//*[local-name()='resource']/*[local-name()='publicationYear']");
+	    value = expr.evaluate(document);
+	    if (DEBUG) System.out.println("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
+	    linkedHashMap.put(key, value);
+
+        } catch (Exception e) { 
+	    e.printStackTrace();
+            if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-datacite.xml: " + DataCiteFile.getName());
+        } finally {
+            try { } 
+	    catch (Exception e) { }
+        }
+        return linkedHashMap;
+    }
 }
