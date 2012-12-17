@@ -331,13 +331,13 @@ public class MintUtil
 	    } else {
 	        try {
 		    if (jobState.getObjectCreator() == null) 
-		        md.add("datacite.creator: " + escape("unknown"));
+		        md.add("datacite.creator: " + escape("(:unas)"));
 		    else
 		        md.add("datacite.creator: " + escape(jobState.getObjectCreator()));
 	        } catch (Exception e) {}
 	        try {
 		    if (jobState.getObjectTitle() == null) 
-		        md.add("datacite.title: " + escape("unknown"));
+		        md.add("datacite.title: " + escape("(:unas)"));
 		    else
 		        md.add("datacite.title: " + escape(jobState.getObjectTitle()));
 	        } catch (Exception e) {}
