@@ -97,6 +97,8 @@ public class HandlerDescribe extends Handler<JobState>
             File systemErcFile = new File(systemTargetDir, "mrt-erc.txt");
             File producerErcFile = new File(producerTargetDir, "mrt-erc.txt");
             File producerDCFile = new File(producerTargetDir, "mrt-dc.xml");
+            File producerDataCiteFile = new File(producerTargetDir, "mrt-datacite.xml");
+            File producerEMLFile = new File(producerTargetDir, "mrt-eml.xml");
             File systemDCFile = new File(systemTargetDir, "mrt-dc.xml");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
@@ -131,7 +133,8 @@ public class HandlerDescribe extends Handler<JobState>
             }
 
             // update resource map
-            if (! updateResourceMap(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, producerDCFile)) {
+            if (! updateResourceMap(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, 
+			producerDCFile, producerDataCiteFile, producerEMLFile)) {
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to update map file w/ ERC reference: " + systemErcFile.getAbsolutePath());
             }
@@ -653,12 +656,13 @@ Now done in HandlerMinter
      * @return successful in updating resource map
      */
     private boolean updateResourceMap(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		File systemErcFile, File producerErcFile, File producerDCFile)
+		File systemErcFile, File producerErcFile, File producerDCFile, File producerDataCiteFile, File producerEMLFile)
         throws TException {
         try {
             if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
 
-            Model model = updateModel(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, producerDCFile);
+            Model model = updateModel(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, 
+		producerDCFile, producerDataCiteFile, producerEMLFile);
             if (DEBUG) ResourceMapUtil.dumpModel(model);
             ResourceMapUtil.writeModel(model, mapFile);
 
@@ -675,7 +679,7 @@ Now done in HandlerMinter
     }
 
     public Model updateModel(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		File systemErcFile, File producerErcFile, File producerDCFile)
+		File systemErcFile, File producerErcFile, File producerDCFile, File producerDataCiteFile, File producerEMLFile)
         throws Exception
     {
         try {
@@ -753,6 +757,40 @@ Now done in HandlerMinter
                     ResourceFactory.createProperty(mrt + "metadataSchema"),
                     ResourceFactory.createResource(msc + "DC"));
                 model.add(ResourceFactory.createResource(producerDCURI),
+                    ResourceFactory.createProperty(mrt + "mimeType"),
+                    ResourceFactory.createResource(mts + "text/xml"));
+	    }
+
+	    // producer DataCite
+	    if (producerDataCiteFile.exists()) {
+        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DataCite data: " + producerDataCiteFile.getAbsolutePath());
+                String producerDataCiteURI = objectURI + "/" + versionIDS + "/" + 
+			URLEncoder.encode("producer/" + producerDataCiteFile.getName(), "utf-8");
+
+                model.add(ResourceFactory.createResource(objectURI),
+                    ResourceFactory.createProperty(mrt + "hasMetadata"),
+                    ResourceFactory.createResource(producerDataCiteURI));
+                model.add(ResourceFactory.createResource(producerDataCiteURI),
+                    ResourceFactory.createProperty(mrt + "metadataSchema"),
+                    ResourceFactory.createResource("DataCite"));
+                model.add(ResourceFactory.createResource(producerDataCiteURI),
+                    ResourceFactory.createProperty(mrt + "mimeType"),
+                    ResourceFactory.createResource(mts + "text/xml"));
+	    }
+
+	    // producer EML
+	    if (producerEMLFile.exists()) {
+        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found EML data: " + producerEMLFile.getAbsolutePath());
+                String producerEMLURI = objectURI + "/" + versionIDS + "/" + 
+			URLEncoder.encode("producer/" + producerEMLFile.getName(), "utf-8");
+
+                model.add(ResourceFactory.createResource(objectURI),
+                    ResourceFactory.createProperty(mrt + "hasMetadata"),
+                    ResourceFactory.createResource(producerEMLURI));
+                model.add(ResourceFactory.createResource(producerEMLURI),
+                    ResourceFactory.createProperty(mrt + "metadataSchema"),
+                    ResourceFactory.createResource("EML"));
+                model.add(ResourceFactory.createResource(producerEMLURI),
                     ResourceFactory.createProperty(mrt + "mimeType"),
                     ResourceFactory.createResource(mts + "text/xml"));
 	    }
