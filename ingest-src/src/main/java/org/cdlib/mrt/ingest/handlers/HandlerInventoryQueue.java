@@ -75,7 +75,7 @@ public class HandlerInventoryQueue extends Handler<JobState> {
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
         try {
-	    // 4Store
+	    // 4Store & MySQL (minimum schema)
             zooKeeper = 
                 new ZooKeeper(jobState.grabMisc(), 10000, new Ignorer());
             distributedQueue = 
@@ -83,7 +83,7 @@ public class HandlerInventoryQueue extends Handler<JobState> {
 	    System.out.println("HandlerInventoryQueue submitting URL [4Store]: " + jobState.grabObjectState());
             submit(jobState.grabObjectState().getBytes());
 
-	    // MySQL
+	    // MySQL (full schema)
             distributedQueue = 
                 new DistributedQueue(zooKeeper, "/inv", null);
 	    prop = getInventoryProps(profileState, jobState);
@@ -120,14 +120,8 @@ public class HandlerInventoryQueue extends Handler<JobState> {
     {
         Properties prop = new Properties();
 
-        prop.setProperty("profile", profileState.getProfileID().getValue());
-        prop.setProperty("batch_id", jobState.grabBatchID().getValue());
-        prop.setProperty("job_id", jobState.getJobID().getValue());
-        prop.setProperty("user_agent", "unknown");
-        prop.setProperty("submitted_date_time", jobState.getSubmissionDate().toString());
-        prop.setProperty("current_version_number", jobState.getVersionID().toString());
-        prop.setProperty("fileid", jobState.getPackageName());
-        prop.setProperty("storage_url", jobState.grabObjectState());
+        String manifestURL = jobState.grabObjectState().replace("/state/", "/manifest/");
+        prop.setProperty("manifest_url", manifestURL);
 
         return prop;
     }
