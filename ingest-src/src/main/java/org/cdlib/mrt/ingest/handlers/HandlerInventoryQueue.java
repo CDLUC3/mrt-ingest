@@ -121,7 +121,7 @@ public class HandlerInventoryQueue extends Handler<JobState> {
         Properties prop = new Properties();
 
         String manifestURL = jobState.grabObjectState().replace("/state/", "/manifest/");
-        prop.setProperty("manifest_url", manifestURL);
+        prop.setProperty("manifestURL", manifestURL);
 
         return prop;
     }
