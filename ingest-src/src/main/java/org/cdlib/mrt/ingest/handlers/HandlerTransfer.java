@@ -118,7 +118,7 @@ public class HandlerTransfer extends Handler<JobState>
 	    WebResource webResource = client.resource(url);
 
 	    // convert manifest to encoded string
-	    String manifest = getManifest(new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt"));
+            String manifest = getManifest(new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt"));
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifest: " + manifest);
 
 	    Form formData = new Form();
