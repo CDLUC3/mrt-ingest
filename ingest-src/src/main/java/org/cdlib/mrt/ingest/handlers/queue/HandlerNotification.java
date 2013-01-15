@@ -86,10 +86,12 @@ public class HandlerNotification extends Handler<BatchState>
         String batchID = batchState.getBatchID().getValue();
 
 	try {
-	    if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.  Skipping notification.");
-                return new HandlerResult(true, "SUCCESS: " + NAME + " no notification required", 0);
-	    }
+	    try {
+	        if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.  Skipping notification.");
+                    return new HandlerResult(true, "SUCCESS: " + NAME + " no notification required", 0);
+	        }
+	    } catch (Exception e) {}
 
   	    email.setHostName("localhost");	// production machines are SMTP enabled
 	    for (Notification recipient : profileState.getContactsEmail()) {
