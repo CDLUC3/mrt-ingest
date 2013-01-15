@@ -241,11 +241,11 @@ public class HandlerMinter extends Handler<JobState>
 			    jobState.setLocalID(retrievedLocalID);
 			} else {
 	                    for (String lid : retrievedLocalID.split(";")) {
-				if (! jobState.getLocalID().getValue().contains(lid)) {
+				if (! jobState.getLocalID().getValue().contains(lid.trim())) {
 				    // append
-			            jobState.setLocalID(jobState.getLocalID() + "; " + retrievedLocalID);
+			            jobState.setLocalID(jobState.getLocalID() + "; " + lid.trim());
 				} else {
-		        	    System.out.println("[warn] " + MESSAGE + "Local ID already contains: " + lid);
+		        	    System.out.println("[warn] " + MESSAGE + "Local ID already contains: " + lid.trim());
 				}
 			    }
 			}
