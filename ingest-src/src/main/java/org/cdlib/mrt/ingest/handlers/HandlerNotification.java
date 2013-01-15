@@ -91,10 +91,12 @@ public class HandlerNotification extends Handler<BatchState>
 	FormatType formatType = null;
 
 	try {
-            if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
-                verbose = true;
-            }
+	    try {
+                if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
+                    verbose = true;
+                }
+	    } catch (Exception e) {}
 
 	    // Is this a batch submission?
 	    if (jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
