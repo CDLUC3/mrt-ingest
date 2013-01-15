@@ -88,7 +88,8 @@ public class ProfileState
     private String misc = null;
     private String dataoneNodeID = null;
     private String ezidCoowner = null;
-    private FormatType notificationFormat = null;		// default
+    private FormatType notificationFormat = null;	// response type
+    private String notificationType = null;		// human readable notification 
 
     final String[] OBJECTTYPE = { "MRT-curatorial", "MRT-system" };
     final String[] OBJECTROLE = { "MRT-content", "MRT-class" };
@@ -523,6 +524,10 @@ public class ProfileState
         return notificationFormat;
     }
 
+    public String getNotificationType() {
+        return notificationType;
+    }
+
     public String getEzidCoowner() {
         return ezidCoowner;
     }
@@ -540,6 +545,10 @@ public class ProfileState
             if (DEBUG) System.out.println("[warn] ProfileState: Could not assign format type: " + notificationFormat);
             this.notificationFormat = null;
         }
+    }
+
+    public void setNotificationType(String notificationType) {
+	this.notificationType = notificationType;
     }
 
     public String dump(String header)
