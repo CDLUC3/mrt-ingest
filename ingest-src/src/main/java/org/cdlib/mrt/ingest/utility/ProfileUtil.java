@@ -105,6 +105,7 @@ public class ProfileUtil
     private static final String matchContext = "Context";
     private static final String matchEzidCoowner = "EZID_co-owner";
     private static final String matchNotificationFormat = "NotificationFormat";
+    private static final String matchNotificationType = "NotificationType";
     
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
         throws TException
@@ -289,6 +290,9 @@ public class ProfileUtil
 		} else if (key.startsWith(matchNotificationFormat)) {
                     if (DEBUG) System.out.println("[debug] notification format: " + value);
 		    profileState.setNotificationFormat(value);
+		} else if (key.startsWith(matchNotificationType)) {
+                    if (DEBUG) System.out.println("[debug] notification type: " + value);
+		    profileState.setNotificationType(value);
 	        } else {
                     if (DEBUG) System.out.println("[debug] could not procces profile parameter: " + key);
 		}
