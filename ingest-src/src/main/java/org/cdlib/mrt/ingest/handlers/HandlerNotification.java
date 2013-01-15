@@ -86,10 +86,18 @@ public class HandlerNotification extends Handler<BatchState>
         JobState jobState = ingestRequest.getJob();
 	boolean isBatch = true;
 	boolean batchComplete = false;
+	boolean verbose = false;
         FormatterUtil formatterUtil = new FormatterUtil();
 	FormatType formatType = null;
 
 	try {
+	    try {
+                if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
+                    verbose = true;
+                }
+	    } catch (Exception e) {}
+
 	    // Is this a batch submission?
 	    if (jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
 		isBatch = false;
@@ -156,7 +164,15 @@ public class HandlerNotification extends Handler<BatchState>
 		       aggregate = "[" + profileState.getAggregateType() + "] ";
 		} catch (NullPointerException npe) {}
 
-  	        email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Processed", aggregate + batchState.getBatchID().getValue()));
+		if (! verbose) 
+  	            email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Processed", aggregate + batchState.getBatchID().getValue()));
+		else {
+		    try {
+  	                email.setSubject("Submission Processed: " + jobState.getLocalID().getValue());
+		    } catch (Exception e) {
+  	                email.setSubject("Submission Processed: " + jobState.getPrimaryID().getValue());
+		    }
+		}
 
 		// Comma delimited
 		//email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
@@ -176,7 +192,11 @@ public class HandlerNotification extends Handler<BatchState>
 			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
 		}
 
-		email.setMsg(batchState.dump("", false, false));	// summary only
+		if (! verbose) 
+		    email.setMsg(batchState.dump("", false, false));	// summary only
+		else
+  	            email.setMsg(getVerboseMsg(jobState));
+
 		try {
   	            email.send();
 		} catch (Exception e) {
@@ -198,6 +218,23 @@ public class HandlerNotification extends Handler<BatchState>
 	}
     }
 
+    private String getVerboseMsg(JobState jobState) {
+
+	String id = null;
+        try {
+	    id = jobState.getLocalID().getValue();
+	} catch (Exception e) {
+	    id = jobState.getPrimaryID().getValue();
+	}
+
+	String msg = 
+	    "The dataset \"" + jobState.getObjectTitle() + "\" was successfully uploaded at " + jobState.getCompletionDate().toString() + ".\n"
+	  + "The identifier associated with this dataset is " + id + ". Please retain\n"
+	  + "this email for your records.\n\n"
+	  + "To access this dataset and associated metadata, use the following URL: \n"
+	  + jobState.getPersistentURL() + "\n";
+	return msg;
+    }
 
     public String getName() {
 	return NAME;
