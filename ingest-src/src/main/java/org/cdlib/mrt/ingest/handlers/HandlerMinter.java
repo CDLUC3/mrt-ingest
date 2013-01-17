@@ -576,6 +576,7 @@ public class HandlerMinter extends Handler<JobState>
                                     }
                                 }
 			    } 
+			    value = sanitize(value);
                             jobState.setLocalID(trimLeft(trimRight(value)));
                             if (DEBUG) System.out.println("[info]" + MESSAGE + "Found local ID(s) in metadata file: " + value);
 			}
@@ -680,6 +681,25 @@ public class HandlerMinter extends Handler<JobState>
 
     public String trimRight(String s) {
         return s.replaceAll("\\s+$", "");
+    }
+
+    public String sanitize(String s) {
+	String rebuild = "";
+	boolean first = true;
+	for (String p: s.split(";")) {
+	    p = p.trim();
+	    if (! rebuild.contains(p)) {
+		if (first) {
+		    rebuild = p;
+		    first = false;
+		} else
+		    rebuild += "; " + p;
+	    }
+	}
+	if (first) rebuild = s;
+        System.out.println("[info] " + MESSAGE + "sanitized localid: " + s + " ---> " + rebuild);
+
+        return rebuild;
     }
 
     public String getName() {
