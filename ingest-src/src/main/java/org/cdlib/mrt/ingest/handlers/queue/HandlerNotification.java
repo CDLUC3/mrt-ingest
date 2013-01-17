@@ -80,27 +80,32 @@ public class HandlerNotification extends Handler<BatchState>
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, BatchState batchState) 
 	throws TException 
     {
-   MultiPartEmail email = new MultiPartEmail();
+   	MultiPartEmail email = new MultiPartEmail();
         FormatterUtil formatterUtil = new FormatterUtil();
         FormatType formatType = null;
         String batchID = batchState.getBatchID().getValue();
+	boolean verbose = false;
 
 	try {
 	    try {
 	        if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.  Skipping notification.");
-                    return new HandlerResult(true, "SUCCESS: " + NAME + " no notification required", 0);
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
+		    verbose = true;
 	        }
 	    } catch (Exception e) {}
 
   	    email.setHostName("localhost");	// production machines are SMTP enabled
-	    for (Notification recipient : profileState.getContactsEmail()) {
-		try {
-  	    	    email.addTo(recipient.getContactEmail());
-		} catch (Exception e) { 
-		    e.printStackTrace();
-		    notify(e.getMessage() + " - " + recipient.getContactEmail(), profileState, ingestRequest); 
-		}
+	    if (! verbose) {
+	        for (Notification recipient : profileState.getContactsEmail()) {
+		    try {
+  	    	        email.addTo(recipient.getContactEmail());
+		    } catch (Exception e) { 
+		        e.printStackTrace();
+		        notify(e.getMessage() + " - " + recipient.getContactEmail(), profileState, ingestRequest); 
+		    }
+	        }
+	    } else {
+                if (DEBUG) System.out.println("[info] " + MESSAGE + "recipients will not receive Queue notification.");
 	    }
             if (profileState.getAdmin() != null) {
                 for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {

@@ -221,14 +221,20 @@ public class HandlerNotification extends Handler<BatchState>
     private String getVerboseMsg(JobState jobState) {
 
 	String id = null;
+	String completionDate = "null";
         try {
 	    id = jobState.getLocalID().getValue();
 	} catch (Exception e) {
 	    id = jobState.getPrimaryID().getValue();
 	}
+        try {
+	    completionDate = jobState.getCompletionDate().toString();
+	} catch (Exception e) {
+	    completionDate = "unknown";
+	}
 
 	String msg = 
-	    "The dataset \"" + jobState.getObjectTitle() + "\" was successfully uploaded at " + jobState.getCompletionDate().toString() + ".\n"
+	    "The dataset \"" + jobState.getObjectTitle() + "\" was successfully uploaded at " + completionDate + ".\n"
 	  + "The identifier associated with this dataset is " + id + ". Please retain\n"
 	  + "this email for your records.\n\n"
 	  + "To access this dataset and associated metadata, use the following URL: \n"
