@@ -85,7 +85,7 @@ public class HandlerInventoryQueue extends Handler<JobState> {
 
 	    // MySQL (full schema)
             distributedQueue = 
-                new DistributedQueue(zooKeeper, "/distrib.vat01.1inv", null);
+                new DistributedQueue(zooKeeper, jobState.grabExtra(), null);
 	    prop = getInventoryProps(profileState, jobState);
 	    System.out.println("HandlerInventoryQueue submitting properties [MySQL]: " + prop.toString());
             submit(ZooCodeUtil.encodeItem(prop));
