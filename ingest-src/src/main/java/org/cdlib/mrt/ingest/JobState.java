@@ -100,6 +100,7 @@ public class JobState
 	private String jobStatusMessage = null;
 	private String objectType = null;
 	private String misc = null;
+	private String extra = null;
 	private String note = null;
 	private String queuePriority = null;
 	private String metacatStatus = null;		// only if dataONE handler active
@@ -498,6 +499,22 @@ public class JobState
      */
     public String grabMisc() {
         return misc;
+    }
+
+    /**
+     * Set extra data
+     * @param String extra
+     */
+    public void setExtra(String extra) {
+        this.extra = extra;
+    }
+
+    /**
+     * Get extra data
+     * @return String extra
+     */
+    public String grabExtra() {
+        return extra;
     }
 
     /**

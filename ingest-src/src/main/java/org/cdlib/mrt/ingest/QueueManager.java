@@ -103,6 +103,7 @@ public class QueueManager
     private Properties queueProperties = null;
     private String queueConnectionString = null;
     private String queueNode = null;
+    private String inventoryNode = "/inv";	// default
     private ArrayList<String> m_admin = new ArrayList<String>(20);
 
     private boolean debugDump = false;
@@ -173,6 +174,7 @@ public class QueueManager
             String matchIngest = "ingestServicePath";
             String matchQueueService = "QueueService";
             String matchQueueNode = "QueueName";
+            String matchInventoryNode = "InventoryName";
             String matchAdmin = "admin";
             String defaultIDKey = "IDDefault";
 	    Integer storageID = null;
@@ -208,12 +210,9 @@ public class QueueManager
             while( e.hasMoreElements() ) {
                 key = (String) e.nextElement();
                 value = ingestProperties.getProperty(key);
-                if (key.equals(matchQueueService)) {
-		    this.queueConnectionString = value;
-                }
-                if (key.equals(matchQueueNode)) {
-		    this.queueNode = value;
-                }
+                if (key.equals(matchQueueService)) this.queueConnectionString = value;
+                if (key.equals(matchQueueNode) )this.queueNode = value;
+                if (key.equals(matchInventoryNode)) this.inventoryNode = value;
 
                 // admin notification
                 if (key.startsWith(matchAdmin)) {
@@ -330,6 +329,7 @@ public class QueueManager
 	    batchState.clear();
 	    batchState.setTargetQueue(queueConnectionString);
 	    batchState.setTargetQueueNode(queueNode);
+	    batchState.setTargetInventoryNode(inventoryNode);
 	    batchState.setUserAgent(ingestRequest.getJob().grabUserAgent());
 	    batchState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 	    batchState.setBatchStatus(BatchStatusEnum.QUEUED);

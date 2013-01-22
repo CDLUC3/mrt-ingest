@@ -72,9 +72,9 @@ public class HandlerDigest extends Handler<JobState>
     {
 
 	try {
+            File manifest = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
+            manifest.createNewFile();
 
-	    File manifest = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
-	    manifest.createNewFile();
 
 	    // requires symlink from webapps/ingestqueue to home ingest queue directory
 	    URL link = new URL(ingestRequest.getLink());	
@@ -89,7 +89,7 @@ public class HandlerDigest extends Handler<JobState>
 	    // build manifest
 	    ManifestBuild.getPostManifest(baseURL, ingestRequest.getQueuePath(), manifest);
 
-	    FileUtil.removeLineFromFile(manifest.getAbsolutePath(), "mrt-manifest.txt", "END");
+	    FileUtil.removeLineFromFile(manifest.getAbsolutePath(), "system/mrt-manifest.txt", "CONTAIN");
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " created manifest");
 	} catch (TException te) {

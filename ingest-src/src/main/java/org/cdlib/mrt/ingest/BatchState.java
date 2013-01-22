@@ -62,6 +62,7 @@ public class BatchState
     private String batchStatusMessage = null;
     private String queueConnectionString = null;
     private String queueNode = null;
+    private String inventoryNode = null;
     private Map<String, JobState> jobStates = new HashMap<String, JobState>();
     private static Map<String, BatchState> batchStates = new HashMap<String, BatchState>();
     private static Map<String, Integer> batchReadiness = new HashMap<String, Integer>();
@@ -250,12 +251,25 @@ public class BatchState
         return this.queueNode;
     }
 
+    public String grabTargetInventoryNode()
+    {
+        return this.inventoryNode;
+    }
+
     /**
      * Set queue target node
      * @param String target queue node
      */
     public void setTargetQueueNode(String queueNode) {
         this.queueNode = queueNode;
+    }
+
+    /**
+     * Set inventory target node
+     * @param String target inventory node
+     */
+    public void setTargetInventoryNode(String inventoryNode) {
+        this.inventoryNode = inventoryNode;
     }
 
     public ProfileState grabBatchProfile()
