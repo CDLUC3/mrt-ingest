@@ -264,18 +264,17 @@ public class HandlerMinter extends Handler<JobState>
                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Primary ID is not an ARK: " + jobState.getPrimaryID().getValue());
 	    }
 
-	    // perform updates
+	    // update metadata (ERC, target URL and context)
+	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
+	    if (! returnValue.startsWith("ark")) {
+	        System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
+                throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
+	    }
+
+	    // need to update target for shadow ARK (_target not shared metadata)
 	    if (jobState.grabShadowARK()) {
-	        // need to update shadow ARK?
 	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false, true);
 	        if (returnValue.startsWith("ark")) {
-	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
-               	    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
-	        }
-	    } else {
-	        // update metadata (ERC, target URL and context)
-	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
-	        if (! returnValue.startsWith("ark")) {
 	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
                	    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
 	        }
