@@ -155,6 +155,7 @@ public class MetadataUtil
 
 	    String line = null;
 	    String tokens[] = null;
+	    boolean foundPrimary = false;
 	    while ((line = fileBuffer.readLine()) != null) {
 		if (dcPattern.matcher(line).matches()) {
 		    tokens = splitPattern.split(line, 2);
@@ -162,8 +163,10 @@ public class MetadataUtil
 
                     // a little hack to process local/primary IDs
                     if (tokens[0].matches("where")) {
-                        if (tokens[1].contains("ark:/")) tokens[0] = "where-primary";
-                        else tokens[0] = "where-local";
+                        if (tokens[1].contains("ark:/") && ! foundPrimary) {
+			    tokens[0] = "where-primary";
+			    foundPrimary = true;
+                        } else tokens[0] = "where-local";
                     }
 		    if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
 		        linkedHashMap.put(tokens[0], tokens[1]);
