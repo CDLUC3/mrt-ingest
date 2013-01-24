@@ -211,9 +211,9 @@ public class MintUtil
 	    }
 	    httpCommand.addHeader("Content-Type", "text/plain");
 	    if (! shadow) {
-		String stringEntity = null;
+	        String stringEntity = null;
 		stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + coowner;
-		if (profileState.getIdentifierScheme() == Identifier.Namespace.DOI) {
+		if (profileState.getIdentifierScheme() == Identifier.Namespace.DOI && mint) {
 	            for (String dataCite : getDataCiteMetadata(ingestRequest, profileState, jobState)) {
 		        stringEntity = stringEntity + dataCite + "\n";
 		    }
