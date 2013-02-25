@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Vector;
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -94,6 +95,7 @@ public class HandlerFixity extends Handler<JobState>
     private static final String NAME = "HandlerFixity";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
+    private static final String CONTEXT_DELIM = "<>";
     private LoggerInf logger = null;
     private Properties conf = null;
     private boolean notify = true;	// notify admins if failure
@@ -135,6 +137,7 @@ public class HandlerFixity extends Handler<JobState>
             FileComponentContentInf rowIn = null;
             FileComponent fileComponent = null;
 	    String digestType = "sha-256";
+	    String context = null;
 	    String contextMain = "|objectid=%s|versionid=%s|fileid=%s|";
 	    String contextOwner = "|owner=%s|";
 	    String contextCollection = "|member=%s|";
@@ -154,8 +157,18 @@ public class HandlerFixity extends Handler<JobState>
             	formDataMultiPart.field("size", fileComponent.getSize() + "");
             	formDataMultiPart.field("digest-type", digestType);
             	formDataMultiPart.field("digest-value", fileComponent.getMessageDigest(digestType).getValue());
-            	formDataMultiPart.field("context", String.format(contextMain, jobState.getPrimaryID().getValue(), jobState.getVersionID().toString(),
-			fileComponent.getIdentifier()));
+
+		// context main
+            	context = String.format(contextMain, jobState.getPrimaryID().getValue(), jobState.getVersionID().toString(), fileComponent.getIdentifier());
+		// context w/ owner
+                context += CONTEXT_DELIM + String.format(contextOwner, profileState.getOwner());
+		// update context w/ members
+                Vector<String> members = profileState.getCollection();
+		for (String member: members) {
+		    context += CONTEXT_DELIM + String.format(contextCollection, member);
+		}
+            	formDataMultiPart.field("context", context);
+
             	formDataMultiPart.field("note", "");
             	formDataMultiPart.field("responseForm", "xml");		// alignment w/ fixity spec. 
             	formDataMultiPart.field("response-form", "xml");
@@ -182,6 +195,7 @@ public class HandlerFixity extends Handler<JobState>
 	            }
 		}
 
+/*
 		// another request to update owner context
                 formDataMultiPart = new FormDataMultiPart();
             	formDataMultiPart.field("url", createStorageURL(fileComponent, jobState, profileState));
@@ -234,6 +248,7 @@ public class HandlerFixity extends Handler<JobState>
 	                }
 		    }
 		}
+*/
             }
 
 	    return new HandlerResult(true, "SUCCESS: fixity request", clientResponse.getStatus());
