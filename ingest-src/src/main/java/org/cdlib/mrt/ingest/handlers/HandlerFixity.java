@@ -194,61 +194,6 @@ public class HandlerFixity extends Handler<JobState>
 		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL + "/add"); 
 	            }
 		}
-
-/*
-		// another request to update owner context
-                formDataMultiPart = new FormDataMultiPart();
-            	formDataMultiPart.field("url", createStorageURL(fileComponent, jobState, profileState));
-            	formDataMultiPart.field("context", String.format(contextOwner, profileState.getOwner()));
-	        try {
-  	            clientResponse = webResourceUpdate.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
-	        } catch (Exception e) {
-		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL + "/update"); 
-	        }
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + " UPDATE (owner) response code " + clientResponse.getStatus());
-
-	        if (clientResponse.getStatus() != 200) {
-                    try {
-			// most likely exception
-			// can only call once, as stream is not reset
-                        TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
-		    } catch (TException te) {
-		        throw te;
-                    } catch (Exception e) {
-		        // let's report something
-		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL + "/add"); 
-	            }
-		}
-
-		// yet another request to update collection context(s)
-                Iterator iterator = profileState.getCollection().iterator();
-                while(iterator.hasNext()) {
-                    formDataMultiPart = new FormDataMultiPart();
-            	    formDataMultiPart.field("url", createStorageURL(fileComponent, jobState, profileState));
-            	    formDataMultiPart.field("context", String.format(contextCollection, (String) iterator.next()));
-	            try {
-  	                clientResponse = webResourceUpdate.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
-	            } catch (Exception e) {
-		        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL + "/update"); 
-	            }
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + " UPDATE (collection) response code " + clientResponse.getStatus());
-
-	            if (clientResponse.getStatus() != 200) {
-                        try {
-			    // most likely exception
-			    // can only call once, as stream is not reset
-                            TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
-		        } catch (TException te) {
-		            throw te;
-                        } catch (Exception e) {
-		            // let's report something
-		            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": fixity service: " + fixityURL + "/add"); 
-	                }
-		    }
-		}
-*/
             }
 
 	    return new HandlerResult(true, "SUCCESS: fixity request", clientResponse.getStatus());
