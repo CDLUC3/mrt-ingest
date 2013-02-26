@@ -28,10 +28,27 @@
               <rules>
                 <requireProperty>
                   <property>environment</property>
-                  <message>You must specify an environment.</message>
-                  <regex>(development|stage|local)</regex>
-                  <regexMessage>You must specify an environment: development, stage or local</regexMessage>
+                  <message>You must specify an environment -D=environment={local,development,stage} </message>
+                  <regex>(local|development|stage)</regex>
+                  <regexMessage>You must specify an environment: local, development or stage</regexMessage>
+                  <regexMessage></regexMessage>
                 </requireProperty>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+          <execution>
+            <id>enforce-files-exist</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireFilesExist>
+                  <files>
+                   <file>${basedir}/properties/${environment}</file>
+                  </files>
+                </requireFilesExist>
               </rules>
               <fail>true</fail>
             </configuration>
