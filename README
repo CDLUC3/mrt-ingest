@@ -69,7 +69,7 @@ Test
 ----
 See online help pages for manifest information and sample data: http://merritt.cdlib.org/help
 
-Test service with a form submission to ingest, for example
+Example manifest submission using queue (synchronous):
     curl --silent  \
         -F "file=@example.checkm" \
         -F "type=container-batch-manifest" \
@@ -77,7 +77,14 @@ Test service with a form submission to ingest, for example
         -F "responseForm=xml" \
         -F "profile=sample-profile" \
         http://example.org:8080/poster/submit
-
+Example manifest submission directly to Ingest (synchronous):
+    curl --silent  \
+        -F "file=@example.checkm" \
+        -F "type=container-batch-manifest" \
+        -F "submitter=sample-user" \
+        -F "responseForm=xml" \
+        -F "profile=sample-profile" \
+        http://example.org:8080/ingest/submit-object
 
 Logs
 ----
