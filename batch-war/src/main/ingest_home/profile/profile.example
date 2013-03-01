@@ -24,7 +24,9 @@ Handler.4: org.cdlib.mrt.ingest.handlers.HandlerDisaggregate
 Handler.5: org.cdlib.mrt.ingest.handlers.HandlerRetrieve
 Handler.6: org.cdlib.mrt.ingest.handlers.HandlerCorroborate
 Handler.7: org.cdlib.mrt.ingest.handlers.HandlerCharacterize
-Handler.8: org.cdlib.mrt.ingest.handlers.HandlerMinter
+# Minting handler provided uses EZID (http://n2t.net/ezid)
+# Providing primaryIdentifier in submission will allow bypass of Mint handler
+# Handler.8: org.cdlib.mrt.ingest.handlers.HandlerMinter
 Handler.9: org.cdlib.mrt.ingest.handlers.HandlerDescribe
 Handler.10: org.cdlib.mrt.ingest.handlers.HandlerDocument
 Handler.11: org.cdlib.mrt.ingest.handlers.HandlerDigest
