@@ -494,12 +494,18 @@ public class IngestManager
 			if (override(ingestRequest)) {
                             BatchState batchState = new BatchState();
 			    // batchstate has been flushed, need to recreate
-                            batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
+			     try {
+				 // process serialized object 
+                                 batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
+			    } catch (Exception e) {
+				 // we can still continue for batches of size 1
+ 	                	System.err.println("[warn] no serialized object: " + ingestRequest.getQueuePath().getParentFile());
+			    }
                             BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
 			    BatchState.putBatchReadiness(jobState.grabBatchID().getValue(), 1);
 			}
 		    } catch (Exception e) {
-		 	//e.printStackTrace();
+		 	e.printStackTrace();
  	                //System.err.println("IngestManager [error] accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
 			//break;		// prevent looping in recovery
 		    }
