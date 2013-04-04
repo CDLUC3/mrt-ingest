@@ -826,30 +826,30 @@ public class JobState
                 if (StringUtil.isNotEmpty(jobStatusS)) header += indent + "Status: " + jobStatusS + delimiter;
                 if (StringUtil.isNotEmpty(jobStatusMessageS)) header += indent + "Status message: " + jobStatusMessageS + delimiter;
 
-	    //} else if (format.equalsIgnoreCase("CSV")) {
-	        //String[] fields = new String[12];
-                //StringWriter stringWriter = new StringWriter();
-                //CSVWriter csvWriter = new CSVWriter(stringWriter);
+	    } else if (format.toString().equals("csv")) {
+	        String[] fields = new String[12];
+                StringWriter stringWriter = new StringWriter();
+                CSVWriter csvWriter = new CSVWriter(stringWriter);
     
-                //if (StringUtil.isNotEmpty(jobIDS)) fields[0] = jobIDS;
-                //if (StringUtil.isNotEmpty(primaryIDS)) fields[1] = primaryIDS;
-                //if (StringUtil.isNotEmpty(localIDS)) fields[2] = localIDS;
-                //if (StringUtil.isNotEmpty(versionIDS)) fields[3] = versionIDS;
-                //if (StringUtil.isNotEmpty(packageName)) fields[4] = packageName;
-                //if (StringUtil.isNotEmpty(objectTitleS)) fields[5] = objectTitleS;
-                //if (StringUtil.isNotEmpty(objectCreatorS)) fields[6] = objectCreatorS;
-                //if (StringUtil.isNotEmpty(objectDateS)) fields[7] = objectDateS;
-                //if (StringUtil.isNotEmpty(submissionDateS)) fields[8] = submissionDateS;
-                //if (StringUtil.isNotEmpty(completionDateS)) fields[9] = completionDateS;
-                //if (StringUtil.isNotEmpty(jobStatusS)) fields[10] = jobStatusS;
-                //if (StringUtil.isNotEmpty(jobStatusMessageS)) fields[11] = jobStatusMessageS;
-                //csvWriter.writeNext(fields);
-	        //fields = null;
-	        //try {
-	            //csvWriter.close();
-	        //} catch (Exception e) {}
+                if (StringUtil.isNotEmpty(jobIDS)) fields[0] = jobIDS;
+                if (StringUtil.isNotEmpty(primaryIDS)) fields[1] = primaryIDS;
+                if (StringUtil.isNotEmpty(localIDS)) fields[2] = localIDS;
+                if (StringUtil.isNotEmpty(versionIDS)) fields[3] = versionIDS;
+                if (StringUtil.isNotEmpty(packageName)) fields[4] = packageName;
+                if (StringUtil.isNotEmpty(objectTitleS)) fields[5] = objectTitleS;
+                if (StringUtil.isNotEmpty(objectCreatorS)) fields[6] = objectCreatorS;
+                if (StringUtil.isNotEmpty(objectDateS)) fields[7] = objectDateS;
+                if (StringUtil.isNotEmpty(submissionDateS)) fields[8] = submissionDateS;
+                if (StringUtil.isNotEmpty(completionDateS)) fields[9] = completionDateS;
+                if (StringUtil.isNotEmpty(jobStatusS)) fields[10] = jobStatusS;
+                if (StringUtil.isNotEmpty(jobStatusMessageS)) fields[11] = jobStatusMessageS;
+                csvWriter.writeNext(fields);
+	        fields = null;
+	        try {
+	            csvWriter.close();
+	        } catch (Exception e) {}
     
-	        //header = stringWriter.toString();
+	        header = stringWriter.toString();
 	    } else {	// state formatter
 		try {
                     formatterUtil = new FormatterUtil();
