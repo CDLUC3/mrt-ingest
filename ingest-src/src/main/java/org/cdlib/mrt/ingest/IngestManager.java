@@ -463,9 +463,9 @@ public class IngestManager
 	        while (BatchState.getBatchReadiness(jobState.grabBatchID().getValue()) != 1) {
 	            System.out.println("[info]" + MESSAGE + "waiting for posting to complete: " + jobState.getJobID());
 
-/*
 		    // are we recovering from a shutdown?
 		    try {
+/*
 			synchronized (this) {
 		            if (BatchState.getBatchStates().size() == 0) {
 		                if (BatchState.getBatchStates().size() == 0) {	// in case two objects pending, only let one through
@@ -483,7 +483,6 @@ public class IngestManager
                 		        if (jobStateTemp.getJobStatus() != JobStatusEnum.PENDING) completed++;
             		            }
 
-
 			            System.out.println("-------> number of completed jobs: " + completed);
 			            BatchState.putBatchCompletion(jobState.grabBatchID().getValue(), completed);
 			            BatchState.putBatchReadiness(jobState.grabBatchID().getValue(), 1);
@@ -491,12 +490,25 @@ public class IngestManager
 		                }
 		            }
 			}
+*/
+			if (override(ingestRequest)) {
+                            BatchState batchState = new BatchState();
+			    // batchstate has been flushed, need to recreate
+			     try {
+				 // process serialized object 
+                                 batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
+			    } catch (Exception e) {
+				 // we can still continue for batches of size 1
+ 	                	System.err.println("[warn] no serialized object: " + ingestRequest.getQueuePath().getParentFile());
+			    }
+                            BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
+			    BatchState.putBatchReadiness(jobState.grabBatchID().getValue(), 1);
+			}
 		    } catch (Exception e) {
 		 	e.printStackTrace();
- 	                System.err.println("IngestManager [error] accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
-			break;		// prevent looping in recovery
+ 	                //System.err.println("IngestManager [error] accessing serialized object: " + ingestRequest.getQueuePath().getParentFile());
+			//break;		// prevent looping in recovery
 		    }
-*/
 		
 		    Thread.currentThread().sleep(30 * 1000);
 	        }
@@ -631,6 +643,17 @@ public class IngestManager
 	}
     }
 
+    private boolean override(IngestRequest ingestRequest)
+	throws Exception
+    {
+	try {
+	    if (new File(ingestRequest.getQueuePath().getParentFile(), "POST_COMPLETE").exists()) {
+	        System.out.println("[INFO] IngestManager: POST_COMPLETE detected: " + ingestRequest.getQueuePath().getParentFile()); 
+	        return true;
+	    }	
+	} catch (Exception e) {}
+	return false;
+    }
     protected void setIngestStateProperties(IngestServiceState ingestState) 
 	throws TException
     {

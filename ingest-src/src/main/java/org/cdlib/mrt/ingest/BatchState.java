@@ -38,6 +38,7 @@ import java.util.Map;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
@@ -394,7 +395,7 @@ public class BatchState
 	        jobStateS = jobStateS + jobState.dump("", "\t", "\n", null) + "\n";
 	    } else {
 		if (jobonly) {
-	            header += jobState.dump("");
+	            header += jobState.dump("", "\t", "\n", FormatType.valueOf("csv"));
 		} else {
 		    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) completed++;
 		    if (jobState.getJobStatus() == JobStatusEnum.FAILED) failed++;

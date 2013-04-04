@@ -87,6 +87,7 @@ public class HandlerNotification extends Handler<BatchState>
 	boolean isBatch = true;
 	boolean batchComplete = false;
 	boolean verbose = false;
+	boolean csv = false;
         FormatterUtil formatterUtil = new FormatterUtil();
 	FormatType formatType = null;
 
@@ -95,6 +96,12 @@ public class HandlerNotification extends Handler<BatchState>
                 if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
                     if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
                     verbose = true;
+                }
+	    } catch (Exception e) {}
+	    try {
+                if (profileState.getNotificationType().equalsIgnoreCase("additional")) {
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'additional' notification (CSV).");
+                    csv = true;
                 }
 	    } catch (Exception e) {}
 
@@ -174,9 +181,11 @@ public class HandlerNotification extends Handler<BatchState>
 		    }
 		}
 
-		// Comma delimited
-		//email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
-			 //batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
+		if (csv) {
+		    // Comma delimited
+		    email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
+			 batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
+		}
 
                 // attachment: batch state with user defined formatting
                 if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
