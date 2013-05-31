@@ -557,7 +557,7 @@ public class HandlerMinter extends Handler<JobState>
 		}
 
                 // local ID processing
-                if (key.matches("where-local") || key.matches("dc.identifier") || (key.matches("where:") && ! value.contains("ark:/"))) {
+                if (key.matches("where-local") || (key.matches("dc.identifier") && ! jobState.grabObjectProfile().grabSuppressDublinCoreLocalID()) || (key.matches("where:") && ! value.contains("ark:/"))) {
                     if (! trimLeft(trimRight(value)).contains("(:unas)")) {
 			// append existing local ID values
 			if (updateIDs) {
