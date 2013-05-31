@@ -90,6 +90,7 @@ public class ProfileState
     private String ezidCoowner = null;
     private FormatType notificationFormat = null;	// response type
     private String notificationType = null;		// human readable notification 
+    private boolean suppressDublinCoreLocalID = false;	// opt-in policy
 
     final String[] OBJECTTYPE = { "MRT-curatorial", "MRT-system" };
     final String[] OBJECTROLE = { "MRT-content", "MRT-class" };
@@ -534,6 +535,14 @@ public class ProfileState
 
     public void setEzidCoowner(String ezidCoowner) {
         this.ezidCoowner = ezidCoowner;
+    }
+
+    public boolean grabSuppressDublinCoreLocalID() {
+        return suppressDublinCoreLocalID;
+    }
+
+    public void setSuppressDublinCoreLocalID(boolean suppressDublinCoreLocalID) {
+        this.suppressDublinCoreLocalID = suppressDublinCoreLocalID;
     }
 
     public void setNotificationFormat(String notificationFormat) {
