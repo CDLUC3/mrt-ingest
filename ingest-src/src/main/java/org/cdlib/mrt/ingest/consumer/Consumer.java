@@ -276,7 +276,6 @@ class ConsumerDaemon implements Runnable
 
     private ZooKeeper zooKeeper = null;
     private DistributedQueue distributedQueue = null;
-    private int sessionTimeout =    40000;	// default max 20*tick 
 
     // session data
     private long sessionID;
@@ -296,7 +295,7 @@ class ConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
 
             distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
 	} catch (Exception e) {
@@ -390,7 +389,7 @@ class ConsumerDaemon implements Runnable
         	} catch (SessionExpiredException see) {
 		    see.printStackTrace(System.err);
 		    System.err.println("[warn] " + MESSAGE + "Session expired.  Attempting to recreate session.");
-		    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer(), sessionID, sessionAuth);
+		    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer(), sessionID, sessionAuth);
 		} catch (RejectedExecutionException ree) {
 	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
 		} catch (NoSuchElementException nsee) {
@@ -456,7 +455,7 @@ class ConsumerDaemon implements Runnable
 	        item = distributedQueue.updateStatus(id, Item.CONSUMED, Item.PENDING);
 	    } catch (SessionExpiredException see) {
 	        System.err.println("[error]" + MESSAGE +  "Session expired.  Attempting to recreate session while requeueing.");
-		zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer(), sessionID, sessionAuth);
+		zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer(), sessionID, sessionAuth);
 		return false;
 	    }
 
@@ -603,7 +602,6 @@ class CleanupDaemon implements Runnable
 
     private ZooKeeper zooKeeper = null;
     private DistributedQueue distributedQueue = null;
-    private int sessionTimeout =    40000;      // default max 20*tick
 
     // session data
     private long sessionID;
@@ -617,7 +615,7 @@ class CleanupDaemon implements Runnable
         this.queueNode = queueNode;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
 
             distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
         } catch (Exception e) {
@@ -670,7 +668,7 @@ class CleanupDaemon implements Runnable
                 } catch (SessionExpiredException see) {
                     see.printStackTrace(System.err);
                     System.err.println("[warn] " + MESSAGE + "Session expired.  Attempting to recreate session.");
-                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer(), sessionID, sessionAuth);
+                    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer(), sessionID, sessionAuth);
                 } catch (RejectedExecutionException ree) {
                     System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
                 } catch (NoSuchElementException nsee) {

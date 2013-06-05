@@ -109,7 +109,7 @@ public class HandlerSubmit extends Handler<BatchState>
 
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), 10000, new Ignorer());
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), DistributedQueue.sessionTimeout, new Ignorer());
 	    String priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
 	    System.out.println("[info] queue priority: " + priority);
             DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority, null);	// default priority
