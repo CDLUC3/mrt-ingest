@@ -264,7 +264,7 @@ public class QueueManager
 
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(queueConnectionString, 10000, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
             DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
 
             TreeMap<Long,String> orderedChildren;
