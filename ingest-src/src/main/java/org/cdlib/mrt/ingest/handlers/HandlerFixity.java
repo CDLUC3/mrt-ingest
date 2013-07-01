@@ -225,7 +225,8 @@ public class HandlerFixity extends Handler<JobState>
             url = profileState.getTargetStorage().getStorageLink().toString() + "/content/" + 
 		profileState.getTargetStorage().getNodeID() + "/" + 
 		URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8") + "/" + jobState.getVersionID().toString() + "/" +
-		URLEncoder.encode(fileComponent.getIdentifier(), "utf-8");
+		URLEncoder.encode(fileComponent.getIdentifier(), "utf-8") + 
+		 "?fixity=no";
 	    return url;
 
 	} catch (Exception e) { return url; }
