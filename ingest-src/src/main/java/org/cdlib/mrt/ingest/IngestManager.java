@@ -568,7 +568,7 @@ public class IngestManager
 
 		try {
                     if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue.class) {
-	    		if ( (! batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) || 
+	    		if ( (! batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) && 
 				(batchState.grabTargetQueue() != null)) {
 			    jobState.setMisc(batchState.grabTargetQueue());
 			    jobState.setExtra(batchState.grabTargetInventoryNode());
