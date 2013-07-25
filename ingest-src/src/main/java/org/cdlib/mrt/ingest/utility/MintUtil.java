@@ -428,7 +428,8 @@ public class MintUtil
     }
 
     private static boolean isDevelopment(ProfileState profileState) {
-	return ! profileState.getObjectMinterURL().toString().contains("https://n2t.net/");
+	// return ! profileState.getObjectMinterURL().toString().contains("https://n2t.net/");
+	return true;
     }
 
     // http://theskeleton.wordpress.com/2010/07/24/
