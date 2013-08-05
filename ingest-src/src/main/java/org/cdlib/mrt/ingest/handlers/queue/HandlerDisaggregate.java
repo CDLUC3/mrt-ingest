@@ -230,16 +230,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    File tempFile = new File(queueDir, fileName);
 	    tempFile.createNewFile();
 
-            int retryCount = 0;
-	    try {
-                FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
-	    } catch (Exception e) {
-                if (retryCount >= 3) throw e;
-                System.err.println("[error] " + MESSAGE + "Downloading: " + fileURL.toString() + " retrying: attepmt " + retryCount + " of 3");
-		Thread.currentThread().sleep(retryCount + 1 * 1000);	
-		retryCount++;
-
-	    }
+	    // retry 3 times
+            FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
 
     	    return createJob(tempFile, queueDir);
 	} catch (Exception e) {
