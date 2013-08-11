@@ -192,8 +192,12 @@ public class HandlerMinter extends Handler<JobState>
 		    // expect DOI and shadow ARK
 		    String[] parse = returnValue.split("\\|");
 		    if (parse[0].startsWith("doi")) {
-	        	 System.out.println("[info] " + MESSAGE + "Setting DOI to local ID: " + parse[0]);
-		        jobState.setLocalID(parse[0]);
+			if (jobState.getLocalID() == null) {
+		            jobState.setLocalID(parse[0].trim());
+			} else {
+		            jobState.setLocalID(jobState.getLocalID() + "; " + parse[0].trim());
+			}
+	        	System.out.println("[info] " + MESSAGE + "Adding DOI to local ID: " + jobState.getLocalID().getValue());
 		    } else {
 	                System.err.println("[warn] " + MESSAGE + "Failure to mint a DOI identifier.");
                 	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": failure to mint DOI identifier: " + parse[0]);

@@ -159,10 +159,15 @@ public class MintUtil
 	    HttpEntityEnclosingRequestBase httpCommand = null;
 	    if ( ! mint) {
 	        // Update an ID.  Fails if ID does not exist.
-	        if (shadow) 
-		    url = url.replaceFirst("/shoulder.*", "/id/") + jobState.getLocalID().getValue();
-		else
+	        if (shadow) {
+		    String doi = "";
+		    for (String s : jobState.getLocalID().getValue().split(";")) {
+			if (s.trim().startsWith("doi:")) doi = s.trim();
+		    }
+		    url = url.replaceFirst("/shoulder.*", "/id/") + doi;
+		} else {
 		    url = url.replaceFirst("/shoulder.*", "/id/") + jobState.getPrimaryID().getValue();
+		}
 		System.out.println("[info] " + MESSAGE + "updating ID: " + url);
 	    }
 
