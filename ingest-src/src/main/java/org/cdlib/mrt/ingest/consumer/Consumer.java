@@ -376,8 +376,9 @@ class ConsumerDaemon implements Runnable
 		            if (requeue(parse[1])) {
 			        break;
 		    	    }
+			    i++;
 		        }
-			if (i == MAX_ATTEMPT){
+			if (i >= MAX_ATTEMPT){
 	    	            System.out.println("[error]" + MESSAGE + "Could not requeue ITEM: " + parse[1]);
 			    // session expired ?  If so, can we recover or just eror
 			    //throw new org.apache.zookeeper.KeeperException.SessionExpiredException();
