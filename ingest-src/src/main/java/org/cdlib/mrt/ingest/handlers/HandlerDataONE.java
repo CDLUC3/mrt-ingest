@@ -54,6 +54,7 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
@@ -78,7 +79,10 @@ import net.sf.jmimemagic.MagicMatch;
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
 
+import org.cdlib.mrt.cloud.VersionMap;
+import org.cdlib.mrt.cloud.VersionMapUtil;
 import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.dataone.content.CreateContent;
 import org.cdlib.mrt.dataone.create.DataOneHandler;
@@ -89,6 +93,7 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
+import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -179,13 +184,54 @@ public class HandlerDataONE extends Handler<JobState>
 		throw new TException.REQUEST_ELEMENT_UNSUPPORTED("[error] " + NAME + ": No dataONE coordinating node url specified.");
 	    }
 
+	    // d1 resource manifest retrieval (if necessary)
+	    File resourceManifest = new File(ingestRequest.getQueuePath() + FS + resourceManifestName);
+            List<FileComponent> fileComponents = null;
+	    Vector deleteFiles = null;
+	    if ((! resourceManifest.exists()) && (jobState.grabUpdateFlag())) {
+		// try {
+                   if (DEBUG) System.out.println("[debug] " + MESSAGE + " retrieving previous D1 resource manifest " + resourceManifest.getName());
+		   resourceManifest = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "producer/mrt-dataone-manifest.txt");
+
+                   String objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
+		   String urlManifest = profileState.getTargetStorage().getStorageLink().toString() + "/manifest/" + 
+                       profileState.getTargetStorage().getNodeID() + "/" + URLEncoder.encode(objectIDS, "utf-8");
+
+		   deleteFiles = new Vector<String>();
+                   VersionMap map = VersionMapUtil.getMap(urlManifest);
+                   fileComponents = VersionMapUtil.getVersion(map, map.getCurrent());
+
+	           // retrieve all producer/ files 
+		   for (int i = 0; i < fileComponents.size(); i++) {
+		       FileComponent fileComponent = fileComponents.get(i);
+		       String fileName = fileComponent.getIdentifier();
+		       if (! fileName.contains("producer")) {
+			   continue;
+		       }
+
+                       String urlComponent = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
+                            profileState.getTargetStorage().getNodeID() + "/" + URLEncoder.encode(objectIDS, "utf-8") + 
+			    "/" + Integer.toString(map.getCurrent()) + "/" + URLEncoder.encode(fileName, "utf-8");
+                       File f = new File(ingestRequest.getQueuePath(), fileName);
+		       if (! f.exists()) {
+                           if (DEBUG) System.out.println("[debug] " + MESSAGE + " retrieving component " + urlComponent);
+                           FileUtil.url2File(null, urlComponent, f, 2);
+			   deleteFiles.add(fileName);
+		       } else {
+			   continue;	// safeguard subsequest ops
+		       }
+                   }
+		 //} catch (Exception e) {
+                   //if (DEBUG) System.out.println("[warn] " + MESSAGE + " Error while trying to retrieve existing D1 storage data for update request.");
+		 //}
+	       }
 
 	    // d1 resource manifest processing
-	    File resourceManifest = new File(ingestRequest.getQueuePath() + FS + resourceManifestName);
-	    if ( ! resourceManifest.exists()) {
+	    //if ( resourceManifest == null && ! resourceManifest.exists()) {
+	    if (! resourceManifest.exists()) {
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " creating D1 resource manifest " + resourceManifest.getName());
 	        resourceManifestName = resourceManifestName.replace("producer", "system");
 	        resourceManifest = new File(ingestRequest.getQueuePath() + FS + resourceManifestName);
-                if (DEBUG) System.out.println("[debug] " + MESSAGE + " creating D1 resource manifest " + resourceManifest.getName());
 		FileUtil.string2File(resourceManifest, 
 		    createResourceManifest(new File(ingestRequest.getQueuePath() + FS + "producer")));
 	    }
@@ -195,7 +241,6 @@ public class HandlerDataONE extends Handler<JobState>
 		resourceManifestName = removeERC(resourceManifest, tmpFile);
 	    }
 
-
             DataOneHandler handler = DataOneHandler.getDataOneHandler(ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, 
 		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, coordinatingNodeURL, 
 		createStorageURL(jobState, profileState), logger);
@@ -204,6 +249,21 @@ public class HandlerDataONE extends Handler<JobState>
 	    // create resource map
 	    if ( ! dataONE)
 	        handler.getCreateContentResourceMap(OUTFORMAT, OUTPUTRESOURCENAME);	// just need map for now
+
+	    // remove all producer/ files we downloaded for resource map processing
+	    if ((deleteFiles != null) && (jobState.grabUpdateFlag())) {
+		// try {
+                   Iterator <String> it = deleteFiles.iterator();
+                   for (; it.hasNext();) {
+		       String filename = it.next();
+                       File f = new File(ingestRequest.getQueuePath(), filename);
+                       if (DEBUG) System.out.println("[debug] " + MESSAGE + " removing component " + f.getAbsolutePath());
+		       f.delete();
+		   }
+		// } catch (Exception e) {
+                   // if (DEBUG) System.out.println("[warn] " + MESSAGE + " Error while trying to remove existing D1 storage data for update request.");
+		// }
+	    }
 
 	    // update Merritt resource map
 	    if ( ! dataONE) {
