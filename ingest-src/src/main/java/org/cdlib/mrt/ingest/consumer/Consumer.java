@@ -390,7 +390,7 @@ class ConsumerDaemon implements Runnable
         	} catch (SessionExpiredException see) {
 		    see.printStackTrace(System.err);
 		    System.err.println("[warn] " + MESSAGE + "Session expired.  Attempting to recreate session.");
-		    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer(), sessionID, sessionAuth);
+            	    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                     distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);  
 		} catch (RejectedExecutionException ree) {
 	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
