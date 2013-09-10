@@ -250,6 +250,7 @@ public class HandlerDataONE extends Handler<JobState>
 	    if ( ! dataONE)
 	        handler.getCreateContentResourceMap(OUTFORMAT, OUTPUTRESOURCENAME);	// just need map for now
 
+/*
 	    // remove all producer/ files we downloaded for resource map processing
 	    if ((deleteFiles != null) && (jobState.grabUpdateFlag())) {
 		// try {
@@ -264,6 +265,7 @@ public class HandlerDataONE extends Handler<JobState>
                    // if (DEBUG) System.out.println("[warn] " + MESSAGE + " Error while trying to remove existing D1 storage data for update request.");
 		// }
 	    }
+*/
 
 	    // update Merritt resource map
 	    if ( ! dataONE) {
@@ -349,6 +351,7 @@ public class HandlerDataONE extends Handler<JobState>
 	            try {
   	                clientResponse = webResourceCreate.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, formDataMultiPart);
 	            } catch (Exception e) {
+			e.printStackTrace();
 		        error = true;
 		        jobState.setMetacatStatus("failure");
 		        String msg = "[error] " + NAME + ": dateONE service: " + dataoneURL + "/create"; 
