@@ -355,7 +355,7 @@ class ConsumerDaemon implements Runnable
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional tasks.  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
-                            executorService.execute(new ConsumeData(ingestService, distributedQueue.consume(), distributedQueue));
+                            executorService.execute(new ConsumeData(ingestService, distributedQueue.consume(), distributedQueue, queueConnectionString, queueNode));
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
@@ -496,16 +496,23 @@ class ConsumeData implements Runnable
     private static final boolean DEBUG = true;
     protected static final String FS = System.getProperty("file.separator");
 
+    private String queueConnectionString = null;
+    private String queueNode = null;
+    private ZooKeeper zooKeeper = null;
     private DistributedQueue distributedQueue = null;
+
     private Item item = null;
     private IngestServiceInf ingestService = null;
 
     // Constructor
-    public ConsumeData(IngestServiceInf ingestService, Item item, DistributedQueue distributedQueue)
+    public ConsumeData(IngestServiceInf ingestService, Item item, DistributedQueue distributedQueue, String queueConnectionString, String queueNode)
     {
 	this.distributedQueue = distributedQueue;
 	this.item = item;
 	this.ingestService = ingestService;
+
+        this.queueConnectionString = queueConnectionString;
+        this.queueNode = queueNode;
     }
 
     public void run()
@@ -583,6 +590,28 @@ class ConsumeData implements Runnable
 	    distributedQueue.complete(item.getId());
 
             if (DEBUG) System.out.println("[item] END: completed queue data:" + item.toString());
+        } catch (SessionExpiredException see) {
+            see.printStackTrace(System.err);
+            System.err.println("[warn] ConsumeData" + MESSAGE + "Session expired.  Attempting to recreate session.");
+	    try {
+                zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	        distributedQueue.complete(item.getId());
+	    } catch (Exception e) {
+                e.printStackTrace(System.err);
+                System.out.println("[error] Consuming queue data: Could not recreate session.");
+	    }
+        } catch (ConnectionLossException cle) {
+            cle.printStackTrace(System.err);
+            System.err.println("[warn] ConsumeData" + MESSAGE + "Connection loss.  Attempting to reconnect.");
+	    try {
+                zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	        distributedQueue.complete(item.getId());
+	    } catch (Exception e) {
+                e.printStackTrace(System.err);
+                System.out.println("[error] Consuming queue data: Could not reconnect.");
+	    }
         } catch (Exception e) {
             e.printStackTrace(System.err);
             System.out.println("[error] Consuming queue data");
@@ -593,6 +622,13 @@ class ConsumeData implements Runnable
 	    }
 	} 
     }
+
+   public class Ignorer implements Watcher {
+       public void process(WatchedEvent event){
+           if (event.getState().equals("Disconnected"))
+               System.out.println("Disconnected: " + event.toString());
+       }
+   }
 }
 
 
