@@ -180,10 +180,18 @@ public class HandlerRetrieve extends Handler<JobState>
 			tasks.add(future);
                     }
 
+		    // Not blocked w/ callables
+      		    executorService.shutdown();
+
+		    while (! executorService.isTerminated()) {
+		        System.out.println("awaiting completion of retrievals.... Thread: " + Thread.currentThread().getName());
+		        Thread.currentThread().sleep(15000);		// 15 seconds
+		    }
+
 		    // check for errors
 		    try {
       			for (Future<String> future : tasks) {
-        		    String s = future.get();
+        		    String s = future.get();	// blocked, but should be complete
 			    if (s != null) {
 				failure = true;
 				failureURL = s;
@@ -191,17 +199,10 @@ public class HandlerRetrieve extends Handler<JobState>
 			    }
       			}
 
-      			executorService.shutdown();
 		    } catch (Exception e) { 
 			failure = true;
 		    }
 
-
-
-		    while (! executorService.isTerminated()) {
-		        System.out.println("awaiting completion of retrievals....");
-		        Thread.currentThread().sleep(5000);		// 5 seconds
-		    }
 
 		    tasks.clear();
 		    // did any retrieval fail?
