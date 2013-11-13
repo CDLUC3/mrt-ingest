@@ -159,6 +159,15 @@ public class HandlerRetrieve extends Handler<JobState>
 	        for (String fileS : targetDir.list()) {
 	            manifestFile = new File(targetDir, fileS);
 
+		    if (manifestFile.exists()) {
+                        System.out.println("[HandlerRetrieve] Processing manifest file: " + manifestFile.getName());
+		    } else if (executorService != null) {
+                        System.out.println("[HandlerRetrieve] WARNING: Manifest file does not exist: " + manifestFile.getName());
+			continue;
+		    } else {
+			// manifest does not exist and no other manifests processed...FAIL
+		    }
+			
                     Enumeration<ManifestRowInf> enumRow = manifest.getRows(new FileInputStream(manifestFile));
                     ManifestRowIngest rowIn = null;
                     FileComponent fileComponent = null;
