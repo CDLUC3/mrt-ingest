@@ -132,7 +132,7 @@ public class HandlerMinter extends Handler<JobState>
 	    if (producerDataCiteFile.exists()) {
                 Map<String, String> producerDataCite = MetadataUtil.readDataCiteXML(producerDataCiteFile);
 		// overwrite Form or Manifest parameters
-           	haveMetadata = updateMetadata(jobState, producerDataCite, true, false);
+           	haveMetadata = updateMetadata(jobState, producerDataCite, true, true);
 
 		// save datacite content for EZID
 		jobState.setDataCiteMetadata(FileUtil.file2String(producerDataCiteFile));
@@ -451,34 +451,33 @@ public class HandlerMinter extends Handler<JobState>
                 String key = (String) producerDataItr.next();
                 String value = (String) producerData.get(key);
 
-
                 final String DELIMITER = "; ";
-                if (key.matches("who") || key.matches("dc.creator")) {
+                if (key.matches("who") || key.matches("dc.creator") || key.matches("datacite.creator")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
 			if (overwrite || objectCreator == null || objectCreator.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectCreator(trimLeft(trimRight(value)));
-			    if (DEBUG && key.matches("who")) System.out.println("[info] " + NAME + " found creator in metadata file: " + value);
+			    if (DEBUG) System.out.println("[info] " + NAME + " found creator in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
 		}
-                if (key.matches("what") ||  key.matches("dc.title")) {
+                if (key.matches("what") || key.matches("dc.title") || key.matches("datacite.title")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
 			if (overwrite || objectTitle == null || objectTitle.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectTitle(trimLeft(trimRight(value)));
-			    if (DEBUG && key.matches("what")) System.out.println("[info] " + NAME + " found title in metadata file: " + value);
+			    if (DEBUG) System.out.println("[info] " + NAME + " found title in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
 		}
-                if (key.matches("when") ||  key.matches("dc.date")) {
+                if (key.matches("when") || key.matches("dc.date") || key.matches("datacite.publicationyear")) {
 		    if ( ! trimLeft(trimRight(value)).equals("(:unas)")) {
 			if (overwrite || objectDate == null || objectDate.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectDate(trimLeft(trimRight(value)));
-			    if (DEBUG && key.matches("when")) System.out.println("[info] " + NAME + " found date in metadata file: " + value);
+			    if (DEBUG) System.out.println("[info] " + NAME + " found date in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
