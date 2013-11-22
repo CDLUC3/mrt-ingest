@@ -643,7 +643,8 @@ public class HandlerMinter extends Handler<JobState>
  	    String string = FileManager.get().readWholeFileAsUTF8(mapFile.getAbsolutePath());
 	    if (resetObject) {
             	if (DEBUG) System.out.println("[debug] " + MESSAGE + "assigning objectID");
-		string = string.replaceAll("OID_UNKNOWN", URLEncoder.encode(ingestRequest.getJob().getPrimaryID().getValue(), "UTF-8"));
+		string = string.replaceAll("ark:/OID/UNKNOWN", URLEncoder.encode(ingestRequest.getJob().getPrimaryID().getValue(), "UTF-8"));
+		string = string.replaceAll(URLEncoder.encode("ark:/OID/UNKNOWN", "UTF-8"), URLEncoder.encode(ingestRequest.getJob().getPrimaryID().getValue(), "UTF-8"));
 	    }
 
 	    InputStream inputStream = new ByteArrayInputStream(string.getBytes("UTF-8"));
@@ -663,10 +664,8 @@ public class HandlerMinter extends Handler<JobState>
             } catch (Exception e) {
                 objectIDS = "(:unas)";		// will this ever happen?
             }
-            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" +
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
                         URLEncoder.encode(objectIDS, "utf-8");
-
 
             return model;
         } catch (Exception e) {

@@ -360,11 +360,11 @@ public class HandlerInitialize extends Handler<JobState>
 	        objectIDS = jobState.getPrimaryID().getValue();
 	    } catch (Exception e) {
 		// localID
-		objectIDS = "OID_UNKNOWN";
+		objectIDS = "ark:/OID/UNKNOWN";
 	    }
-	    String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" + 
-			URLEncoder.encode(objectIDS, "utf-8");
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
+                        URLEncoder.encode(objectIDS, "utf-8");
+            String object = objectIDS;
 
 	    String metadataURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/" + ingestFile.getName(), "utf-8");
 	    String membershipURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-membership.txt", "utf-8"); 
@@ -376,11 +376,13 @@ public class HandlerInitialize extends Handler<JobState>
             String ore = "http://www.openarchives.org/ore/terms#";
             String msc = "http://uc3.cdlib.org/ontology/schema#";
             String mts = "http://purl.org/NET/mediatypes/";
+            String n2t = "http://n2t.net/";
 
             Model model = ModelFactory.createDefaultModel();
             model.setNsPrefix("mrt", mrt);
             model.setNsPrefix("ore", ore);
             model.setNsPrefix("msc", msc);
+            model.setNsPrefix("n2t", n2t);
 
 	    String localIdentifier = null;
             try {
@@ -390,34 +392,34 @@ public class HandlerInitialize extends Handler<JobState>
             }
 
 	    // object
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(ore + "aggregates"), 
 		ResourceFactory.createResource(metadataURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(ore + "aggregates"), 
 		ResourceFactory.createResource(membershipURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(ore + "aggregates"), 
 		ResourceFactory.createResource(momURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(ore + "aggregates"), 
 		ResourceFactory.createResource(ownerURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(ore + "aggregates"), 
 		ResourceFactory.createResource(resourceMapURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
 		ResourceFactory.createResource(metadataURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
 		ResourceFactory.createResource(membershipURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
 		ResourceFactory.createResource(momURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
 		ResourceFactory.createResource(ownerURI));
-	    model.add(ResourceFactory.createResource(objectURI),
+	    model.add(ResourceFactory.createResource(n2t + object),
 		ResourceFactory.createProperty(mrt + "hasMetadata"), 
 		ResourceFactory.createResource(resourceMapURI));
 
@@ -462,7 +464,7 @@ public class HandlerInitialize extends Handler<JobState>
 		ResourceFactory.createResource(mts + "text/turtle"));
 	    model.add(ResourceFactory.createResource(resourceMapURI),
 		ResourceFactory.createProperty(ore + "describes"), 
-		ResourceFactory.createResource(objectURI));
+                ResourceFactory.createResource(n2t + object));
 	
             return model;
         } catch (Exception e) {
