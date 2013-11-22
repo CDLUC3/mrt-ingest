@@ -697,6 +697,7 @@ Now done in HandlerMinter
             String ore = "http://www.openarchives.org/ore/terms#";
             String msc = "http://uc3.cdlib.org/ontology/schema#";
             String mts = "http://purl.org/NET/mediatypes/";
+            String n2t = "http://n2t.net/";
 
             String versionIDS = "0";	// current
             Integer versionID = jobState.getVersionID();
@@ -707,17 +708,18 @@ Now done in HandlerMinter
             } catch (Exception e) {
                 objectIDS = "(:unas)";          // will this ever happen?
             }
-            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" +
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
                         URLEncoder.encode(objectIDS, "utf-8");
+            String object = objectIDS;
+
             String systemErcURI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + systemErcFile.getName(), "utf-8");
 
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
                 ResourceFactory.createResource(systemErcURI));
 
 	    // system ERC
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(ore + "aggregates"),
                 ResourceFactory.createResource(systemErcURI));
             model.add(ResourceFactory.createResource(systemErcURI),
@@ -733,7 +735,7 @@ Now done in HandlerMinter
                 String producerErcURI = objectURI + "/" + versionIDS + "/" + 
 			URLEncoder.encode("producer/" + producerErcFile.getName(), "utf-8");
 
-                model.add(ResourceFactory.createResource(objectURI),
+                model.add(ResourceFactory.createResource(n2t + object),
                     ResourceFactory.createProperty(mrt + "hasMetadata"),
                     ResourceFactory.createResource(producerErcURI));
                 model.add(ResourceFactory.createResource(producerErcURI),
@@ -750,7 +752,7 @@ Now done in HandlerMinter
                 String producerDCURI = objectURI + "/" + versionIDS + "/" + 
 			URLEncoder.encode("producer/" + producerDCFile.getName(), "utf-8");
 
-                model.add(ResourceFactory.createResource(objectURI),
+                model.add(ResourceFactory.createResource(n2t + object),
                     ResourceFactory.createProperty(mrt + "hasMetadata"),
                     ResourceFactory.createResource(producerDCURI));
                 model.add(ResourceFactory.createResource(producerDCURI),
@@ -767,7 +769,7 @@ Now done in HandlerMinter
                 String producerDataCiteURI = objectURI + "/" + versionIDS + "/" + 
 			URLEncoder.encode("producer/" + producerDataCiteFile.getName(), "utf-8");
 
-                model.add(ResourceFactory.createResource(objectURI),
+                model.add(ResourceFactory.createResource(n2t + object),
                     ResourceFactory.createProperty(mrt + "hasMetadata"),
                     ResourceFactory.createResource(producerDataCiteURI));
                 model.add(ResourceFactory.createResource(producerDataCiteURI),
@@ -784,7 +786,7 @@ Now done in HandlerMinter
                 String producerEMLURI = objectURI + "/" + versionIDS + "/" + 
 			URLEncoder.encode("producer/" + producerEMLFile.getName(), "utf-8");
 
-                model.add(ResourceFactory.createResource(objectURI),
+                model.add(ResourceFactory.createResource(n2t + object),
                     ResourceFactory.createProperty(mrt + "hasMetadata"),
                     ResourceFactory.createResource(producerEMLURI));
                 model.add(ResourceFactory.createResource(producerEMLURI),
@@ -817,7 +819,7 @@ Now done in HandlerMinter
 			String fileName = fileComponent.getIdentifier();
 			if (fileName.startsWith("producer/")) {
 			    String component = objectURI + "/" + versionIDS + "/" + URLEncoder.encode(fileName, "utf-8");
-	                    model.add(ResourceFactory.createResource(objectURI),
+                            model.add(ResourceFactory.createResource(n2t + object),
                     	        ResourceFactory.createProperty(ore + "aggregates"),
                     	        ResourceFactory.createResource(component));
 
@@ -831,7 +833,7 @@ Now done in HandlerMinter
                 if (deleteLines != null) {
                     for (String deleteLine : deleteLines) {
 	                String component = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("producer/" + deleteLine, "utf-8");
-	                Statement statement = model.createStatement(ResourceFactory.createResource(objectURI), 
+	                Statement statement = model.createStatement(ResourceFactory.createResource(n2t + object), 
 		            ResourceFactory.createProperty(ore + "aggregates"),
                             ResourceFactory.createResource(component));
     

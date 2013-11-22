@@ -432,15 +432,16 @@ public class HandlerDisaggregate extends Handler<JobState>
             String versionID = "0";             // current
             String objectIDS = null;
             String ore = "http://www.openarchives.org/ore/terms#";
+            String n2t = "http://n2t.net/";
 
             try {
                 objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
             } catch (Exception e) {
-                objectIDS = "OID_UNKNOWN";	// replace when known
+                objectIDS = "ark:/OID/UNKNOWN";	// replace when known
             }
-            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" +
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
                         URLEncoder.encode(objectIDS, "utf-8");
+            String object = objectIDS;
 
             String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8");
 
@@ -452,8 +453,8 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    for (File file : files) {
 		if (file.isDirectory()) continue;
 		String component = objectURI + "/" + versionID + "/" +
-			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("producer")), "utf-8");
-                model.add(ResourceFactory.createResource(objectURI),
+			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer") + 1), "utf-8");
+                model.add(ResourceFactory.createResource(n2t + object),
                     ResourceFactory.createProperty(ore + "aggregates"),
                     ResourceFactory.createResource(component));
 	    }

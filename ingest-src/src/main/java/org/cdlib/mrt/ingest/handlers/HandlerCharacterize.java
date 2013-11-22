@@ -256,6 +256,7 @@ public class HandlerCharacterize extends Handler<JobState>
             String mrt = "http://uc3.cdlib.org/ontology/mom#";
             String msc = "http://uc3.cdlib.org/ontology/schema#";
             String mts = "http://purl.org/NET/mediatypes/";
+            String n2t = "http://n2t.net/";
 
             String versionIDS = "0";    // current
             Integer versionID = jobState.getVersionID();
@@ -264,14 +265,16 @@ public class HandlerCharacterize extends Handler<JobState>
             try {
                 objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
             } catch (Exception e) {
-                objectIDS = "OID_UNKNOWN";
+                objectIDS = "ark:/OID/UNKNOWN";
+
             }
-            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" +
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
                         URLEncoder.encode(objectIDS, "utf-8");
+            String object = objectIDS;
+
             String systemJhove2URI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + metadataFile.getName(), "utf-8");
 
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
                 ResourceFactory.createResource(systemJhove2URI));
             model.add(ResourceFactory.createResource(systemJhove2URI),

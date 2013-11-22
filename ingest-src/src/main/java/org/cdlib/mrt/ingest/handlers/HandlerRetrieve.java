@@ -348,15 +348,16 @@ public class HandlerRetrieve extends Handler<JobState>
             String versionID = "0";             // current
             String objectIDS = null;
             String ore = "http://www.openarchives.org/ore/terms#";
+            String n2t = "http://n2t.net/";
 
             try {
                 objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
             } catch (Exception e) {
-                objectIDS = "OID_UNKNOWN";          // replace when known
+                objectIDS = "ark:/OID/UNKNOWN";          // replace when known
             }
-            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" +
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
                         URLEncoder.encode(objectIDS, "utf-8");
+            String object = objectIDS;
 
             String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8");
 
@@ -369,8 +370,9 @@ public class HandlerRetrieve extends Handler<JobState>
                 if (file.isDirectory()) continue;
                 if (file.getName().equals(manifestFile.getName())) continue;	// ignore manifest file
                 // Turtle will not handle whitespace in URL, must encode
-                String component = objectURI + "/" + versionID + URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer")), "utf-8");
-                model.add(ResourceFactory.createResource(objectURI),
+                String component = objectURI + "/" + versionID + "/" + 
+			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer") + 1), "utf-8");
+                model.add(ResourceFactory.createResource(n2t + object),
                     ResourceFactory.createProperty(ore + "aggregates"),
                     ResourceFactory.createResource(component));
             }
