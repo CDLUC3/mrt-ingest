@@ -243,7 +243,7 @@ public class HandlerDataONE extends Handler<JobState>
 
             DataOneHandler handler = DataOneHandler.getDataOneHandler(ingestRequest.getQueuePath(), resourceManifestName, MEMBERNODE, 
 		profileState.getOwner(), jobState.getPrimaryID(), versionID, OUTPUTRESOURCENAME, coordinatingNodeURL, 
-		createStorageURL(jobState, profileState), logger);
+		createStorageURL(jobState, profileState, ingestRequest), logger);
 	    //if (DEBUG) handler.dumpList();
 
 	    // create resource map
@@ -439,12 +439,11 @@ public class HandlerDataONE extends Handler<JobState>
         return NAME;
     }
 
-    protected URL createStorageURL(JobState jobState, ProfileState profileState) {
+    protected URL createStorageURL(JobState jobState, ProfileState profileState, IngestRequest ingestRequest) {
 	String url = "";
 	try {
-            url = profileState.getTargetStorage().getStorageLink().toString() + "/content/" + 
-		profileState.getTargetStorage().getNodeID() + "/" + 
-		URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8") + "/" + Integer.toString(versionID) + "/"; 
+            url = ingestRequest.getServiceState().getTargetID() + "/d/" +
+                  URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8") + "/" + Integer.toString(versionID) + "/"; 
 	    return new URL(url);
 
 	} catch (Exception e) { 
@@ -581,6 +580,7 @@ public class HandlerDataONE extends Handler<JobState>
             String ore = "http://www.openarchives.org/ore/terms#";
             String msc = "http://uc3.cdlib.org/ontology/schema#";
             String mts = "http://purl.org/NET/mediatypes/";
+            String n2t = "http://" + profileState.getObjectMinterURL().getHost() + "/";
 
             String versionIDS = "0";    // current
             Integer versionID = jobState.getVersionID();
@@ -591,25 +591,26 @@ public class HandlerDataONE extends Handler<JobState>
             } catch (Exception e) {
                 objectIDS = "(:unas)";          // will this ever happen?
             }
-            String objectURI = profileState.getTargetStorage().getStorageLink().toString() + "/content/" +
-                        profileState.getTargetStorage().getNodeID() + "/" +
+            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
                         URLEncoder.encode(objectIDS, "utf-8");
+            String object = objectIDS;
+
 	    // Merritt create manifest?
 	    String locDir = "producer/";
 	    if (! manifestFile.getAbsolutePath().contains(locDir + manifestFile.getName())) locDir = "system/";
             String manifestURI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode(locDir + manifestFile.getName(), "utf-8");
             String resourceMapURI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + resourceMapFile.getName(), "utf-8");
 
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(ore + "aggregates"),
                 ResourceFactory.createResource(manifestURI));
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(ore + "aggregates"),
                 ResourceFactory.createResource(resourceMapURI));
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
                 ResourceFactory.createResource(manifestURI));
-            model.add(ResourceFactory.createResource(objectURI),
+            model.add(ResourceFactory.createResource(n2t + object),
                 ResourceFactory.createProperty(mrt + "hasMetadata"),
                 ResourceFactory.createResource(resourceMapURI));
 

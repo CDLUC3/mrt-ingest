@@ -376,13 +376,12 @@ public class HandlerInitialize extends Handler<JobState>
             String ore = "http://www.openarchives.org/ore/terms#";
             String msc = "http://uc3.cdlib.org/ontology/schema#";
             String mts = "http://purl.org/NET/mediatypes/";
-            String n2t = "http://n2t.net/";
+            String n2t = "http://" + profileState.getObjectMinterURL().getHost() + "/";
 
             Model model = ModelFactory.createDefaultModel();
             model.setNsPrefix("mrt", mrt);
             model.setNsPrefix("ore", ore);
             model.setNsPrefix("msc", msc);
-            model.setNsPrefix("n2t", n2t);
 
 	    String localIdentifier = null;
             try {
