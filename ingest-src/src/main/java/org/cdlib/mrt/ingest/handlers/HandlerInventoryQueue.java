@@ -75,15 +75,9 @@ public class HandlerInventoryQueue extends Handler<JobState> {
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
         try {
-	    // 4Store & MySQL (minimum schema)
+	    // MySQL (full schema)
             zooKeeper = 
                 new ZooKeeper(jobState.grabMisc(), DistributedQueue.sessionTimeout, new Ignorer());
-            distributedQueue = 
-                new DistributedQueue(zooKeeper, "/inventory", null);
-	    System.out.println("HandlerInventoryQueue submitting URL [4Store]: " + jobState.grabObjectState());
-            submit(jobState.grabObjectState().getBytes());
-
-	    // MySQL (full schema)
             distributedQueue = 
                 new DistributedQueue(zooKeeper, jobState.grabExtra(), null);
 	    prop = getInventoryProps(profileState, jobState);
