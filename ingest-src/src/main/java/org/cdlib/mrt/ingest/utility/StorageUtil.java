@@ -37,6 +37,7 @@ import com.sun.jersey.api.representation.Form;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.lang.Integer;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Properties;
@@ -243,6 +244,11 @@ public class StorageUtil
 			URLEncoder.encode(localID,  "utf-8") + "?t=xml";
             if (DEBUG) System.out.println("[debug] PrimaryID fetch URL: " + url);
             Client client = Client.create();    // reuse?  creation is expensive
+
+	    /* fix client timeout problem */
+	    client.setReadTimeout(new Integer(30000));
+	    client.setConnectTimeout(new Integer(30000));
+
             WebResource webResource = client.resource(url);
 
             // make service request
@@ -319,6 +325,11 @@ public class StorageUtil
 			URLEncoder.encode(primaryID,  "utf-8") + "?t=xml";
             if (DEBUG) System.out.println("[debug] LocalID fetch URL from storage db: " + url);
             Client client = Client.create();    // reuse?  creation is expensive
+
+            /* fix client timeout problem */
+            client.setConnectTimeout(new Integer(30000));
+            client.setReadTimeout(new Integer(30000));
+
             WebResource webResource = client.resource(url);
 
             // make service request
