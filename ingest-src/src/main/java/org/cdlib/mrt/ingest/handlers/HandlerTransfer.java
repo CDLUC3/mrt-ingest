@@ -61,6 +61,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
@@ -115,6 +116,11 @@ public class HandlerTransfer extends Handler<JobState>
 	    String url = storeNode.getStorageLink().toString() + action + storeNode.getNodeID() + 
 			"/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
 	    Client client = Client.create();	// reuse?  creation is expensive
+
+            /* fix client timeout problem */
+            client.setConnectTimeout(new Integer(StorageUtil.STORAGE_CONNECT_TIMEOUT));
+            client.setReadTimeout(new Integer(StorageUtil.STORAGE_READ_TIMEOUT));
+
 	    WebResource webResource = client.resource(url);
 
 	    // convert manifest to encoded string
@@ -147,6 +153,7 @@ public class HandlerTransfer extends Handler<JobState>
 	    try {
   	        clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
 	    } catch (Exception e) {
+		e.printStackTrace();
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
 	    }
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());

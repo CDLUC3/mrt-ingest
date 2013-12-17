@@ -89,6 +89,8 @@ public class StorageUtil
     private LoggerInf logger = null;
     private static final boolean DEBUG = true;
     private static StoreNode storeNode = null;
+    public static final int STORAGE_CONNECT_TIMEOUT = 30000; 	// 30 secs to conenct
+    public static final int STORAGE_READ_TIMEOUT = 30000; 	// 30 secs to read
 
 
     public static String getStorageManifest(ProfileState profileState, String objectID)
@@ -246,8 +248,8 @@ public class StorageUtil
             Client client = Client.create();    // reuse?  creation is expensive
 
 	    /* fix client timeout problem */
-	    client.setReadTimeout(new Integer(30000));
-	    client.setConnectTimeout(new Integer(30000));
+	    client.setConnectTimeout(new Integer(STORAGE_CONNECT_TIMEOUT));
+	    client.setReadTimeout(new Integer(STORAGE_READ_TIMEOUT));
 
             WebResource webResource = client.resource(url);
 
@@ -327,8 +329,8 @@ public class StorageUtil
             Client client = Client.create();    // reuse?  creation is expensive
 
             /* fix client timeout problem */
-            client.setConnectTimeout(new Integer(30000));
-            client.setReadTimeout(new Integer(30000));
+            client.setConnectTimeout(new Integer(STORAGE_CONNECT_TIMEOUT));
+            client.setReadTimeout(new Integer(STORAGE_READ_TIMEOUT));
 
             WebResource webResource = client.resource(url);
 
