@@ -175,6 +175,7 @@ public class HandlerTransfer extends Handler<JobState>
                     throw te;
                 } catch (Exception e) {
                     // let's report something
+		    e.printStackTrace();
                     throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
                 }
 	    }
