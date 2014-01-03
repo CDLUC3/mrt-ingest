@@ -204,6 +204,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 		    }
 		    out = new FileOutputStream(destFile);
 		    tarIn.copyEntryContents(out);
+		    out.close();
 	        }
 	        tarEntry = tarIn.getNextEntry();
 	    }
