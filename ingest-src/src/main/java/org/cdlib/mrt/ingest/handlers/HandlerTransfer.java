@@ -122,14 +122,22 @@ public class HandlerTransfer extends Handler<JobState>
             client.setReadTimeout(new Integer(StorageUtil.STORAGE_READ_TIMEOUT));
 
 	    WebResource webResource = client.resource(url);
-
-	    // convert manifest to encoded string
-            String manifest = getManifest(new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt"));
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifest: " + manifest);
-
 	    Form formData = new Form();
   	    formData.add("t", "xml");
-  	    formData.add("manifest", manifest);
+
+            File manifestFile = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
+	    if (manifestFile.length() < (1024L * 1024L)) {		// < 1 MB
+	       // Push manifest to Storage as a form parm
+               String manifest = getManifest(manifestFile);
+	       if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifest: " + manifest);
+  	       formData.add("manifest", manifest);
+	    } else {
+	       // Storage will Pull manifest via an exposed URL
+               String manifestURL = getManifestURL(ingestRequest, manifestFile);
+	       if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifestURL: " + manifestURL);
+  	       formData.add("url", manifestURL);
+	    }
+
             if (jobState.grabUpdateFlag()) {
             	File deleteFile = new File(ingestRequest.getQueuePath(), "system/mrt-delete.txt");
 		if (deleteFile.exists()) {
@@ -242,6 +250,35 @@ public class HandlerTransfer extends Handler<JobState>
 	    return null;
 	}
     }
+
+
+    /**
+     * Create a URL to be used by Storage to retrieve manifest
+     *
+     * @param ingestRequst ingestRequest
+     * @param manifestFile manifest created by handler "Manifest"
+     * @return String manifest URL as a string representation
+     */
+    private String getManifestURL(IngestRequest ingestRequest, File manifestFile) {
+	try {
+            // requires symlink from webapps/ingestqueue to home ingest queue directory
+            URL link = new URL(ingestRequest.getLink());
+            String port = "";
+            String path = link.getPath();
+            if (link.getPort() != -1) port = ":" + link.getPort();
+            String baseURL = link.getProtocol() + "://" + link.getHost() + port + path +
+                 "/ingestqueue/" + ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
+
+	    baseURL += "/system/" + manifestFile.getName();
+
+	    return baseURL;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    return null;
+	}
+    }
+
+    /**
 
     /**
      * extract version ID from storage service response
