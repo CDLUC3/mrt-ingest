@@ -221,11 +221,13 @@ public class HandlerTransfer extends Handler<JobState>
 	    String strFile = "";
 	    while ((strLine = br.readLine()) != null)   {
 	    	// Line By Line
-		if (! strLine.startsWith("producer/")) {
-		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "prepending \"producer/\" to delete entry: " + strLine);
-		    strLine = "producer/" + strLine; 
+		if (! StringUtil.isEmpty(strLine)) {
+		    if (! strLine.startsWith("producer/")) {
+		        strLine = "producer/" + strLine; 
+		    }
+		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "delete entry: " + strLine);
+		    strFile += strLine + "\n";
 		}
-		strFile += strLine + "\n";
 	}
 
 	    return strFile;
