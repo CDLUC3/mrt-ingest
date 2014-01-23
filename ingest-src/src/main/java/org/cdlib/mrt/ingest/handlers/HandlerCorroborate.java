@@ -47,6 +47,7 @@ import org.cdlib.mrt.core.ManifestRowObject;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -189,7 +190,7 @@ public class HandlerCorroborate extends Handler<JobState>
             Vector<File> files = new Vector<File>(INITIAL_SIZE);
             Map<String, FileComponent> fcManifest = new HashMap<String, FileComponent>(INITIAL_SIZE);	// user supplied manifest
             Map<String, FileComponent> fcDirectory = new HashMap<String, FileComponent>(INITIAL_SIZE);	// data directory
-            FileUtil.getDirectoryFiles(new File(queuePath, "producer"), files);
+            FileUtilAlt.getDirectoryFiles(new File(queuePath, "producer"), files);
             FileComponent fc = null;
 
 	    // read data directory

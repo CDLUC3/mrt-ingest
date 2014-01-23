@@ -54,6 +54,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
@@ -450,7 +451,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    Vector<File> files = new Vector();
 
 
-	    FileUtil.getDirectoryFiles(sourceDir, files);
+	    FileUtilAlt.getDirectoryFiles(sourceDir, files);
 	    for (File file : files) {
 		if (file.isDirectory()) continue;
 		String component = objectURI + "/" + versionID + "/" +
