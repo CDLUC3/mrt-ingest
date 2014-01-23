@@ -46,6 +46,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
@@ -190,7 +191,7 @@ public class HandlerAccept extends Handler<JobState>
             // add each component file
             Vector<File> files = new Vector();
 
-            FileUtil.getDirectoryFiles(sourceDir, files);
+            FileUtilAlt.getDirectoryFiles(sourceDir, files);
             for (File file : files) {
                 if (file.isDirectory()) continue;
                 // Turtle will not handle whitespace in URL, must encode

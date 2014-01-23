@@ -65,6 +65,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -364,8 +365,7 @@ public class HandlerRetrieve extends Handler<JobState>
             // add each component file
             Vector<File> files = new Vector();
 
-
-            FileUtil.getDirectoryFiles(sourceDir, files);
+            FileUtilAlt.getDirectoryFiles(sourceDir, files);
             for (File file : files) {
                 if (file.isDirectory()) continue;
                 if (file.getName().equals(manifestFile.getName())) continue;	// ignore manifest file

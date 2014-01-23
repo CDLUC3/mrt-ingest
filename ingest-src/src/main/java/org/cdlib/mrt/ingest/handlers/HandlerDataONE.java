@@ -90,6 +90,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
@@ -494,7 +495,7 @@ public class HandlerDataONE extends Handler<JobState>
 		+ "#%fields  | dom:scienceMetadataFile | dom:scienceMetadataFormat | dom:scienceDataFile | mrt:mimeType" + NL;
 
             buf.append(header);
-	    FileUtil.getDirectoryFiles(producerDir, fileNames);
+	    FileUtilAlt.getDirectoryFiles(producerDir, fileNames);
             String dispAggregates = getAggregates(fileNames);
             buf.append(dispAggregates);
             buf.append("#%EOF");
