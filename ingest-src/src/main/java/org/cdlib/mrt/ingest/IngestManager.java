@@ -331,6 +331,9 @@ public class IngestManager
 	    File queueDir = new File(ingestFileS, "queue");
 	    
 	    File[] files = queueDir.listFiles();
+	    // try again
+	    if (files == null) files = queueDir.listFiles();
+	    if (files == null) throw new Exception(MESSAGE + " listFiles(): I/O exception: " + queueDir.getAbsolutePath());
 	    Arrays.sort(files, new Comparator<File>() {
 		 public int compare(File f1, File f2) {
 	            // newest first
