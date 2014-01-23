@@ -78,6 +78,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -141,7 +142,7 @@ public class HandlerCharacterize extends Handler<JobState>
 	    // iterate through all components
 	    String characterizeString = ""; 
 	    Vector files = new Vector();
-	    FileUtil.getDirectoryFiles(new File(ingestRequest.getQueuePath(), "/producer"), files);
+	    FileUtilAlt.getDirectoryFiles(new File(ingestRequest.getQueuePath(), "/producer"), files);
 	    for (Object object : files.toArray()) {
 		File file = (File) object;
 		if (file.isDirectory()) continue;
