@@ -89,8 +89,8 @@ public class StorageUtil
     private LoggerInf logger = null;
     private static final boolean DEBUG = true;
     private static StoreNode storeNode = null;
-    public static final int STORAGE_CONNECT_TIMEOUT = 60000;	// 1 minute
-    public static final int STORAGE_READ_TIMEOUT = 60000; 	// 1 minute
+    public static final int STORAGE_CONNECT_TIMEOUT = 600000;	// 10 minutes
+    public static final int STORAGE_READ_TIMEOUT = 600000; 	// 10 minutes
 
 
     public static String getStorageManifest(ProfileState profileState, String objectID)
