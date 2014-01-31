@@ -697,7 +697,7 @@ Now done in HandlerMinter
             String ore = "http://www.openarchives.org/ore/terms#";
             String msc = "http://uc3.cdlib.org/ontology/schema#";
             String mts = "http://purl.org/NET/mediatypes/";
-            String n2t = "http://" + profileState.getObjectMinterURL().getHost() + "/";
+            String n2t = profileState.getPURL();
 
 
             String versionIDS = "0";	// current

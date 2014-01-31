@@ -349,7 +349,7 @@ public class HandlerRetrieve extends Handler<JobState>
             String versionID = "0";             // current
             String objectIDS = null;
             String ore = "http://www.openarchives.org/ore/terms#";
-            String n2t = "http://" + profileState.getObjectMinterURL().getHost() + "/";
+            String n2t = profileState.getPURL();
 
             try {
                 objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
