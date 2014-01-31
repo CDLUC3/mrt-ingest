@@ -86,6 +86,7 @@ public class ProfileState
     private Collection admin = null;
     private String context = null;
     private String misc = null;
+    private String purl = null;
     private String dataoneNodeID = null;
     private String ezidCoowner = null;
     private FormatType notificationFormat = null;	// response type
@@ -509,8 +510,16 @@ public class ProfileState
         return misc;
     }
 
+    public String getPURL() {
+        return purl;
+    }
+
     public void setMisc(String misc) {
         this.misc = misc;
+    }
+
+    public void setPURL(String purl) {
+        this.purl = purl;
     }
 
     public String getDataoneNodeID() {
