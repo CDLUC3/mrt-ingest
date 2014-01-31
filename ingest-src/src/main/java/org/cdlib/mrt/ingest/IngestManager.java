@@ -92,6 +92,7 @@ public class IngestManager
     private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
     private ArrayList<String> m_admin = new ArrayList<String>(20);
     private String m_ezid = null;
+    private String m_purl = null;	// persistent URL
     private String ingestFileS = null;	// prop "IngestService"
 
     public String getIngestServiceProp() {
@@ -169,6 +170,7 @@ public class IngestManager
             String matchIngest = "ingestServicePath";
             String matchAdmin = "admin";
             String matchEZID = "ezid";
+            String matchPURL = "purl";
             String defaultIDKey = "IDDefault";
 	    Integer id = null;
 
@@ -247,6 +249,12 @@ public class IngestManager
 		// ezid auth
                 if (key.startsWith(matchEZID)) {
 		    m_ezid = value;
+                }
+
+		// persistent URL
+                if (key.startsWith(matchPURL)) {
+		    m_purl = value;
+		    if (! m_purl.endsWith("/")) m_purl += "/";
                 }
             }
 
@@ -451,6 +459,7 @@ public class IngestManager
 
 	    if (m_admin != null) profileState.setAdmin(m_admin);
 	    if (m_ezid != null) profileState.setMisc(m_ezid);
+	    if (m_purl != null) profileState.setPURL(m_purl);
 
 	    if (profileState.getAccessURL() != null) {
 	        jobState.setTargetStorage(new StoreNode(profileState.getAccessURL(), profileState.getTargetStorage().getNodeID()));
@@ -561,8 +570,7 @@ public class IngestManager
 			BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1);           // increment
 
             	    // update persistent URL if necessary
-            	    jobState.setPersistentURL("http://" +
-		        profileState.getObjectMinterURL().getHost() + "/" + jobState.getPrimaryID());
+            	    jobState.setPersistentURL(profileState.getPURL() + jobState.getPrimaryID());
 		}
 
                 if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerCallback.class) {
@@ -786,6 +794,7 @@ public class IngestManager
             profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
                  ingestRequest.getQueuePath().getParentFile().getParentFile().getParent() + "/profiles");       // three levels down from home
             if (m_ezid != null) profileState.setMisc(m_ezid);
+            if (m_purl != null) profileState.setPURL(m_purl);
 
             jobState = ingestRequest.getJob();
 
