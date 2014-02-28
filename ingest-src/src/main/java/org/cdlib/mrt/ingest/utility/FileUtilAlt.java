@@ -45,7 +45,11 @@ import java.io.PrintWriter;
 import java.net.URL;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Vector;
+
 
 /**
  * Generalized file utilities
@@ -68,8 +72,28 @@ public class FileUtilAlt {
         try {
             File [] children = null;
 	    int cnt = 0;
-            if (sourceLocation.isDirectory()) {
+	    BasicFileAttributes attrs;
+	    boolean isDir;
+
+	    try {
+               // Can throw I/O exception
+	       attrs = Files.readAttributes(sourceLocation.toPath(), BasicFileAttributes.class);
+	    } catch (IOException ioe) {
+	       // Try a second and last time
+	       attrs = Files.readAttributes(sourceLocation.toPath(), BasicFileAttributes.class);
+	    }
+	    try {
+               // Can throw exception
+               isDir = attrs.isDirectory();		
+	    } catch (Exception e) {
+	       // Try a second and last time
+               isDir = attrs.isDirectory();		
+	    }
+
+            // if (sourceLocation.isDirectory()) {	// I/O exception returns false
+            if (isDir) {
 		while (children == null && cnt < 3) {
+		    // I/O exception returns null
                     children = sourceLocation.listFiles();
 		    cnt++;
 		}
@@ -84,9 +108,10 @@ public class FileUtilAlt {
             }
 
         } catch(TException mfe) {
+	    mfe.printStackTrace();
             throw mfe;
-
         } catch(Exception ex) {
+	    ex.printStackTrace();
             String err = MESSAGE + "getDirectoryFiles() - Exception:" + ex;
             throw new TException.GENERAL_EXCEPTION( err);
         }
