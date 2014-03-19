@@ -54,6 +54,33 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathExpression;
 
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
+
 import org.cdlib.mrt.cloud.VersionMap;
 import org.cdlib.mrt.cloud.ManifestXML;
 
@@ -236,7 +263,7 @@ public class StorageUtil
 
         ClientResponse clientResponse = null;
         try {
-
+	    // First lets fetch from our localID DB on Storage
 	    String primaryID = null;
             StoreNode storeNode = profileState.getTargetStorage();
 
@@ -289,9 +316,91 @@ public class StorageUtil
                 if (DEBUG) System.out.println("[debug] primary ID: " + xpathS);
                 primaryID = xpathS;
             } else {
-                if (DEBUG) System.out.println("[debug] Can not determine primary ID");
+                if (DEBUG) System.out.println("[debug] Can not determine primary ID from storage DB");
 		primaryID = null;
             }
+
+	    // Next lets try EZID if local looks like a DOI
+	    // note: EZID service is SSL so don't use Jersey client
+	    if (primaryID == null && localID.toLowerCase().startsWith("doi:")) {
+                // build REST url
+                url = profileState.getObjectMinterURL().toString();
+                url = url.replaceFirst("/shoulder.*", "/id/") + localID.toLowerCase();
+
+                System.out.println("[info] " + MESSAGE + "Searching for shadowedBy ID: " + url);
+
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+                httpClient = wrapClient(httpClient);
+
+		// authenticate
+		String misc = null;
+		if ((misc = profileState.getMisc()) == null) {
+                    System.err.println("[warning] " + MESSAGE + "EZID credentials not found.");
+                    throw new TException.GENERAL_EXCEPTION("EZID credentials not found.");
+		}
+
+
+		String[] auth = misc.split(":");
+		Credentials credentials = new UsernamePasswordCredentials( auth[0], auth[1] );
+		httpClient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT), credentials);
+		HttpGet httpGet = null;
+
+		try {
+		    httpGet = new HttpGet(url);
+		} catch (java.lang.IllegalArgumentException iae) {
+		    throw new TException.INVALID_OR_MISSING_PARM("Target hostname or primary ID not valid: " + url);
+		}
+		httpGet.addHeader("Accept", "text/plain");
+
+
+		String responseBody = null;
+		HttpResponse httpResponse = null;
+
+		try {
+		    httpResponse = httpClient.execute(httpGet);
+		    responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
+		} catch (HttpHostConnectException hhce) {
+		    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("error in connecting to host: " + url);
+		} catch (org.apache.http.client.HttpResponseException hre) {
+		    System.err.println("[error] " + MESSAGE + "request failed with status code: " + hre.getStatusCode());
+		    System.err.println("[error] " + MESSAGE + "request failed with status message: " + hre.getMessage());
+		    responseBody = "failed";
+		}
+
+		status = httpResponse.getStatusLine().getStatusCode();
+
+                if (status == 400) {
+		    // DOI not registered with EZID
+		    if (DEBUG) System.out.println("[warn] " + MESSAGE + " DOI local ID is NOT registered with EZID: " + localID);
+		    primaryID = null;
+		} else if (status == 200) {
+		    // Found DOI in EZID
+		    String coowners = "";
+		    String owner = "";
+		    // extract ARK listed as "_shadowedBy"
+		    String[] responseSplit = responseBody.split("\n");
+		    for (String element : responseSplit) {
+			if (element.startsWith("_shadowedby:")) {
+			    primaryID = element.substring(element.indexOf(":") + 1).trim();
+			    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Found DOI in EZID, shadow ark is: " + primaryID);
+			}
+			if (element.startsWith("_coowners:")) {
+			    coowners = element.substring(element.indexOf(":") + 1).trim();
+			}
+			if (element.startsWith("_owner:")) {
+			    owner = element.substring(element.indexOf(":") + 1).trim();
+			}
+		    }
+		    // Are we permitted to update this DOI?
+		    if ((! coowners.contains("merritt")) && (! owner.contains("merritt"))) {
+                        throw new TException.REQUEST_INVALID("[error] " + NAME + ": Not authorized to update DOI: " + url);
+		    }
+                } else {
+		    // error
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": EZID service: " + url);
+                }
+            }
+
             return primaryID;
 
         } catch (TException te) {
@@ -394,6 +503,34 @@ public class StorageUtil
         } finally {
             try {
             } catch (Exception e) {}
+        }
+    }
+
+    // http://theskeleton.wordpress.com/2010/07/24/
+        // avoiding-the-javax-net-ssl-sslpeerunverifiedexception-peer-not-authenticated-with-httpclient/
+    public static DefaultHttpClient wrapClient(DefaultHttpClient base) {
+        try {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            X509TrustManager tm = new X509TrustManager() {
+
+                public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+
+                public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+            };
+            ctx.init(null, new TrustManager[]{tm}, null);
+            SSLSocketFactory ssf = new SSLSocketFactory(ctx);
+            ssf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            ClientConnectionManager ccm = base.getConnectionManager();
+            SchemeRegistry sr = ccm.getSchemeRegistry();
+            sr.register(new Scheme("https", ssf, 443));
+            return new DefaultHttpClient(ccm, base.getParams());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
         }
     }
 }
