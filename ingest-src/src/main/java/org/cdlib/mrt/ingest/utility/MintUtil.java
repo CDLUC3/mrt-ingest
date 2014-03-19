@@ -162,7 +162,7 @@ public class MintUtil
 	        if (shadow) {
 		    String doi = "";
 		    for (String s : jobState.getLocalID().getValue().split(";")) {
-			if (s.trim().startsWith("doi:")) doi = s.trim();
+			if (s.trim().toLowerCase().startsWith("doi:")) doi = s.trim();
 		    }
 		    url = url.replaceFirst("/shoulder.*", "/id/") + doi;
 		} else {
