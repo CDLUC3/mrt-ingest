@@ -181,7 +181,7 @@ public class HandlerDisaggregate extends Handler<JobState>
      * @param target target unpacking location
      * @return boolean decompression status
      */
-    private boolean untar(File container, File target) {
+    private boolean untar(File container, File target) throws Exception {
 	FileInputStream in = null;
 	FileOutputStream out = null;
 	TarInputStream tarIn = null;
@@ -214,7 +214,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	} catch (Exception e) {
     	    e.printStackTrace();
     	    System.out.println("[error] " + MESSAGE + "error decompressing/expanding file: " + container.getAbsolutePath());
-    	    return false;
+	    throw e;
 	} finally {
             try {
 	        tarIn.close();
@@ -234,7 +234,7 @@ public class HandlerDisaggregate extends Handler<JobState>
      * @return expanded file (or directory for zip)
      */
     private File decompress(File container, File target) 
-	throws TException
+	throws Exception
     {
 	InputStream in = null;
 	FileInputStream fileIn = null;
@@ -336,11 +336,11 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    return container;
 
 	} catch (TException te) {
-	    throw te;
+	    throw new Exception(te.toString());
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    System.out.println("[error] + " + MESSAGE + "error decompressing file: " + container.getAbsolutePath());
-	    return null;
+	    throw e;
 	} finally {
 	    try {
 		in.close();
