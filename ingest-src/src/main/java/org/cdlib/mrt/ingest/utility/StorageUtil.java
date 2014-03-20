@@ -393,7 +393,7 @@ public class StorageUtil
 		    }
 		    // Are we permitted to update this DOI?
 		    if ((! coowners.contains("merritt")) && (! owner.contains("merritt"))) {
-                        throw new TException.REQUEST_INVALID("[error] " + NAME + ": Not authorized to update DOI: " + url);
+                        throw new TException.REQUEST_INVALID("[error] " + NAME + ": Merritt not authorized to update DOI: " + url);
 		    }
                 } else {
 		    // error
