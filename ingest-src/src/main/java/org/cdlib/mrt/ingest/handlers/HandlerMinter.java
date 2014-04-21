@@ -269,7 +269,9 @@ public class HandlerMinter extends Handler<JobState>
 	    }
 
 	    // update metadata (ERC, target URL and context)
-	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
+            boolean fix = (profileState.getIdentifierScheme() ==  Identifier.Namespace.DOI);
+
+	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false, fix);
 	    if (! returnValue.startsWith("ark")) {
 	        System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
                 throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
