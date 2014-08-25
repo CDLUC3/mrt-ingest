@@ -33,27 +33,27 @@ import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.util.*;
 import com.hp.hpl.jena.vocabulary.*;
 
-import org.cdlib.mrt.ingest.handlers.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.Runnable;
+import java.net.URL;
+import java.text.ParseException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.List;
-import java.lang.Runnable;
-import java.net.URL;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.cdlib.mrt.ingest.handlers.*;
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.FileComponentContentInf;
 import org.cdlib.mrt.core.Manifest;
@@ -78,6 +78,7 @@ import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.TRuntimeException;
 import org.cdlib.mrt.utility.URLEncoder;
+
 
 
 /**
@@ -367,7 +368,8 @@ public class HandlerRetrieve extends Handler<JobState>
 
             FileUtilAlt.getDirectoryFiles(sourceDir, files);
             for (File file : files) {
-                if (file.isDirectory()) continue;
+                if (FileUtilAlt.isDirectory(file)) continue;
+
                 if (file.getName().equals(manifestFile.getName())) continue;	// ignore manifest file
                 // Turtle will not handle whitespace in URL, must encode
                 String component = objectURI + "/" + versionID + "/" + 

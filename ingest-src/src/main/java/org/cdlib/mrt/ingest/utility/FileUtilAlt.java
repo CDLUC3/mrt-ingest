@@ -117,4 +117,46 @@ public class FileUtilAlt {
         }
 
     }
+
+    /**
+     * Build list of files for a directory
+     * @param sourceLocation target directory for testing
+     * @throws org.cdlib.mrt.utility.MException
+     */
+    public static boolean isDirectory(File sourceLocation)
+        throws Exception
+    {
+
+        try {
+	    BasicFileAttributes attrs;
+	    boolean isDir;
+
+	    try {
+               // Can throw I/O exception
+	       attrs = Files.readAttributes(sourceLocation.toPath(), BasicFileAttributes.class);
+	    } catch (IOException ioe) {
+	       // Try a second and last time
+	       attrs = Files.readAttributes(sourceLocation.toPath(), BasicFileAttributes.class);
+	    }
+	    try {
+               // Can throw exception
+               isDir = attrs.isDirectory();		
+	    } catch (Exception e) {
+	       // Try a second and last time
+               isDir = attrs.isDirectory();		
+	    }
+
+            if (isDir) {
+		return true;
+	    } else {
+		return false;
+	    }
+        } catch(Exception ex) {
+	    ex.printStackTrace();
+            String err = MESSAGE + "isDirectory() - Exception:" + ex;
+            throw new TException.GENERAL_EXCEPTION( err);
+        }
+
+    }
+
 }
