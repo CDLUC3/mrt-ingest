@@ -367,6 +367,7 @@ public class MetadataUtil
      * @return properties map of properties
      */
     public static Map<String, String> readDataCiteXML(File DataCiteFile)
+        throws TException
     {
 
 	String DC_DELIMITER = "; ";
@@ -425,7 +426,9 @@ public class MetadataUtil
 
         } catch (Exception e) { 
 	    e.printStackTrace();
-            if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-datacite.xml: " + DataCiteFile.getName());
+            if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-datacite.xml: " + e.getMessage());
+            throw new TException.GENERAL_EXCEPTION("[error] " +
+                MESSAGE + ": unable to process mrt-datacite.xml: " + e.getMessage());
         } finally {
             try { } 
 	    catch (Exception e) { }
