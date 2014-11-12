@@ -174,10 +174,14 @@ public class HandlerNotification extends Handler<BatchState>
 		if (! verbose) 
   	            email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Processed", aggregate + batchState.getBatchID().getValue()));
 		else {
+		    String statusDisplay = "";
+		    if (server != null) statusDisplay = " [Merritt " + server + "]";
 		    try {
-  	                email.setSubject("Submission Processed: " + jobState.getLocalID().getValue());
+  	                if (status.equals("OK")) email.setSubject("Submission Processed" + statusDisplay + ": " + jobState.getLocalID().getValue());
+  	                else email.setSubject("Submission Failed" + statusDisplay + ": " + jobState.getLocalID().getValue());
 		    } catch (Exception e) {
-  	                email.setSubject("Submission Processed: " + jobState.getPrimaryID().getValue());
+  	                if (status.equals("OK")) email.setSubject("Submission Processed" + statusDisplay + ": " + jobState.getPrimaryID().getValue());
+  	                else email.setSubject("Submission Failed" + statusDisplay + ": " + jobState.getPrimaryID().getValue());
 		    }
 		}
 
