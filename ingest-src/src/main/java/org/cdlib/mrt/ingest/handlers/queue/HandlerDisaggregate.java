@@ -66,6 +66,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
     protected static final String NAME = "HandlerDisaggregate";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
+    protected static final long MAX_MANIFEST_LENGTH = 5000000;
     protected LoggerInf logger = null;
     protected Properties conf = null;
 
@@ -171,6 +172,12 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	try {
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", 10, 10), ManifestRowAbs.ManifestType.batch);
 	    ManifestRowBatch manifestRow = null;
+
+            if (manifestFile.length() > MAX_MANIFEST_LENGTH) {
+                if (DEBUG) System.out.println("[error]  Manifest exceeds size limit: " + manifestFile.getAbsolutePath()
+                        + " -- size: " + manifestFile.length());
+                throw new TException.REQUEST_INVALID(MESSAGE + "Manifest exceeds size limit. (Max: 5MB)");
+            }
 
             Enumeration en = manifest.getRows(manifestFile);
             while (en.hasMoreElements()) {

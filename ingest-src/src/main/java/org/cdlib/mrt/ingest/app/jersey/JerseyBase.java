@@ -101,8 +101,6 @@ public class JerseyBase
     protected static final boolean DEBUG = true;
     protected static final String NL = System.getProperty("line.separator");
     protected static final String FS = System.getProperty("file.separator");
-    protected static final long MAX_BATCH_MANIFEST_LENGTH = 5000000;
-    protected static final long MAX_OBJECT_MANIFEST_LENGTH = 5000000;
 
     protected LoggerInf defaultLogger = new TFileLogger("Jersey", 10, 10);
     protected JerseyCleanup jerseyCleanup = new JerseyCleanup();
@@ -824,11 +822,6 @@ public class JerseyBase
     {
 	String manifestType = null;
         try {
-            if (manifestFile.length() > MAX_BATCH_MANIFEST_LENGTH) {
-                if (DEBUG) System.out.println("[info] File too large to be batch manifest. Skipping test: " + manifestFile.getAbsolutePath()
-                        + " -- size: " + manifestFile.length());
-                return null;
-            }
             if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
 
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", -100, -100), ManifestRowAbs.ManifestType.batch);
@@ -866,11 +859,6 @@ public class JerseyBase
     {
 	String manifestType = null;
         try {
-	    if (manifestFile.length() > MAX_OBJECT_MANIFEST_LENGTH) {
-                if (DEBUG) System.out.println("[info] File too large to be an object manifest. Skipping test: " + manifestFile.getAbsolutePath() 
-			+ " -- size: " + manifestFile.length());
-	        return null;
-	    }
             if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
 
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", 10, 10), ManifestRowAbs.ManifestType.ingest);
@@ -889,7 +877,6 @@ public class JerseyBase
 	    }
 
 	    return manifestType;
-
         } catch (Exception ex) {
 	    // ex.printStackTrace();
             if (DEBUG) System.out.println("[warn] Could not determine if file is manifest: " + manifestFile.getName());
