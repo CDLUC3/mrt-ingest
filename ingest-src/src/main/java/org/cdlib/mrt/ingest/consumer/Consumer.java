@@ -313,6 +313,7 @@ class ConsumerDaemon implements Runnable
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
 	sessionAuth = zooKeeper.getSessionPasswd();
+        Item item = null;
 
         try {
             long queueSize = workQueue.size();
@@ -355,7 +356,8 @@ class ConsumerDaemon implements Runnable
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional tasks.  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
-                            executorService.execute(new ConsumeData(ingestService, distributedQueue.consume(), distributedQueue, queueConnectionString, queueNode));
+			    item = distributedQueue.consume();
+                            executorService.execute(new ConsumeData(ingestService, item, distributedQueue, queueConnectionString, queueNode));
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
@@ -393,7 +395,9 @@ class ConsumerDaemon implements Runnable
             	    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                     distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);  
 		} catch (RejectedExecutionException ree) {
-	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
+	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission, and requeuing: " + item.toString());
+		    distributedQueue.requeue(item.getId());
+        	    Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
 		} catch (NoSuchElementException nsee) {
 		    // no data in queue
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
