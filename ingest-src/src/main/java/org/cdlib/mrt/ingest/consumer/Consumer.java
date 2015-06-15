@@ -373,12 +373,12 @@ class ConsumerDaemon implements Runnable
 			int i = 0;
 			final int MAX_ATTEMPT = 3;
 		        while (i < MAX_ATTEMPT) {
-	    	            Thread.currentThread().sleep(1000);
 	    	            System.out.println("[info]" + MESSAGE +  i + ":Attempting to requeue: " + parse[1]);
 		            if (requeue(parse[1])) {
 			        break;
 		    	    }
 			    i++;
+	    	            Thread.currentThread().sleep(30 * 1000);		// wait for ZK to recover
 		        }
 			if (i >= MAX_ATTEMPT){
 	    	            System.out.println("[error]" + MESSAGE + "Could not requeue ITEM: " + parse[1]);
