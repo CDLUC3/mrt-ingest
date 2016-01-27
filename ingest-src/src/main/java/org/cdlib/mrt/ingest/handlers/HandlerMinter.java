@@ -60,6 +60,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -157,7 +158,7 @@ public class HandlerMinter extends Handler<JobState>
 
 	    Identifier localID = jobState.getLocalID();
 	    if (localID != null && jobState.getPrimaryID() == null && ! localID.getValue().contains("(:unas)"))	
-		retrievedObjectID = StorageUtil.fetchPrimaryID(profileState, localID.getValue());
+		retrievedObjectID = LocalIDUtil.fetchPrimaryID(profileState, localID.getValue());
 	    else
 		System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
 
@@ -235,7 +236,7 @@ public class HandlerMinter extends Handler<JobState>
 		// populate local ID
 		try {
 		    try {
-		        retrievedLocalID = StorageUtil.fetchLocalID(profileState, jobState.getPrimaryID().getValue());
+		        retrievedLocalID = LocalIDUtil.fetchLocalID(profileState, jobState.getPrimaryID().getValue());
 		    } catch (NullPointerException npe) {
 		    }
 		    if (retrievedLocalID != null) {
