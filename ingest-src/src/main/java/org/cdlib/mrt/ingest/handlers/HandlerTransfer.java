@@ -147,6 +147,26 @@ public class HandlerTransfer extends Handler<JobState>
 		}
 	    }
 
+	    // Update the LocalID db
+	    try {
+		if (jobState.getLocalID().getValue().contains("(:unas)")) {
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID found.");
+                    throw new Exception("");	// (:unas) is equivalent to no localID
+		}
+
+		try {
+                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating LocalID db pid: " + 
+			jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
+		   LocalIDUtil.addLocalID(profileState, jobState.getPrimaryID().getValue(), jobState.getLocalID().getValue());
+		} catch (Exception le) {
+		   le.printStackTrace();
+                   System.err.println("[error] " + MESSAGE + "failed to update LocalID db: " + le.getMessage());
+		   throw le;
+		}
+	    } catch (Exception e) {
+		// no local ID
+	    }
+
 	    // make service request
 	    try {
   	        clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
@@ -180,26 +200,6 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
 	    jobState.setVersionID(getVersionID(clientResponse.getEntity(String.class)));
-
-	    // Update the LocalID db
-	    try {
-		if (jobState.getLocalID().getValue().contains("(:unas)")) {
-                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID found.");
-                    throw new Exception("");	// (:unas) is equivalent to no localID
-		}
-
-		try {
-                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating LocalID db pid: " + 
-			jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
-		   LocalIDUtil.addLocalID(profileState, jobState.getPrimaryID().getValue(), jobState.getLocalID().getValue());
-		} catch (Exception le) {
-		   le.printStackTrace();
-                   System.err.println("[error] " + MESSAGE + "failed to update LocalID db: " + le.getMessage());
-		   throw le;
-		}
-	    } catch (Exception e) {
-		// no local ID
-	    }
 
 	    return new HandlerResult(true, "SUCCESS: transfer", clientResponse.getStatus());
 	} catch (TException te) {

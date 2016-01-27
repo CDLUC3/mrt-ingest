@@ -367,11 +367,12 @@ public class LocalIDUtil
             //String url = localIDURL.toString() + "/primary";
             String url = localIDURL.toString() + "/primary/" + 
 		URLEncoder.encode(primaryID, "utf-8") + "/" + 
-		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + localID;
+		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + localID + "?t=xml";
             if (DEBUG) System.out.println("[debug] LocalID add URL for localID db: " + url);
             Client client = Client.create();    // reuse?  creation is expensive
 
             WebResource webResource = client.resource(url);
+	    // Note: form data does not currently work (mjr160126)
             //Form formData = new Form();
             //formData.add("objectid", primaryID.replaceAll("%3A",":").replaceAll("%2F","/"));	// encoding fails
             //formData.add("ownerid", profileState.getOwner().replaceAll("%3A",":").replaceAll("%2F","/"));	//encoding fails
