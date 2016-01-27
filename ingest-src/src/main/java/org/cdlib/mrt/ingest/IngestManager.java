@@ -91,6 +91,7 @@ public class IngestManager
     private Hashtable<Integer, URL> m_store = new Hashtable<Integer, URL>(20);
     private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
     private ArrayList<String> m_admin = new ArrayList<String>(20);
+    private String m_localID = null;
     private String m_ezid = null;
     private String m_purl = null;	// persistent URL
     private String ingestFileS = null;	// prop "IngestService"
@@ -167,6 +168,7 @@ public class IngestManager
             String value = null;
             String matchStorage = "store.";
             String matchAccess = "access.";
+            String matchLocalID = "localID";
             String matchIngest = "ingestServicePath";
             String matchAdmin = "admin";
             String matchEZID = "ezid";
@@ -224,6 +226,7 @@ public class IngestManager
                         this.defaultStorage = Integer.parseInt(value);
                     } catch (Exception ex) {}
                 }
+
 		// access.1 .. access.n
                 if (key.startsWith(matchAccess)) {
                     String accessS = key.substring(matchAccess.length());
@@ -238,6 +241,12 @@ public class IngestManager
 
 		    m_access.put(id, urlValue);
                 }
+
+		// localID service
+                if (key.startsWith(matchLocalID)) {
+                    m_localID = value;
+                }
+
 
 		// admin notification
                 if (key.startsWith(matchAdmin)) {
@@ -457,6 +466,10 @@ public class IngestManager
                 System.err.println("[warn]" + msg);
 	    }
 
+	    if (m_localID != null) {
+		profileState.setLocalIDURL(new URL(m_localID));
+                System.out.println("Setting local ID URL: " + m_localID);
+	    }
 	    if (m_admin != null) profileState.setAdmin(m_admin);
 	    if (m_ezid != null) profileState.setMisc(m_ezid);
 	    if (m_purl != null) profileState.setPURL(m_purl);

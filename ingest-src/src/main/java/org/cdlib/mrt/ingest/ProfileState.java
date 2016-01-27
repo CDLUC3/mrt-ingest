@@ -64,6 +64,7 @@ public class ProfileState
     private String contentModel = null;
     private String scheme = null;
     private URL objectMinterURL = null;
+    private URL localIDURL = null;
     private URL characterizationURL = null;
     private URL fixityURL = null;
     private URL dataONEURL = null;
@@ -205,6 +206,14 @@ public class ProfileState
     }
 
     /**
+     * Set localID service URL
+     * @param URL localID service URL
+     */
+    public void setLocalIDURL(URL localIDURL) {
+        this.localIDURL = localIDURL;
+    }
+
+    /**
      * Set characterization URL
      * @param URL characterization URL
      */
@@ -261,12 +270,19 @@ public class ProfileState
     }
 
     /**
-    /**
      * Get object minter URL
      * @return object minter URL
      */
     public URL getObjectMinterURL() {
         return this.objectMinterURL; 
+    }
+
+    /**
+     * Get localID service URL
+     * @return localID service URL
+     */
+    public URL getLocalIDURL() {
+        return this.localIDURL; 
     }
 
     /**
