@@ -364,7 +364,6 @@ public class LocalIDUtil
             URL localIDURL = profileState.getLocalIDURL();
 
             // build REST url
-            //String url = localIDURL.toString() + "/primary";
             String url = localIDURL.toString() + "/primary/" + 
 		URLEncoder.encode(primaryID, "utf-8") + "/" + 
 		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + localID + "?t=xml";
@@ -372,19 +371,12 @@ public class LocalIDUtil
             Client client = Client.create();    // reuse?  creation is expensive
 
             WebResource webResource = client.resource(url);
-	    // Note: form data does not currently work (mjr160126)
-            //Form formData = new Form();
-            //formData.add("objectid", primaryID.replaceAll("%3A",":").replaceAll("%2F","/"));	// encoding fails
-            //formData.add("ownerid", profileState.getOwner().replaceAll("%3A",":").replaceAll("%2F","/"));	//encoding fails
-            //formData.add("localids", localID);
-            //formData.add("response-form", "xml");
 
 	    int retryCount = 0;
 	    int status;
 	    while (true) {
 		try {
             	     // make service request
-            	     //clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
             	     clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class);
 	    	     status = clientResponse.getStatus();
    	    	     String response = null;
