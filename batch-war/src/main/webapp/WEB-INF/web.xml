@@ -61,9 +61,8 @@
     </servlet>
 
     <servlet>
-        <servlet-class>
-            org.cdlib.mrt.ingest.consumer.Consumer
-        </servlet-class>
+        <servlet-name>Consumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.Consumer</servlet-class>
         <init-param>
             <param-name>loggerProperties</param-name>
             <param-value>resources/TIngestLogger.properties</param-value>
