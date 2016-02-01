@@ -399,7 +399,7 @@ public class IngestManager
 	    } 
             BatchState batchState = BatchState.getBatchState(batchID);
 
-            Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
+            Map<String,JobState> jobStates = (HashMap<String,JobState>) batchState.getJobStates();
             JobState jobStateTemp = (JobState) jobStates.get(jobID);
             System.out.println("[info]" + MESSAGE + "updating job: " + jobStateTemp.getJobID());
 
@@ -768,7 +768,7 @@ public class IngestManager
 		batchState.setBatchID(jobState.grabBatchID());
 
 		// remove old job and replace w/ new
-		Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
+		Map<String, JobState> jobStates = (HashMap<String, JobState>) batchState.getJobStates();
 		JobState jobStateTemp = (JobState) jobStates.get(jobState.getJobID().getValue());
 		System.out.println("[info]" + MESSAGE + "updating job: " + jobState.getJobID());
 		batchState.removeJob(jobState.getJobID().getValue());

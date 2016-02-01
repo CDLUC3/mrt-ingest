@@ -111,8 +111,8 @@ public class ProfileUtil
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
         throws TException
     {
-    	TreeMap<Integer,HandlerState> ingestHandlers = new TreeMap();
-    	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap();
+    	TreeMap<Integer,HandlerState> ingestHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
 	ProfileState profileState = new ProfileState();
 
 	try {
@@ -134,7 +134,7 @@ public class ProfileUtil
 	    // clear old data if necessary
 	    // if (notification.getContactEmail() != null) notification.getContactEmail().clear();
 	
-            Enumeration e = profileProperties.propertyNames();
+            Enumeration<?> e = (Enumeration<?>) profileProperties.propertyNames();
             while( e.hasMoreElements() ) {
                 String key = (String) e.nextElement();
                 String value = profileProperties.getProperty(key);
@@ -232,7 +232,7 @@ public class ProfileUtil
 
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
-		    ingestHandlers.put(handlerID, (HandlerState) handler);
+		    ingestHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerQueue)) {
                     if (DEBUG) System.out.println("[debug] queue handler: " + value);
 
@@ -241,7 +241,7 @@ public class ProfileUtil
 
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
-		    queueHandlers.put(handlerID, (HandlerState) handler);
+		    queueHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchStorageService)) {
                     if (DEBUG) System.out.println("[debug] storage service: " + value);
                     try {

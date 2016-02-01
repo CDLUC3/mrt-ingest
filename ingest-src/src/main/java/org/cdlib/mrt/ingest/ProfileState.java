@@ -72,19 +72,19 @@ public class ProfileState
     private URL callbackURL = null;
     private URL statusURL = null;
     private File statusView = null;
-    private Vector<Notification> contactsEmail = new Vector();
+    private Vector<Notification> contactsEmail = new Vector<Notification>();
     private SortedMap<Integer,HandlerState> ingestHandlers = null;
     private SortedMap<Integer,HandlerState> queueHandlers = null;
     private DateState creationDate = null;
     private DateState modificationDate = null;
     private Identifier.Namespace objectScheme = null;
     private String objectNamespace = null;
-    private Vector<String> collection = new Vector();
+    private Vector<String> collection = new Vector<String>();
     private String objectType = null;
     private String objectRole = null;
     private String aggregateType = null;
     private String owner = null;
-    private Collection admin = null;
+    private Collection<String> admin = null;
     private String context = null;
     private String misc = null;
     private String purl = null;
@@ -506,11 +506,11 @@ public class ProfileState
         return storeNode;
     }
 
-    public Collection getAdmin() {
+    public Collection<String> getAdmin() {
         return admin;
     }
 
-    public void setAdmin(Collection admin) {
+    public void setAdmin(Collection<String> admin) {
         this.admin = admin;
     }
 

@@ -81,7 +81,7 @@ public class BatchState
         return copy;  
     }  
 
-    public synchronized static Map getBatchStates () {
+    public synchronized static Map<String, BatchState> getBatchStates () {
       return batchStates;
     } 
     public synchronized static BatchState getBatchState (String id) {
@@ -388,9 +388,9 @@ public class BatchState
 	    header += "\"Status\",";
 	    header += "\"Status message\"\n";
 	}
-	Iterator iterator = getJobStates().keySet().iterator();
+	Iterator<String> iterator = getJobStates().keySet().iterator();
         while(iterator.hasNext()) {
-             JobState jobState = (JobState) jobStates.get(iterator.next());
+             JobState jobState = jobStates.get(iterator.next());
 	    if (full) {
 	        jobStateS = jobStateS + jobState.dump("", "\t", "\n", null) + "\n";
 	    } else {

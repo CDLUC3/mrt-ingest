@@ -474,7 +474,7 @@ class Post implements Runnable
 	    this.batchState = batchState;
 	    this.ingestRequest = ingestRequest;
 	    this.profileState = profileState;
-	    this.queueHandlers = new TreeMap(profileState.getQueueHandlers());
+	    this.queueHandlers = new TreeMap<Integer,HandlerState>(profileState.getQueueHandlers());
         } catch (Exception e) {
             e.printStackTrace(System.err);
 	}
