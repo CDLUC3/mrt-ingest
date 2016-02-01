@@ -189,7 +189,7 @@ public class HandlerAccept extends Handler<JobState>
             String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8");
 
             // add each component file
-            Vector<File> files = new Vector();
+            Vector<File> files = new Vector<File>();
 
             FileUtilAlt.getDirectoryFiles(sourceDir, files);
             for (File file : files) {

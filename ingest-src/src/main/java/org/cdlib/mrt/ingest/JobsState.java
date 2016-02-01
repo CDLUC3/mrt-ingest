@@ -46,7 +46,7 @@ public class JobsState
 {
 
     private String ingestServer = null;
-    private ArrayList<JobState> jobsState = new ArrayList(5); 
+    private ArrayList<JobState> jobsState = new ArrayList<JobState>(5); 
 
     /**
      * Set server

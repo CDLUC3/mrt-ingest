@@ -175,9 +175,9 @@ public class MintUtil
 	    String group = "";
 
 	    // Eventually we will not need group for access, but for now assume the first ARK in collection is a valid group
-	    Iterator collections = profileState.getCollection().iterator();
+	    Iterator<String> collections = profileState.getCollection().iterator();
   	    while (collections.hasNext()) {
-    		String collection = (String) collections.next();
+    		String collection = collections.next();
 		if (collection.startsWith("ark:/")) {
 		    System.out.println("[info] " + MESSAGE + "Found group identifier: " + collection);
 		    group = "&group=" + escape(collection);

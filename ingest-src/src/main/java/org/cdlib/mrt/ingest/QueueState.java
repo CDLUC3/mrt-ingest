@@ -100,9 +100,9 @@ public class QueueState
     {
 	// gather queue entries
 	String queueEntriesS = "\n\n";
-        Iterator iterator = queueEntries.iterator();
+        Iterator<QueueEntryState> iterator = queueEntries.iterator();
         while(iterator.hasNext()) {
-            QueueEntryState queueEntry = (QueueEntryState) iterator.next();
+            QueueEntryState queueEntry = iterator.next();
 	    queueEntriesS = queueEntriesS + queueEntry + "\n";
 	}
 	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );

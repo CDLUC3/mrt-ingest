@@ -363,7 +363,7 @@ public class JerseyBase
                     if (retryCount >= 6) {	// 30 seconds
                         // We can not wait any longer. Let's return BatchState with current state (may be missing some JobStates)
                         if (DEBUG) System.out.println("[error] JerseyBase: Truncating BatchState response:" + responseState.getBatchID().getValue());
-                        BatchState batchState = (BatchState) responseState.clone();
+                        BatchState batchState = responseState.clone();
                         response = getStateResponse(batchState, ingestRequest.getResponseForm(), logger, cs, sc);
                     } else {
                         if (DEBUG) System.out.println("[error] JerseyBase: Batch State is not yet stable (still adding jobs) " + responseState.getBatchID().getValue() + "  Retrying...");
@@ -520,7 +520,7 @@ public class JerseyBase
 	ServletFileUpload upload = new ServletFileUpload(factory);
 	List<FileItem> items = null;
 	try {
-	   items = upload.parseRequest(request); 
+	   items = (List<FileItem>) upload.parseRequest(request); 
 	} catch (Exception e) {
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + e);
 	}
@@ -528,9 +528,9 @@ public class JerseyBase
 	if (DEBUG) System.err.println("[debug] form items: " + items.toString());
 
 	// Process form fields
-	Iterator iter = items.iterator();
+	Iterator<FileItem> iter = items.iterator();
 	while (iter.hasNext()) {
-    	   item = (FileItem) iter.next();
+    	   item = iter.next();
 
 	   String field = null;
 	   try {
@@ -730,7 +730,7 @@ public class JerseyBase
 	// Process data
 	iter = items.iterator();
 	while (iter.hasNext()) {
-    	   item = (FileItem) iter.next();
+    	   item = iter.next();
     	   if ( ! item.isFormField()) {
 		String fieldName = item.getFieldName();
 		String fileName = item.getName();
@@ -825,7 +825,7 @@ public class JerseyBase
             if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
 
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", -100, -100), ManifestRowAbs.ManifestType.batch);
-            Enumeration en = manifest.getRows(manifestFile);
+            Enumeration<ManifestRowInf> en = manifest.getRows(manifestFile);
             ManifestRowBatch manifestRow = null;
 	    String profile = null;
             while (en.hasMoreElements()) {
@@ -862,7 +862,7 @@ public class JerseyBase
             if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
 
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", 10, 10), ManifestRowAbs.ManifestType.ingest);
-            Enumeration en = manifest.getRows(manifestFile);
+            Enumeration<ManifestRowInf> en = manifest.getRows(manifestFile);
             ManifestRowIngest manifestRow = null;
 	    String profile = null;
             while (en.hasMoreElements()) {
