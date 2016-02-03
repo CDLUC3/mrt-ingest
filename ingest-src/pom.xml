@@ -107,7 +107,7 @@
                         weekly: Update the database entries once per week.
                         offline   : Disable the synchronization mechanism.
                       -->  
-                      <updates>offline</updates>
+                      <updates>daily</updates>
 
                     </rule>
                   </rules>
