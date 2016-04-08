@@ -366,7 +366,7 @@ public class LocalIDUtil
             // build REST url
             String url = localIDURL.toString() + "/primary/" + 
 		URLEncoder.encode(primaryID, "utf-8") + "/" + 
-		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + localID + "?t=xml";
+		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + URLEncoder.encode(localID, "utf-8") + "?t=xml";
             if (DEBUG) System.out.println("[debug] LocalID add URL for localID db: " + url);
             Client client = Client.create();    // reuse?  creation is expensive
 
