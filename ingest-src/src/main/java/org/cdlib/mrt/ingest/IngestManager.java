@@ -644,10 +644,14 @@ public class IngestManager
 	    }
 
             // update status if necessary
-            if (profileState.getStatusURL() != null)
-                if (! JSONUtil.updateJobState(profileState, jobState))
-		    if (! ingestRequest.getSynchronousMode())
+            if (profileState.getStatusURL() != null) {
+		if (! ingestRequest.getSynchronousMode()) {
+                    if (! JSONUtil.updateJobState(profileState, jobState))
 		        JSONUtil.notify(jobState, profileState, ingestRequest);
+	        } else {
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + ": No BATCH detected, Istatus not being called");
+		}
+	    }
 
             return jobState;
           
