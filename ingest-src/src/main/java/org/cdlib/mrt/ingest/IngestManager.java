@@ -645,7 +645,8 @@ public class IngestManager
 
             // update status if necessary
             if (profileState.getStatusURL() != null) {
-		if (! ingestRequest.getSynchronousMode()) {
+		// Batch mode ?
+                if (! jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
                     if (! JSONUtil.updateJobState(profileState, jobState))
 		        JSONUtil.notify(jobState, profileState, ingestRequest);
 	        } else {
