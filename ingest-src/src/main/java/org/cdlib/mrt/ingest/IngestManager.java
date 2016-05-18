@@ -646,7 +646,8 @@ public class IngestManager
             // update status if necessary
             if (profileState.getStatusURL() != null)
                 if (! JSONUtil.updateJobState(profileState, jobState))
-		    JSONUtil.notify(jobState, profileState, ingestRequest);
+		    if (! ingestRequest.getSynchronousMode())
+		        JSONUtil.notify(jobState, profileState, ingestRequest);
 
             return jobState;
           
