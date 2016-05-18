@@ -669,7 +669,10 @@ public class IngestManager
             // update status if necessary
 	    try {
                 if (profileState.getStatusURL() != null)
-                    JSONUtil.updateJobState(profileState, jobState);
+                    // Batch mode ?
+                    if (! jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
+                        JSONUtil.updateJobState(profileState, jobState);
+		    }
 	    } catch (Exception e) { /* ignore */ }
 	}
     }
