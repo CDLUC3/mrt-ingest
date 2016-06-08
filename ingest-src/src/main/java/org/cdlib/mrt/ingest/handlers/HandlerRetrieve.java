@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.lang.Runnable;
 import java.net.URL;
 import java.text.ParseException;
@@ -202,6 +203,7 @@ public class HandlerRetrieve extends Handler<JobState>
 		    // check for errors
 		    try {
       			for (Future<String> future : tasks) {
+        		    System.out.println("ARE WE DONE YET...... " + future.isDone());
         		    String s = future.get();	// blocked, but should be complete
 			    if (s != null) {
 				failure = true;
@@ -211,6 +213,8 @@ public class HandlerRetrieve extends Handler<JobState>
       			}
 
 		    } catch (Exception e) { 
+		        System.err.println("Error in checking download status");
+			e.printStackTrace(System.err);
 			failure = true;
 		    }
 
@@ -218,8 +222,13 @@ public class HandlerRetrieve extends Handler<JobState>
 		    tasks.clear();
 		    // did any retrieval fail?
 		    if (failure) {
-		        throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] " + MESSAGE + 
-                                "Manifest error (URL retrieval error or manifest has duplicate filename entries): " + failureURL);
+			if (failureURL.contains("://")) {
+		            throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] " + MESSAGE + 
+                                "Manifest error (URL retrieval error: " + failureURL + ")");
+			} else {
+		            throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + 
+                                "Manifest error (Duplicate filename: " + failureURL + ")");
+			}
 		    }
 
 		    // validate checksums
@@ -440,8 +449,8 @@ class RetrieveData implements Callable<String>
 		    throw new Exception("Error creating target file: " + f.getAbsolutePath());
 	        }
 	    } else {
-	        System.out.println("[warn] file already exists: " + f.getAbsolutePath());
-		return null;
+	        System.out.println("[error] file already exists: " + f.getAbsolutePath());
+		throw new IOException("Error file already exists: " + f.getAbsolutePath());
 	    }
             for (int i=0; i < 2; i++) {
 	        try {
@@ -456,9 +465,13 @@ class RetrieveData implements Callable<String>
 
 	    return null;
 
+	} catch (IOException ioe) {
+	    ioe.printStackTrace();
+	    System.out.println("[error] file already exists " + url.getFile());
+	    return new String(url.getFile());
 	} catch (Exception e) {
 	    e.printStackTrace();
-	    System.out.println("[error] Retrieving URL : " + url.toString());
+	    System.out.println("[error] In retrieval of URL: " + url.toString());
 	    return new String(url.toString());
 	}
     }
