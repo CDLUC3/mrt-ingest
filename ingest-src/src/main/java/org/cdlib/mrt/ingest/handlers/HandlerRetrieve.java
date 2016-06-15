@@ -203,7 +203,6 @@ public class HandlerRetrieve extends Handler<JobState>
 		    // check for errors
 		    try {
       			for (Future<String> future : tasks) {
-        		    System.out.println("ARE WE DONE YET...... " + future.isDone());
         		    String s = future.get();	// blocked, but should be complete
 			    if (s != null) {
 				failure = true;
