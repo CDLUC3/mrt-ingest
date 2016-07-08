@@ -434,6 +434,11 @@ public class IngestManager
             jobState = ingestRequest.getJob();
 	    jobState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 
+	    if (ingestRequest.getUpdateFlag()) {
+		System.out.println("[info] Update flag set: " + ingestRequest.getUpdateFlag());
+		jobState.setUpdateFlag(ingestRequest.getUpdateFlag());
+	    }
+
 	    // assign profile
 	    profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
 		 ingestRequest.getQueuePath().getParentFile().getParentFile().getParent() + "/profiles");	// three levels down from home
