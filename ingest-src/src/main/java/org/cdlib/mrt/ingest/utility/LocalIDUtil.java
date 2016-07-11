@@ -240,11 +240,13 @@ public class LocalIDUtil
 			}
 			if (element.startsWith("_owner:")) {
 			    owner = element.substring(element.indexOf(":") + 1).trim();
+		    	    if (DEBUG) System.out.println("[info] " + MESSAGE + " Owner of EZID id: " + owner);
 			}
 		    }
 		    // Are we permitted to update this DOI?
 		    if ((! coowners.contains("merritt")) && (! owner.contains("merritt"))) {
-                        throw new TException.REQUEST_INVALID("[error] " + NAME + ": Merritt not authorized to update DOI: " + url);
+                        // throw new TException.REQUEST_INVALID("[error] " + NAME + ": Merritt not authorized to update DOI: " + url);
+		    	if (DEBUG) System.out.println("[info] " + MESSAGE + "EZID no onger supports co-owner. Non Merritt owners are now OK: " + owner);
 		    }
                 } else {
 		    // error
