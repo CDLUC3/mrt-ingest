@@ -205,8 +205,11 @@ public class MintUtil
 	    // Is co-owner available?
 	    String coowner = "\n";
 	    try {
-		if (profileState.getEzidCoowner() != null)
-	            coowner = "\n" + "_coowners: " + profileState.getEzidCoowner() + "\n";
+		if (profileState.getEzidCoowner() != null) {
+	            // coowner = "\n" + "_coowners: " + profileState.getEzidCoowner() + "\n";
+	            coowner = "\n" + "_owner: " + profileState.getEzidCoowner() + "\n";
+                    System.out.println("[info] " + MESSAGE + "Found EZID co-owner: " + profileState.getEzidCoowner());
+		}
 	    } catch (Exception e) { }
 
 	    try {
