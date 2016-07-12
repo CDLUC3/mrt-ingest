@@ -42,6 +42,7 @@ import java.io.InputStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.Date;
 import java.util.Properties;
@@ -169,7 +170,10 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    // make service request
 	    try {
-  	        clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, formData);
+  	        clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).
+			header("JID", jobState.getJobID().getValue()).
+			header("hostname", InetAddress.getLocalHost().getHostName() ).
+			post(ClientResponse.class, formData);
 	    } catch (Exception e) {
 		e.printStackTrace();
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
