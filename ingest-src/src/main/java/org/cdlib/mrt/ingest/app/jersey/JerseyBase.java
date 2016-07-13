@@ -37,6 +37,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.InterruptedException;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -427,9 +429,43 @@ public class JerseyBase
                 + " - formatType=" + typeFile.formatType
                 + " - mimeType=" + typeFile.formatType.getMimeType());
 
-        return Response.ok(typeFile.file, typeFile.formatType.getMimeType()).build();
-    }
+        // grab identifier (JID or BID) via reflection to include in header response
+        String id = null;
+        String value = null;
+        try {
+           Object o = responseState;
+           for (Field field : o.getClass().getDeclaredFields()) {
+              field.setAccessible(true);
+              if (field.getName().equals("batchID")) {
+		 id = "BID";
+		 value = field.get(o).toString();
+                 System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
+		 break;
+	      }
+              if (field.getName().equals("jobID")) {
+		 id = "JID";
+		 value = field.get(o).toString();
+                 System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
+		 break;
+              }
+           }
+        } catch (Exception e) {
+           e.printStackTrace();
+        }
 
+        // Determine hostname, which will be included in header
+        String hostname =  "";
+        try {
+	   hostname =  InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+	   hostname = "unknown";
+        }
+
+        return Response.ok(typeFile.file, typeFile.formatType.getMimeType()).
+		header(id, value).
+		header("hostname", hostname).
+		build();
+    }
 
     /**
      * Validate and return object identifier
