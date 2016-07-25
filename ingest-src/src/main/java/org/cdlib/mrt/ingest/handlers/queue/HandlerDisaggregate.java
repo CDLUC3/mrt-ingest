@@ -185,6 +185,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
                 FileComponent fileComponent = manifestRow.getFileComponent();
 	        String fileName = fileComponent.getIdentifier();
 	        if (StringUtil.isEmpty(fileName)) fileName = fileComponent.getURL().getFile().replace("/", "");
+                System.out.println("[info] " + MESSAGE + "Queuing is active, batchID: " + batchState.getBatchID().getValue() + " manifest entry: " + fileName);
 		JobState jobState = createJob(fileComponent.getURL(), fileName, queueDir);
 		jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
@@ -210,6 +211,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		} catch (Exception e) {}
 		batchState.addJob(jobState.getJobID().getValue(), jobState);
             }
+            System.out.println("[info] " + MESSAGE + "Queuing is complete, batchID: " + batchState.getBatchID().getValue());
 	    // manifestFile.delete();	// keep for debugging
 
     	    return true;
