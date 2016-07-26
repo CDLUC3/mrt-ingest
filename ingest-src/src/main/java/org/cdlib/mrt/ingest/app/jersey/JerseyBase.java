@@ -206,6 +206,7 @@ public class JerseyBase
         LoggerInf logger = defaultLogger;
         try {
 	    ingestRequest.getJob().setJobID(MintUtil.getJobID());
+	    if (DEBUG) System.out.println("[info] POST started, Job ID: " +  ingestRequest.getJob().getJobID().getValue());
             log("addVersion submit entered:"
                     + " - ingestRequest=" + ingestRequest.dump("submit")
                     + " - request=" + request.toString()
@@ -216,6 +217,7 @@ public class JerseyBase
 	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
             jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
             StateInf responseState = submit(ingestRequest, ingestService, logger);
+	    if (DEBUG) System.out.println("[info] POST complete, Job ID: " +  ingestRequest.getJob().getJobID().getValue());
 
             return getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
 
@@ -343,6 +345,7 @@ public class JerseyBase
 	    // batch processing
 	    ingestRequest.getJob().setBatchID(MintUtil.getBatchID());	
 
+            if (DEBUG) System.out.println("[info] POST started, Batch ID: " +  ingestRequest.getJob().grabBatchID().getValue());
             log("submit to queue request entered:"
                     + " - ingestRequest=" + ingestRequest.dump("submitPost")
                     + " - request=" + request.toString()
@@ -378,6 +381,7 @@ public class JerseyBase
 		finally {
 		}
 	    }
+            if (DEBUG) System.out.println("[info] POST complete, Batch ID: " +  ingestRequest.getJob().grabBatchID().getValue());
 
             return response;
 
