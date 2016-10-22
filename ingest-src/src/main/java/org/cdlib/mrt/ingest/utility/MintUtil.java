@@ -192,8 +192,12 @@ public class MintUtil
 		// e.g. http://merritt.cdlib.org/m/{objectID}
 		// Need to double encode the id, as EZID will HEX percent decode
 		target = "_target: " + ingestRequest.getServiceState().getTargetID() + "/m/" +
-			URLEncoder.encode(URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8"), "UTF-8");
+		   URLEncoder.encode(URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8"), "UTF-8");
 	        System.out.println("[info] " + MESSAGE + "Target url: " + target);
+		if (ingestRequest.getRetainTargetURL()) {
+		   target = "";
+	           System.out.println("[info] " + MESSAGE + "Found retain existing Target URL.  Not setting _target for EZID.");
+		}
 	    } catch (Exception e) { }
 
 	    // Is context available?
