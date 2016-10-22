@@ -434,6 +434,11 @@ public class IngestManager
             jobState = ingestRequest.getJob();
 	    jobState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 
+	    if (ingestRequest.getRetainTargetURL()) {
+		System.out.println("[info] Retain Target URL set: " + ingestRequest.getRetainTargetURL());
+		jobState.setRetainTargetURL(ingestRequest.getRetainTargetURL());
+	    }
+
 	    if (ingestRequest.getUpdateFlag()) {
 		System.out.println("[info] Update flag set: " + ingestRequest.getUpdateFlag());
 		jobState.setUpdateFlag(ingestRequest.getUpdateFlag());

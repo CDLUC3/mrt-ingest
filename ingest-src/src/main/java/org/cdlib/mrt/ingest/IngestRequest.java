@@ -83,6 +83,7 @@ public class IngestRequest
     private IngestServiceState serviceState;
     private boolean updateFlag;
     private boolean synchronousMode;
+    private boolean retainTargetURL;
 
     // constructors
     public IngestRequest(){ jobState = new JobState(); }
@@ -326,6 +327,23 @@ public class IngestRequest
      */
     public void setServiceState(IngestServiceState serviceState) {
         this.serviceState = serviceState;
+    }
+
+
+    /**
+     * Set retain EZID target URL boolean
+     * @param boolean EZID retain target URL
+     */
+    public void setRetainTargetURL(boolean retainTargetURL) {
+        this.retainTargetURL = retainTargetURL;
+    }
+
+    /**
+     * Get retain EZID target URL boolean
+     * @return boolean EZID retain target URL
+     */
+    public boolean getRetainTargetURL() {
+        return retainTargetURL;
     }
 
     /**

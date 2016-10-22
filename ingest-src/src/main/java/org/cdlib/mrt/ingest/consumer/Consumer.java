@@ -533,9 +533,17 @@ class ConsumeData implements Runnable
 			    p.getProperty("filename"), p.getProperty("type"), p.getProperty("size"), p.getProperty("digestType"),
 			    p.getProperty("digestValue"), p.getProperty("objectID"), p.getProperty("creator"), p.getProperty("title"),
 			    p.getProperty("date"), p.getProperty("responseForm"), p.getProperty("note"));
+			    // p.getProperty("retainTargetURL"), p.getProperty("targetURL"));
 	    ingestRequest.getJob().setBatchID(new Identifier(p.getProperty("batchID")));
 	    ingestRequest.getJob().setJobID(new Identifier(p.getProperty("jobID")));
 	    ingestRequest.getJob().setLocalID(p.getProperty("localID"));
+	    try {
+	       if (p.getProperty("retainTargetURL") != null) {
+	          if (p.getProperty("retainTargetURL").equalsIgnoreCase("true")) {
+		     ingestRequest.getJob().setRetainTargetURL(true);
+		  }
+	       }
+	    } catch (Exception e) { } 	// assigned with null value
 
 	    try {
 	        ingestRequest.setNotificationFormat(p.getProperty("notificationFormat"));
