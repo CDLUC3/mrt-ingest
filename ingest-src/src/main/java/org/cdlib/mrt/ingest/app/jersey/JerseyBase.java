@@ -753,7 +753,7 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("retainTargetURL")) {
 		       field = "retainTargetURL";
 		       if (item.getString("utf-8").equalsIgnoreCase("true")) {
-		           ingestRequest.getJob().setRetainTargetURL(true);
+		           ingestRequest.setRetainTargetURL(true);
 		           if (DEBUG) System.err.println("[debug] Retain EZID target URL set");
 			}
 		    } else if (item.getFieldName().equals("synchronousMode")) {
