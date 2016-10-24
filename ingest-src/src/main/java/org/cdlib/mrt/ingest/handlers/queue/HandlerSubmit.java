@@ -222,6 +222,12 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	    properties.put("type", jobState.getObjectType());
 		} catch (Exception e) { }
 		try {
+		    if (ingestRequest.getRetainTargetURL()) {
+			System.out.println("[info] " + MESSAGE + "Setting retainTargetURL to true");
+			properties.put("retainTargetURL", "true");
+		    }
+		} catch (Exception e) { }
+		try {
 	    	    properties.put("update", new Boolean (jobState.grabUpdateFlag()));
 		} catch (Exception e) {
 		    // default
