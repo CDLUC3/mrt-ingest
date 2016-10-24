@@ -750,6 +750,12 @@ public class JerseyBase
 
             	       ingestRequest.setDataCiteResourceType(resourceType);
 		       if (DEBUG) System.err.println("[debug] DataCite.resourceType: " + ingestRequest.getDataCiteResourceType());
+		    } else if (item.getFieldName().equals("retainTargetURL")) {
+		       field = "retainTargetURL";
+		       if (item.getString("utf-8").equalsIgnoreCase("true")) {
+		           ingestRequest.setRetainTargetURL(true);
+		           if (DEBUG) System.err.println("[debug] Retain EZID target URL set");
+			}
 		    } else if (item.getFieldName().equals("synchronousMode")) {
 		       field = "synchronousMode";
 		       if (item.getString("utf-8").matches("true")) {

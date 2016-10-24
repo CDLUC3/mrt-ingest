@@ -110,6 +110,7 @@ public class JobState
 	private boolean shadowARK;
 	private boolean updateFlag;
 	private boolean cleanup = true;
+	private boolean retainTargetURL = false;	// EZID, do not update target URL
 	private VersionMap versionMap = null;		// storage manifest 
 
 
@@ -627,6 +628,22 @@ public class JobState
      */
     public String grabAltNotification() {		// non-displayable
         return altNotification;
+    }
+
+    /**
+     * Set Retain EZID Target URL
+     * @param boolean Retain EZID Target URL
+     */
+    public void setRetainTargetURL(boolean retainTargetURL) {
+        this.retainTargetURL = retainTargetURL;
+    }
+
+    /**
+     * Get Retain EZID Target URL
+     * @return boolean Retain EZID Target URL
+     */
+    public boolean getRetainTargetURL() {
+        return retainTargetURL;
     }
 
     /**
