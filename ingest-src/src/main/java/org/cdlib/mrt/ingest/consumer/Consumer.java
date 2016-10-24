@@ -540,7 +540,8 @@ class ConsumeData implements Runnable
 	    try {
 	       if (p.getProperty("retainTargetURL") != null) {
 	          if (p.getProperty("retainTargetURL").equalsIgnoreCase("true")) {
-		     ingestRequest.getJob().setRetainTargetURL(true);
+		     System.out.println("[info] Setting retainTargetURL to " + p.getProperty("retainTargetURL"));
+		     ingestRequest.setRetainTargetURL(true);
 		  }
 	       }
 	    } catch (Exception e) { } 	// assigned with null value
