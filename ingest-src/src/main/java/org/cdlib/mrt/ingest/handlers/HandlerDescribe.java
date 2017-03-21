@@ -99,6 +99,7 @@ public class HandlerDescribe extends Handler<JobState>
             File producerDCFile = new File(producerTargetDir, "mrt-dc.xml");
             File producerDataCiteFile = new File(producerTargetDir, "mrt-datacite.xml");
             File producerEMLFile = new File(producerTargetDir, "mrt-eml.xml");
+            File producerEmbargoFile = new File(producerTargetDir, "mrt-embargo.txt");
             File systemDCFile = new File(systemTargetDir, "mrt-dc.xml");
             File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
@@ -125,6 +126,18 @@ public class HandlerDescribe extends Handler<JobState>
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to create ERC file: " + systemErcFile.getAbsolutePath());
             }
+
+	    // Check for embargo data
+	    Map<String, String> producerEmbargo = null;
+	    if (producerEmbargoFile.exists()) {
+	        producerEmbargo = MetadataUtil.readMetadataANVL(producerEmbargoFile);
+                // Sanity check
+                if ( ! checkEmbargo(producerEmbargo)) {
+                    throw new TException.GENERAL_EXCEPTION("[error] "
+                        + MESSAGE + ": Embargo data not valid");
+		}
+	    }
+
 
             // Dublin Core file in XML format (system/mrt-dc.xml)
             if ( ! createDC(jobState, (LinkedHashMap) MetadataUtil.readDublinCoreXML(producerDCFile), systemDCFile)) {
@@ -153,6 +166,44 @@ public class HandlerDescribe extends Handler<JobState>
         }
 
     }
+
+
+    /**
+     * Sanity check for embargo data
+     *
+     * @param producerEmbargo producer supplied embargo
+     * @return successful validated data
+     */
+    private boolean checkEmbargo(Map producerEmbargo)
+        throws Exception
+    {
+
+	if (producerEmbargo != null) {
+	    Iterator producerEmbargoItr = producerEmbargo.keySet().iterator();
+	    while (producerEmbargoItr.hasNext()) {
+	        String key = (String) producerEmbargoItr.next();
+	        String value = (String) producerEmbargoItr.get(key);
+
+	        if (key.matches("EmbargoEndDate")) {
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data found: " + value);
+
+		    // "NONE" is supported
+		    if (value.matches("[Nn][Oo][Nn][Ee]")) {
+			return true;
+		    }
+
+		    // regex for MySQL "DateTime"
+		    if (value.matches("/^\d\d\d\d-(\d)?\d-(\d)?\d \d\d:\d\d:\d\d$/g")) {
+			return true;
+		    }
+		    
+		    return false;
+		}
+	    }
+	}
+
+    }
+
 
 
     /**
