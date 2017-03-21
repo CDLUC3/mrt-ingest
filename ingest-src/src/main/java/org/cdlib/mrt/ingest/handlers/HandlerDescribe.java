@@ -182,7 +182,7 @@ public class HandlerDescribe extends Handler<JobState>
 	    Iterator producerEmbargoItr = producerEmbargo.keySet().iterator();
 	    while (producerEmbargoItr.hasNext()) {
 	        String key = (String) producerEmbargoItr.next();
-	        String value = (String) producerEmbargoItr.get(key);
+	        String value = (String) producerEmbargo.get(key);
 
 	        if (key.matches("EmbargoEndDate")) {
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data found: " + value);
@@ -193,7 +193,7 @@ public class HandlerDescribe extends Handler<JobState>
 		    }
 
 		    // regex for MySQL "DateTime"
-		    if (value.matches("/^\d\d\d\d-(\d)?\d-(\d)?\d \d\d:\d\d:\d\d$/g")) {
+		    if (value.matches("/^\\d\\d\\d\\d-(\\d)?\\d-(\\d)?\\d \\d\\d:\\d\\d:\\d\\d$/g")) {
 			return true;
 		    }
 		    
@@ -201,7 +201,7 @@ public class HandlerDescribe extends Handler<JobState>
 		}
 	    }
 	}
-
+	return true;
     }
 
 
