@@ -205,7 +205,7 @@ public class HandlerDescribe extends Handler<JobState>
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid Embargo data found: " + value);
 		    return false;
 		} else {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid key found: " + key);
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid Embargo key found: " + key);
 		}
 	    }
 	}
