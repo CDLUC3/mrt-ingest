@@ -130,12 +130,15 @@ public class HandlerDescribe extends Handler<JobState>
 	    // Check for embargo data
 	    Map<String, String> producerEmbargo = null;
 	    if (producerEmbargoFile.exists()) {
-	        producerEmbargo = MetadataUtil.readMetadataANVL(producerEmbargoFile);
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data file found");
+	        producerEmbargo = MetadataUtil.readEmbargoANVL(producerEmbargoFile);
                 // Sanity check
                 if ( ! checkEmbargo(producerEmbargo)) {
                     throw new TException.GENERAL_EXCEPTION("[error] "
                         + MESSAGE + ": Embargo data not valid");
 		}
+	    } else {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "NO Embargo data file found");
 	    }
 
 
@@ -184,20 +187,25 @@ public class HandlerDescribe extends Handler<JobState>
 	        String key = (String) producerEmbargoItr.next();
 	        String value = (String) producerEmbargo.get(key);
 
-	        if (key.matches("EmbargoEndDate")) {
+	        if (key.toLowerCase().matches("embargoenddate")) {
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data found: " + value);
 
 		    // "NONE" is supported
-		    if (value.matches("[Nn][Oo][Nn][Ee]")) {
+		    if (value.toUpperCase().matches(".*NONE.*")) {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
 			return true;
 		    }
 
 		    // regex for MySQL "DateTime"
-		    if (value.matches("/^\\d\\d\\d\\d-(\\d)?\\d-(\\d)?\\d \\d\\d:\\d\\d:\\d\\d$/g")) {
+		    if (value.toUpperCase().matches(".*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d\\d:\\d\\d)|Z)?.*")) {
+        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
 			return true;
 		    }
 		    
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid Embargo data found: " + value);
 		    return false;
+		} else {
+        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid key found: " + key);
 		}
 	    }
 	}

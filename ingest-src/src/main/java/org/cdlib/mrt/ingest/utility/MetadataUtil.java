@@ -187,6 +187,47 @@ public class MetadataUtil
     }
 
     /**
+     * read embargo anvl file
+     *
+     * @param merritt embargo fie
+     * @return properties map of properties
+     */
+    public static Map<String, String> readEmbargoANVL(File embargoFile)
+        throws TException
+    {
+
+        Map linkedHashMap = new LinkedHashMap();
+        BufferedReader fileBuffer = null;
+        try {
+            fileBuffer = new BufferedReader(new InputStreamReader(new FileInputStream(embargoFile), "UTF-8"));
+            Pattern dcPattern = Pattern.compile("embargoEndDate.*:.*");
+            Pattern splitPattern = Pattern.compile(":");
+
+            String line = null;
+            String tokens[] = null;
+            while ((line = fileBuffer.readLine()) != null) {
+                if (dcPattern.matcher(line).matches()) {
+                    tokens = splitPattern.split(line, 2);
+                    System.out.println("[info] " + NAME + " Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+                    if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
+                        linkedHashMap.put(tokens[0], tokens[1]);
+                    }
+                } else {
+                    System.out.println("[warn] " + NAME + " No match: " + line);
+                }
+            }
+        } 
+	catch (Exception e) { }
+        finally {
+            try { } 
+	    catch (Exception e) { }
+        }
+        return linkedHashMap;
+     }
+   
+
+
+    /**
      * read mom anvl file
      *
      * @param merritt object model file source file (usually "mrt-mom.txt")
