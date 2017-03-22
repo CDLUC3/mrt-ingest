@@ -200,7 +200,8 @@ public class MetadataUtil
         BufferedReader fileBuffer = null;
         try {
             fileBuffer = new BufferedReader(new InputStreamReader(new FileInputStream(embargoFile), "UTF-8"));
-            Pattern dcPattern = Pattern.compile("embargoEndDate.*:.*");
+            // Pattern dcPattern = Pattern.compile("embargoEndDate.*:.*");
+            Pattern dcPattern = Pattern.compile(":");
             Pattern splitPattern = Pattern.compile(":");
 
             String line = null;
@@ -213,7 +214,7 @@ public class MetadataUtil
                         linkedHashMap.put(tokens[0], tokens[1]);
                     }
                 } else {
-                    System.out.println("[warn] " + NAME + " No match: " + line);
+                    System.out.println("[warn] " + NAME + " No embargo key/value pair defined: " + line);
                 }
             }
         } 

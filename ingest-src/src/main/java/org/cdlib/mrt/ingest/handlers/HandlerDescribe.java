@@ -133,7 +133,7 @@ public class HandlerDescribe extends Handler<JobState>
 	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data file found");
 	        producerEmbargo = MetadataUtil.readEmbargoANVL(producerEmbargoFile);
                 // Sanity check
-                if ( ! checkEmbargo(producerEmbargo)) {
+                if ( producerEmbargo.size() < 1 || ! checkEmbargo(producerEmbargo)) {
                     throw new TException.GENERAL_EXCEPTION("[error] "
                         + MESSAGE + ": Embargo data not valid");
 		}
@@ -206,6 +206,7 @@ public class HandlerDescribe extends Handler<JobState>
 		    return false;
 		} else {
         	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid Embargo key found: " + key);
+		    return false;
 		}
 	    }
 	}
