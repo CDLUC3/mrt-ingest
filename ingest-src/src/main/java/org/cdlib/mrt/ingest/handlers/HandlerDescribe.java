@@ -196,7 +196,7 @@ public class HandlerDescribe extends Handler<JobState>
 			return true;
 		    }
 
-		    // regex for MySQL "DateTime"
+		    // regex for ISO8601
 		    if (value.toUpperCase().matches(".*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d\\d:\\d\\d)|Z)?.*")) {
         	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
 			return true;
