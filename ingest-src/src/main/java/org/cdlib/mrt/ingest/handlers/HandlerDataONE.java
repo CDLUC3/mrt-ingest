@@ -335,8 +335,8 @@ public class HandlerDataONE extends Handler<JobState>
 		}
 
 	    	String id = translateWhiteSpace(createContent.getComponentPid()); 	// Whitespace is not supported by D1 
-                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node, id : " + id);
-	    	webResourceCreate = client.resource(dataoneURL + id);
+	    	// webResourceCreate = client.resource(dataoneURL + id);
+	    	webResourceCreate = client.resource(dataoneURL + "");
                 if (DEBUG) System.out.println(createContent.dump("-METADATA-"));
 
                 formDataMultiPart = new FormDataMultiPart();
@@ -345,6 +345,10 @@ public class HandlerDataONE extends Handler<JobState>
 		formDataMultiPart.getBodyParts().add(new FileDataBodyPart("object", createContent.getCreateFile()));
 		formDataMultiPart.getBodyParts().add(new FileDataBodyPart("sysmeta", systemMetadataFile));
 		formDataMultiPart.getBodyParts().add(new FormDataBodyPart("pid", id));
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " Submitting to d1 member node: " + dataoneURL);
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " object: " + createContent.getCreateFile());
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " sysmeta: " + systemMetadataFile);
+                if (DEBUG) System.out.println("[debug] " + MESSAGE + " pid: " + id);
 
 		// make service request
 		int maxTries = 3;
