@@ -107,7 +107,6 @@ public class JobState
 	private String ercData = null;			// EZID pass-thru
 	private String altNotification = null;		// EZID pass-thru notificaton
 	private String persistentURL = null;		// EZID binding persistent URL
-	private boolean shadowARK;
 	private boolean updateFlag;
 	private boolean cleanup = true;
 	private boolean retainTargetURL = false;	// EZID, do not update target URL
@@ -127,7 +126,6 @@ public class JobState
 		this.userAgent = user;
 		this.setPrimaryID(primaryID);
 		this.setHashAlgorithm(algorithm);
-		this.setShadowARK(false);
 	}
 
 	@Override
@@ -564,22 +562,6 @@ public class JobState
      */
     public String grabQueuePriority() {		// non-displayable
         return queuePriority;
-    }
-
-    /**
-     * Set shadow ark boolean
-     * @param boolean set shadow ark
-     */
-    public void setShadowARK(boolean shadowARK) {
-        this.shadowARK = shadowARK;
-    }
-
-    /**
-     * Get shadow ark boolean
-     * @return boolean shadow ark
-     */
-    public boolean grabShadowARK() {		// non-displayable
-        return shadowARK;
     }
 
     /**
