@@ -184,36 +184,20 @@ public class HandlerMinter extends Handler<JobState>
 	    }
 
 	    if (mint) {
+		if (profileState.getIdentifierScheme() ==  Identifier.Namespace.DOI) {
+	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Merritt no longer supports DOI minting: " + profileState.getIdentifierScheme());
+                    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Merritt no longer supports DOI minting: " + profileState.getIdentifierScheme());
+		} 
+		    
 	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, mint);
 		if (profileState.getIdentifierScheme() ==  Identifier.Namespace.ARK) {
 		    assignedObjectID = returnValue;
 	            jobState.setPrimaryID(assignedObjectID);
 	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "objectID minted: " + assignedObjectID);
 		} else {
-		    // expect DOI and shadow ARK
-		    String[] parse = returnValue.split("\\|");
-		    if (parse[0].startsWith("doi")) {
-			if (jobState.getLocalID() == null) {
-		            jobState.setLocalID(parse[0].trim());
-			} else {
-		            jobState.setLocalID(jobState.getLocalID() + "; " + parse[0].trim());
-			}
-	        	System.out.println("[info] " + MESSAGE + "Adding DOI to local ID: " + jobState.getLocalID().getValue());
-		    } else {
-	                System.err.println("[warn] " + MESSAGE + "Failure to mint a DOI identifier.");
-                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": failure to mint DOI identifier: " + parse[0]);
-		    }
-		    if (parse[1].startsWith("ark")) {
-	        	System.out.println("[info] " + MESSAGE + "Setting shadow ARK to primary ID: " + parse[1]);
-		        assignedObjectID = parse[1];
-	                jobState.setPrimaryID(assignedObjectID);
-			jobState.setShadowARK(true);
-		    } else {
-	                System.err.println("[warn] " + MESSAGE + "Failure to mint an ARK shadow identifier.");
-                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": failure to mint an ARK shadow identifier: " + parse[1]);
-		    }
+	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Unsupported Identifier scheme: " + profileState.getIdentifierScheme());
+                    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Unsupported Identifier scheme: " + profileState.getIdentifierScheme());
 		}
-
 	    }
 
 	    // At this point we'll need to populate primary/local ID with previous version
@@ -275,15 +259,6 @@ public class HandlerMinter extends Handler<JobState>
 	    if (! returnValue.startsWith("ark")) {
 	        System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
                 throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
-	    }
-
-	    // need to update target for shadow ARK (_target not shared metadata)
-	    if (jobState.grabShadowARK()) {
-	        returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false, true);
-	        if (returnValue.startsWith("ark")) {
-	            System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
-               	    throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
-	        }
 	    }
 
 	    // update resource map

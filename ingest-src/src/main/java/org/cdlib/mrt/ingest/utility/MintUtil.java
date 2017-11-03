@@ -130,12 +130,6 @@ public class MintUtil
     public static String processObjectID(ProfileState profileState, JobState jobState, IngestRequest ingestRequest, boolean mint)
         throws TException
     {
-	return processObjectID(profileState, jobState, ingestRequest, mint, false);
-    }
-
-    public static String processObjectID(ProfileState profileState, JobState jobState, IngestRequest ingestRequest, boolean mint, boolean shadow)
-        throws TException
-    {
 	// EZID implemntation.
 	try {
 	    DefaultHttpClient httpClient = new DefaultHttpClient();
@@ -159,15 +153,7 @@ public class MintUtil
 	    HttpEntityEnclosingRequestBase httpCommand = null;
 	    if ( ! mint) {
 	        // Update an ID.  Fails if ID does not exist.
-	        if (shadow) {
-		    String doi = "";
-		    for (String s : jobState.getLocalID().getValue().split(";")) {
-			if (s.trim().toLowerCase().startsWith("doi:")) doi = s.trim();
-		    }
-		    url = url.replaceFirst("/shoulder.*", "/id/") + doi;
-		} else {
-		    url = url.replaceFirst("/shoulder.*", "/id/") + jobState.getPrimaryID().getValue();
-		}
+		url = url.replaceFirst("/shoulder.*", "/id/") + jobState.getPrimaryID().getValue();
 		System.out.println("[info] " + MESSAGE + "updating ID: " + url);
 	    }
 
@@ -222,16 +208,18 @@ public class MintUtil
 		throw new TException.INVALID_OR_MISSING_PARM("Target hostname or primary ID not valid: " + url);
 	    }
 	    httpCommand.addHeader("Content-Type", "text/plain");
-	    if (! shadow) {
-	        String stringEntity = null;
-		stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + coowner;
-		if (profileState.getIdentifierScheme() == Identifier.Namespace.DOI && mint) {
-	            for (String dataCite : getDataCiteMetadata(ingestRequest, profileState, jobState)) {
-		        stringEntity = stringEntity + dataCite + "\n";
-		    }
-		}
+	    String stringEntity = null;
+
+	    // Populate with ERC profile if supplied
+	    stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + coowner;
+
+	    // Populate datacite EZID profile if supplied
+	    if ((jobState.grabDataCiteMetadata() != null) && mint) {
+	        for (String dataCite : getDataCiteMetadata(ingestRequest, profileState, jobState)) {
+	            stringEntity = stringEntity + dataCite + "\n";
+	        }
 		httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
-	    } else { httpCommand.setEntity(new StringEntity(target, "UTF-8")); }
+	    } 
 
             String responseBody = null;
 	    HttpResponse httpResponse = null;
