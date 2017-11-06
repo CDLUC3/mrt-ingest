@@ -213,13 +213,7 @@ public class MintUtil
 	    // Populate with ERC profile if supplied
 	    stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + coowner;
 
-	    // Populate datacite EZID profile if supplied
-	    if ((jobState.grabDataCiteMetadata() != null) && mint) {
-	        for (String dataCite : getDataCiteMetadata(ingestRequest, profileState, jobState)) {
-	            stringEntity = stringEntity + dataCite + "\n";
-	        }
-		httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
-	    } 
+            System.out.println("[info] POST stringEntity: " + stringEntity);
 
             String responseBody = null;
 	    HttpResponse httpResponse = null;
