@@ -238,7 +238,7 @@ public class HandlerRetrieve extends Handler<JobState>
                         fileComponent = rowIn.getFileComponent();
 			if (fileComponent.getMessageDigest() == null) {
 		            if (DEBUG) System.out.println("[info] No checksum provided: " + fileComponent.getIdentifier());
-			    break;
+			    continue;
 			}
 			if (fileComponent.getIdentifier() == null) {
 			    fileComponent.setIdentifier(fileComponent.getURL().getPath());
