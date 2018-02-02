@@ -257,8 +257,7 @@ public class HandlerMinter extends Handler<JobState>
 	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
 
 	    if (! returnValue.startsWith("ark")) {
-	        System.err.println("[warn] " + MESSAGE + "Could not update identifier: " + returnValue);
-                throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Could not update identifier: " + returnValue);
+	        System.out.println("[info] " + MESSAGE + "Non ark returned by EZID: " + returnValue);
 	    }
 
 	    // update resource map
