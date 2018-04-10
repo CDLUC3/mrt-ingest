@@ -378,8 +378,8 @@ public class HandlerDataONE extends Handler<JobState>
 	                    }
 			} else {
 	                    if (DEBUG) {
-				System.out.println("[warn] " + MESSAGE + " ADD response code " + clientResponse.getStatus() + " - " + jobState.getJobID().getValue()
-					+ " Attempt: " + cnt + " of " + maxTries);
+				System.out.println("[warn] " + MESSAGE + " ADD response code " + clientResponse.getStatus() + " - " + jobState.getJobID().getValue() + " Attempt: " + cnt + " of " + maxTries);
+				System.out.println("[warn] " + MESSAGE + " ADD response message " + clientResponse.getEntity(String.class));
 			    }
 			    Thread.currentThread().sleep(5 * 1000);	// wait a bit before reattempting
 			}
