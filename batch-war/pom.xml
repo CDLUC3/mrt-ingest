@@ -51,9 +51,11 @@
             <id>version</id>
 	    <phase>package</phase>
             <configuration>
-              <executable>hg</executable>
+              <executable>git</executable>
               <arguments>
-                <argument>id</argument>
+                <argument>log</argument>
+                <argument>--pretty=oneline</argument>
+                <argument>--max-count=1</argument>
               </arguments>
               <outputFile>target/VERSION</outputFile>
             </configuration>
@@ -65,10 +67,9 @@
             <id>branch</id>
 	    <phase>package</phase>
             <configuration>
-              <executable>hg</executable>
+              <executable>git</executable>
               <arguments>
-                <argument>id</argument>
-                <argument>--branch</argument>
+                <argument>branch</argument>
               </arguments>
               <outputFile>target/BRANCH</outputFile>
             </configuration>
