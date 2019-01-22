@@ -94,18 +94,22 @@ public class HandlerAccept extends Handler<JobState>
 	    for (String fileS : ingestRequest.getQueuePath().list()) {
 	    	if ( ! isComponent(fileS)) continue;
 
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "copying file to stage dir: " + fileS);
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "moving file to stage dir: " + fileS);
 		File sourceFile = new File(sourceDir, fileS);
 		File targetFile = new File(targetDir, fileS);
 		if (sourceFile.isHidden()) continue;		// process after disaggregate
-		FileUtil.copyFile(sourceFile.getName(), sourceDir, targetDir);
+		boolean renamed = sourceFile.renameTo(targetFile);
+		if (! renamed) {
+	            if (DEBUG) System.out.println("[error] " + MESSAGE + "unable to move file to stage dir: " + fileS);
+		    throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] "
+			+ MESSAGE + ": unable to move file to stage dir: " + fileS);
+		}
 
-		sourceFile.delete();
 		if (! targetFile.exists()) {
-	            if (DEBUG) System.out.println("[error] " + MESSAGE + "unable to copying file to stage dir: " + fileS);
+	            if (DEBUG) System.out.println("[error] " + MESSAGE + "unable to move file to stage dir: " + fileS);
 	    	    // return new HandlerResult(false, "[error]: " + MESSAGE + "unable to copying file to stage dir: " + fileS);
 		    throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] " 
-			+ MESSAGE + ": unable to copying file to stage dir: " + fileS);
+			+ MESSAGE + ": unable to move file to stage dir: " + fileS);
 		}
 	    }
 
@@ -118,11 +122,11 @@ public class HandlerAccept extends Handler<JobState>
                 }
 	    }
 
-	    return new HandlerResult(true, "SUCCESS: " + NAME + " has copied data to staging area", 0);
+	    return new HandlerResult(true, "SUCCESS: " + NAME + " has moved data to staging area", 0);
 	} catch (TException te) {
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-	    String msg = "[error] " + MESSAGE + "copying file to staging directory: " + e.getMessage();
+	    String msg = "[error] " + MESSAGE + "moving file to staging directory: " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {
 	    // cleanup?
