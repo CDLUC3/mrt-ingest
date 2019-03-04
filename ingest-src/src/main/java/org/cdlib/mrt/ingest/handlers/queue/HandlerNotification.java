@@ -149,13 +149,21 @@ public class HandlerNotification extends Handler<BatchState>
                      batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
             }
 
-            email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued", aggregate + batchState.getBatchID().getValue()));
-  	    email.setMsg(batchState.dump("", false, false));
+            try {
+	       if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+                  email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queue Failed", aggregate + batchState.getBatchID().getValue()));
+	       } else {
+                  email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued", aggregate + batchState.getBatchID().getValue()));
+	       }
+  	       email.setMsg(batchState.dump("", false, false));
+            } catch (Exception e) {
+		e.printStackTrace(System.err);
+            }
 
 	    try {
   	        email.send();
 	    } catch (Exception e) {
-		e.printStackTrace();
+		e.printStackTrace(System.err);
 		// do not fail?
 	    }
 
