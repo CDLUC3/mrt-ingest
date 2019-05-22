@@ -74,14 +74,20 @@ public class HandlerCleanup extends Handler<JobState>
 
 	    boolean deleteDir = FileUtil.deleteDir(stageDir);
 	    if (! deleteDir) {
-	        throw new TException.GENERAL_EXCEPTION("[error] " 
-			+ MESSAGE + "unable to remove stage area: " +  stageDir.getAbsolutePath());
+                if (DEBUG) System.out.println("[error] " + MESSAGE + "Failure in removing: " 
+		    + stageDir.getAbsolutePath() + "   Retrying...");
+
+		// EFS may have a delay before directory removal is propagated
+	        Thread.sleep(5000);
+                deleteDir = FileUtil.deleteDir(stageDir);
+	        if (! deleteDir) {
+	           if (DEBUG) System.out.println("[error] " + MESSAGE + "Another failure in removing: " 
+			+ stageDir.getAbsolutePath());
+	           if (DEBUG) System.out.println("[error] " + MESSAGE + "Non fatal error.  Continuing.");
+		}
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " deletion of staging directory", 0);
-	} catch (TException te) {
-            te.printStackTrace(System.err);
-            return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "removing staging directory: " + e.getMessage();
