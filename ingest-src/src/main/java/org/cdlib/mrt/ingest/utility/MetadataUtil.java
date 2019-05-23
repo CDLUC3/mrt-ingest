@@ -180,8 +180,8 @@ public class MetadataUtil
 	}
 	finally {
 	    try {
-	    } catch (Exception e) {
-	    }
+	        fileBuffer.close();
+	    } catch (Exception e) { }
 	}
 	return linkedHashMap;
     }
@@ -220,8 +220,9 @@ public class MetadataUtil
         } 
 	catch (Exception e) { }
         finally {
-            try { } 
-	    catch (Exception e) { }
+            try { 
+	        fileBuffer.close();
+	    } catch (Exception e) { }
         }
         return linkedHashMap;
      }
@@ -262,8 +263,9 @@ public class MetadataUtil
         } 
 	catch (Exception e) { }
         finally {
-            try { } 
-	    catch (Exception e) { }
+            try { 
+	        fileBuffer.close();
+	    } catch (Exception e) { }
         }
         return linkedHashMap;
     }
@@ -312,8 +314,9 @@ public class MetadataUtil
         } catch (Exception e) { 
             if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-dc.xml: " + DCFile.getName());
         } finally {
-            try { } 
-	    catch (Exception e) { }
+            try { 
+	        fileInputStream.close();
+	    } catch (Exception e) { }
         }
         return linkedHashMap;
     }
@@ -381,8 +384,8 @@ public class MetadataUtil
             throw new TException.GENERAL_EXCEPTION("[error] " +
                 MESSAGE + ": unable to write mrt-dc.xml: " + DCFile.getName());
         } finally {
-            try { } 
-	    catch (Exception e) { }
+            try { 
+	    } catch (Exception e) { }
         }
 
 	return;
@@ -472,8 +475,9 @@ public class MetadataUtil
             throw new TException.GENERAL_EXCEPTION("[error] " +
                 MESSAGE + ": unable to process mrt-datacite.xml: " + e.getMessage());
         } finally {
-            try { } 
-	    catch (Exception e) { }
+            try { 
+	        fileInputStream.close();
+	    } catch (Exception e) { }
         }
         return linkedHashMap;
     }
