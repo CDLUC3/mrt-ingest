@@ -707,6 +707,7 @@ public class IngestManager {
 		String NODESCHEME = "node-scheme";
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
+		String MAILHOST = "mail-host";
 
 		String serviceNameS = ingestProperties.getProperty(SERVICENAME);
 		if (serviceNameS != null) {
@@ -769,6 +770,15 @@ public class IngestManager {
 			throw new TException.INVALID_CONFIGURATION(
 					"[error] " + MESSAGE + SUPPORTURI + " parameter is missing from ingest-info.txt");
 		}
+		String mailHost = ingestProperties.getProperty(MAILHOST);
+		if (mailHost == null) {
+			mailHost = "localhost"; // default
+			if (DEBUG)
+				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is missing from ingest-info.txt");
+			if (DEBUG)
+				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
+		}
+		ingestState.setMailHost(mailHost);
 	}
 
 	protected synchronized BatchState updateBatch(BatchState sourceBatchState, IngestRequest ingestRequest,

@@ -123,5 +123,11 @@ public interface IngestServiceStateInf
      */
     public String dump(String header);
 
+    /**
+     * Get smtp host name
+     * @return smtp host name
+     */
+	public String getMailHost();
+
 }
 
