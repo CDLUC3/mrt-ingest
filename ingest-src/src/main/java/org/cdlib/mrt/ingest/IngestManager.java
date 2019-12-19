@@ -552,7 +552,6 @@ public class IngestManager {
 				String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
 				Handler handler = (Handler) createObject(handlerS);
 				
-				System.out.println("*** "+handler.getName() + " " + handler);
 				if (handler == null) {
 					throw new TException.INVALID_CONFIGURATION("[error] Could not find handler: " + handlerS);
 				}
