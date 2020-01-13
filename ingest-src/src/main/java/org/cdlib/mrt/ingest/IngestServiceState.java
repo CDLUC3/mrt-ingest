@@ -60,6 +60,7 @@ public class IngestServiceState
     private URL accessServiceURL;
     private URL supportServiceURL;
     private String commands = null;
+    private String mailHost = null;
 
     public IngestServiceState()
             throws TException
@@ -244,6 +245,19 @@ public class IngestServiceState
      */
     public void setCommands(String commands) {
         this.commands = commands;
+    }
+
+    @Override
+    public String getMailHost() {
+        return mailHost;
+    }
+
+    /**
+     * Set Storage Service identifier
+     * @param String Storage Service identifier
+     */
+    public void setMailHost(String mailHost) {
+        this.mailHost = mailHost;
     }
 
     /**

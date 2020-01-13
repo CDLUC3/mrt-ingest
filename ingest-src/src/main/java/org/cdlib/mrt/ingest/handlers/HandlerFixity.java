@@ -238,7 +238,7 @@ public class HandlerFixity extends Handler<JobState>
         MultiPartEmail email = new MultiPartEmail();
 
 	try {
-            email.setHostName("localhost");     // production machines are SMTP enabled
+            email.setHostName(ingestRequest.getServiceState().getMailHost());     // production machines are SMTP enabled
             if (profileState.getAdmin() != null) {
                 for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
                     // admin will receive notifications

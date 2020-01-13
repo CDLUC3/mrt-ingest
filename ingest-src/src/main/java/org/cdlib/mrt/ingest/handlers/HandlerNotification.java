@@ -117,7 +117,7 @@ public class HandlerNotification extends Handler<BatchState>
 	        }
 	    }
 
-  	    email.setHostName("localhost");	// production machines are SMTP enabled
+  	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled
 	    if (jobState.grabAltNotification() == null) {
 	        for (Notification recipient : profileState.getContactsEmail()) {
 		    try {
