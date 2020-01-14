@@ -55,184 +55,161 @@ import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+
 /**
  * notify user of queue submission results
- * 
  * @author mreyes
  */
-public class HandlerNotification extends Handler<BatchState> {
+public class HandlerNotification extends Handler<BatchState>
+{
 
-	protected static final String NAME = "HandlerNotification";
-	private static final String SERVICE = "Ingest";
-	protected static final String MESSAGE = NAME + ": ";
-	protected static final boolean DEBUG = true;
-	protected LoggerInf logger = null;
+    protected static final String NAME = "HandlerNotification";
+    private static final String SERVICE = "Ingest";
+    protected static final String MESSAGE = NAME + ": ";
+    protected static final boolean DEBUG = true;
+    protected LoggerInf logger = null;
 
-	/**
-	 * notify user(s)
-	 *
-	 * @param profileState  contains target storage service info
-	 * @param ingestRequest contains ingest request info
-	 * @param batchState
-	 * @return HandlerResult object containing processing status
-	 */
-	public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, BatchState batchState)
-			throws TException {
-		MultiPartEmail email = new MultiPartEmail();
-		FormatterUtil formatterUtil = new FormatterUtil();
-		FormatType formatType = null;
-		String batchID = batchState.getBatchID().getValue();
-		boolean verbose = false;
+    /**
+     * notify user(s)
+     *
+     * @param profileState contains target storage service info
+     * @param ingestRequest contains ingest request info
+     * @param batchState
+     * @return HandlerResult object containing processing status 
+     */
+    public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, BatchState batchState) 
+	throws TException 
+    {
+   	MultiPartEmail email = new MultiPartEmail();
+        FormatterUtil formatterUtil = new FormatterUtil();
+        FormatType formatType = null;
+        String batchID = batchState.getBatchID().getValue();
+	boolean verbose = false;
 
-		try {
-			try {
-				if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
-					if (DEBUG)
-						System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
-					verbose = true;
-				}
-			} catch (Exception e) {
-			}
+	try {
+	    try {
+	        if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
+		    verbose = true;
+	        }
+	    } catch (Exception e) {}
 
-			email.setHostName(ingestRequest.getServiceState().getMailHost()); // production machines are SMTP enabled
-			System.out.println("TBTB1: "+ingestRequest.getServiceState().getMailHost());
-			if (!verbose) {
-				for (Notification recipient : profileState.getContactsEmail()) {
-					try {
-						email.addTo(recipient.getContactEmail());
-					} catch (Exception e) {
-						e.printStackTrace();
-						notify(e.getMessage() + " - " + recipient.getContactEmail(), profileState, ingestRequest);
-					}
-				}
-			} else {
-				if (DEBUG)
-					System.out.println("[info] " + MESSAGE + "recipients will not receive Queue notification.");
-			}
-			if (profileState.getAdmin() != null) {
-				for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext();) {
-					// admin will receive all completion notifications
-					String recipient = admin.next();
-					if (StringUtil.isNotEmpty(recipient))
-						email.addBcc(recipient);
-				}
-			}
+  	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled
+	    if (! verbose) {
+	        for (Notification recipient : profileState.getContactsEmail()) {
+		    try {
+  	    	        email.addTo(recipient.getContactEmail());
+		    } catch (Exception e) { 
+		        e.printStackTrace();
+		        notify(e.getMessage() + " - " + recipient.getContactEmail(), profileState, ingestRequest); 
+		    }
+	        }
+	    } else {
+                if (DEBUG) System.out.println("[info] " + MESSAGE + "recipients will not receive Queue notification.");
+	    }
+            if (profileState.getAdmin() != null) {
+                for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
+                    // admin will receive all completion notifications
+                    String recipient = admin.next();
+                    if (StringUtil.isNotEmpty(recipient)) email.addBcc(recipient);
+                }
+            }
 
-			email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+  	    email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
 
-			String server = null;
-			String status = "OK";
+            String server = null;
+            String status = "OK";
 
-			// admin object?
-			String aggregate = "";
-			try {
-				if (StringUtil.isNotEmpty(profileState.getAggregateType()))
-					aggregate = "[" + profileState.getAggregateType() + "] ";
-			} catch (NullPointerException npe) {
-			}
+            // admin object?
+            String aggregate = "";
+            try {
+               if (StringUtil.isNotEmpty(profileState.getAggregateType()))
+                   aggregate = "[" + profileState.getAggregateType() + "] ";
+            } catch (NullPointerException npe) {}
 
-			// instance?
-			try {
-				String ingestServiceName = ingestRequest.getServiceState().getServiceName();
-				if (StringUtil.isNotEmpty(ingestServiceName))
-					if (ingestServiceName.contains("Development"))
-						server = "dev";
-					else if (ingestServiceName.contains("Stage"))
-						server = "stg";
-			} catch (NullPointerException npe) {
-			}
+            // instance?
+            try {
+               String ingestServiceName = ingestRequest.getServiceState().getServiceName();
+               if (StringUtil.isNotEmpty(ingestServiceName))
+                    if (ingestServiceName.contains("Development")) server = "dev";
+                    else if (ingestServiceName.contains("Stage")) server = "stg";
+            } catch (NullPointerException npe) {}
 
-			// attachment: batch state with user defined formatting
-			if (ingestRequest.getNotificationFormat() != null)
-				formatType = ingestRequest.getNotificationFormat();
-			else if (profileState.getNotificationFormat() != null)
-				formatType = profileState.getNotificationFormat(); // POST parm overrides profile parm
+            // attachment: batch state with user defined formatting
+            if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
+            else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();	// POST parm overrides profile parm
 
-			try {
-				email.attach(
-						new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType),
-								formatType.getMimeType()),
-						batchID + "." + formatType.getExtension(), "Full report for " + batchID,
-						EmailAttachment.ATTACHMENT);
-			} catch (Exception e) {
-				if (DEBUG)
-					System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
-				// human readable
-				email.attach(
-						new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"),
-								"text/plain"),
-						batchID + ".txt", "Full report for " + batchID, EmailAttachment.ATTACHMENT);
-			}
+            try {
+                email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
+                    batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
+            } catch (Exception e) {
+                if (DEBUG) System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
+                // human readable
+                email.attach(new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"), "text/plain"),
+                     batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
+            }
 
-			try {
-				if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
-					email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queue Failed",
-							aggregate + batchState.getBatchID().getValue()));
-				} else {
-					email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued",
-							aggregate + batchState.getBatchID().getValue()));
-				}
-				email.setMsg(batchState.dump("", false, false));
-			} catch (Exception e) {
-				e.printStackTrace(System.err);
-			}
+            try {
+	       if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+                  email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queue Failed", aggregate + batchState.getBatchID().getValue()));
+	       } else {
+                  email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued", aggregate + batchState.getBatchID().getValue()));
+	       }
+  	       email.setMsg(batchState.dump("", false, false));
+            } catch (Exception e) {
+		e.printStackTrace(System.err);
+            }
 
-			try {
-				System.out.println("TBTB2: "+email.getHostName());
-				email.send();
-			} catch (Exception e) {
-				e.printStackTrace(System.err);
-				// do not fail?
-			}
+	    try {
+  	        email.send();
+	    } catch (Exception e) {
+		e.printStackTrace(System.err);
+		// do not fail?
+	    }
 
-			return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
+	    return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
 
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-			String msg = "[error] " + MESSAGE + ": in submission notification: " + e.getMessage();
-			System.err.println(msg);
-			throw new TException.GENERAL_EXCEPTION(msg);
+	} catch (Exception e) {
+	    e.printStackTrace(System.err);
+            String msg = "[error] " + MESSAGE + ": in submission notification: " + e.getMessage();
+	    System.err.println(msg);
+            throw new TException.GENERAL_EXCEPTION(msg);
 
-		} finally {
-			formatterUtil = null;
-			formatType = null;
-		}
-	}
+        } finally {
+            formatterUtil = null;
+            formatType = null;
+        }
+    }
+   
+    public String getName() {
+	return NAME;
+    }
 
-	public String getName() {
-		return NAME;
-	}
+    public void notify(String message, ProfileState profileState, IngestRequest ingestRequest) {
+        String server = "";
+        MultiPartEmail email = new MultiPartEmail();
 
-	public void notify(String message, ProfileState profileState, IngestRequest ingestRequest) {
-		String server = "";
-		MultiPartEmail email = new MultiPartEmail();
+        try {
+            email.setHostName(ingestRequest.getServiceState().getMailHost());     // production machines are SMTP enabled
+            if (profileState.getAdmin() != null) {
+                for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
+                    // admin will receive notifications
+                    String recipient = admin.next();
+                    if (StringUtil.isNotEmpty(recipient)) email.addTo(recipient);
+                }
+            } 
 
-		try {
-			email.setHostName(ingestRequest.getServiceState().getMailHost()); // production machines are SMTP enabled
-			if (profileState.getAdmin() != null) {
-				for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext();) {
-					// admin will receive notifications
-					String recipient = admin.next();
-					if (StringUtil.isNotEmpty(recipient))
-						email.addTo(recipient);
-				}
-			}
+            String ingestServiceName = ingestRequest.getServiceState().getServiceName();
+            if (StringUtil.isNotEmpty(ingestServiceName))
+                if (ingestServiceName.contains("Development")) server = " [Development]";
+                else if (ingestServiceName.contains("Stage")) server = " [Stage]";
+            email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+            email.setSubject("[Warning] Error in user notification" + server);
+            email.setMsg(message);
+            email.send();
+        } catch (Exception e) {};
 
-			String ingestServiceName = ingestRequest.getServiceState().getServiceName();
-			if (StringUtil.isNotEmpty(ingestServiceName))
-				if (ingestServiceName.contains("Development"))
-					server = " [Development]";
-				else if (ingestServiceName.contains("Stage"))
-					server = " [Stage]";
-			email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
-			email.setSubject("[Warning] Error in user notification" + server);
-			email.setMsg(message);
-			email.send();
-		} catch (Exception e) {
-		}
-		;
-
-		return;
-	}
+        return;
+    }
 
 }
