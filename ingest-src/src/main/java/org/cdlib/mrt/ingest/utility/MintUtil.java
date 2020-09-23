@@ -217,15 +217,31 @@ public class MintUtil
 
             String responseBody = null;
 	    HttpResponse httpResponse = null;
-	    try {
-                httpResponse = httpClient.execute(httpCommand);
-		responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
-	    } catch (HttpHostConnectException hhce) {
-	        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("error in connecting to host: " + url);
-	    } catch (org.apache.http.client.HttpResponseException hre) {
-		System.err.println("[error] " + MESSAGE + "request failed with status code: " + hre.getStatusCode());
-		System.err.println("[error] " + MESSAGE + "request failed with status message: " + hre.getMessage());
-		responseBody = "failed";
+
+            int retryCount = 0;
+            while (true) {
+	    	try {
+                     httpResponse = httpClient.execute(httpCommand);
+		     responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
+		     break;
+	    	} catch (HttpHostConnectException hhce) {
+		     retryCount++;
+                     if (retryCount >= 3) {
+	                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("error in connecting to host: " + url);
+		     }
+		     System.err.println("[error] " + MESSAGE + "error connecting to host. " + hhce.getMessage());
+		     System.err.println("Wait 5 seconds and retry attempt: " + retryCount);
+		     Thread.sleep(5000);
+	    	} catch (Exception e) {
+		     retryCount++;
+                     if (retryCount >= 3) {
+			throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("minting ID from endpoint: " + url);
+		     }
+		     System.err.println("[error] " + MESSAGE + "request failed with status message: " + e.getMessage());
+		     System.err.println("Wait 5 seconds and retry attempt: " + retryCount);
+		     Thread.sleep(5000);
+		     responseBody = "failed";
+	    	}
 	    }
 	    if (responseBody.startsWith("success")) {
                 System.out.println("[info] " + MESSAGE + responseBody);
