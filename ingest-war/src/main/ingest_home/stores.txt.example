@@ -1,0 +1,8 @@
+# -----------------------------
+# Storage service configuration
+# -----------------------------
+
+# Define all storage services available
+# Specific service to be used is defined in user profile
+store.1: http://example.org/storage
+access.1: http://example.org/storage

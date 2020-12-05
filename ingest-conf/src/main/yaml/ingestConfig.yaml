@@ -1,0 +1,73 @@
+which-ingest: "{!ENV: MERRITT_INGEST !DEFAULT: ingest}"
+ingest:
+  ingest-info:
+    name: "UC3 Ingest"
+    identifier: "{!SSM: ingest/config/identifier"
+    target: "{!SSM: ingest/config/target"
+    description: "UC3 ingest micro-service"
+    access-uri: "http://{!ENV: HOSTNAME}.cdlib.org:33121"
+    ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
+    service-scheme: "Ingest/0.1"
+    support-uri: "http://www.cdlib.org/services/uc3/contact.html"
+    admin: "{SSM: ingest/config/admin}"
+    purl: "http://n2t.net/"
+
+  store-info:
+    store.1: "{!SSM: ingest/config/store.1}"
+    access.1: "{!SSM: ingest/config/access.1}"
+    localID: "{!SSM: ingest/config/localID}"
+
+  queue-info:
+    QueueService: "{!SSM: inventory/zoo/queueService}"
+    QueueName: "/ingest.{!ENV: WORKERNAME}.1"
+    InventoryName: "{!SSM: inventory/zoo/queueName"
+    QueueHoldFile: "{!SSM: ingest/config/QueueHoldFile}"
+    PollingInterval: "{!SSM: ingest/config/PollingInterval !DEFAULT: 10}"
+    NumThreads: "{!SSM: ingest/config/numThreads !DEFAULT: 5}"
+
+  logger-info:
+    MessageMaximumLevel: "{!SSM: ingest/config/log/messageMaximumLevel !DEFAULT: 5}"
+    MessageMaximumError: "{!SSM: ingest/config/log/messageMaximumError !DEFAULT: 10}"
+    Path: "{!SSM: ingest/config/log/path !DEFAULT: /dpr2/ingest_home/logs}"
+    Name: "ingest"
+    Qualifier: "yyMMdd"
+    Trace: 5
+    ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
+
+
+
+ingest-docker:
+  ingest-info:
+    name: "UC3 Docker Ingest"
+    identifier: "ingest"
+    target: "http://my-minio-localhost-alias:8089"
+    description: "UC3 ingest docker micro-service"
+    service-scheme: "Ingest/0.1"
+    access-uri: "http://ingest:8080"
+    ezid: "example:value"
+    support-uri: "http://www.cdlib.org/services/uc3/contact.html"
+    admin: 
+    purl: "http://n2t.net/"
+    mail-host: "smtp"
+
+  store-info:
+    store.1: "http://store:8080/store"
+    access.1: "http://store:8080/store"
+    localID: "http://inventory:8080/inventory"
+
+  queue-info:
+    QueueService: "zoo:2181"
+    QueueName: "/ingest"
+    InventoryName: "/mrt.inventory.full"
+    QueueHoldFile: "/tdr/ingest/queue/HOLD"
+    PollingInterval: 10
+    NumThreads: 5
+
+  logger-info:
+    MessageMaximumLevel: 5
+    MessageMaximumError: 10
+    Path: "example/log/path"
+    Name: "ingest"
+    Qualifier: "yyMMdd"
+    Trace: 5
+    ingestServicePath: "/tdr/ingest"
