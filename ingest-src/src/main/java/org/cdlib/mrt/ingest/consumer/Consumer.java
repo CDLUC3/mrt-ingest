@@ -112,7 +112,7 @@ public class Consumer extends HttpServlet
 	}
 
 	try {
-	    queueConnectionString = ingestService.getQueueServiceProps().getProperty("QueueService");
+	    queueConnectionString = ingestService.getQueueServiceConf().getString("QueueService");
 	    if (StringUtil.isNotEmpty(queueConnectionString)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting queue connection string: " + queueConnectionString);
 		this.queueConnectionString = queueConnectionString;
@@ -123,7 +123,7 @@ public class Consumer extends HttpServlet
 	}
 
 	try {
-	    queueNode = ingestService.getQueueServiceProps().getProperty("QueueName");
+	    queueNode = ingestService.getQueueServiceConf().getString("QueueName");
 	    if (StringUtil.isNotEmpty(queueNode)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting queue node: " + queueNode);
 		this.queueNode = queueNode;
@@ -134,7 +134,7 @@ public class Consumer extends HttpServlet
 	}
 
 	try {
-	    numThreads = ingestService.getQueueServiceProps().getProperty("NumThreads");
+	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
 		this.numThreads = new Integer(numThreads).intValue();
@@ -144,7 +144,7 @@ public class Consumer extends HttpServlet
 	}
 
 	try {
-	    pollingInterval = ingestService.getQueueServiceProps().getProperty("PollingInterval");
+	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
 		this.pollingInterval = new Integer(pollingInterval).intValue();
@@ -441,7 +441,7 @@ class ConsumerDaemon implements Runnable
     private boolean onHold()
     {
         try {
-	    File holdFile = new File(ingestService.getQueueServiceProps().getProperty("QueueHoldFile"));
+	    File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile"));
 	    if (holdFile.exists()) {
 	        System.out.println("[info]" + NAME + ": hold file exists, not processing queue: " + holdFile.getAbsolutePath());
 	        return true;

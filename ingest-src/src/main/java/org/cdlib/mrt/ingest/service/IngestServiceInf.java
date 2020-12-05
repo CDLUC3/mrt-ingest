@@ -44,6 +44,8 @@ import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 
+import org.json.JSONObject;
+
 /**
  * This interface defines the functional API for a Curational Ingest Service
  * @author mreyes
@@ -125,7 +127,7 @@ public interface IngestServiceInf
      * @return IngestService properties
      * @throws TException Exception condition during storage service procssing
      */
-    public Properties getIngestServiceProps()
+    public JSONObject getIngestServiceConf()
         throws TException;
 
     /**
@@ -133,7 +135,7 @@ public interface IngestServiceInf
      * @return IngestService properties
      * @throws TException Exception condition during storage service procssing
      */
-    public Properties getQueueServiceProps()
+    public JSONObject getQueueServiceConf()
         throws TException;
 
     /**

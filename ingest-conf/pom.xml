@@ -13,68 +13,22 @@
   </properties>
   <build>
     <plugins>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.0</version>
-        <executions>
-          <execution>
-            <id>enforce-property</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.0</version>
             <configuration>
-              <rules>
-                <requireProperty>
-                  <property>environment</property>
-                  <message>You must specify an environment -D=environment={local,development,stage} </message>
-                  <regex>(local|development|stage)</regex>
-                  <regexMessage>You must specify an environment: local, development or stage</regexMessage>
-                  <regexMessage></regexMessage>
-                </requireProperty>
-              </rules>
-              <fail>true</fail>
+                <source>1.7</source>
+                <target>1.7</target>
             </configuration>
-          </execution>
-          <execution>
-            <id>enforce-files-exist</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <requireFilesExist>
-                  <files>
-                   <file>${basedir}/properties/${environment}</file>
-                  </files>
-                </requireFilesExist>
-              </rules>
-              <fail>true</fail>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>validate</phase>
-            <configuration>
-              <tasks>
-                <fail message="'environment' property must be set" unless="environment"/>
-                <ant dir="." antfile="setconf.xml" target="setprop-${environment}"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
+        </plugin>
     </plugins>
+    <resources>
+      <resource>
+        <directory>src/main/yaml</directory>
+        <targetPath>resources</targetPath>
+      </resource>
+    </resources>
+
   </build>
 </project>

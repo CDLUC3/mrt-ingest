@@ -41,6 +41,7 @@ import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.JobState;
+import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
@@ -90,7 +91,7 @@ public class IngestCmdMain
         throws TException
     {
         this.logger = mFrame.getLogger();
-        this.ingestService = IngestServiceAbs.getIngestService(logger, mFrame.getProperties());
+        this.ingestService = IngestServiceAbs.getIngestService(IngestConfig.useYaml());
     }
 
     /**

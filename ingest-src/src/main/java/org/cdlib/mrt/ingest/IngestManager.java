@@ -72,6 +72,9 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 /**
  * Basic manager for Ingest Service
  * 
@@ -83,8 +86,8 @@ public class IngestManager {
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
 	private LoggerInf logger = null;
-	private Properties conf = null;
-	private Properties ingestProperties = null;
+        private JSONObject storeConf = null;
+        private JSONObject ingestConf = null;
 	private Integer defaultStorage = null;
 	private URL ingestLink = null;
 	private boolean debugDump = false;
@@ -100,27 +103,28 @@ public class IngestManager {
 		return ingestFileS;
 	}
 
-	public Properties getIngestServiceProps() {
-		return ingestProperties;
+	public JSONObject getIngestServiceConf() {
+		return ingestConf;
 	}
 
 	public URL getIngestLink() {
 		return ingestLink;
 	}
 
-	protected IngestManager(LoggerInf logger, Properties conf) throws TException {
+	protected IngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf) throws TException {
 		try {
 			this.logger = logger;
-			this.conf = conf;
-			init(conf);
+			this.storeConf = storeConf;
+			this.ingestConf = ingestConf;
+			init(storeConf, ingestConf);
 		} catch (TException tex) {
 			throw tex;
 		}
 	}
 
-	public static IngestManager getIngestManager(LoggerInf logger, Properties conf) throws TException {
+	public static IngestManager getIngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf) throws TException {
 		try {
-			IngestManager ingestManager = new IngestManager(logger, conf);
+			IngestManager ingestManager = new IngestManager(logger, storeConf, ingestConf);
 			return ingestManager;
 
 		} catch (TException tex) {
@@ -134,72 +138,36 @@ public class IngestManager {
 	}
 
 	/**
-	 * <pre>
 	 * Initialize the IngestManager
 	 * Using a set of Properties identify all storage references.
 	 *
-	*!!!! -------------- May defer to use store node/node ID housed in Profile definitions ------ !!!!
-	 * Properties:
-	 * "Storage.nnn=value" identifies a storage reference. The nnn is the numeric serviceID.
-	 * The value is either a file name (local) or is a URL (remote)
-	 *
-	 * "IDDefault=" is the default serviceID used for accessing a storage service.
-	 * ingest -> ingest-info.txt - primarily the Access-uri is used in the  getVersion link manifest
-	 *
-	 * </pre>
-	 * 
-	 * @param prop system properties used to resolve Storage references
+	 * @param config system properties used to resolve Storage references
 	 * @throws TException process exceptions
 	 */
-	public void init(Properties prop) throws TException {
+	public void init(JSONObject storeConf, JSONObject ingestConf) throws TException {
 		try {
-			if (prop == null) {
-				throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Exception MFrame properties not set");
-			}
+                        if (storeConf == null) {
+                                throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Store Config properties not set");
+                        }
+                        if (ingestConf == null) {
+                                throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Ingest Config properties not set");
+                        }
 
 			String key = null;
 			String value = null;
 			String matchStorage = "store.";
 			String matchAccess = "access.";
 			String matchLocalID = "localID";
-			String matchIngest = "ingestServicePath";
 			String matchAdmin = "admin";
 			String matchEZID = "ezid";
 			String matchPURL = "purl";
 			String defaultIDKey = "IDDefault";
 			Integer id = null;
 
-			ingestFileS = prop.getProperty(matchIngest);
-			if (ingestFileS != null) {
-				// load ingest-info.txt
-				File ingestInfoTxt = new File(ingestFileS, "ingest-info.txt");
-				if (!ingestInfoTxt.exists()) {
-					throw new TException.INVALID_OR_MISSING_PARM(
-							MESSAGE + "ingest-info.txt file not found: " + ingestInfoTxt.getAbsolutePath());
-				}
-				ingestProperties = PropertiesUtil.loadFileProperties(ingestInfoTxt);
-
-				// add stores.txt
-				File storesTxt = new File(ingestFileS, "stores.txt");
-				if (!storesTxt.exists()) {
-					throw new TException.INVALID_OR_MISSING_PARM(
-							MESSAGE + "stores.txt file not found: " + storesTxt.getAbsolutePath());
-				}
-				Properties storesProperties = PropertiesUtil.loadFileProperties(storesTxt);
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				storesProperties.store(out, null);
-				ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-
-				ingestProperties.load(in); // append
-			} else {
-				throw new TException.INVALID_OR_MISSING_PARM(
-						MESSAGE + "IngestService: ingest service path definition not found: " + matchIngest);
-			}
-
-			Enumeration e = ingestProperties.propertyNames();
-			while (e.hasMoreElements()) {
-				key = (String) e.nextElement();
-				value = ingestProperties.getProperty(key);
+			// Iterate through store vars for multiple access/store
+			Iterator<String> keys = storeConf.keys();
+			while(keys.hasNext()) {
+				value = storeConf.getString(key);
 
 				// store.1 .. store.n
 				if (key.startsWith(matchStorage)) {
@@ -210,12 +178,13 @@ public class IngestManager {
 					try {
 						urlValue = new URL(value);
 					} catch (MalformedURLException muex) {
-						throw new TException.INVALID_CONFIGURATION(
-								"store.n parameter (stores.txt) is not a valid URL: " + value);
+						throw new TException.INVALID_CONFIGURATION("store.n parameter (stores.txt) is not a valid URL: " + value);
 					}
 
 					m_store.put(id, urlValue);
 				}
+
+				// Needed still?
 				if (key.equals(defaultIDKey) && StringUtil.isNotEmpty(value)) {
 					try {
 						this.defaultStorage = Integer.parseInt(value);
@@ -232,37 +201,29 @@ public class IngestManager {
 					try {
 						urlValue = new URL(value);
 					} catch (MalformedURLException muex) {
-						throw new TException.INVALID_CONFIGURATION(
-								"access.n parameter (stores.txt) is not a valid URL: " + value);
+						throw new TException.INVALID_CONFIGURATION("access.n parameter (stores.txt) is not a valid URL: " + value);
 					}
 
 					m_access.put(id, urlValue);
 				}
 
-				// localID service
-				if (key.startsWith(matchLocalID)) {
-					m_localID = value;
-				}
-
-				// admin notification
-				if (key.startsWith(matchAdmin)) {
-					for (String recipient : value.split(";")) {
-						m_admin.add((String) recipient);
-					}
-				}
-
-				// ezid auth
-				if (key.startsWith(matchEZID)) {
-					m_ezid = value;
-				}
-
-				// persistent URL
-				if (key.startsWith(matchPURL)) {
-					m_purl = value;
-					if (!m_purl.endsWith("/"))
-						m_purl += "/";
-				}
 			}
+
+			// localID
+			m_localID = storeConf.getString(matchLocalID);
+
+			// admin 
+			value = ingestConf.getString(matchAdmin);
+			for (String recipient : value.split(";")) {
+				m_admin.add((String) recipient);
+			}
+
+			// ezid 
+			m_ezid = ingestConf.getString(matchEZID);
+
+			// purl
+			m_purl = ingestConf.getString(matchPURL);
+			if (!m_purl.endsWith("/")) m_purl += "/";
 
 		} catch (TException tex) {
 			throw tex;
@@ -702,29 +663,27 @@ public class IngestManager {
 		String TARGETID = "target";
 		String SERVICEDESCRIPTION = "description";
 		String SERVICESCHEME = "service-scheme";
-		// String SERVICECUST = "customer-support";
 		String NODESCHEME = "node-scheme";
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-		String serviceNameS = ingestProperties.getProperty(SERVICENAME);
+           try {
+		String serviceNameS = ingestConf.getString(SERVICENAME);
 		if (serviceNameS != null) {
 			ingestState.setServiceName(serviceNameS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SERVICENAME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICENAME + " parameter is missing from ingest-info.txt");
 		}
 
-		String serviceIDS = ingestProperties.getProperty(SERVICEID);
+		String serviceIDS = ingestConf.getString(SERVICEID);
 		if (serviceIDS != null) {
 			ingestState.setServiceID(serviceIDS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SERVICEID + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is missing from ingest-info.txt");
 		}
 
-		String targetIDS = ingestProperties.getProperty(TARGETID);
+		String targetIDS = ingestConf.getString(TARGETID);
 		if (targetIDS == null) {
 			targetIDS = "http://merritt.cdlib.org"; // default
 			if (DEBUG)
@@ -734,42 +693,36 @@ public class IngestManager {
 		}
 		ingestState.setTargetID(targetIDS);
 
-		String serviceScehmeS = ingestProperties.getProperty(SERVICESCHEME);
+		String serviceScehmeS = ingestConf.getString(SERVICESCHEME);
 		if (serviceScehmeS != null) {
 			ingestState.setServiceVersion(serviceScehmeS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SERVICESCHEME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICESCHEME + " parameter is missing from ingest-info.txt");
 		}
 
-		// ingestState.setServiceCustomerSupport(ingestProperties.getProperty(SERVICECUST));
-
-		String accessServiceUrlS = ingestProperties.getProperty(ACCESSURI);
+		String accessServiceUrlS = ingestConf.getString(ACCESSURI);
 		if (accessServiceUrlS != null) {
 			try {
 				ingestState.setAccessServiceURL(new URL(accessServiceUrlS));
 			} catch (MalformedURLException muex) {
-				throw new TException.INVALID_CONFIGURATION(
-						"[error] " + MESSAGE + ACCESSURI + " parameter is not a valid URL");
+				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not a valid URL");
 			}
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + ACCESSURI + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is missing from ingest-info.txt");
 		}
 
-		String supportServiceUrlS = ingestProperties.getProperty(SUPPORTURI);
+		String supportServiceUrlS = ingestConf.getString(SUPPORTURI);
 		if (supportServiceUrlS != null) {
 			try {
 				ingestState.setSupportServiceURL(new URL(supportServiceUrlS));
 			} catch (MalformedURLException muex) {
-				throw new TException.INVALID_CONFIGURATION(
-						"[error] " + MESSAGE + SUPPORTURI + "Support-uri parameter is not a valid URL");
+				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + "Support-uri parameter is not a valid URL");
 			}
 		} else {
 			throw new TException.INVALID_CONFIGURATION(
 					"[error] " + MESSAGE + SUPPORTURI + " parameter is missing from ingest-info.txt");
 		}
-		String mailHost = ingestProperties.getProperty(MAILHOST);
+		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
 			if (DEBUG)
@@ -778,6 +731,15 @@ public class IngestManager {
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
+            } catch (TException me) {
+                    throw me;
+
+            } catch (Exception ex) {
+                    System.out.println(StringUtil.stackTrace(ex));
+                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+                    throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+            }
+
 	}
 
 	protected synchronized BatchState updateBatch(BatchState sourceBatchState, IngestRequest ingestRequest,

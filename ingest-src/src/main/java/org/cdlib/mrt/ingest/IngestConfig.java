@@ -171,7 +171,7 @@ public class IngestConfig
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new TException(ex);
+            throw new TException.INVALID_CONFIGURATION(MESSAGE + "Unable to locate configuration");
         }
     }
 

@@ -32,6 +32,7 @@ package org.cdlib.mrt.ingest.service;
 
 import java.util.Properties;
 
+import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.IngestManager;
 import org.cdlib.mrt.ingest.QueueManager;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -68,11 +69,10 @@ public class IngestServiceAbs
      * @throws org.cdlib.mrt.utility.MException
      */
     public static IngestService getIngestService(
-            LoggerInf logger,
-            Properties confProp)
+            IngestConfig ingestConfig)
         throws TException
     {
-        IngestService ingestService = new IngestService(logger, confProp);
+        IngestService ingestService = new IngestService(ingestConfig);
         return ingestService;
     }
 
@@ -83,17 +83,22 @@ public class IngestServiceAbs
      * @throws TException process exception
      */
     public IngestServiceAbs(
-            LoggerInf logger,
-            Properties confProp)
+            IngestConfig ingestConfig)
         throws TException
     {
-        if (confProp == null) {
+        if (ingestConfig == null) {
             throw new TException.INVALID_OR_MISSING_PARM(
-                    MESSAGE + "Required confProp is missing");
+                    MESSAGE + "Required Ingest Configuration data is missing");
         }
-        this.logger = logger;
-        this.ingestManager = IngestManager.getIngestManager(logger, confProp);
-        this.queueManager = QueueManager.getQueueManager(logger, confProp);
+        this.logger = ingestConfig.getLogger();
+        this.ingestManager = IngestManager.getIngestManager(
+		ingestConfig.getLogger(),
+		ingestConfig.getStoreConf(),
+		ingestConfig.getIngestConf());
+        this.queueManager = QueueManager.getQueueManager(
+		ingestConfig.getLogger(),
+		ingestConfig.getQueueConf(),
+		ingestConfig.getIngestConf());
     }
 
     /**
