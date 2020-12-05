@@ -144,7 +144,7 @@ public class IngestConfig
        throws TException
     {
         try {
-            String propName = "resources/ingestConfig.yml";
+            String propName = "resources/ingestConfig.yaml";
             Test test=new Test();
             InputStream propStream =  test.getClass().getClassLoader().getResourceAsStream(propName);
             String ingestYaml = StringUtil.streamToString(propStream, "utf8");
