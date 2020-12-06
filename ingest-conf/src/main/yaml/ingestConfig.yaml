@@ -18,20 +18,20 @@ ingest:
     localID: "{!SSM: ingest/config/localID}"
 
   queue-info:
-    QueueService: "{!SSM: inventory/zoo/queueService}"
+    QueueService: "{!SSM: inventory/zoo/queueService}"
     QueueName: "/ingest.{!ENV: WORKERNAME}.1"
-    InventoryName: "{!SSM: inventory/zoo/queueName"
+    InventoryName: "{!SSM: inventory/zoo/queueName}"
     QueueHoldFile: "{!SSM: ingest/config/QueueHoldFile}"
     PollingInterval: "{!SSM: ingest/config/PollingInterval !DEFAULT: 10}"
     NumThreads: "{!SSM: ingest/config/numThreads !DEFAULT: 5}"
 
   logger-info:
-    MessageMaximumLevel: "{!SSM: ingest/config/log/messageMaximumLevel !DEFAULT: 5}"
-    MessageMaximumError: "{!SSM: ingest/config/log/messageMaximumError !DEFAULT: 10}"
-    Path: "{!SSM: ingest/config/log/path !DEFAULT: /dpr2/ingest_home/logs}"
-    Name: "ingest"
-    Qualifier: "yyMMdd"
-    Trace: 5
+    messageMaximumLevel: "{!SSM: ingest/config/log/messageMaximumLevel !DEFAULT: 5}"
+    messageMaximumError: "{!SSM: ingest/config/log/messageMaximumError !DEFAULT: 10}"
+    path: "{!SSM: ingest/config/log/path !DEFAULT: /dpr2/ingest_home/logs}"
+    name: "ingest"
+    qualifier: "yyMMdd"
+    trace: 5
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
 
 
@@ -46,7 +46,7 @@ ingest-docker:
     access-uri: "http://ingest:8080"
     ezid: "example:value"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
-    admin: 
+    admin: "test@email"
     purl: "http://n2t.net/"
     mail-host: "smtp"
 
@@ -60,14 +60,14 @@ ingest-docker:
     QueueName: "/ingest"
     InventoryName: "/mrt.inventory.full"
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
-    PollingInterval: 10
-    NumThreads: 5
+    PollingInterval: "10"
+    NumThreads: "5"
 
   logger-info:
-    MessageMaximumLevel: 5
-    MessageMaximumError: 10
-    Path: "example/log/path"
-    Name: "ingest"
-    Qualifier: "yyMMdd"
-    Trace: 5
+    messageMaximumLevel: 5
+    messageMaximumError: 10
+    path: "logs"
+    name: "ingest"
+    qualifier: "yyMMdd"
+    trace: 5
     ingestServicePath: "/tdr/ingest"

@@ -167,6 +167,7 @@ public class IngestManager {
 			// Iterate through store vars for multiple access/store
 			Iterator<String> keys = storeConf.keys();
 			while(keys.hasNext()) {
+				key = keys.next();
 				value = storeConf.getString(key);
 
 				// store.1 .. store.n
@@ -226,8 +227,10 @@ public class IngestManager {
 			if (!m_purl.endsWith("/")) m_purl += "/";
 
 		} catch (TException tex) {
+			tex.printStackTrace();
 			throw tex;
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			String msg = MESSAGE + " Exception:" + ex;
 			logger.logError(msg, 3);
 			logger.logError(StringUtil.stackTrace(ex), 0);

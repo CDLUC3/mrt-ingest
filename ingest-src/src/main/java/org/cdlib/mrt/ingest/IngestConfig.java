@@ -148,20 +148,19 @@ public class IngestConfig
             Test test=new Test();
             InputStream propStream =  test.getClass().getClassLoader().getResourceAsStream(propName);
             String ingestYaml = StringUtil.streamToString(propStream, "utf8");
-            // System.out.println("ingestYaml:\n" + ingestYaml);
+               // System.out.println("ingestYaml:\n" + ingestYaml);
             String ingInfoConfig = getYamlInfo();
-            // System.out.println("\n\n***table:\n" + ingInfoConfig);
+               // System.out.println("\n\n***table:\n" + ingInfoConfig);
             String rootPath = System.getenv("SSM_ROOT_PATH");
-            // System.out.append("\n\n***root:\n" + rootPath + "\n");
+               // System.out.append("\n\n***root:\n" + rootPath + "\n");
             SSMConfigResolver ssmResolver = new SSMConfigResolver();
             YamlParser yamlParser = new YamlParser(ssmResolver);
-            // System.out.println("\n\n***IngestYaml:\n" + ingestYaml);
+               System.out.println("Ingest Yaml:\n" + ingestYaml);
             LinkedHashMap<String, Object> map = yamlParser.parseString(ingestYaml);
             LinkedHashMap<String, Object> lmap = (LinkedHashMap<String, Object>)map.get(ingInfoConfig);
             if (lmap == null) {
                 throw new TException.INVALID_CONFIGURATION(MESSAGE + "Unable to locate configuration");
             }
-            //System.out.println("lmap not null");
             yamlParser.loadConfigMap(lmap);
             yamlParser.resolveValues();
             return yamlParser.getJson();
@@ -180,10 +179,10 @@ public class IngestConfig
     {
         String ingInfoConfig = System.getenv("which-ingest");
         if (ingInfoConfig == null) {
-            ingInfoConfig = System.getenv("MERRITT_INGEST_INFO");
+            ingInfoConfig = System.getenv("MERRITT_INGEST");
         }
         if (ingInfoConfig == null) {
-            ingInfoConfig = "inv-info";
+            ingInfoConfig = "ingest-info";
         }
         return ingInfoConfig;
     }
