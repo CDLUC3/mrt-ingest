@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Builds the CDL Framework --><!-- Assumes: Java source is at '../src' --><!-- Builds:  Java classes at '../classes' --><!-- Builds:  Jar at '../lib' --><!--  -->
-<project basedir="." default="cleanup" name="buildstore">
-    <target name="-init">
-        <echo message="-init entered"/>
-        <property file="build.properties"/>
-    </target>
-
+<project basedir="." default="cleanup" name="buildingest">
     <target name="cleanup">
         <echo message="ingest cleanup entered"/>
-        <delete dir="../ingest-conf/src"/>
-        <delete dir="../ingest-conf/resources"/>
         <delete dir="../ingest-conf/target"/>
         <delete dir="../ingest-src/target"/>
-        <delete dir="../batch-war/target"/>
-        <delete dir="../batch-war/war"/>
+        <delete dir="../ingest-war/target"/>
+        <delete dir="../ingest-war/war"/>
     </target>
 </project>

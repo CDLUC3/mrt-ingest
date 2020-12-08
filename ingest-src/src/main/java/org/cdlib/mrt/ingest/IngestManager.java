@@ -179,7 +179,7 @@ public class IngestManager {
 					try {
 						urlValue = new URL(value);
 					} catch (MalformedURLException muex) {
-						throw new TException.INVALID_CONFIGURATION("store.n parameter (stores.txt) is not a valid URL: " + value);
+						throw new TException.INVALID_CONFIGURATION("store.n parameter is not a valid URL: " + value);
 					}
 
 					m_store.put(id, urlValue);
@@ -202,7 +202,7 @@ public class IngestManager {
 					try {
 						urlValue = new URL(value);
 					} catch (MalformedURLException muex) {
-						throw new TException.INVALID_CONFIGURATION("access.n parameter (stores.txt) is not a valid URL: " + value);
+						throw new TException.INVALID_CONFIGURATION("access.n parameter is not a valid URL: " + value);
 					}
 
 					m_access.put(id, urlValue);
@@ -372,7 +372,7 @@ public class IngestManager {
 		ProfileState profileState = null;
 		JobState jobState = null;
 		try {
-			// add service state properties (ingest-info.txt) to ingest request
+			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
 
 			// assign preliminary job info
@@ -679,21 +679,21 @@ public class IngestManager {
 		if (serviceNameS != null) {
 			ingestState.setServiceName(serviceNameS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICENAME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICENAME + " parameter is not available");
 		}
 
 		String serviceIDS = ingestConf.getString(SERVICEID);
 		if (serviceIDS != null) {
 			ingestState.setServiceID(serviceIDS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is not available");
 		}
 
 		String targetIDS = ingestConf.getString(TARGETID);
 		if (targetIDS == null) {
 			targetIDS = "http://merritt.cdlib.org"; // default
 			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + TARGETID + " parameter is missing from ingest-info.txt");
+				System.err.println(MESSAGE + "[warn] " + TARGETID + " parameter is not available");
 			if (DEBUG)
 				System.err.println(MESSAGE + "[warn] " + TARGETID + " using default value: " + targetIDS);
 		}
@@ -703,7 +703,7 @@ public class IngestManager {
 		if (serviceScehmeS != null) {
 			ingestState.setServiceVersion(serviceScehmeS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICESCHEME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICESCHEME + " parameter is not available");
 		}
 
 		String accessServiceUrlS = ingestConf.getString(ACCESSURI);
@@ -714,7 +714,7 @@ public class IngestManager {
 				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not a valid URL");
 			}
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not available");
 		}
 
 		String supportServiceUrlS = ingestConf.getString(SUPPORTURI);
@@ -726,13 +726,13 @@ public class IngestManager {
 			}
 		} else {
 			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SUPPORTURI + " parameter is missing from ingest-info.txt");
+					"[error] " + MESSAGE + SUPPORTURI + " parameter is not available");
 		}
 		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
 			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is missing from ingest-info.txt");
+				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
 			if (DEBUG)
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}

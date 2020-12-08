@@ -274,7 +274,7 @@ public class QueueManager {
 	public BatchState submit(IngestRequest ingestRequest) throws Exception {
 		ProfileState profileState = null;
 		try {
-			// add service state properties (ingest-info.txt) to ingest request
+			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
 
 			// assign preliminary batch info
@@ -349,7 +349,7 @@ public class QueueManager {
 		if (serviceNameS != null) {
 			ingestState.setServiceName(serviceNameS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICENAME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICENAME + " parameter is not available");
 		}
 
 		// identifier
@@ -357,7 +357,7 @@ public class QueueManager {
 		if (serviceIDS != null) {
 			ingestState.setServiceID(SERVICEID);
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is not available");
 		}
 
 		// service-scheme
@@ -365,7 +365,7 @@ public class QueueManager {
 		if (serviceScehmeS != null) {
 			ingestState.setServiceVersion(serviceScehmeS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICESCHEME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICESCHEME + " parameter is not available");
 		}
 
 		// access-uri
@@ -377,7 +377,7 @@ public class QueueManager {
 				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not a valid URL");
 			}
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not available");
 		}
 
 		// support-uri
@@ -389,7 +389,7 @@ public class QueueManager {
 				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + "Support-uri parameter is not a valid URL");
 			}
 		} else {
-			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + " parameter is not available");
 		}
 
 		// mail-host
@@ -397,7 +397,7 @@ public class QueueManager {
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
 			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is missing from ingest-info.txt");
+				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
 			if (DEBUG)
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
