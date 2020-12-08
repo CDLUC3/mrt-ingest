@@ -38,6 +38,7 @@ import java.util.Properties;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.IdentifierState;
+import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.QueueState;
@@ -47,6 +48,8 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+
+import org.json.JSONObject;
 
 /**
  * IngestService
@@ -61,11 +64,10 @@ public class IngestService
 
 
     protected IngestService(
-            LoggerInf logger,
-            Properties confProp)
+	    IngestConfig ingestConfig)
         throws TException
     {
-        super(logger, confProp);
+        super(ingestConfig);
     }
 
     @Override
@@ -161,14 +163,14 @@ public class IngestService
     }
 
     @Override
-    public Properties getIngestServiceProps()
+    public JSONObject getIngestServiceConf()
     {
-        return ingestManager.getIngestServiceProps();
+        return ingestManager.getIngestServiceConf();
     }
 
     @Override
-    public Properties getQueueServiceProps()
+    public JSONObject getQueueServiceConf()
     {
-        return queueManager.getQueueServiceProps();
+        return queueManager.getQueueServiceConf();
     }
 }

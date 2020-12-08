@@ -17,7 +17,7 @@
       <module>ingest-init</module>
       <module>ingest-conf</module>
       <module>ingest-src</module>
-      <module>batch-war</module>
+      <module>ingest-war</module>
   </modules>
 
 </project>

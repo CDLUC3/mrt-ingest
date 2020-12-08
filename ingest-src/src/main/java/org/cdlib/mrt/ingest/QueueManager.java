@@ -87,6 +87,9 @@ import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 /**
  * Basic manager for Queuing Service
  * 
@@ -98,9 +101,8 @@ public class QueueManager {
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
 	private LoggerInf logger = null;
-	private Properties conf = null;
-	private Properties ingestProperties = null;
-	private Properties queueProperties = null;
+	private JSONObject queueConf = null;
+	private JSONObject ingestConf = null;
 	private String queueConnectionString = null;
 	private String queueNode = null;
 	private String inventoryNode = "/inv"; // default
@@ -109,23 +111,24 @@ public class QueueManager {
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
 
-	public Properties getQueueServiceProps() {
-		return queueProperties;
+	public JSONObject getQueueServiceConf() {
+		return queueConf;
 	}
 
-	protected QueueManager(LoggerInf logger, Properties conf) throws TException {
+	protected QueueManager(LoggerInf logger, JSONObject queueConf, JSONObject ingestConf) throws TException {
 		try {
 			this.logger = logger;
-			this.conf = conf;
-			init(conf);
+			this.queueConf = queueConf;
+			this.ingestConf = ingestConf;
+			init(queueConf, ingestConf);
 		} catch (TException tex) {
 			throw tex;
 		}
 	}
 
-	public static QueueManager getQueueManager(LoggerInf logger, Properties conf) throws TException {
+	public static QueueManager getQueueManager(LoggerInf logger, JSONObject queueConf, JSONObject ingestConf) throws TException {
 		try {
-			QueueManager queueManager = new QueueManager(logger, conf);
+			QueueManager queueManager = new QueueManager(logger, queueConf, ingestConf);
 			return queueManager;
 
 		} catch (TException tex) {
@@ -139,27 +142,19 @@ public class QueueManager {
 	}
 
 	/**
-	 * <pre>
 	 * Initialize the QueueManager
 	 * Using a set of Properties identify all storage references.
 	 *
-	*!!!! -------------- May defer to use store node/node ID housed in Profile definitions ------ !!!!
-	 * Properties:
-	 * "Storage.nnn=value" identifies a storage reference. The nnn is the numeric serviceID.
-	 * The value is either a file name (local) or is a URL (remote)
-	 *
-	 * "IDDefault=" is the default serviceID used for accessing a storage service.
-	 * ingest -> ingest-info.txt - primarily the Access-uri is used in the  getVersion link manifest
-	 *
-	 * </pre>
-	 * 
-	 * @param prop system properties used to resolve Storage references
+	 * @param configs system properties used to resolve Storage references
 	 * @throws TException process exceptions
 	 */
-	public void init(Properties prop) throws TException {
+	public void init(JSONObject queueConf, JSONObject ingestConf) throws TException {
 		try {
-			if (prop == null) {
-				throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Exception MFrame properties not set");
+			if (queueConf == null) {
+				throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Queue Config properties not set");
+			}
+			if (ingestConf == null) {
+				throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Ingest Config properties not set");
 			}
 
 			String key = null;
@@ -172,51 +167,19 @@ public class QueueManager {
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
 
-			ingestFileS = prop.getProperty(matchIngest);
-			if (ingestFileS != null) {
-				// load ingest-info.txt
-				File ingestInfoTxt = new File(ingestFileS, "ingest-info.txt");
-				if (!ingestInfoTxt.exists()) {
-					throw new TException.INVALID_OR_MISSING_PARM(
-							MESSAGE + "ingest-info.txt file not found: " + ingestInfoTxt.getAbsolutePath());
-				}
-				ingestProperties = PropertiesUtil.loadFileProperties(ingestInfoTxt);
+			this.ingestFileS = ingestConf.getString(matchIngest);
 
-				// add queue.txt
-				File queueTxt = new File(ingestFileS, "queue.txt");
-				if (!queueTxt.exists()) {
-					throw new TException.INVALID_OR_MISSING_PARM(
-							MESSAGE + "queue.txt file not found: " + queueTxt.getAbsolutePath());
-				}
-				queueProperties = PropertiesUtil.loadFileProperties(queueTxt);
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				queueProperties.store(out, null);
-				ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+			// QueueService - host1:2181,host2:2181
+			this.queueConnectionString = queueConf.getString(matchQueueService);
+			// QueueName - /ingest.ingest01.1
+			this.queueNode = queueConf.getString(matchQueueNode);
+			// InventoryName - /mrt.inventory.full
+			this.inventoryNode = queueConf.getString(matchInventoryNode);
 
-				ingestProperties.load(in); // append
-			} else {
-				throw new TException.INVALID_OR_MISSING_PARM(
-						MESSAGE + "IngestService: ingest service path definition not found: " + matchIngest);
-			}
-
-			// Queue and Ingest properties (ingest_info.txt/queue.txt)
-			Enumeration e = ingestProperties.propertyNames();
-			while (e.hasMoreElements()) {
-				key = (String) e.nextElement();
-				value = ingestProperties.getProperty(key);
-				if (key.equals(matchQueueService))
-					this.queueConnectionString = value;
-				if (key.equals(matchQueueNode))
-					this.queueNode = value;
-				if (key.equals(matchInventoryNode))
-					this.inventoryNode = value;
-
-				// admin notification
-				if (key.startsWith(matchAdmin)) {
-					for (String recipient : value.split(";")) {
-						m_admin.add((String) recipient);
-					}
-				}
+			// email list
+			value = ingestConf.getString(matchAdmin);
+			for (String recipient : value.split(";")) {
+				m_admin.add((String) recipient);
 			}
 
 		} catch (TException tex) {
@@ -311,7 +274,7 @@ public class QueueManager {
 	public BatchState submit(IngestRequest ingestRequest) throws Exception {
 		ProfileState profileState = null;
 		try {
-			// add service state properties (ingest-info.txt) to ingest request
+			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
 
 			// assign preliminary batch info
@@ -328,7 +291,7 @@ public class QueueManager {
 
 			// assign profile
 			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
-					ingestRequest.getQueuePath().getParentFile().getParent() + "/profiles"); // two levels down from
+					ingestFileS + "/profiles"); // two levels down from
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
@@ -370,76 +333,84 @@ public class QueueManager {
 	}
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
+	   try {
 		String SERVICENAME = "name";
 		String SERVICEID = "identifier";
 		String SERVICEDESCRIPTION = "description";
 		String SERVICESCHEME = "service-scheme";
-		// String SERVICECUST = "customer-support";
+		String SERVICECUST = "customer-support";
 		String NODESCHEME = "node-scheme";
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
-
-		String serviceNameS = ingestProperties.getProperty(SERVICENAME);
 		String MAILHOST = "mail-host";
+
+		// name
+		String serviceNameS = ingestConf.getString(SERVICENAME);
 		if (serviceNameS != null) {
 			ingestState.setServiceName(serviceNameS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SERVICENAME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICENAME + " parameter is not available");
 		}
 
-		String serviceIDS = ingestProperties.getProperty(SERVICEID);
+		// identifier
+		String serviceIDS = ingestConf.getString(SERVICEID); 
 		if (serviceIDS != null) {
-			ingestState.setServiceID(serviceIDS);
+			ingestState.setServiceID(SERVICEID);
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SERVICEID + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICEID + " parameter is not available");
 		}
 
-		String serviceScehmeS = ingestProperties.getProperty(SERVICESCHEME);
+		// service-scheme
+		String serviceScehmeS = ingestConf.getString(SERVICESCHEME);
 		if (serviceScehmeS != null) {
 			ingestState.setServiceVersion(serviceScehmeS);
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SERVICESCHEME + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SERVICESCHEME + " parameter is not available");
 		}
 
-		// ingestState.setServiceCustomerSupport(queueProperties.getProperty(SERVICECUST));
-
-		String accessServiceUrlS = ingestProperties.getProperty(ACCESSURI);
+		// access-uri
+		String accessServiceUrlS = ingestConf.getString(ACCESSURI);
 		if (accessServiceUrlS != null) {
 			try {
 				ingestState.setAccessServiceURL(new URL(accessServiceUrlS));
 			} catch (MalformedURLException muex) {
-				throw new TException.INVALID_CONFIGURATION(
-						"[error] " + MESSAGE + ACCESSURI + " parameter is not a valid URL");
+				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not a valid URL");
 			}
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + ACCESSURI + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + ACCESSURI + " parameter is not available");
 		}
 
-		String supportServiceUrlS = ingestProperties.getProperty(SUPPORTURI);
+		// support-uri
+		String supportServiceUrlS = ingestConf.getString(SUPPORTURI);
 		if (supportServiceUrlS != null) {
 			try {
 				ingestState.setSupportServiceURL(new URL(supportServiceUrlS));
 			} catch (MalformedURLException muex) {
-				throw new TException.INVALID_CONFIGURATION(
-						"[error] " + MESSAGE + SUPPORTURI + "Support-uri parameter is not a valid URL");
+				throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + "Support-uri parameter is not a valid URL");
 			}
 		} else {
-			throw new TException.INVALID_CONFIGURATION(
-					"[error] " + MESSAGE + SUPPORTURI + " parameter is missing from ingest-info.txt");
+			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + " parameter is not available");
 		}
-		String mailHost = ingestProperties.getProperty(MAILHOST);
+
+		// mail-host
+		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
 			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is missing from ingest-info.txt");
+				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
 			if (DEBUG)
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
+
+            } catch (TException me) {
+                    throw me;
+
+            } catch (Exception ex) {
+                    System.out.println(StringUtil.stackTrace(ex));
+                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+                    throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+            }
 	}
 
 	static Object createObject(String className) {

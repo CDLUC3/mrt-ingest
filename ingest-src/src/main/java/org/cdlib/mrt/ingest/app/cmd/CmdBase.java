@@ -39,6 +39,7 @@ import java.io.PrintStream;
 
 import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
+import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.service.IngestServiceAbs;
@@ -161,7 +162,7 @@ public abstract class CmdBase
         throws TException
     {
         this.logger = mFrame.getLogger();
-        this.ingestService = IngestServiceAbs.getIngestService(logger, mFrame.getProperties());
+        this.ingestService = IngestServiceAbs.getIngestService(IngestConfig.useYaml());
     }
 
     /**

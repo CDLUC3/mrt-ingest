@@ -30,10 +30,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.cdlib.mrt.ingest.app;
 
-import org.cdlib.mrt.utility.TFrameInit;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
+import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.service.IngestServiceAbs;
 import org.cdlib.mrt.utility.TException;
@@ -42,9 +42,11 @@ import org.cdlib.mrt.utility.TException;
  * @author mreyes
  */
 public class IngestServiceInit
-        extends TFrameInit
 {
     protected IngestServiceInf ingestService = null;
+    protected volatile IngestConfig ingestConfig = null;
+    protected ServletConfig servletConfig = null;
+
 
     /**
      * Get resolved ingest service
@@ -84,8 +86,7 @@ public class IngestServiceInit
     public IngestServiceInit(ServletConfig servletConfig, String serviceName)
             throws TException
     {
-        super(servletConfig, serviceName);
-        ingestService = IngestServiceAbs.getIngestService(
-                tFrame.getLogger(), tFrame.getProperties());
+        this.servletConfig = servletConfig;
+        ingestService = IngestServiceAbs.getIngestService(IngestConfig.useYaml());
     }
 }
