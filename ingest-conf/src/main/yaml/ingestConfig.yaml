@@ -3,14 +3,14 @@ ingest:
   ingest-info:
     name: "UC3 Ingest"
     identifier: "{!SSM: ingest/config/identifier"
-    target: "{!SSM: ingest/config/target"
+    target: "{!SSM: ingest/config/target}"
     description: "UC3 ingest micro-service"
     access-uri: "http://{!ENV: HOSTNAME}.cdlib.org:33121"
     ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
     service-scheme: "Ingest/0.1"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
     mail-host: "{!SSM: ingest/config/mail-host !DEFAULT: localhost}"
-    admin: "{SSM: ingest/config/admin}"
+    admin: "{!SSM: ingest/config/admin}"
     purl: "http://n2t.net/"
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
 

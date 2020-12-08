@@ -112,12 +112,12 @@ public class IngestConfig
             LoggerInf logger = ingestConfig.setLogger(loggerConf);
             ingestConfig.setLogger(logger);
 
-	    // ingestServicePath var
-	    ingestConfig.setServicePath(ingestConf.getString("ingestServicePath"));
-
 	    // Ingest config object (ingest-info)
             JSONObject ingestConf = jIngInfo.getJSONObject("ingest-info");
             ingestConfig.setIngestConf(ingestConf);
+	    // ingestServicePath var
+	    ingestConfig.setServicePath(loggerConf.getString("ingestServicePath"));
+
 
 	    // Store config object (store-info)
             JSONObject storeConf = jIngInfo.getJSONObject("store-info");
