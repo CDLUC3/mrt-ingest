@@ -100,7 +100,7 @@ public class IngestManager {
 	private String ingestFileS = null; // prop "IngestService"
 
 	public String getIngestServiceProp() {
-		return ingestFileS;
+		return this.ingestFileS;
 	}
 
 	public JSONObject getIngestServiceConf() {
@@ -218,6 +218,9 @@ public class IngestManager {
 			for (String recipient : value.split(";")) {
 				m_admin.add((String) recipient);
 			}
+
+			// ingestServicePath
+			this.ingestFileS = ingestConf.getString("ingestServicePath");
 
 			// ezid 
 			m_ezid = ingestConf.getString(matchEZID);

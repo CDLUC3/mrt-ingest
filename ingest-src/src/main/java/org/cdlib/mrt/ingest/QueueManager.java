@@ -167,7 +167,7 @@ public class QueueManager {
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
 
-			// ingestFileS = prop.getProperty(matchIngest);
+			this.ingestFileS = ingestConf.getString(matchIngest);
 
 			// QueueService - host1:2181,host2:2181
 			this.queueConnectionString = queueConf.getString(matchQueueService);
@@ -291,7 +291,7 @@ public class QueueManager {
 
 			// assign profile
 			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
-					ingestRequest.getQueuePath().getParentFile().getParent() + "/profiles"); // two levels down from
+					ingestFileS + "/profiles"); // two levels down from
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
