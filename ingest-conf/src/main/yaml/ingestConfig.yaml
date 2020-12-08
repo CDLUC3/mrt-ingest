@@ -9,6 +9,7 @@ ingest:
     ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
     service-scheme: "Ingest/0.1"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
+    mail-host: "{!SSM: ingest/config/mail-host !DEFAULT: localhost}"
     admin: "{SSM: ingest/config/admin}"
     purl: "http://n2t.net/"
 
@@ -28,7 +29,7 @@ ingest:
   logger-info:
     messageMaximumLevel: "{!SSM: ingest/config/log/messageMaximumLevel !DEFAULT: 5}"
     messageMaximumError: "{!SSM: ingest/config/log/messageMaximumError !DEFAULT: 10}"
-    path: "{!SSM: ingest/config/log/path !DEFAULT: /dpr2/ingest_home/logs}"
+    path: "{!SSM: ingest/config/log/path !DEFAULT: logs}"
     name: "ingest"
     qualifier: "yyMMdd"
     trace: 5
@@ -46,6 +47,7 @@ ingest-docker:
     access-uri: "http://ingest:8080"
     ezid: "example:value"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
+    mail-host: "{!SSM: ingest/config/mail-host !DEFAULT: localhost}"
     admin: "test@email"
     purl: "http://n2t.net/"
     mail-host: "smtp"
