@@ -116,7 +116,7 @@ public class IngestConfig
             JSONObject ingestConf = jIngInfo.getJSONObject("ingest-info");
             ingestConfig.setIngestConf(ingestConf);
 	    // ingestServicePath var
-	    ingestConfig.setServicePath(loggerConf.getString("ingestServicePath"));
+	    ingestConfig.setServicePath(ingestConf.getString("ingestServicePath"));
 
 
 	    // Store config object (store-info)
