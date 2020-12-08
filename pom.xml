@@ -14,7 +14,7 @@
   </properties>
 
   <modules>
-      <module>ingest-init</module 
+      <module>ingest-init</module>
       <module>ingest-conf</module>
       <module>ingest-src</module>
       <module>ingest-war</module>
