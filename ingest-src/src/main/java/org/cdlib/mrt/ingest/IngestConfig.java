@@ -150,12 +150,12 @@ public class IngestConfig
             String ingestYaml = StringUtil.streamToString(propStream, "utf8");
                // System.out.println("ingestYaml:\n" + ingestYaml);
             String ingInfoConfig = getYamlInfo();
-               // System.out.println("\n\n***table:\n" + ingInfoConfig);
             String rootPath = System.getenv("SSM_ROOT_PATH");
-               // System.out.append("\n\n***root:\n" + rootPath + "\n");
+            System.out.println("SSM_ROOT_PATH:" + rootPath);
             SSMConfigResolver ssmResolver = new SSMConfigResolver();
             YamlParser yamlParser = new YamlParser(ssmResolver);
-               System.out.println("Ingest Yaml:\n" + ingestYaml);
+            System.out.println("Ingest Table:" + ingInfoConfig);
+            System.out.println("Ingest Yaml:\n" + ingestYaml);
             LinkedHashMap<String, Object> map = yamlParser.parseString(ingestYaml);
             LinkedHashMap<String, Object> lmap = (LinkedHashMap<String, Object>)map.get(ingInfoConfig);
             if (lmap == null) {
