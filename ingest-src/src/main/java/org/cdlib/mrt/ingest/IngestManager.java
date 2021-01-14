@@ -88,6 +88,7 @@ public class IngestManager {
 	private LoggerInf logger = null;
         private JSONObject storeConf = null;
         private JSONObject ingestConf = null;
+        private JSONObject queueConf = null;
 	private Integer defaultStorage = null;
 	private URL ingestLink = null;
 	private boolean debugDump = false;
@@ -111,20 +112,21 @@ public class IngestManager {
 		return ingestLink;
 	}
 
-	protected IngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf) throws TException {
+	protected IngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf, JSONObject queueConf) throws TException {
 		try {
 			this.logger = logger;
 			this.storeConf = storeConf;
 			this.ingestConf = ingestConf;
-			init(storeConf, ingestConf);
+			this.queueConf = queueConf;
+			init(storeConf, ingestConf, queueConf);
 		} catch (TException tex) {
 			throw tex;
 		}
 	}
 
-	public static IngestManager getIngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf) throws TException {
+	public static IngestManager getIngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf, JSONObject queueConf) throws TException {
 		try {
-			IngestManager ingestManager = new IngestManager(logger, storeConf, ingestConf);
+			IngestManager ingestManager = new IngestManager(logger, storeConf, ingestConf, queueConf);
 			return ingestManager;
 
 		} catch (TException tex) {
@@ -144,7 +146,7 @@ public class IngestManager {
 	 * @param config system properties used to resolve Storage references
 	 * @throws TException process exceptions
 	 */
-	public void init(JSONObject storeConf, JSONObject ingestConf) throws TException {
+	public void init(JSONObject storeConf, JSONObject ingestConf, JSONObject queueConf) throws TException {
 		try {
                         if (storeConf == null) {
                                 throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Store Config properties not set");
@@ -564,8 +566,10 @@ public class IngestManager {
 							jobState.setExtra(batchState.grabTargetInventoryNode());
 						} else {
 							// not a batch or in recovery mode
-							jobState.setMisc(getProps(ingestRequest, "queue.txt").getProperty("QueueService"));
-							jobState.setExtra(getProps(ingestRequest, "queue.txt").getProperty("InventoryName"));
+                                                        System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
+                                                        jobState.setMisc(queueConf.getString("QueueService"));
+                                                        jobState.setExtra(queueConf.getString("InventoryName"));
+							jobState.setExtra(queueConf.getString("InventoryName"));
 						}
 					}
 

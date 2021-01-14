@@ -94,7 +94,8 @@ public class IngestServiceAbs
         this.ingestManager = IngestManager.getIngestManager(
 		ingestConfig.getLogger(),
 		ingestConfig.getStoreConf(),
-		ingestConfig.getIngestConf());
+		ingestConfig.getIngestConf(),
+		ingestConfig.getQueueConf());
         this.queueManager = QueueManager.getQueueManager(
 		ingestConfig.getLogger(),
 		ingestConfig.getQueueConf(),
