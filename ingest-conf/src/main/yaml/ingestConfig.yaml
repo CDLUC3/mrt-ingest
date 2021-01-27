@@ -1,8 +1,8 @@
 which-ingest: "{!ENV: MERRITT_INGEST !DEFAULT: ingest}"
 ingest:
   ingest-info:
-    name: "UC3 Ingest"
-    identifier: "{!SSM: ingest/config/identifier"
+    name: "{!SSM: ingest/config/name}"
+    identifier: "{!SSM: ingest/config/identifier}"
     target: "{!SSM: ingest/config/target}"
     description: "UC3 ingest micro-service"
     access-uri: "http://{!ENV: HOSTNAME}.cdlib.org:33121"
