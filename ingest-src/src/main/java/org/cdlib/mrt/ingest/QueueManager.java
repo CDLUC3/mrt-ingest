@@ -225,28 +225,38 @@ public class QueueManager {
 			try {
 				orderedChildren = distributedQueue.orderedChildren(null);
 			} catch (KeeperException.NoNodeException e) {
-				throw new NoSuchElementException();
+				orderedChildren = null;
+				// throw new NoSuchElementException();
 			}
-			for (String headNode : orderedChildren.values()) {
-				String path = String.format("%s/%s", distributedQueue.dir, headNode);
-				try {
-					byte[] data = zooKeeper.getData(path, false, null);
-					Item item = Item.fromBytes(data);
-					if (item.getStatus() != Item.PENDING)
-						continue;
+			if ( orderedChildren != null) {
+			   for (String headNode : orderedChildren.values()) {
+				   String path = String.format("%s/%s", distributedQueue.dir, headNode);
+				   try {
+				 	byte[] data = zooKeeper.getData(path, false, null);
+				   	Item item = Item.fromBytes(data);
 					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
 					ObjectInputStream ois = new ObjectInputStream(bis);
 					Properties p = (Properties) ois.readObject();
 
 					QueueEntryState queueEntryState = new QueueEntryState();
 					queueEntryState.setDate(item.getTimestamp().toString());
-					queueEntryState.setStatus("Pending");
+					if (item.getStatus() == Item.PENDING) 
+						queueEntryState.setStatus("Pending");
+					else if (item.getStatus() == Item.CONSUMED) 
+						queueEntryState.setStatus("Consumed");
+					else if (item.getStatus() == Item.FAILED) 
+						queueEntryState.setStatus("Failed");
+					else if (item.getStatus() == Item.COMPLETED) 
+						queueEntryState.setStatus("Completed");
+					else if (item.getStatus() == Item.DELETED) 
+						queueEntryState.setStatus("Deleted");
 					queueEntryState.setID(headNode);
 					queueEntryState.setJobID(p.getProperty("jobID"));
 					queueEntryState.setBatchID(p.getProperty("batchID"));
+					queueEntryState.setFileType(p.getProperty("type"));
 					queueEntryState.setUser(p.getProperty("submitter"));
 					queueEntryState.setProfile(p.getProperty("profile"));
-					queueEntryState.setName(p.getProperty("name"));
+					queueEntryState.setName(p.getProperty("filename"));
 					queueEntryState.setObjectCreator(p.getProperty("creator"));
 					queueEntryState.setObjectTitle(p.getProperty("title"));
 					queueEntryState.setObjectDate(p.getProperty("date"));
@@ -254,7 +264,13 @@ public class QueueManager {
 
 					queueState.addEntry(queueEntryState);
 				} catch (KeeperException.NoNodeException e) {
+					System.out.println("KeeperException.NoNodeException");
+					System.out.println(StringUtil.stackTrace(e));
+				} catch (Exception ex) { 
+					System.out.println("Exception");
+					System.out.println(StringUtil.stackTrace(ex));
 				}
+			    }
 			}
 
 			return queueState;

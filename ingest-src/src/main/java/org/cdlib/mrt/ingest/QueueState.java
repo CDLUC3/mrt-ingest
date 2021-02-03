@@ -76,15 +76,16 @@ public class QueueState
      * retrieve all entries
      * @return queue entries
      */
+/*
     public Vector<QueueEntryState> getQueueEntries() {
         return this.queueEntries;
     }
+*/
 
     /**
      * get all entries
      * @return queue entries
      */
-/*
     public  LinkedHashList<String, String> getQueueEntries() {
         LinkedHashList<String, String> queueRef = new LinkedHashList<String, String>(5);
         QueueEntryState queueEntry = null;
@@ -94,7 +95,6 @@ public class QueueState
         }
 	return queueRef;
     }
-*/
 
     public String dump(String header)
     {
