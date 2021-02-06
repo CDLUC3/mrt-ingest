@@ -41,6 +41,7 @@ import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.QueueState;
+import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 
