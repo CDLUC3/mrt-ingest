@@ -33,7 +33,7 @@ import java.io.File;
 import java.lang.String;
 import java.util.Vector;
 
-import org.cdlib.mrt.ingest.HandlerState;
+import org.cdlib.mrt.ingest.ProfileFile;
 import org.cdlib.mrt.utility.StateInf;
 
 /**
@@ -47,5 +47,5 @@ public interface ProfilesStateInf
      * Get profiles
      * @return Vector profiles
      */
-    public Vector<File> getProfiles();
+    public Vector<ProfileFile> getProfiles();
 }

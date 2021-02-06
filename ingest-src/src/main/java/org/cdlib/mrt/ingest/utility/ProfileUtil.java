@@ -40,6 +40,7 @@ import java.lang.NumberFormatException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,6 +55,7 @@ import org.cdlib.mrt.ingest.HandlerState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
+import org.cdlib.mrt.ingest.ProfileFile;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
@@ -325,14 +327,20 @@ public class ProfileUtil
         throws TException
     {
 	ProfilesState profilesState = new ProfilesState();
-	Vector<File> profiles = new Vector<File>();
+	Vector<File> files = new Vector<File>();
 
 	try {
 		File profileDirectory = new File(profileDir);
-		FileUtil.getDirectoryFiles(profileDirectory, profiles);
+		FileUtil.getDirectoryFiles(profileDirectory, files);
 
-		profilesState.setProfiles(profiles);
+        	Iterator<File> iterator = files.iterator();
+        	while(iterator.hasNext()) {
+			File profile = iterator.next();
+			profilesState.addProfileInstance(profile);
+		}
+
 		return profilesState;
+
 	} catch (TException tex) {
 	    throw tex;
 	} catch (Exception ex) {

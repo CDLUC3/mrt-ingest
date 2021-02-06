@@ -29,74 +29,47 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.Iterator;
-import java.lang.String;
-import java.util.Vector;
 
-import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.ProfileFile;
+import java.io.File;
+import java.lang.String;
+import java.net.URL;
 import org.cdlib.mrt.utility.StateInf;
 
 /**
- * Profiles State information
+ * Simple File wrapper needed for formatter
  * @author mreyes
  */
-public class ProfilesState
-        implements ProfilesStateInf, StateInf, Serializable
-
+public class ProfileFile
+        implements StateInf
 {
 
-    private static final String NAME = "ProfilesState";
-    private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
+    protected File file = null;
 
-
-    private Vector<ProfileFile> profiles = new Vector<ProfileFile>();
-
-
-    /**
-     * Get profile 
-     * @return Vector profile names
-     */
-    public Vector<ProfileFile> getProfiles() {
-        return this.profiles;
+    // constructor
+    ProfileFile() {
     }
 
-    /**
-     * Set profile 
-     * @param ProfileFile profiles
-     */
-    public void setProfiles(Vector<ProfileFile> profiles) {
-	this.profiles = profiles;
-    }
-
-    /**
-     * Add a profile instance to list
-     * @param File profile  to be added
-     */
-    public void addProfileInstance(File profile)
+    public String getFile()
     {
-        if (profile == null) return;
-        ProfileFile file = new ProfileFile();
-        file.setFile(profile);
-        profiles.add(file);
+        return file.getName();
+    }
+
+    public String getSize()
+    {
+        return String.valueOf(file.length());
+    }
+
+    /**
+     * Set file
+     * @param File file
+     */
+    public void setFile(File file) {
+        this.file = file;
     }
 
     public String dump(String header)
     {
-        // gather profile names
-        String outProfile = "\n\n";
-        Iterator<ProfileFile> iterator = profiles.iterator();
-        while(iterator.hasNext()) {
-            ProfileFile profile = iterator.next();
-            outProfile = outProfile + profile.toString() + "\n";
-        }
-        outProfile = outProfile.substring(1, outProfile.length() - 1 );
-
-        return header  + "\n\n"
-                + " profileNames: " + outProfile + "\n";
+        return header
+                + " - file=" + getFile();
     }
-
 }
