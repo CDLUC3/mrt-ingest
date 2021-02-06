@@ -43,14 +43,17 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Vector;
 
 import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.HandlerState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
@@ -317,6 +320,29 @@ public class ProfileUtil
             throw new TException.GENERAL_EXCEPTION(err);
 	}
     }
+
+    public static synchronized ProfilesState getProfiles(String profileDir)
+        throws TException
+    {
+	ProfilesState profilesState = new ProfilesState();
+	Vector<File> profiles = new Vector<File>();
+
+	try {
+		File profileDirectory = new File(profileDir);
+		FileUtil.getDirectoryFiles(profileDirectory, profiles);
+
+		profilesState.setProfiles(profiles);
+		return profilesState;
+	} catch (TException tex) {
+	    throw tex;
+	} catch (Exception ex) {
+            String err = MESSAGE + "error getting profiles - Exception:" + ex;
+
+            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(err);
+	}
+    }
+
 
     // write serialize object to disk
     public static synchronized void writeTo(BatchState batchState, File targetDir)

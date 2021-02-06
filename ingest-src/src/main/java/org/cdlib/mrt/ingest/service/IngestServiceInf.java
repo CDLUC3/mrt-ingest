@@ -115,6 +115,14 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Get profiles state information 
+     * @return ProfilesState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public ProfilesState getProfilesState()
+        throws TException;
+
+    /**
      * Get ingest home
      * @return IngestService string
      * @throws TException Exception condition during storage service procssing

@@ -41,6 +41,7 @@ import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
@@ -147,6 +148,13 @@ public class IngestService
         throws TException
     {
         return ingestManager.getStatus(type);
+    }
+
+    @Override
+    public ProfilesState getProfilesState()
+        throws TException
+    {
+        return ingestManager.getProfilesState();
     }
 
     @Override
