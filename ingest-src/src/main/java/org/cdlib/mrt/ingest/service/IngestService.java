@@ -154,7 +154,7 @@ public class IngestService
     public ProfilesState getProfilesState()
         throws TException
     {
-        return ingestManager.getProfilesState();
+        return admin.getProfilesState();
     }
 
     @Override
