@@ -278,9 +278,4 @@ public class AdminManager {
 	}
 
 
-	public static class Ignorer implements Watcher {
-		public void process(WatchedEvent event) {
-		}
-	}
-
 }
