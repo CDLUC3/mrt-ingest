@@ -173,7 +173,7 @@ public class JerseyPost extends JerseyBase
     @GET
     @Path("/queue")
     public Response getQueueState(
-            @DefaultValue("xhtml") @QueryParam("t") String formatType,
+            @DefaultValue("json") @QueryParam("t") String formatType,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -211,7 +211,7 @@ public class JerseyPost extends JerseyBase
     @GET
     @Path("/profiles")
     public Response getProfilesState(
-            @DefaultValue("xhtml") @QueryParam("t") String formatType,
+            @DefaultValue("json") @QueryParam("t") String formatType,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
