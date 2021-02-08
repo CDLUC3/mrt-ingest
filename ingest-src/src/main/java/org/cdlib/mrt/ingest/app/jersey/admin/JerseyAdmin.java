@@ -137,7 +137,7 @@ public class JerseyAdmin extends JerseyBase
     // Get queue state 
     // need to also support state/queue/job/..
     @GET
-    @Path("/queue")
+    @Path("/queues")
     public Response getQueueState(
             @DefaultValue("json") @QueryParam("t") String formatType,
             @Context HttpServletRequest request,
