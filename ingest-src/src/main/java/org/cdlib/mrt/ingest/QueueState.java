@@ -53,7 +53,7 @@ public class QueueState
         implements QueueStateInf, StateInf, Serializable
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>(5);
+    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
 
 
     /**
@@ -76,25 +76,20 @@ public class QueueState
      * retrieve all entries
      * @return queue entries
      */
-/*
     public Vector<QueueEntryState> getQueueEntries() {
         return this.queueEntries;
     }
-*/
 
     /**
-     * get all entries
+     * add queue entry
      * @return queue entries
      */
-    public  LinkedHashList<String, String> getQueueEntries() {
-        LinkedHashList<String, String> queueRef = new LinkedHashList<String, String>(5);
-        QueueEntryState queueEntry = null;
-        for (int i=0; i < queueEntries.size(); i++) {
-            queueEntry = queueEntries.get(i);
-            if (queueEntry != null) queueRef.put("queueEntry", queueEntry.toString());
-        }
-	return queueRef;
+    public void addQueueEntry(QueueEntryState queueEntry)
+    {
+        if (queueEntry == null) return;
+        queueEntries.add(queueEntry);
     }
+
 
     public String dump(String header)
     {

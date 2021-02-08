@@ -45,8 +45,6 @@ public interface QueueStateInf
      * Get queue entries
      * @return LinkedHashList<String, String> entries
      */
-    //public Vector<QueueEntryState> getQueueEntries(); 
-    public LinkedHashList<String, String> getQueueEntries(); 
-
+    public Vector<QueueEntryState> getQueueEntries(); 
 
 }
