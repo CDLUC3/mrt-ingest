@@ -61,6 +61,27 @@
     </servlet>
 
     <servlet>
+        <servlet-name>Jersey Admin Web Application</servlet-name>
+        <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>com.sun.jersey.config.property.packages</param-name>
+            <param-value>org.cdlib.mrt.ingest.app.jersey.admin</param-value>
+        </init-param>
+        <init-param>
+            <param-name>loggerProperties</param-name>
+            <param-value>resources/TIngestLogger.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>serviceProperties</param-name>
+            <param-value>resources/TIngestService.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localProperties</param-name>
+            <param-value>resources/TIngestServiceLocal.properties</param-value>
+        </init-param>
+    </servlet>
+
+    <servlet>
         <servlet-name>Consumer Daemon</servlet-name>
         <servlet-class>org.cdlib.mrt.ingest.consumer.Consumer</servlet-class>
         <init-param>
@@ -86,7 +107,10 @@
         <servlet-name>Jersey Batch Web Application</servlet-name>
         <url-pattern>/poster/*</url-pattern>
     </servlet-mapping>
-
+    <servlet-mapping>
+        <servlet-name>Jersey Admin Web Application</servlet-name>
+        <url-pattern>/admin/*</url-pattern>
+    </servlet-mapping>
 
 
 </web-app>

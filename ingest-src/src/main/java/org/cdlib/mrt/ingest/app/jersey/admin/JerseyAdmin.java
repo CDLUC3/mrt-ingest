@@ -27,7 +27,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-package org.cdlib.mrt.ingest.app.jersey.post;
+package org.cdlib.mrt.ingest.app.jersey.admin;
 
 import com.sun.jersey.spi.CloseableService;
 
@@ -61,14 +61,14 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Thin Jersey layer for Post servlet
+ * Thin Jersey layer for Admin servlet
  * @author mreyes
  */
 @Path ("/")
-public class JerseyPost extends JerseyBase
+public class JerseyAdmin extends JerseyBase
 {
 
-    protected static final String NAME = "JerseyPost";
+    protected static final String NAME = "JerseyAdmin";
     protected static final String MESSAGE = NAME + ": ";
     protected static final FormatterInf.Format DEFAULT_OUTPUT_FORMAT = FormatterInf.Format.xml;
     protected static final boolean DEBUG = false;
@@ -134,13 +134,12 @@ public class JerseyPost extends JerseyBase
     }
 
 
-    // Get job status
-    // NOT YET SUPPORTED
+    // Get queue state 
+    // need to also support state/queue/job/..
     @GET
-    @Path("/status")
-    public Response getBatchStates(
-            @QueryParam("t") String formatType,
-            @DefaultValue("FAILED") @QueryParam("f") String type,
+    @Path("/queue")
+    public Response getQueueState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -148,13 +147,19 @@ public class JerseyPost extends JerseyBase
     {
         LoggerInf logger = null;
         try {
-            formatType = processFormatType(request.getHeader("Accept"), formatType);	// xml default
-            log("getBatchStates entered:" + " - formatType=" + formatType);
+            log("processing getQueueState");
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
 
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getStatus(type);
+            StateInf responseState = ingestService.getQueueState();
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
@@ -168,123 +173,42 @@ public class JerseyPost extends JerseyBase
     }
 
 
-    // Update object 
-    // No object ID supplied in URL
-    @POST
-    @Path("{request: update}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
-    public Response update(
-	    @Context HttpServletRequest request,
+    // Get profiles state
+    @GET
+    @Path("/profiles")
+    public Response getProfilesState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
         throws TException
     {
-        log("processing update(no ID, multi-part)");
-
-        // Accept is overridden by responseForm form parm
-        String responseForm = "";
+        LoggerInf logger = null;
         try {
-            responseForm = processFormatType(request.getHeader("Accept"), "");
-        } catch (Exception e) {}
-        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+            log("processing getProfilesState");
 
-	IngestRequest ingestRequest = new IngestRequest();
-        ingestRequest.setResponseForm(responseForm);
-        ingestRequest.getJob().setPrimaryID(null);
-        ingestRequest.setUpdateFlag(true);
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
 
-        return submitPost(ingestRequest, request, cs, sc);
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getProfilesState();
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
     }
 
-
-    // Update object 
-    // Object ID supplied in URL
-    @POST
-    @Path("{request: update}/{scheme}/{shoulder}/{objectid}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
-    public Response update(
-            @PathParam("scheme") String scheme,
-            @PathParam("shoulder") String shoulder,
-            @PathParam("objectid") String object,
-	    @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        log("processing update (ID, multi-part)");
-
-        // Accept is overridden by responseForm form parm
-        String responseForm = "";
-        try {
-            responseForm = processFormatType(request.getHeader("Accept"), "");
-        } catch (Exception e) {}
-        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-	IngestRequest ingestRequest = new IngestRequest();
-        ingestRequest.setResponseForm(responseForm);
-        ingestRequest.getJob().setPrimaryID(scheme + "/" + shoulder + "/" + object);
-        ingestRequest.setUpdateFlag(true);
-
-        return submitPost(ingestRequest, request, cs, sc);
-    }
-
-
-    // Submit entire object 
-    // No object ID supplied in URL
-    @POST
-    @Path("{request: submit|add}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
-    public Response submit(
-	    @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        log("processing submit (no ID, multi-part)");
-
-        // Accept is overridden by responseForm form parm
-        String responseForm = "";
-        try {
-            responseForm = processFormatType(request.getHeader("Accept"), "");
-        } catch (Exception e) {}
-        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-	IngestRequest ingestRequest = new IngestRequest();
-        ingestRequest.setResponseForm(responseForm);
-        ingestRequest.getJob().setPrimaryID(null);
-
-        return submitPost(ingestRequest, request, cs, sc);
-    }
-
-
-    // Submit entire object 
-    // Object ID supplied in URL
-    @POST
-    @Path("{request: submit|add}/{scheme}/{shoulder}/{objectid}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)	// Container, component or manifest file
-    public Response submit(
-            @PathParam("scheme") String scheme,
-            @PathParam("shoulder") String shoulder,
-            @PathParam("objectid") String object,
-	    @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        log("processing submit (ID, multi-part)");
-
-        // Accept is overridden by responseForm form parm
-        String responseForm = "";
-        try {
-            responseForm = processFormatType(request.getHeader("Accept"), "");
-        } catch (Exception e) {}
-        if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-	IngestRequest ingestRequest = new IngestRequest();
-        ingestRequest.setResponseForm(responseForm);
-        ingestRequest.getJob().setPrimaryID(scheme + "/" + shoulder + "/" + object);
-
-        return submitPost(ingestRequest, request, cs, sc);
-    }
 
 }
