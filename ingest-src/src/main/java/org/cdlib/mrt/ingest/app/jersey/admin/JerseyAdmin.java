@@ -210,5 +210,42 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
+    // Profile state
+    @GET
+    @Path("/profile/{profile}")
+    public Response getProfileState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("profile") String profile,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing getProfileState" + profile);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getProfileState(profile);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
 
 }

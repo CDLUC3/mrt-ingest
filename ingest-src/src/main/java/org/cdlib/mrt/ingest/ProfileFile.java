@@ -54,11 +54,6 @@ public class ProfileFile
         return file.getName();
     }
 
-    public String getSize()
-    {
-        return String.valueOf(file.length());
-    }
-
     /**
      * Set file
      * @param File file

@@ -180,6 +180,22 @@ public class AdminManager {
 		}
 	}
 
+	public ProfileState getProfileState(String profile) throws TException {
+		try {
+			ProfileState profileState = new ProfileState();
+			Identifier profileID = new Identifier(profile, Identifier.Namespace.Local);
+			profileState = ProfileUtil.getProfile(profileID, ingestFileS + "/profiles");
+
+			return profileState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
 	public ProfilesState getProfilesState() throws TException {
 		try {
 			ProfilesState profilesState = new ProfilesState();

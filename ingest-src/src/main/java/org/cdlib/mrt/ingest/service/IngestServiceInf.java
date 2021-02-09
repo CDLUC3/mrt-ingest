@@ -41,6 +41,7 @@ import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.QueueState;
+import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
@@ -113,6 +114,14 @@ public interface IngestServiceInf
      * @throws TException Exception condition during queue service processing
      */
     public QueueState getQueueState()
+        throws TException;
+
+    /**
+     * Get profile state information 
+     * @return ProfilesState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public ProfileState getProfileState(String profile)
         throws TException;
 
     /**
