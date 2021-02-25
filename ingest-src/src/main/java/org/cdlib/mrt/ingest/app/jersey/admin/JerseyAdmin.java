@@ -173,7 +173,7 @@ public class JerseyAdmin extends JerseyBase
     }
 
 
-    // Get profiles state
+    // Get profiles state - Names only
     @GET
     @Path("/profiles")
     public Response getProfilesState(
@@ -209,6 +209,45 @@ public class JerseyAdmin extends JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
+
+
+    // Get profiles state - Full
+    @GET
+    @Path("/profiles-full")
+    public Response getProfilesFullState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing getProfilesFullState");
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getProfilesFullState();
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
 
     // Profile state
     @GET

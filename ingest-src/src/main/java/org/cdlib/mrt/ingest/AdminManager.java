@@ -211,6 +211,21 @@ public class AdminManager {
 		}
 	}
 
+	public ProfilesFullState getProfilesFullState() throws TException {
+		try {
+			ProfilesFullState profilesFullState = new ProfilesFullState();
+			profilesFullState = ProfileUtil.getProfilesFull(ingestFileS + "/profiles");
+
+			return profilesFullState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
 	   try {
