@@ -260,7 +260,13 @@ public class ProfileUtil
 		    try {
 		        node = new Integer(value).intValue();
 		    } catch (java.lang.NumberFormatException nfe) {
-                        throw new TException.INVALID_CONFIGURATION("StorageNode parameter in profile is not a valid node ID: " + value);
+			// Check to see if valid Profile
+			if ( ! isValidProfile(profileName.getValue())) {
+			   // Must be a Template, set to nonsensical value
+		           node = new Integer(0).intValue();
+			} else {
+                           throw new TException.INVALID_CONFIGURATION("StorageNode parameter in profile is not a valid node ID: " + value);
+			}
 		    } 
 		} else if (key.startsWith(matchCreationDate)) {
                     if (DEBUG) System.out.println("[debug] creation date: " + value);
@@ -283,8 +289,15 @@ public class ProfileUtil
 			    throw new TException.INVALID_CONFIGURATION("aggregate not valid: " + value);
 		} else if (key.startsWith(matchOwner)) {
                     if (DEBUG) System.out.println("[debug] owner: " + value);
-		    if (! profileState.setOwner(value))
-			throw new TException.INVALID_CONFIGURATION("owner not a valid id: " + value);
+		    if (! profileState.setOwner(value)) {
+                        // Check to see if valid Profile
+                        if ( ! isValidProfile(profileName.getValue())) {
+                           // Must be a Template, set to non-sensical value
+			   profileState.setOwner("ark:/template/profile");
+			} else {
+			   throw new TException.INVALID_CONFIGURATION("owner not a valid id: " + value);
+			}
+		    }
 		} else if (key.startsWith(matchContext)) {
                     if (DEBUG) System.out.println("[debug] context: " + value);
 		    profileState.setContext(value);
@@ -415,6 +428,16 @@ public class ProfileUtil
         } catch (Exception e) {
             throw new Exception("[error] " + MESSAGE + " could not read object from disk: " + targetDir.getAbsolutePath());
         }
+   }
+
+    public static boolean isValidProfile(String profileName) {
+        try {
+	    // Convention that all profiles end with "_content"
+            return profileName.endsWith("_content");
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine if profile is valid: " + profileName);
+        }
+	return true;	// default
    }
 
     public static boolean isDemoMode(ProfileState profileState) {
