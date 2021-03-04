@@ -37,6 +37,7 @@ import java.util.Properties;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.JobsState;
@@ -170,6 +171,13 @@ public class IngestService
         throws TException
     {
         return adminManager.getProfilesFullState();
+    }
+
+    @Override
+    public BatchFileState getBatchFileState(String batchID)
+        throws TException
+    {
+        return adminManager.getBatchFileState(batchID);
     }
 
     @Override

@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
 
@@ -226,6 +227,39 @@ public class AdminManager {
 		}
 	}
 
+	public BatchFileState getBatchFileState(String batchID) throws TException {
+		try {
+			BatchFileState batchFileState = new BatchFileState();
+
+			File batchDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID);
+			if ( ! batchDir.isDirectory()) { 
+                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Batch direcotry: " + batchDir);
+			}
+		
+                	File[] files = batchDir.listFiles();
+                	for (int i=0; i<files.length; i++) {
+			   File file = files[i];
+			   String filename = file.getName();
+
+			   // Add jobs within batch
+			   if (file.isDirectory() && filename.startsWith("jid")) {
+				batchFileState.addBatchFile(new String(filename));
+			   // Add manifest if present
+			   } else if (file.isFile() && filename.endsWith(".checkm")) {
+				batchFileState.setBatchManifestName(filename);
+				batchFileState.setBatchManifestData(FileUtil.file2String(file));
+			   }
+			}				
+
+			return batchFileState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
 	   try {
