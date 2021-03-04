@@ -252,7 +252,8 @@ public class AdminManager {
 			}				
 
 			return batchFileState;
-
+                } catch (TException tex) {
+                        throw tex;
 		} catch (Exception ex) {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
