@@ -326,4 +326,43 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
+    // Job File State
+    @GET
+    @Path("/jid-erc/{batchID}/{jobID}")
+    public Response getJobFileState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("batchID") String batchID,
+            @PathParam("jobID") String jobID,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing getFileID: " + batchID);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getJobFileState(batchID, jobID);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
 }

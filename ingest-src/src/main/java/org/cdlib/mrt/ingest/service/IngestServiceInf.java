@@ -39,6 +39,7 @@ import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
+import org.cdlib.mrt.ingest.JobFileState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.QueueState;
@@ -148,6 +149,14 @@ public interface IngestServiceInf
      * @throws TException Exception condition during queue service processing
      */
     public BatchFileState getBatchFileState(String batchID)
+        throws TException;
+
+    /**
+     * Get Job info from files
+     * @return JobFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public JobFileState getJobFileState(String batchID, String jobID)
         throws TException;
 
     /**

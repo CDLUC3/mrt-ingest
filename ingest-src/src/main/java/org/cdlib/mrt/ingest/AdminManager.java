@@ -233,7 +233,7 @@ public class AdminManager {
 
 			File batchDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID);
 			if ( ! batchDir.isDirectory()) { 
-                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Batch direcotry: " + batchDir);
+                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Batch directory: " + batchDir);
 			}
 		
                 	File[] files = batchDir.listFiles();
@@ -243,7 +243,7 @@ public class AdminManager {
 
 			   // Add jobs within batch
 			   if (file.isDirectory() && filename.startsWith("jid")) {
-				batchFileState.addBatchFile(new String(filename));
+				batchFileState.addBatchFile(filename);
 			   // Add manifest if present
 			   } else if (file.isFile() && filename.endsWith(".checkm")) {
 				batchFileState.setBatchManifestName(filename);
@@ -252,6 +252,50 @@ public class AdminManager {
 			}				
 
 			return batchFileState;
+                } catch (TException tex) {
+                        throw tex;
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
+	public JobFileState getJobFileState(String batchID, String jobID) throws TException {
+		try {
+			JobFileState jobFileState = new JobFileState();
+
+			// Fixed location of ERC file
+			File jobFile = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID + "/system/mrt-erc.txt");
+			if ( ! jobFile.exists()) { 
+                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobFile.getAbsolutePath());
+			}
+		
+                	String[] lines = FileUtil.getLinesFromFile(jobFile);
+			boolean primaryID = true;
+                	for (int i=0; i<lines.length; i++) {
+			   String line = lines[i];
+			   String parts[] = line.split(":", 2);
+
+			   String key = parts[0];
+			   String value = parts[1];
+			   if (key.startsWith("erc")) continue;
+
+			   if (key.startsWith("where")) {
+				// Primary ID is alsways listed first
+				// All subsequent entries are local IDs
+				if (primaryID) {
+				   key += "-primary";
+			           primaryID = false;
+				} else {
+				   key += "-local";
+				}
+			   } 
+			   jobFileState.addEntry(key, value);
+			}				
+
+			return jobFileState;
                 } catch (TException tex) {
                         throw tex;
 		} catch (Exception ex) {
