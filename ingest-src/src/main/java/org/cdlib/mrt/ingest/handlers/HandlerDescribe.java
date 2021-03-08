@@ -470,7 +470,7 @@ Now done in HandlerMinter
 */
 
         ercProperties.put("where", arrayWhere);
-        return MetadataUtil.writeMetadataANVL(systemErcFile, ercProperties, false);
+        return MetadataUtil.writeMetadataANVL(systemErcFile, ercProperties, " ", false);
     }
 
 

@@ -96,9 +96,34 @@ public class MetadataUtil
     public static boolean writeMetadataANVL(File file, Map<String, Object> properties, boolean append)
         throws TException
     {
-	
+	try {
+	    writeMetadataANVL(file, properties, null, append);
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+
+	return true;
+    }
+
+
+    /**
+     * write metadata to anvl file
+     *
+     * @param file source file (usually "mrt-ingest.txt")
+     * @param properties map of properties
+     * @return successful in writing resource map
+     */
+    public static boolean writeMetadataANVL(File file, Map<String, Object> properties, String delimiter, boolean append)
+        throws TException
+    {
 	BufferedWriter fileBuffer = null;
 	try {
+	    if (delimiter == null) {
+		System.out.println("No ANVL delimiter set - using default");
+		delimiter = DELIMITER;
+	    } else {
+		System.out.println("ANVL delimiter: " + delimiter);
+	    }
 	    fileBuffer = new BufferedWriter(new FileWriter(file, append));
 	    Iterator ingestItr = properties.keySet().iterator();
 
@@ -108,7 +133,7 @@ public class MetadataUtil
 		String type = o.getClass().getName();
 		if (type.equals(String.class.getName())) {
 		    String value = (String) properties.get(key);
-		    fileBuffer.write(key + ":" + DELIMITER + value);
+		    fileBuffer.write(key + ":" + delimiter + value);
 		    // handle string...
 		} else if (type.equals(ArrayList.class.getName())) {
 		    // handle array-list...
@@ -116,7 +141,7 @@ public class MetadataUtil
 		    Iterator iterator = valueList.iterator();
 	            while (iterator.hasNext()) {
 		        String value = (String) iterator.next();
-		        fileBuffer.write(key + ":" + DELIMITER + value + "\n");
+		        fileBuffer.write(key + ":" + delimiter + value + "\n");
 		    }
 		} else {
 		    // do not process
