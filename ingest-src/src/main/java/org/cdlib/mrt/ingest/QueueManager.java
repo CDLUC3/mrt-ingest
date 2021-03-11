@@ -296,7 +296,8 @@ public class QueueManager {
 	public IngestQueueNameState getIngestQueueState() throws TException {
 		try {
 			IngestQueueNameState ingestQueueNameState = new IngestQueueNameState();
-			String[] nodes = ingestQNames.split(":");
+			// comma delimiter if multiple ingest ZK queues
+			String[] nodes = ingestQNames.split(",");
 			for (String node: nodes) {
 			   ingestQueueNameState.addEntry(node);
 			}
