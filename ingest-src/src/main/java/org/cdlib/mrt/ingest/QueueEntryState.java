@@ -65,6 +65,7 @@ public class QueueEntryState
     private String objectDate = null;
     private String localID = null;
     private String fileType = null;
+    private String queueNode = null;
 
     /**
      * Set entry ID
@@ -272,6 +273,22 @@ public class QueueEntryState
      */
     public String getFileType() {
         return this.fileType;
+    }
+
+    /**
+     * Set Queue Node
+     * @param String queue node
+     */
+    public void setQueueNode(String queueNode) {
+        this.queueNode = queueNode;
+    }
+
+    /**
+     * Get queue node
+     * @return String file type
+     */
+    public String getQueueNode() {
+        return this.queueNode;
     }
 
     public String toString()

@@ -48,6 +48,7 @@ import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
+import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
@@ -189,10 +190,17 @@ public class IngestService
     }
 
     @Override
-    public QueueState getQueueState()
+    public QueueState getQueueState(String queue)
         throws TException
     {
-        return queueManager.getQueueState();
+        return queueManager.getQueueState(queue);
+    }
+
+    @Override
+    public IngestQueueNameState getIngestQueueState()
+        throws TException
+    {
+        return queueManager.getIngestQueueState();
     }
 
     @Override

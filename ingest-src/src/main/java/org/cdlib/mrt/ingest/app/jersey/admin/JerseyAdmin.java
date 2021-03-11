@@ -138,8 +138,87 @@ public class JerseyAdmin extends JerseyBase
     // need to also support state/queue/job/..
     @GET
     @Path("/queues")
+    public Response getIngestQueueState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing getIngestQueueState");
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getIngestQueueState();
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+ex.printStackTrace();
+            //System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+    // Get queue state  - default
+    @GET
+    @Path("/queue")
+    public Response getQueueDefaultState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing Default getQueueState");
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getQueueState(null);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+
+
+    // Get queue state 
+    // need to also support state/queue/job/..
+    @GET
+    @Path("/queue/{queue}")
     public Response getQueueState(
             @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("queue") String queue,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -159,7 +238,7 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getQueueState();
+            StateInf responseState = ingestService.getQueueState("/" + queue);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {

@@ -29,35 +29,42 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.io.Serializable;
-import java.net.URL;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import java.io.File;
+import java.lang.String;
+import java.net.URL;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue entry information
+ * Simple String wrapper needed for formatter
  * @author mreyes
  */
-public interface QueueEntryStateInf
-        extends StateInf
+public class IngestQueue
+        implements StateInf
 {
-    public String getID(); 
-    public String getStatus();
-    public String getDate();
-    public String getBatchID();
-    public String getJobID();
-    public String getName();
-    public String getUser();
-    public String getProfile();
-    public String getQueueNode();
 
+    protected String ingestQueue = null;
+
+    // constructor
+    IngestQueue() {
+    }
+
+    public String getNode()
+    {
+        return ingestQueue;
+    }
+
+    /**
+     * Set node
+     * @param String node
+     */
+    public void setNode(String node) {
+        this.ingestQueue = node;
+    }
+
+    public String dump(String header)
+    {
+        return header
+                + " - node=" + getNode();
+    }
 }
