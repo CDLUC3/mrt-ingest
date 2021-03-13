@@ -50,6 +50,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
+import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
@@ -187,6 +188,13 @@ public class IngestService
         throws TException
     {
         return adminManager.getJobFileState(batchID, jobID);
+    }
+
+    @Override
+    public ManifestsState getJobManifestState(String batchID, String jobID)
+        throws TException
+    {
+        return adminManager.getJobManifestState(batchID, jobID);
     }
 
     @Override

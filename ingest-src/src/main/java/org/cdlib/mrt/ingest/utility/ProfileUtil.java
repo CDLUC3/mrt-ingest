@@ -343,22 +343,18 @@ public class ProfileUtil
     {
 	ProfilesFullState profilesFullState = new ProfilesFullState();
 	Vector<ProfileState> profiles = new Vector<ProfileState>();
-	Vector<File> files = new Vector<File>();
 
 	try {
+ 
 		File profileDirectory = new File(profileDir);
-		FileUtil.getDirectoryFiles(profileDirectory, files);
+                File[] files = profileDirectory.listFiles();
+                for (File profile: files) {
+		   if (profile.isDirectory()) continue;
+                   ProfileState profileState = new ProfileState();
+                   Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
+                   profileState = ProfileUtil.getProfile(profileID, profileDir);
 
-        	Iterator<File> iterator = files.iterator();
-        	while(iterator.hasNext()) {
-			File profile = iterator.next();
-			// profilesState.addProfileInstance(profile);
-
-                        ProfileState profileState = new ProfileState();
-                        Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
-                        profileState = ProfileUtil.getProfile(profileID, profileDir);
-
-                        profilesFullState.addProfileInstance(profileState);
+                   profilesFullState.addProfileInstance(profileState);
 		}
 
 		return profilesFullState;

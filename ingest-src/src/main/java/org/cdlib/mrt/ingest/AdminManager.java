@@ -237,8 +237,7 @@ public class AdminManager {
 			}
 		
                 	File[] files = batchDir.listFiles();
-                	for (int i=0; i<files.length; i++) {
-			   File file = files[i];
+                	for (File file: files) {
 			   String filename = file.getName();
 
 			   // Add jobs within batch
@@ -274,8 +273,7 @@ public class AdminManager {
 		
                 	String[] lines = FileUtil.getLinesFromFile(jobFile);
 			boolean primaryID = true;
-                	for (int i=0; i<lines.length; i++) {
-			   String line = lines[i];
+                	for (String line: lines) {
 			   String parts[] = line.split(":", 2);
 
 			   String key = parts[0];
@@ -296,6 +294,48 @@ public class AdminManager {
 			}				
 
 			return jobFileState;
+                } catch (TException tex) {
+                        throw tex;
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
+	public ManifestsState getJobManifestState(String batchID, String jobID) throws TException {
+		try {
+
+			// Fixed location of Manifest file
+			File jobFile = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID + "/system/mrt-manifest.txt");
+			if ( ! jobFile.exists()) { 
+                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job manifest: " + jobFile.getAbsolutePath());
+			}
+		
+			ManifestsState manifestsState = new ManifestsState();
+
+                	String[] lines = FileUtil.getLinesFromFile(jobFile);
+			// File URL | sha256 | 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 | 4 |  | producer/TDR Acc+H2O.md | text/x-web-markdown
+			for (String line: lines) {
+			   // skip headers and footers
+			   if (! line.startsWith("http:")) continue;
+			   String parts[] = line.split("\\|", 7);
+			
+			   // skip system files
+			   if ( parts[5].contains("system/")) continue;
+
+			   ManifestEntryState manifestEntryState = new ManifestEntryState();
+			   manifestEntryState.setFileName(parts[5]);
+			   manifestEntryState.setFileSize(parts[3]);
+			   manifestEntryState.setHashAlgorithm(parts[1]);
+			   manifestEntryState.setHashValue(parts[2]);
+			   manifestEntryState.setMimeType(parts[6]);
+
+			   manifestsState.addManifestInstance(manifestEntryState);
+			}				
+
+			return manifestsState;
                 } catch (TException tex) {
                         throw tex;
 		} catch (Exception ex) {
