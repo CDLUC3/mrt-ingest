@@ -44,11 +44,16 @@ public class BatchFile
 {
 
     protected String batchFile = null;
+    protected String fileDate = null;
 
     // constructor
     BatchFile() {
     }
 
+    /**
+     * Get file
+     * @return file
+     */
     public String getFile()
     {
         return batchFile;
@@ -62,9 +67,27 @@ public class BatchFile
         this.batchFile = file;
     }
 
+    /**
+     * Get file date
+     * @return file date
+     */
+    public String getFileDate()
+    {
+        return fileDate;
+    }
+
+    /**
+     * Set file date
+     * @param String file date
+     */
+    public void setFileDate(String fileDate) {
+        this.fileDate = fileDate;
+    }
+
     public String dump(String header)
     {
         return header
-                + " - file=" + getFile();
+                + " - file=" + getFile()
+                + " - fileDate=" + getFileDate();
     }
 }

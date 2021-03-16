@@ -31,6 +31,7 @@ package org.cdlib.mrt.ingest;
 
 import java.lang.IllegalArgumentException;
 import java.lang.Thread;
+import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -242,7 +243,8 @@ public class AdminManager {
 
 			   // Add jobs within batch
 			   if (file.isDirectory() && filename.startsWith("jid")) {
-				batchFileState.addBatchFile(filename);
+				Date date = new Date(file.lastModified());
+				batchFileState.addBatchFile(filename, date.toString());
 			   // Add manifest if present
 			   } else if (file.isFile() && filename.endsWith(".checkm")) {
 				batchFileState.setBatchManifestName(filename);

@@ -79,11 +79,12 @@ public class BatchFileState
      * Add a batch file
      * @param File batch file  to be added
      */
-    public void addBatchFile(String bFile)
+    public void addBatchFile(String bFile, String bFileDate)
     {
-        if (bFile == null) return;
+        if (bFile == null || bFileDate == null) return;
         BatchFile file = new BatchFile();
         file.setFile(bFile);
+        file.setFileDate(bFileDate);
         batchFile.add(file);
     }
 
