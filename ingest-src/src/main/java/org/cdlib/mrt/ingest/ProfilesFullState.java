@@ -29,80 +29,72 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Vector;
+import java.io.File;
 import java.io.Serializable;
-import java.net.URL;
+import java.util.Iterator;
+import java.lang.String;
+import java.util.Vector;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.QueueEntryState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue State information
+ * Profiles State information
  * @author mreyes
  */
-public class QueueState
-        implements QueueStateInf, StateInf, Serializable
+public class ProfilesFullState
+        implements ProfilesFullStateInf, StateInf, Serializable
+
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
+    private static final String NAME = "ProfilesFullState";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+
+
+    private Vector<ProfileState> profilesFull = new Vector<ProfileState>();
 
 
     /**
-     * Add entry to queue
-     * @param String entry
+     * Get profile 
+     * @return Vector profile states
      */
-    public void addEntry(QueueEntryState entry) {
-        this.queueEntries.add(entry);
+    public Vector<ProfileState> getProfilesFull() {
+        return this.profilesFull;
     }
 
     /**
-     * Remove entry from queue
-     * @param String entry
+     * Set profile states
+     * @param ProfileState profiles
      */
-    public void removeEntry(int index) {
-        this.queueEntries.remove(index);
+    public void setProfiles(Vector<ProfileState> profilesFull) {
+	this.profilesFull = profilesFull;
     }
 
     /**
-     * retrieve all entries
-     * @return queue entries
+     * Add a profile instance to list
+     * @param File profile  to be added
      */
-    public Vector<QueueEntryState> getQueueEntries() {
-        return this.queueEntries;
-    }
-
-    /**
-     * add queue entry
-     * @return queue entries
-     */
-    public void addQueueEntry(QueueEntryState queueEntry)
+    public void addProfileInstance(ProfileState profileState)
     {
-        if (queueEntry == null) return;
-        queueEntries.add(queueEntry);
+        if (profileState == null) return;
+        profilesFull.add(profileState);
     }
-
 
     public String dump(String header)
     {
-	// gather queue entries
-	String queueEntriesS = "\n\n";
-        Iterator<QueueEntryState> iterator = queueEntries.iterator();
+        // gather profile names
+        String outProfile = "\n\n";
+        Iterator<ProfileState> iterator = profilesFull.iterator();
         while(iterator.hasNext()) {
-            QueueEntryState queueEntry = iterator.next();
-	    queueEntriesS = queueEntriesS + queueEntry + "\n";
-	}
-	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );
+            ProfileState profile = iterator.next();
+            outProfile = outProfile + profile.toString() + "\n";
+        }
+        outProfile = outProfile.substring(1, outProfile.length() - 1 );
 
         return header  + "\n\n"
-                + " - queue entries: " + queueEntriesS + "\n";
+                + " profileStates: " + outProfile + "\n";
     }
+
 }

@@ -64,6 +64,8 @@ public class QueueEntryState
     private String objectTitle = null;
     private String objectDate = null;
     private String localID = null;
+    private String fileType = null;
+    private String queueNode = null;
 
     /**
      * Set entry ID
@@ -257,19 +259,54 @@ public class QueueEntryState
         return this.localID;
     }
 
+    /**
+     * Set File Type
+     * @param String file type
+     */
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
+
+    /**
+     * Get file type
+     * @return String file type
+     */
+    public String getFileType() {
+        return this.fileType;
+    }
+
+    /**
+     * Set Queue Node
+     * @param String queue node
+     */
+    public void setQueueNode(String queueNode) {
+        this.queueNode = queueNode;
+    }
+
+    /**
+     * Get queue node
+     * @return String file type
+     */
+    public String getQueueNode() {
+        return this.queueNode;
+    }
 
     public String toString()
     {
 
 	String delimiter = "  ||  ";
         return "" +
-	       //"id: " + id + delimiter +
-               //"status: " + status + delimiter +
-               "batch id: " + batchID + delimiter +
-               "job id: " + jobID + delimiter +
-               "filename: " + name +
-               //"user: " + user + delimiter +
-               //"profile: " + profile + delimiter +
+	       "id: " + id + delimiter +
+               "status: " + status + delimiter +
+               "batchID: " + batchID + delimiter +
+               "jobID: " + jobID + delimiter +
+               "fileName: " + name + delimiter +
+               "objectCreator: " + objectCreator + delimiter +
+               "objectTitle: " + objectTitle + delimiter +
+               "objectDate: " + objectDate + delimiter +
+               "localID: " + localID + delimiter +
+               "user: " + user + delimiter +
+               "profile: " + profile + delimiter +
                "date: " + date + delimiter;
     }
 

@@ -35,74 +35,110 @@ import java.util.Vector;
 import java.io.Serializable;
 import java.net.URL;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.QueueEntryState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.utility.LinkedHashList;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue State information
+ * Manifest entry information
  * @author mreyes
  */
-public class QueueState
-        implements QueueStateInf, StateInf, Serializable
+public class ManifestEntryState
+        implements ManifestEntryStateInf, StateInf, Serializable
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
-
+    // nfo:fileURL | nfo:hashAlgorithm | nfo:hashValue | nfo:fileSize | nfo:fileLastModified | nfo:fileName | nie:mimeType 
+    private String fileName = null;
+    private String fileSize = null;
+    private String hashAlgorithm = null;
+    private String hashValue = null;
+    private String mimeType = null;
 
     /**
-     * Add entry to queue
-     * @param String entry
+     * Set file name
+     * @param String name
      */
-    public void addEntry(QueueEntryState entry) {
-        this.queueEntries.add(entry);
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     /**
-     * Remove entry from queue
-     * @param String entry
+     * Get file name
+     * @return String file name
      */
-    public void removeEntry(int index) {
-        this.queueEntries.remove(index);
+    public String getFileName() {
+        return this.fileName;
     }
 
     /**
-     * retrieve all entries
-     * @return queue entries
+     * Set file size
+     * @param String file size
      */
-    public Vector<QueueEntryState> getQueueEntries() {
-        return this.queueEntries;
+    public void setFileSize(String fileSize) {
+        this.fileSize = fileSize;
     }
 
     /**
-     * add queue entry
-     * @return queue entries
+     * Get file size
+     * @return String file size
      */
-    public void addQueueEntry(QueueEntryState queueEntry)
-    {
-        if (queueEntry == null) return;
-        queueEntries.add(queueEntry);
+    public String getFileSize() {
+        return this.fileSize;
+    }
+
+    /**
+     * Set hash algorithm
+     * @return String hash algorithm
+     */
+    public void setHashAlgorithm(String hashAlgorithm) {
+        this.hashAlgorithm = hashAlgorithm;
+    }
+
+    /**
+     * Get hash algorithm
+     * @return String hash algorithm
+     */
+    public String getHashAlgorithm() {
+        return this.hashAlgorithm;
+    }
+
+    /**
+     * Set hash value
+     * @return String hash value
+     */
+    public void setHashValue(String hashValue) {
+        this.hashValue = hashValue;
+    }
+
+    /**
+     * Get hash value
+     * @return String hash value
+     */
+    public String getHashValue() {
+        return this.hashValue;
+    }
+
+    /**
+     * Set mime type
+     * @return String mime type
+     */
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
+    }
+
+    /**
+     * Get mime type
+     * @return String mime type
+     */
+    public String getMimeType() {
+        return this.mimeType;
     }
 
 
     public String dump(String header)
     {
-	// gather queue entries
-	String queueEntriesS = "\n\n";
-        Iterator<QueueEntryState> iterator = queueEntries.iterator();
-        while(iterator.hasNext()) {
-            QueueEntryState queueEntry = iterator.next();
-	    queueEntriesS = queueEntriesS + queueEntry + "\n";
-	}
-	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );
 
         return header  + "\n\n"
-                + " - queue entries: " + queueEntriesS + "\n";
+                + " - file: " + fileName + "\n";
     }
 }

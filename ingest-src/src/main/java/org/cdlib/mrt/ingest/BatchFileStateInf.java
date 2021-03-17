@@ -29,35 +29,31 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.io.Serializable;
-import java.net.URL;
+import java.io.File;
+import java.lang.String;
+import java.util.Vector;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import org.cdlib.mrt.ingest.BatchFile;
+import org.cdlib.mrt.ingest.BatchManifest;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue entry information
+ * Batch File State information
  * @author mreyes
  */
-public interface QueueEntryStateInf
+public interface BatchFileStateInf
         extends StateInf
 {
-    public String getID(); 
-    public String getStatus();
-    public String getDate();
-    public String getBatchID();
-    public String getJobID();
-    public String getName();
-    public String getUser();
-    public String getProfile();
-    public String getQueueNode();
+    /**
+     * Get Jobs
+     * @return Vector profiles
+     */
+    public Vector<BatchFile> getJobFile();
+
+    /**
+     * Get Batch Manifest
+     * @return String profiles
+     */
+    public BatchManifest getBatchManifest();
 
 }

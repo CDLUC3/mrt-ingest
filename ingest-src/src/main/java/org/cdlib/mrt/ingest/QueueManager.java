@@ -105,6 +105,7 @@ public class QueueManager {
 	private JSONObject ingestConf = null;
 	private String queueConnectionString = null;
 	private String queueNode = null;
+	private String ingestQNames = null;
 	private String inventoryNode = "/inv"; // default
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
 
@@ -162,6 +163,7 @@ public class QueueManager {
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
 			String matchQueueNode = "QueueName";
+			String matchIngestQNames = "IngestQNames";
 			String matchInventoryNode = "InventoryName";
 			String matchAdmin = "admin";
 			String defaultIDKey = "IDDefault";
@@ -175,6 +177,8 @@ public class QueueManager {
 			this.queueNode = queueConf.getString(matchQueueNode);
 			// InventoryName - /mrt.inventory.full
 			this.inventoryNode = queueConf.getString(matchInventoryNode);
+			// All Ingest Queue Names - "ingest01,ingest02"
+			this.ingestQNames = queueConf.getString(matchIngestQNames);
 
 			// email list
 			value = ingestConf.getString(matchAdmin);
@@ -211,50 +215,68 @@ public class QueueManager {
 		}
 	}
 
-	public QueueState getQueueState() throws TException {
+	public QueueState getQueueState(String queue) throws TException {
 		ZooKeeper zooKeeper = null;
 		try {
 			QueueState queueState = new QueueState();
+			if (queue == null) queue = queueNode;
 
 			// open a single connection to zookeeper for all queue posting
 			// todo: create an interface
 			zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
-			DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queueNode, null); // default priority
+			DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
 			TreeMap<Long, String> orderedChildren;
 			try {
 				orderedChildren = distributedQueue.orderedChildren(null);
 			} catch (KeeperException.NoNodeException e) {
-				throw new NoSuchElementException();
+				orderedChildren = null;
+				// throw new NoSuchElementException();
 			}
-			for (String headNode : orderedChildren.values()) {
-				String path = String.format("%s/%s", distributedQueue.dir, headNode);
-				try {
-					byte[] data = zooKeeper.getData(path, false, null);
-					Item item = Item.fromBytes(data);
-					if (item.getStatus() != Item.PENDING)
-						continue;
+			if ( orderedChildren != null) {
+			   for (String headNode : orderedChildren.values()) {
+				   String path = String.format("%s/%s", distributedQueue.dir, headNode);
+				   try {
+				 	byte[] data = zooKeeper.getData(path, false, null);
+				   	Item item = Item.fromBytes(data);
 					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
 					ObjectInputStream ois = new ObjectInputStream(bis);
 					Properties p = (Properties) ois.readObject();
 
 					QueueEntryState queueEntryState = new QueueEntryState();
 					queueEntryState.setDate(item.getTimestamp().toString());
-					queueEntryState.setStatus("Pending");
+					if (item.getStatus() == Item.PENDING) 
+						queueEntryState.setStatus("Pending");
+					else if (item.getStatus() == Item.CONSUMED) 
+						queueEntryState.setStatus("Consumed");
+					else if (item.getStatus() == Item.FAILED) 
+						queueEntryState.setStatus("Failed");
+					else if (item.getStatus() == Item.COMPLETED) 
+						queueEntryState.setStatus("Completed");
+					else if (item.getStatus() == Item.DELETED) 
+						queueEntryState.setStatus("Deleted");
 					queueEntryState.setID(headNode);
 					queueEntryState.setJobID(p.getProperty("jobID"));
 					queueEntryState.setBatchID(p.getProperty("batchID"));
+					queueEntryState.setFileType(p.getProperty("type"));
 					queueEntryState.setUser(p.getProperty("submitter"));
 					queueEntryState.setProfile(p.getProperty("profile"));
-					queueEntryState.setName(p.getProperty("name"));
+					queueEntryState.setName(p.getProperty("filename"));
 					queueEntryState.setObjectCreator(p.getProperty("creator"));
 					queueEntryState.setObjectTitle(p.getProperty("title"));
 					queueEntryState.setObjectDate(p.getProperty("date"));
 					queueEntryState.setLocalID(p.getProperty("localID"));
+					queueEntryState.setQueueNode(queue);
 
 					queueState.addEntry(queueEntryState);
 				} catch (KeeperException.NoNodeException e) {
+					System.out.println("KeeperException.NoNodeException");
+					System.out.println(StringUtil.stackTrace(e));
+				} catch (Exception ex) { 
+					System.out.println("Exception");
+					System.out.println(StringUtil.stackTrace(ex));
 				}
+			    }
 			}
 
 			return queueState;
@@ -268,6 +290,23 @@ public class QueueManager {
 				zooKeeper.close();
 			} catch (Exception e) {
 			}
+		}
+	}
+
+	public IngestQueueNameState getIngestQueueState() throws TException {
+		try {
+			IngestQueueNameState ingestQueueNameState = new IngestQueueNameState();
+			// comma delimiter if multiple ingest ZK queues
+			String[] nodes = ingestQNames.split(",");
+			for (String node: nodes) {
+			   ingestQueueNameState.addEntry(node);
+			}
+			return ingestQueueNameState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		}
 	}
 

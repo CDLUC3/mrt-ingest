@@ -29,80 +29,66 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Vector;
-import java.io.Serializable;
-import java.net.URL;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.QueueEntryState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import java.io.File;
+import java.lang.String;
+import java.net.URL;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue State information
+ * Simple Manifest wrapper needed for formatter
  * @author mreyes
  */
-public class QueueState
-        implements QueueStateInf, StateInf, Serializable
+public class BatchManifest
+        implements StateInf
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
+    protected String batchManifest = null;
+    protected String manifestData = null;
 
-
-    /**
-     * Add entry to queue
-     * @param String entry
-     */
-    public void addEntry(QueueEntryState entry) {
-        this.queueEntries.add(entry);
+    // constructor
+    BatchManifest() {
     }
 
-    /**
-     * Remove entry from queue
-     * @param String entry
-     */
-    public void removeEntry(int index) {
-        this.queueEntries.remove(index);
-    }
 
     /**
-     * retrieve all entries
-     * @return queue entries
+     * Get Manifest
+     * @param String file
      */
-    public Vector<QueueEntryState> getQueueEntries() {
-        return this.queueEntries;
-    }
-
-    /**
-     * add queue entry
-     * @return queue entries
-     */
-    public void addQueueEntry(QueueEntryState queueEntry)
+    public String getManifest()
     {
-        if (queueEntry == null) return;
-        queueEntries.add(queueEntry);
+        return batchManifest;
+    }
+
+    /**
+     * Set manifest
+     * @param String file
+     */
+    public void setManifest(String file) {
+        this.batchManifest = file;
+    }
+
+    /**
+     * Get Manifest data
+     * @param String content
+     */
+    public String getContent()
+    {
+        return manifestData;
+    }
+
+    /**
+     * Set manifest data
+     * @param String content
+     */
+    public void setContent(String content) {
+        this.manifestData = content;
     }
 
 
     public String dump(String header)
     {
-	// gather queue entries
-	String queueEntriesS = "\n\n";
-        Iterator<QueueEntryState> iterator = queueEntries.iterator();
-        while(iterator.hasNext()) {
-            QueueEntryState queueEntry = iterator.next();
-	    queueEntriesS = queueEntriesS + queueEntry + "\n";
-	}
-	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );
-
-        return header  + "\n\n"
-                + " - queue entries: " + queueEntriesS + "\n";
+        return header
+                + " - file=" + getManifest();
     }
 }

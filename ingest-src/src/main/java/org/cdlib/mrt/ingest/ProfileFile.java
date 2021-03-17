@@ -29,35 +29,42 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.io.Serializable;
-import java.net.URL;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import java.io.File;
+import java.lang.String;
+import java.net.URL;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue entry information
+ * Simple File wrapper needed for formatter
  * @author mreyes
  */
-public interface QueueEntryStateInf
-        extends StateInf
+public class ProfileFile
+        implements StateInf
 {
-    public String getID(); 
-    public String getStatus();
-    public String getDate();
-    public String getBatchID();
-    public String getJobID();
-    public String getName();
-    public String getUser();
-    public String getProfile();
-    public String getQueueNode();
 
+    protected File file = null;
+
+    // constructor
+    ProfileFile() {
+    }
+
+    public String getFile()
+    {
+        return file.getName();
+    }
+
+    /**
+     * Set file
+     * @param File file
+     */
+    public void setFile(File file) {
+        this.file = file;
+    }
+
+    public String dump(String header)
+    {
+        return header
+                + " - file=" + getFile();
+    }
 }

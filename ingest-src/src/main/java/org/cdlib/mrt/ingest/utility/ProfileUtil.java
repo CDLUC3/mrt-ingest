@@ -40,17 +40,23 @@ import java.lang.NumberFormatException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Vector;
 
 import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.HandlerState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.ProfilesState;
+import org.cdlib.mrt.ingest.ProfilesFullState;
+import org.cdlib.mrt.ingest.ProfileFile;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
@@ -254,7 +260,13 @@ public class ProfileUtil
 		    try {
 		        node = new Integer(value).intValue();
 		    } catch (java.lang.NumberFormatException nfe) {
-                        throw new TException.INVALID_CONFIGURATION("StorageNode parameter in profile is not a valid node ID: " + value);
+			// Check to see if valid Profile
+			if ( ! isValidProfile(profileName.getValue())) {
+			   // Must be a Template, set to nonsensical value
+		           node = new Integer(0).intValue();
+			} else {
+                           throw new TException.INVALID_CONFIGURATION("StorageNode parameter in profile is not a valid node ID: " + value);
+			}
 		    } 
 		} else if (key.startsWith(matchCreationDate)) {
                     if (DEBUG) System.out.println("[debug] creation date: " + value);
@@ -277,8 +289,15 @@ public class ProfileUtil
 			    throw new TException.INVALID_CONFIGURATION("aggregate not valid: " + value);
 		} else if (key.startsWith(matchOwner)) {
                     if (DEBUG) System.out.println("[debug] owner: " + value);
-		    if (! profileState.setOwner(value))
-			throw new TException.INVALID_CONFIGURATION("owner not a valid id: " + value);
+		    if (! profileState.setOwner(value)) {
+                        // Check to see if valid Profile
+                        if ( ! isValidProfile(profileName.getValue())) {
+                           // Must be a Template, set to non-sensical value
+			   profileState.setOwner("ark:/template/profile");
+			} else {
+			   throw new TException.INVALID_CONFIGURATION("owner not a valid id: " + value);
+			}
+		    }
 		} else if (key.startsWith(matchContext)) {
                     if (DEBUG) System.out.println("[debug] context: " + value);
 		    profileState.setContext(value);
@@ -318,6 +337,68 @@ public class ProfileUtil
 	}
     }
 
+
+    public static synchronized ProfilesFullState getProfilesFull(String profileDir)
+        throws TException
+    {
+	ProfilesFullState profilesFullState = new ProfilesFullState();
+	Vector<ProfileState> profiles = new Vector<ProfileState>();
+
+	try {
+ 
+		File profileDirectory = new File(profileDir);
+                File[] files = profileDirectory.listFiles();
+                for (File profile: files) {
+		   if (profile.isDirectory()) continue;
+                   ProfileState profileState = new ProfileState();
+                   Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
+                   profileState = ProfileUtil.getProfile(profileID, profileDir);
+
+                   profilesFullState.addProfileInstance(profileState);
+		}
+
+		return profilesFullState;
+
+	} catch (TException tex) {
+	    throw tex;
+	} catch (Exception ex) {
+            String err = MESSAGE + "error getting profiles - Exception:" + ex;
+
+            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(err);
+	}
+    }
+
+
+    public static synchronized ProfilesState getProfiles(String profileDir)
+        throws TException
+    {
+	ProfilesState profilesState = new ProfilesState();
+	Vector<File> files = new Vector<File>();
+
+	try {
+		File profileDirectory = new File(profileDir);
+		FileUtil.getDirectoryFiles(profileDirectory, files);
+
+        	Iterator<File> iterator = files.iterator();
+        	while(iterator.hasNext()) {
+			File profile = iterator.next();
+			profilesState.addProfileInstance(profile);
+		}
+
+		return profilesState;
+
+	} catch (TException tex) {
+	    throw tex;
+	} catch (Exception ex) {
+            String err = MESSAGE + "error getting profiles - Exception:" + ex;
+
+            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(err);
+	}
+    }
+
+
     // write serialize object to disk
     public static synchronized void writeTo(BatchState batchState, File targetDir)
         throws Exception {
@@ -343,6 +424,16 @@ public class ProfileUtil
         } catch (Exception e) {
             throw new Exception("[error] " + MESSAGE + " could not read object from disk: " + targetDir.getAbsolutePath());
         }
+   }
+
+    public static boolean isValidProfile(String profileName) {
+        try {
+	    // Convention that all profiles end with "_content"
+            return profileName.endsWith("_content");
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine if profile is valid: " + profileName);
+        }
+	return true;	// default
    }
 
     public static boolean isDemoMode(ProfileState profileState) {

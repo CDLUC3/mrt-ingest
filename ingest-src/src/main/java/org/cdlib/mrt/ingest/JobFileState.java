@@ -29,80 +29,70 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Vector;
+import java.io.File;
 import java.io.Serializable;
-import java.net.URL;
+import java.util.Iterator;
+import java.lang.String;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Vector;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.QueueEntryState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import org.cdlib.mrt.formatter.FormatType;
+import org.cdlib.mrt.ingest.JobFileStateInf;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue State information
+ * Job File State information
  * @author mreyes
  */
-public class QueueState
-        implements QueueStateInf, StateInf, Serializable
+public class JobFileState
+        implements JobFileStateInf, StateInf, Serializable
+
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
+    private static final String NAME = "JobFileState";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+
+
+    private Map<String, String> jobFile = new LinkedHashMap();
 
 
     /**
-     * Add entry to queue
-     * @param String entry
+     * Get job file
+     * @return Vector jobs
      */
-    public void addEntry(QueueEntryState entry) {
-        this.queueEntries.add(entry);
+    public Map<String, String> getJobFile() {
+        return jobFile;
     }
 
     /**
-     * Remove entry from queue
-     * @param String entry
+     * Set job file
+     * @param String job file
      */
-    public void removeEntry(int index) {
-        this.queueEntries.remove(index);
+    public void setJobFile(Map<String, String> jobFile) {
+	this.jobFile = jobFile;
     }
 
     /**
-     * retrieve all entries
-     * @return queue entries
+     * Add entry into job file
+     * @param String key
+     * @param String value
      */
-    public Vector<QueueEntryState> getQueueEntries() {
-        return this.queueEntries;
-    }
-
-    /**
-     * add queue entry
-     * @return queue entries
-     */
-    public void addQueueEntry(QueueEntryState queueEntry)
+    public void addEntry(String key, String value)
     {
-        if (queueEntry == null) return;
-        queueEntries.add(queueEntry);
+        if (key == null || value == null) return;
+        jobFile.put(key, value);
     }
 
 
     public String dump(String header)
     {
-	// gather queue entries
-	String queueEntriesS = "\n\n";
-        Iterator<QueueEntryState> iterator = queueEntries.iterator();
-        while(iterator.hasNext()) {
-            QueueEntryState queueEntry = iterator.next();
-	    queueEntriesS = queueEntriesS + queueEntry + "\n";
-	}
-	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );
+        String outJobFile = "\n\n";
+        outJobFile = outJobFile + jobFile.toString();
 
         return header  + "\n\n"
-                + " - queue entries: " + queueEntriesS + "\n";
+                + " JobFileState: " + outJobFile + "\n";
     }
+
 }

@@ -29,80 +29,65 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Vector;
-import java.io.Serializable;
-import java.net.URL;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.QueueEntryState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import java.io.File;
+import java.lang.String;
+import java.net.URL;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue State information
+ * Simple String wrapper needed for formatter
  * @author mreyes
  */
-public class QueueState
-        implements QueueStateInf, StateInf, Serializable
+public class BatchFile
+        implements StateInf
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
+    protected String batchFile = null;
+    protected String fileDate = null;
 
-
-    /**
-     * Add entry to queue
-     * @param String entry
-     */
-    public void addEntry(QueueEntryState entry) {
-        this.queueEntries.add(entry);
+    // constructor
+    BatchFile() {
     }
 
     /**
-     * Remove entry from queue
-     * @param String entry
+     * Get file
+     * @return file
      */
-    public void removeEntry(int index) {
-        this.queueEntries.remove(index);
-    }
-
-    /**
-     * retrieve all entries
-     * @return queue entries
-     */
-    public Vector<QueueEntryState> getQueueEntries() {
-        return this.queueEntries;
-    }
-
-    /**
-     * add queue entry
-     * @return queue entries
-     */
-    public void addQueueEntry(QueueEntryState queueEntry)
+    public String getFile()
     {
-        if (queueEntry == null) return;
-        queueEntries.add(queueEntry);
+        return batchFile;
     }
 
+    /**
+     * Set file
+     * @param String file
+     */
+    public void setFile(String file) {
+        this.batchFile = file;
+    }
+
+    /**
+     * Get file date
+     * @return file date
+     */
+    public String getFileDate()
+    {
+        return fileDate;
+    }
+
+    /**
+     * Set file date
+     * @param String file date
+     */
+    public void setFileDate(String fileDate) {
+        this.fileDate = fileDate;
+    }
 
     public String dump(String header)
     {
-	// gather queue entries
-	String queueEntriesS = "\n\n";
-        Iterator<QueueEntryState> iterator = queueEntries.iterator();
-        while(iterator.hasNext()) {
-            QueueEntryState queueEntry = iterator.next();
-	    queueEntriesS = queueEntriesS + queueEntry + "\n";
-	}
-	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );
-
-        return header  + "\n\n"
-                + " - queue entries: " + queueEntriesS + "\n";
+        return header
+                + " - file=" + getFile()
+                + " - fileDate=" + getFileDate();
     }
 }

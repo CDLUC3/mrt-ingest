@@ -47,5 +47,4 @@ public interface QueueStateInf
      */
     public Vector<QueueEntryState> getQueueEntries(); 
 
-
 }

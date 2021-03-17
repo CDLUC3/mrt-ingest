@@ -29,80 +29,71 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Vector;
+import java.io.File;
 import java.io.Serializable;
-import java.net.URL;
+import java.util.Iterator;
+import java.lang.String;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Vector;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.QueueEntryState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
+import org.cdlib.mrt.formatter.FormatType;
+import org.cdlib.mrt.ingest.IngestQueueNameStateInf;
+import org.cdlib.mrt.ingest.IngestQueue;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue State information
+ * Ingest Queue Name State information
  * @author mreyes
  */
-public class QueueState
-        implements QueueStateInf, StateInf, Serializable
+public class IngestQueueNameState
+        implements IngestQueueNameStateInf, StateInf, Serializable
+
 {
 
-    protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();
+    private static final String NAME = "IngestQueueNameState";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+
+    private Vector<IngestQueue> ingestQueueName = new Vector<IngestQueue>();
 
 
     /**
-     * Add entry to queue
-     * @param String entry
+     * Get zk nodes
+     * @return Vector jobs
      */
-    public void addEntry(QueueEntryState entry) {
-        this.queueEntries.add(entry);
+    public Vector<IngestQueue> getIngestQueueName() {
+        return ingestQueueName;
     }
 
     /**
-     * Remove entry from queue
-     * @param String entry
+     * Set zk nodes
+     * @param Vector nodes
      */
-    public void removeEntry(int index) {
-        this.queueEntries.remove(index);
+    public void setIngestQueueName(Vector<IngestQueue> nodes) {
+	this.ingestQueueName = nodes;
     }
 
     /**
-     * retrieve all entries
-     * @return queue entries
+     * Add entry into nodes
+     * @param String node
      */
-    public Vector<QueueEntryState> getQueueEntries() {
-        return this.queueEntries;
-    }
-
-    /**
-     * add queue entry
-     * @return queue entries
-     */
-    public void addQueueEntry(QueueEntryState queueEntry)
+    public void addEntry(String node)
     {
-        if (queueEntry == null) return;
-        queueEntries.add(queueEntry);
+        if (node == null) return;
+	IngestQueue ingestQueue = new IngestQueue();
+	ingestQueue.setNode(node);
+        ingestQueueName.add(ingestQueue);
     }
 
 
     public String dump(String header)
     {
-	// gather queue entries
-	String queueEntriesS = "\n\n";
-        Iterator<QueueEntryState> iterator = queueEntries.iterator();
-        while(iterator.hasNext()) {
-            QueueEntryState queueEntry = iterator.next();
-	    queueEntriesS = queueEntriesS + queueEntry + "\n";
-	}
-	queueEntriesS = queueEntriesS.substring(1, queueEntriesS.length() - 1 );
+        String outIngestQueue = "\n\n";
+        outIngestQueue = outIngestQueue + ingestQueueName.toString();
 
         return header  + "\n\n"
-                + " - queue entries: " + queueEntriesS + "\n";
+                + " IngestQueueNameState: " + outIngestQueue + "\n";
     }
+
 }

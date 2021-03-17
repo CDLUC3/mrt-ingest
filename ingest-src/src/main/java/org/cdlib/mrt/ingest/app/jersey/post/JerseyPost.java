@@ -168,45 +168,6 @@ public class JerseyPost extends JerseyBase
     }
 
 
-    // Get queue state 
-    // need to also support state/queue/job/..
-    @GET
-    @Path("/queue")
-    public Response getQueueState(
-            @DefaultValue("xhtml") @QueryParam("t") String formatType,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            log("processing getQueueState");
-
-            // Accept is overridden by responseForm form parm
-            String responseForm = "";
-            try {
-                responseForm = processFormatType(request.getHeader("Accept"), "");
-            } catch (Exception e) {}
-            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getQueueState();
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-
     // Update object 
     // No object ID supplied in URL
     @POST

@@ -33,6 +33,7 @@ package org.cdlib.mrt.ingest.service;
 import java.util.Properties;
 
 import org.cdlib.mrt.ingest.IngestConfig;
+import org.cdlib.mrt.ingest.AdminManager;
 import org.cdlib.mrt.ingest.IngestManager;
 import org.cdlib.mrt.ingest.QueueManager;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -49,6 +50,7 @@ public class IngestServiceAbs
     protected LoggerInf logger = null;
     protected IngestManager ingestManager = null;
     protected QueueManager queueManager = null;
+    protected AdminManager adminManager = null;
     //protected String ingestFileS = null;        // prop "IngestService"
 
     
@@ -99,6 +101,9 @@ public class IngestServiceAbs
         this.queueManager = QueueManager.getQueueManager(
 		ingestConfig.getLogger(),
 		ingestConfig.getQueueConf(),
+		ingestConfig.getIngestConf());
+        this.adminManager = AdminManager.getAdminManager(
+		ingestConfig.getLogger(),
 		ingestConfig.getIngestConf());
     }
 

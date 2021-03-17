@@ -37,14 +37,20 @@ import java.util.Properties;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestConfig;
+import org.cdlib.mrt.ingest.JobFileState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.ProfilesState;
+import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
+import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
+import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
@@ -150,10 +156,66 @@ public class IngestService
     }
 
     @Override
-    public QueueState getQueueState()
+    public ProfileState getProfileState(String profile)
         throws TException
     {
-        return queueManager.getQueueState();
+        return adminManager.getProfileState(profile);
+    }
+
+    @Override
+    public ProfilesState getProfilesState()
+        throws TException
+    {
+        return adminManager.getProfilesState();
+    }
+
+    @Override
+    public ProfilesFullState getProfilesFullState()
+        throws TException
+    {
+        return adminManager.getProfilesFullState();
+    }
+
+    @Override
+    public BatchFileState getQueueFileState(Integer batchAge)
+        throws TException
+    {
+        return adminManager.getQueueFileState(batchAge);
+    }
+
+    @Override
+    public BatchFileState getBatchFileState(String batchID)
+        throws TException
+    {
+        return adminManager.getBatchFileState(batchID);
+    }
+
+    @Override
+    public JobFileState getJobFileState(String batchID, String jobID)
+        throws TException
+    {
+        return adminManager.getJobFileState(batchID, jobID);
+    }
+
+    @Override
+    public ManifestsState getJobManifestState(String batchID, String jobID)
+        throws TException
+    {
+        return adminManager.getJobManifestState(batchID, jobID);
+    }
+
+    @Override
+    public QueueState getQueueState(String queue)
+        throws TException
+    {
+        return queueManager.getQueueState(queue);
+    }
+
+    @Override
+    public IngestQueueNameState getIngestQueueState()
+        throws TException
+    {
+        return queueManager.getIngestQueueState();
     }
 
     @Override

@@ -29,35 +29,25 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.io.Serializable;
-import java.net.URL;
+import java.io.File;
+import java.lang.String;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
-import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.LinkedHashList;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
- * Queue entry information
+ * Job File State information
  * @author mreyes
  */
-public interface QueueEntryStateInf
+public interface JobFileStateInf
         extends StateInf
 {
-    public String getID(); 
-    public String getStatus();
-    public String getDate();
-    public String getBatchID();
-    public String getJobID();
-    public String getName();
-    public String getUser();
-    public String getProfile();
-    public String getQueueNode();
+    /**
+     * Get Jobs
+     * @return Vector profiles
+     */
+    public Map<String, String> getJobFile();
+
 
 }
