@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -237,6 +238,8 @@ public class AdminManager {
                     	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Batch directory: " + batchDir);
 			}
 		
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+
                 	File[] files = batchDir.listFiles();
                 	for (File file: files) {
 			   String filename = file.getName();
@@ -244,12 +247,50 @@ public class AdminManager {
 			   // Add jobs within batch
 			   if (file.isDirectory() && filename.startsWith("jid")) {
 				Date date = new Date(file.lastModified());
-				batchFileState.addBatchFile(filename, date.toString());
+				//batchFileState.addBatchFile(filename, dateFormat.parse(date.toString()).toString());
+				batchFileState.addBatchFile(filename, dateFormat.format(date));
 			   // Add manifest if present
 			   } else if (file.isFile() && filename.endsWith(".checkm")) {
 				batchFileState.setBatchManifestName(filename);
 				batchFileState.setBatchManifestData(FileUtil.file2String(file));
 			   }
+			}				
+
+			return batchFileState;
+                } catch (TException tex) {
+                        throw tex;
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
+	public BatchFileState getQueueFileState(Integer days) throws TException {
+		try {
+			BatchFileState batchFileState = new BatchFileState();
+
+			File queueDir = new File(ingestConf.getString("ingestServicePath") + "/queue" );
+			if ( ! queueDir.isDirectory()) { 
+                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Queue directory: " + queueDir);
+			}
+		
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+			long daysMilli = days.longValue() * 86400 * 1000;
+			long nowMilli = System.currentTimeMillis();
+
+                	File[] files = queueDir.listFiles();
+                	for (File file: files) {
+			   String filename = file.getName();
+
+			   // filter data
+			   if (! file.isDirectory()) continue; 
+			   if (! filename.startsWith("bid")) continue; 
+			   if (file.lastModified() <= (nowMilli - daysMilli)) continue;
+
+			   Date date = new Date(file.lastModified());
+			   batchFileState.addBatchFile(filename, dateFormat.format(date));
 			}				
 
 			return batchFileState;

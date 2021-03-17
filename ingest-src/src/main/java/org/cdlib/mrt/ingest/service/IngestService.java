@@ -177,6 +177,13 @@ public class IngestService
     }
 
     @Override
+    public BatchFileState getQueueFileState(Integer batchAge)
+        throws TException
+    {
+        return adminManager.getQueueFileState(batchAge);
+    }
+
+    @Override
     public BatchFileState getBatchFileState(String batchID)
         throws TException
     {
