@@ -198,6 +198,13 @@ public class IngestService
     }
 
     @Override
+    public BatchFileState getJobViewState(String batchID, String jobID)
+        throws TException
+    {
+        return adminManager.getJobViewState(batchID, jobID);
+    }
+
+    @Override
     public ManifestsState getJobManifestState(String batchID, String jobID)
         throws TException
     {

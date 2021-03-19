@@ -179,6 +179,14 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Get Job File View
+     * @return JobViewState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getJobViewState(String batchID, String jobID)
+        throws TException;
+
+    /**
      * Get Job info from manifest
      * @return JobManifestState state information
      * @throws TException Exception condition during queue service processing
