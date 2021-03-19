@@ -347,6 +347,37 @@ public class AdminManager {
 		}
 	}
 
+	public BatchFileState getJobViewState(String batchID, String jobID) throws TException {
+		try {
+			BatchFileState batchFileState = new BatchFileState();
+			Vector<File> jobFiles = new Vector<File>();
+
+			// Fixed location of ERC file
+			File jobDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID);
+			if ( ! jobDir.exists()) { 
+                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobDir.getAbsolutePath());
+			}
+
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+			FileUtil.getDirectoryFiles(jobDir, jobFiles);
+                	for (File file: jobFiles.toArray(new File[0])) {
+			   if (file.isDirectory()) continue;
+
+                           Date date = new Date(file.lastModified());
+                           batchFileState.addBatchFile(file.getAbsolutePath(), dateFormat.format(date));
+			}				
+
+			return batchFileState;
+                } catch (TException tex) {
+                        throw tex;
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
 	public ManifestsState getJobManifestState(String batchID, String jobID) throws TException {
 		try {
 
