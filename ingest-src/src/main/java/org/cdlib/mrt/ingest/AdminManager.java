@@ -353,7 +353,8 @@ public class AdminManager {
 			Vector<File> jobFiles = new Vector<File>();
 
 			// Fixed location of ERC file
-			File jobDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID);
+			String jobPath = ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID;
+			File jobDir = new File(jobPath);
 			if ( ! jobDir.exists()) { 
                     	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobDir.getAbsolutePath());
 			}
@@ -364,7 +365,7 @@ public class AdminManager {
 			   if (file.isDirectory()) continue;
 
                            Date date = new Date(file.lastModified());
-                           batchFileState.addBatchFile(file.getAbsolutePath(), dateFormat.format(date));
+                           batchFileState.addBatchFile(file.getAbsolutePath().substring(jobPath.length() + 1), dateFormat.format(date));
 			}				
 
 			return batchFileState;
