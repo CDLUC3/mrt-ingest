@@ -30,6 +30,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.lang.IllegalArgumentException;
+import java.lang.Integer;
 import java.lang.Thread;
 import java.util.Date;
 import java.util.List;
@@ -229,9 +230,15 @@ public class AdminManager {
 		}
 	}
 
-	public BatchFileState getBatchFileState(String batchID) throws TException {
+	public BatchFileState getBatchFileState(String batchID, Integer batchAge) throws TException {
 		try {
 			BatchFileState batchFileState = new BatchFileState();
+
+			// null value is to not filter by age
+			if (batchAge == null) batchAge = new Integer(Integer.MAX_VALUE);
+                        long daysMilli = batchAge.longValue() * 86400 * 1000;
+                        long nowMilli = System.currentTimeMillis();
+
 
 			File batchDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID);
 			if ( ! batchDir.isDirectory()) { 
@@ -242,6 +249,8 @@ public class AdminManager {
 
                 	File[] files = batchDir.listFiles();
                 	for (File file: files) {
+                           if (file.lastModified() <= (nowMilli - daysMilli)) continue;
+
 			   String filename = file.getName();
 
 			   // Add jobs within batch

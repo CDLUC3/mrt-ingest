@@ -442,6 +442,45 @@ ex.printStackTrace();
         }
     }
 
+    // Batch File State with age
+    @GET
+    @Path("/bid/{batchID}/{batchAge}")
+    public Response getBatchFiletate(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("batchID") String batchID,
+            @PathParam("batchAge") Integer batchAge,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing getBatchID: " + batchID + " for jobs " + batchAge.toString() + " days old and newer");
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getBatchFileState(batchID, batchAge);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
     // Job File State
     @GET
     @Path("/jid-erc/{batchID}/{jobID}")

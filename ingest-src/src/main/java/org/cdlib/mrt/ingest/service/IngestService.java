@@ -187,7 +187,14 @@ public class IngestService
     public BatchFileState getBatchFileState(String batchID)
         throws TException
     {
-        return adminManager.getBatchFileState(batchID);
+        return getBatchFileState(batchID, null);
+    }
+
+    @Override
+    public BatchFileState getBatchFileState(String batchID, Integer batchAge)
+        throws TException
+    {
+        return adminManager.getBatchFileState(batchID, batchAge);
     }
 
     @Override

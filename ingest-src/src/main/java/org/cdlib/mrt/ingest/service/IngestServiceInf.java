@@ -171,6 +171,14 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Get Batch info from fileswith age
+     * @return BatchFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getBatchFileState(String batchID, Integer batchAge)
+        throws TException;
+
+    /**
      * Get Job info from files
      * @return JobFileState state information
      * @throws TException Exception condition during queue service processing
