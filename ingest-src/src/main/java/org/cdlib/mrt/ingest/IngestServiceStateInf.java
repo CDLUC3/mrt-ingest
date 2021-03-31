@@ -111,6 +111,12 @@ public interface IngestServiceStateInf
     public URL getSupportServiceURL();
 
     /**
+     * Get submission state
+     * @return String submission state frozen|thawed
+     */
+    public String getSubmissionState();
+
+    /**
      * Commands supported by service
      * @return String of supported commands
      */

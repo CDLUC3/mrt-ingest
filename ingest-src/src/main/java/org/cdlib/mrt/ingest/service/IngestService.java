@@ -149,6 +149,13 @@ public class IngestService
     }
 
     @Override
+    public IngestServiceState postSubmissionAction(String action)
+        throws TException
+    {
+        return queueManager.postSubmissionAction(action);
+    }
+
+    @Override
     public JobsState getStatus(String type)
         throws TException
     {

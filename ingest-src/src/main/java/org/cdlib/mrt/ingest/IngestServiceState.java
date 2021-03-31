@@ -61,6 +61,7 @@ public class IngestServiceState
     private URL supportServiceURL;
     private String commands = null;
     private String mailHost = null;
+    private String submissionState = null;
 
     public IngestServiceState()
             throws TException
@@ -258,6 +259,19 @@ public class IngestServiceState
      */
     public void setMailHost(String mailHost) {
         this.mailHost = mailHost;
+    }
+
+    @Override
+    public String getSubmissionState() {
+        return submissionState;
+    }
+
+    /**
+     * Set submission state
+     * @param String submission state
+     */
+    public void setSubmissionState(String submissionState) {
+        this.submissionState = submissionState;
     }
 
     /**
