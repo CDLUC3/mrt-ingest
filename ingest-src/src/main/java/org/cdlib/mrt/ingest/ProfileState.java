@@ -80,6 +80,7 @@ public class ProfileState
     private Identifier.Namespace objectScheme = null;
     private String objectNamespace = null;
     private Vector<String> collection = new Vector<String>();
+    private String collectionName = null;
     private String objectType = null;
     private String objectRole = null;
     private String aggregateType = null;
@@ -443,11 +444,27 @@ public class ProfileState
     }
 
     /**
+     * Set collection name
+     * @param String collection
+     */
+    public void setCollectionName(String collection) {
+        collectionName = collection;
+    }
+
+    /**
      * Get collection
      * @return Vector collection
      */
     public Vector<String> getCollection() {
         return collection;
+    }
+
+    /**
+     * Get collection name
+     * @return String collection
+     */
+    public String getCollectionName() {
+        return collectionName;
     }
 
     /**

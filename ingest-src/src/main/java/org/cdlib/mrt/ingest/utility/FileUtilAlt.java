@@ -49,6 +49,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Vector;
+import org.apache.commons.io.FileUtils;
 
 
 /**
@@ -159,4 +160,42 @@ public class FileUtilAlt {
 
     }
 
+
+    /**
+     * Submission processing action
+     * @param action Action to perform for submission processing by Daemon
+     * @param holdFile File that defines submission processing
+     * @throws org.cdlib.mrt.utility.MException
+     */
+    public static boolean modifyHoldFile(String action, File holdFile)
+        throws Exception
+    {
+        try {
+
+	    if (action.matches("freeze")) {
+                if (holdFile.exists()) {
+                   System.out.println("[info]" + NAME + ": hold file already exists, not action taken");
+		} else {
+                   System.out.println("[info]" + NAME + ": creating hold file: " + holdFile.getAbsolutePath());
+		   FileUtils.touch(holdFile);
+		}
+	    } else if (action.matches("thaw")) {
+                if (holdFile.exists()) {
+                   System.out.println("[info]" + NAME + ": removing hold file: " + holdFile.getAbsolutePath());
+		   holdFile.delete();
+		} else {
+                   System.out.println("[info]" + NAME + ": hold file does not exist, no action taken");
+		}
+	    } else {
+                System.out.println("[info]" + NAME + ": request not recognized.  No action taken: " + action);
+	    }
+
+            return true;
+        } catch(Exception ex) {
+	    ex.printStackTrace();
+            String err = MESSAGE + "submissionAction() - Exception:" + ex;
+            throw new TException.GENERAL_EXCEPTION( err);
+        }
+
+    }
 }

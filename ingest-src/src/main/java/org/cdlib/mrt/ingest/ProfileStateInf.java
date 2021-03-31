@@ -128,8 +128,14 @@ public interface ProfileStateInf
 
     /**
      * Get collection 
-     * @return String collection
+     * @return Vector collection
      */
     public Vector<String> getCollection();
+
+    /**
+     * Get collection Name
+     * @return String collection
+     */
+    public String getCollectionName();
 
 }

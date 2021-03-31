@@ -230,6 +230,8 @@ public class ProfileUtil
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
 		    profileState.setCollection(value);
+		    // For display state only - assumes only on collection per object
+		    profileState.setCollectionName(value);
 		} else if (key.startsWith(matchHandlerIngest)) {
                     if (DEBUG) System.out.println("[debug] ingest handler: " + value);
 
@@ -374,22 +376,19 @@ public class ProfileUtil
         throws TException
     {
 	ProfilesState profilesState = new ProfilesState();
-	Vector<File> files = new Vector<File>();
+        File profileDirectory = new File(profileDir);
 
 	try {
-		File profileDirectory = new File(profileDir);
-		FileUtil.getDirectoryFiles(profileDirectory, files);
+                File[] files = profileDirectory.listFiles();
 
-        	Iterator<File> iterator = files.iterator();
-        	while(iterator.hasNext()) {
-			File profile = iterator.next();
-			profilesState.addProfileInstance(profile);
+                for (File profile: files) {
+                   if (profile.isDirectory()) continue;
+		   if (! isValidProfile(profile.getName())) continue; 
+		   profilesState.addProfileInstance(profile);
 		}
 
 		return profilesState;
 
-	} catch (TException tex) {
-	    throw tex;
 	} catch (Exception ex) {
             String err = MESSAGE + "error getting profiles - Exception:" + ex;
 

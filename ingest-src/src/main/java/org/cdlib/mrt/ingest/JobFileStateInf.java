@@ -45,7 +45,7 @@ public interface JobFileStateInf
 {
     /**
      * Get Jobs
-     * @return Vector profiles
+     * @return Map job files info
      */
     public Map<String, String> getJobFile();
 

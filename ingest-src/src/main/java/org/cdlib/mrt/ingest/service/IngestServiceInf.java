@@ -105,6 +105,15 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+    /**
+     * Alter the state of submissions freeze|thaw
+     * @return IngestServiceState service state information
+     * @throws TException Exception condition 
+     */
+    public IngestServiceState postSubmissionAction(String action)
+        throws TException;
+
+    /**
      * Get jobs state information about processed jobs
      * @param type status type
      * @return batchesState batches state information
@@ -168,6 +177,14 @@ public interface IngestServiceInf
      * @throws TException Exception condition during queue service processing
      */
     public BatchFileState getBatchFileState(String batchID)
+        throws TException;
+
+    /**
+     * Get Batch info from fileswith age
+     * @return BatchFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getBatchFileState(String batchID, Integer batchAge)
         throws TException;
 
     /**

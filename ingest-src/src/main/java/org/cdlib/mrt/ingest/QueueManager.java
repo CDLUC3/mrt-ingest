@@ -68,6 +68,7 @@ import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.handlers.queue.Handler;
 import org.cdlib.mrt.ingest.handlers.queue.HandlerResult;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobStateInf;
 import org.cdlib.mrt.ingest.ProfileState;
@@ -371,6 +372,26 @@ public class QueueManager {
 		}
 	}
 
+        public IngestServiceState postSubmissionAction(String action) throws TException {
+                try {
+			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile")));
+
+                        IngestServiceState ingestState = new IngestServiceState();
+                        URL storageInstance = null;
+                        ingestState.addQueueInstance(queueConnectionString);
+
+                        setIngestStateProperties(ingestState);
+                        return ingestState;
+                } catch (TException me) {
+                        throw me;
+
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                }
+        }
+
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
 	   try {
 		String SERVICENAME = "name";
@@ -382,6 +403,7 @@ public class QueueManager {
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
+                String QUEUEHOLDFILE = "QueueHoldFile";
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -441,6 +463,17 @@ public class QueueManager {
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
+
+                // submission state
+                String queueHoldString = queueConf.getString(QUEUEHOLDFILE);
+                File queueHoldFile = new File(queueHoldString);
+		String onHold = null;
+		if (queueHoldFile.exists()) {
+		   onHold = "frozen";
+		} else {
+		   onHold = "thawed";
+		}
+		ingestState.setSubmissionState(onHold);
 
             } catch (TException me) {
                     throw me;

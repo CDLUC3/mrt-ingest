@@ -35,7 +35,6 @@ import java.util.Iterator;
 import java.lang.String;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Vector;
 
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.JobFileStateInf;
@@ -60,15 +59,16 @@ public class JobFileState
 
     /**
      * Get job file
-     * @return Vector jobs
+     * @return Map jobs
      */
     public Map<String, String> getJobFile() {
         return jobFile;
     }
 
+
     /**
      * Set job file
-     * @param String job file
+     * @param Map job file
      */
     public void setJobFile(Map<String, String> jobFile) {
 	this.jobFile = jobFile;

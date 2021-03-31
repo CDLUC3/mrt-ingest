@@ -677,6 +677,7 @@ public class IngestManager {
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
+                String QUEUEHOLDFILE = "QueueHoldFile";
 
            try {
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -741,6 +742,17 @@ public class IngestManager {
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
+
+                // submission state
+                String queueHoldString = queueConf.getString(QUEUEHOLDFILE);
+                File queueHoldFile = new File(queueHoldString);
+                String onHold = null;
+                if (queueHoldFile.exists()) {
+                   onHold = "frozen";
+                } else {
+                   onHold = "thawed";
+                }
+                ingestState.setSubmissionState(onHold);
             } catch (TException me) {
                     throw me;
 
