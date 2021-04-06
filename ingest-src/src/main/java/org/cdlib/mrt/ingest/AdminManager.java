@@ -328,9 +328,10 @@ public class AdminManager {
                 	for (String line: lines) {
 			   String parts[] = line.split(":", 2);
 
+			   if (parts.length < 2) continue;
 			   String key = parts[0];
 			   String value = parts[1];
-			   if (key.startsWith("erc")) continue;
+			   if (key.startsWith("erc") || (! key.startsWith("wh"))) continue;
 
 			   if (key.startsWith("where")) {
 				// Primary ID is alsways listed first
