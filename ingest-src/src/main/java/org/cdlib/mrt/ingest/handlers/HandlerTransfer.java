@@ -152,20 +152,13 @@ public class HandlerTransfer extends Handler<JobState>
 	    try {
 		if (jobState.getLocalID().getValue().contains("(:unas)")) {
                     if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID found.");
-                    throw new Exception("");	// (:unas) is equivalent to no localID
-		}
-
-		try {
-                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating LocalID db pid: " + 
-			jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
+		} else {
+                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating LocalID db pid: " + jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
 		   LocalIDUtil.addLocalID(profileState, jobState.getPrimaryID().getValue(), jobState.getLocalID().getValue());
-		} catch (Exception le) {
-		   le.printStackTrace();
-                   System.err.println("[error] " + MESSAGE + "failed to update LocalID db: " + le.getMessage());
-		   throw le;
 		}
 	    } catch (Exception e) {
-		// no local ID
+                System.err.println("[error] " + MESSAGE + "failed to update LocalID db: " + e.getMessage());
+		throw e;
 	    }
 
 	    // make service request
