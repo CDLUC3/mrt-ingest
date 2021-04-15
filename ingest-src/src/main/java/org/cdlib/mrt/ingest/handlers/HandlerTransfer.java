@@ -46,6 +46,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.Date;
 import java.util.Properties;
+import java.util.NoSuchElementException;
 
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -150,12 +151,18 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    // Update the LocalID db
 	    try {
+		if (jobState.getLocalID() == null) {
+		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID present - null");
+		    throw new NoSuchElementException("No Local ID present - null");
+		}
 		if (jobState.getLocalID().getValue().contains("(:unas)")) {
-                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID found.");
+                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID present - (:unas)");
 		} else {
                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating LocalID db pid: " + jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
 		   LocalIDUtil.addLocalID(profileState, jobState.getPrimaryID().getValue(), jobState.getLocalID().getValue());
 		}
+	    } catch (NoSuchElementException nse) {
+		// Do nothing - No local ID specified
 	    } catch (Exception e) {
                 System.err.println("[error] " + MESSAGE + "failed to update LocalID db: " + e.getMessage());
 		throw e;
