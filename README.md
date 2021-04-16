@@ -4,12 +4,10 @@ This microservice is part of the [Merritt Preservation System](https://github.co
 
 ## Purpose
 
-This microservice processes content to be ingested into the Merritt Preservation System.
+This microservice processes content to be ingested into the Merritt Preservation Repository.
 
-An ingest package can consist of a single file, a container file such as a zip file, or a 
+An ingest package can consist of a single file, a container file (zip, tar), or a 
 Merritt [manifest](https://github.com/CDLUC3/mrt-doc/wiki/Manifests) file.
-
-The work performed by this service is driven from a Zookeeper Queue.  
 
 Once an ingest package has been prepared, it is sent to the [Merritt Storage Service](https://github.com/CDLUC3/mrt-store).
 
