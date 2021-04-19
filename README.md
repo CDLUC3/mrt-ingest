@@ -18,6 +18,7 @@ Once an ingest package has been prepared, it is sent to the [Merritt Storage Ser
 
 This code depends on the following Merritt Libraries.
 - [Merritt Core Library](https://github.com/CDLUC3/mrt-core2)
+- [CDL Zookeeper Library](https://github.com/CDLUC3/cdl-zk-queue)
 
 ## For external audiences
 This code is not intended to be run apart from the Merritt Preservation System.
