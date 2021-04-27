@@ -683,9 +683,6 @@ public class JerseyAdmin extends JerseyBase
             } catch (Exception e) {}
             if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
 
-            System.out.println("NAME: " + name);
-            System.out.println("STORAGENODE: " + storagenode);
-
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
@@ -694,6 +691,8 @@ public class JerseyAdmin extends JerseyBase
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
             return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException.INVALID_CONFIGURATION ic) {
+            return getStateResponse(ic, formatType, logger, cs, sc);
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {

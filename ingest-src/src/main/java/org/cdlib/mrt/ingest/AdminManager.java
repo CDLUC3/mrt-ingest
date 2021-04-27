@@ -446,14 +446,14 @@ public class AdminManager {
                     	   throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find profileTemplate: " + profileTemplate.getAbsolutePath());
 			}
 
+			// Populate Template
 			String templateString = FileUtil.file2String(profileTemplate);
  			StringSubstitutor sub = new StringSubstitutor(profileParms);
  			String profileString = sub.replace(templateString);
 
-			// Handle multi-line Notification format 
+			// Handle multi-line Notification format (unique)
 			String contacts[] = notification.split(",");
 			Map<String, String> hs = new HashMap();
-
 			for (int i=1; i<=contacts.length; i++) {
 			    String additional = "";
 			    profileString = profileString.replace("${NOTIFICATIONENUM}", String.format("%d", i));
@@ -461,18 +461,49 @@ public class AdminManager {
 			    profileString = profileString.replace("${NOTIFICATION}", contacts[i-1] + additional);
 			}
 
+			// Create a profile state, as a submission would do
+			validateProfile(profileString);
+
 			GenericState genericState = new GenericState();
 			genericState.setString(profileString);
 
 			return genericState;
                 } catch (TException tex) {
+			logger.logError(MESSAGE + "Exception:" + tex, 0);
+
                         throw tex;
 		} catch (Exception ex) {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
+
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 		}
+	}
+
+
+	protected boolean validateProfile(String profileString) throws TException {
+	   File tempFile = null;
+	   try {
+
+		// Replace XML <CR> with unix
+		profileString = profileString.replaceAll("&#10;", "\n");
+
+		tempFile = File.createTempFile("temp", "_content");
+		FileUtil.string2File(tempFile, profileString);
+		ProfileState testProfileState = ProfileUtil.getProfile(new Identifier("test_content",  Identifier.Namespace.Local), tempFile);
+
+		return true;	// Exception is false
+            } catch (TException me) {
+                    logger.logError(MESSAGE + "TException:" + me, 0);
+		
+                    throw me;
+            } catch (Exception ex) {
+                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+                    throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+            } finally {
+		    if (tempFile != null) tempFile.delete();
+	    }
 	}
 
 
@@ -551,7 +582,6 @@ public class AdminManager {
                     throw me;
 
             } catch (Exception ex) {
-                    System.out.println(StringUtil.stackTrace(ex));
                     logger.logError(MESSAGE + "Exception:" + ex, 0);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
             }

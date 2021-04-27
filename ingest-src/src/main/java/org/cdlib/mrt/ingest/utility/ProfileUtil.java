@@ -95,14 +95,14 @@ public class ProfileUtil
     private static final String matchCreationDate = "CreationDate";
     private static final String matchModificationDate = "ModificationDate";
     private static final String matchObjectMinterURL = "ObjectMinterURL";
-    private static final String matchCharacterizationURL = "CharacterizationURL";
-    private static final String matchFixityURL = "FixityURL";
-    private static final String matchDataoneURL = "DataoneURL";
-    private static final String matchCoordinatingNodeURL = "CoordinatingNodeURL";
-    private static final String matchDataoneNodeID = "DataoneNodeID";
+    // private static final String matchCharacterizationURL = "CharacterizationURL";
+    // private static final String matchFixityURL = "FixityURL";
+    // private static final String matchDataoneURL = "DataoneURL";
+    // private static final String matchCoordinatingNodeURL = "CoordinatingNodeURL";
+    // private static final String matchDataoneNodeID = "DataoneNodeID";
     private static final String matchCallbackURL = "CallbackURL";
-    private static final String matchStatusURL = "StatusURL";
-    private static final String matchStatusView = "StatusView";
+    // private static final String matchStatusURL = "StatusURL";
+    // private static final String matchStatusView = "StatusView";
     private static final String matchCollection = "Collection.";
     private static final String matchType = "Type";
     private static final String matchRole = "Role";
@@ -114,13 +114,11 @@ public class ProfileUtil
     private static final String matchNotificationType = "NotificationType";
     private static final String matchSuppressDublinCoreLocalID = "SuppressDublinCoreLocalID";
     
+
+    // Process active profile
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
         throws TException
     {
-    	TreeMap<Integer,HandlerState> ingestHandlers = new TreeMap<Integer,HandlerState>();
-    	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
-	ProfileState profileState = new ProfileState();
-
 	try {
                 File profileTxt = new File(ingestDir, profileName.getValue() + ".txt");		// assume a text extension
                 if (!profileTxt.exists()) {
@@ -130,6 +128,30 @@ public class ProfileUtil
                         throw new TException.INVALID_OR_MISSING_PARM(
                             MESSAGE + "IngestService: profile not found: " + profileTxt.getAbsolutePath());
 		    }
+                }
+		return getProfile(profileName, profileTxt);
+	} catch (TException tex) {
+	    throw tex;
+	} catch (Exception ex) {
+            String err = MESSAGE + "error in creating profile ID - Exception:" + ex;
+
+            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(err);
+	}
+    }
+
+
+    // Process any profile
+    public static synchronized ProfileState getProfile(Identifier profileName, File profileTxt)
+        throws TException
+    {
+    	TreeMap<Integer,HandlerState> ingestHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
+	ProfileState profileState = new ProfileState();
+
+	try {
+                if (!profileTxt.exists()) {
+                    throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "IngestService: profile not found: " + profileTxt.getAbsolutePath());
                 }
                 Properties profileProperties = PropertiesUtil.loadFileProperties(profileTxt);
                 // Properties profileProperties = PropertiesUtil.loadProperties(profileTxt.getAbsolutePath());
@@ -144,8 +166,6 @@ public class ProfileUtil
             while( e.hasMoreElements() ) {
                 String key = (String) e.nextElement();
                 String value = profileProperties.getProperty(key);
-
-                // if (DEBUG) System.out.println("[debug] " + MESSAGE + key + "*=*" + value + "*");
 
                 if (key.startsWith(matchProfileID)) {
                     if (DEBUG) System.out.println("[debug] profile: " + value);
@@ -170,38 +190,22 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("Mint Service parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setObjectMinterURL(url);
-		} else if (key.startsWith(matchCharacterizationURL)) {
-                    if (DEBUG) System.out.println("[debug] characterization URL: " + value);
-                    try {
-                        url = new URL(value);
-                    } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("CharacterizationService parameter in profile is not a valid URL: " + value);
-                    }
-		    profileState.setCharacterizationURL(url);
-		} else if (key.startsWith(matchFixityURL)) {
-                    if (DEBUG) System.out.println("[debug] fixity URL: " + value);
-                    try {
-                        url = new URL(value);
-                    } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("FixityService parameter in profile is not a valid URL: " + value);
-                    }
-		    profileState.setFixityURL(url);
-		} else if (key.startsWith(matchDataoneURL)) {
-                    if (DEBUG) System.out.println("[debug] dataONE member node URL: " + value);
-                    try {
-                        url = new URL(value);
-                    } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("Dataone MN parameter in profile is not a valid URL: " + value);
-                    }
-		    profileState.setDataoneURL(url);
-		} else if (key.startsWith(matchCoordinatingNodeURL)) {
-                    if (DEBUG) System.out.println("[debug] dataONE coordinating node URL: " + value);
-                    try {
-                        url = new URL(value);
-                    } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("Dataone CN parameter in profile is not a valid URL: " + value);
-                    }
-		    profileState.setCoordinatingNodeURL(url);
+		//} else if (key.startsWith(matchCharacterizationURL)) {
+                    //if (DEBUG) System.out.println("[debug] characterization URL: " + value);
+                    //try {
+                        //url = new URL(value);
+                    //} catch (MalformedURLException muex) {
+                        //throw new TException.INVALID_CONFIGURATION("CharacterizationService parameter in profile is not a valid URL: " + value);
+                    //}
+		    //profileState.setCharacterizationURL(url);
+		//} else if (key.startsWith(matchCoordinatingNodeURL)) {
+                    //if (DEBUG) System.out.println("[debug] dataONE coordinating node URL: " + value);
+                    //try {
+                        //url = new URL(value);
+                    //} catch (MalformedURLException muex) {
+                        //throw new TException.INVALID_CONFIGURATION("Dataone CN parameter in profile is not a valid URL: " + value);
+                    //}
+		    //profileState.setCoordinatingNodeURL(url);
 		} else if (key.startsWith(matchCallbackURL)) {
                     if (DEBUG) System.out.println("[debug] callback URL: " + value);
                     try {
@@ -210,25 +214,17 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setCallbackURL(url);
-		} else if (key.startsWith(matchStatusURL)) {
-                    if (DEBUG) System.out.println("[debug] status URL: " + value);
-                    try {
-                        url = new URL(value);
-                    } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("StatusURL parameter in profile is not a valid URL: " + value);
-                    }
-		    profileState.setStatusURL(url);
-		} else if (key.startsWith(matchStatusView)) {
-		    File statusView = null;
-                    if (DEBUG) System.out.println("[debug] status View: " + value);
-                    try {
-                         statusView = new File(ingestDir, value);
-                    } catch (Exception ex) {
-                        throw new TException.INVALID_CONFIGURATION("StatusView file not found: " + statusView.toString());
-                    }
-		    profileState.setStatusView(statusView);
+		//} else if (key.startsWith(matchStatusURL)) {
+                    //if (DEBUG) System.out.println("[debug] status URL: " + value);
+                    //try {
+                        //url = new URL(value);
+                    //} catch (MalformedURLException muex) {
+                        //throw new TException.INVALID_CONFIGURATION("StatusURL parameter in profile is not a valid URL: " + value);
+                    //}
+		    //profileState.setStatusURL(url);
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
+                    if ( ! value.startsWith("ark:/")) throw new TException.INVALID_CONFIGURATION("Collection ID is not a valid: " + value);
 		    profileState.setCollection(value);
 		    // For display state only - assumes only on collection per object
 		    profileState.setCollectionName(value);
@@ -262,7 +258,6 @@ public class ProfileUtil
 		    try {
 		        node = new Integer(value).intValue();
 		    } catch (java.lang.NumberFormatException nfe) {
-			// Check to see if valid Profile
 			if ( ! isValidProfile(profileName.getValue())) {
 			   // Must be a Template, set to nonsensical value
 		           node = new Integer(0).intValue();
@@ -272,40 +267,40 @@ public class ProfileUtil
 		    } 
 		} else if (key.startsWith(matchCreationDate)) {
                     if (DEBUG) System.out.println("[debug] creation date: " + value);
-		    profileState.setCreationDate(new DateState(value));
+		    DateState ds = new DateState(value);
+		    if ( ds.getDate() == null) throw new TException.INVALID_CONFIGURATION("Creation Date parameter in profile is not a valid: " + value);
+		    profileState.setCreationDate(ds);
 		} else if (key.startsWith(matchModificationDate)) {
                     if (DEBUG) System.out.println("[debug] modification date: " + value);
-		    profileState.setModificationDate(new DateState(value));
+		    DateState ds = new DateState(value);
+		    if ( ds.getDate() == null) throw new TException.INVALID_CONFIGURATION("Modification Date  parameter in profile is not a valid: " + value);
+		    profileState.setModificationDate(ds);
 		} else if (key.startsWith(matchType)) {
                     if (DEBUG) System.out.println("[debug] object type: " + value);
-		    if (! profileState.setObjectType(value))
-			throw new TException.INVALID_CONFIGURATION("object type not valid: " + value);
+		    if (! profileState.setObjectType(value)) throw new TException.INVALID_CONFIGURATION("Object type not valid: " + value);
 		} else if (key.startsWith(matchRole)) {
                     if (DEBUG) System.out.println("[debug] object role: " + value);
-		    if (! profileState.setObjectRole(value))
-			throw new TException.INVALID_CONFIGURATION("object role not valid: " + value);
+		    if (! profileState.setObjectRole(value)) throw new TException.INVALID_CONFIGURATION("Object role not valid: " + value);
 		} else if (key.startsWith(matchAggregate)) {
                     if (DEBUG) System.out.println("[debug] aggregate: " + value);
 		    if (! profileState.setAggregateType(value))
-			if (StringUtil.isNotEmpty(profileState.getAggregateType()))
-			    throw new TException.INVALID_CONFIGURATION("aggregate not valid: " + value);
+			if (StringUtil.isNotEmpty(profileState.getAggregateType())) throw new TException.INVALID_CONFIGURATION("Aggregate not valid: " + value);
 		} else if (key.startsWith(matchOwner)) {
                     if (DEBUG) System.out.println("[debug] owner: " + value);
 		    if (! profileState.setOwner(value)) {
-                        // Check to see if valid Profile
                         if ( ! isValidProfile(profileName.getValue())) {
                            // Must be a Template, set to non-sensical value
 			   profileState.setOwner("ark:/template/profile");
 			} else {
-			   throw new TException.INVALID_CONFIGURATION("owner not a valid id: " + value);
+			   throw new TException.INVALID_CONFIGURATION("Owner not a valid id: " + value);
 			}
 		    }
 		} else if (key.startsWith(matchContext)) {
                     if (DEBUG) System.out.println("[debug] context: " + value);
 		    profileState.setContext(value);
-		} else if (key.startsWith(matchDataoneNodeID)) {
-                    if (DEBUG) System.out.println("[debug] dataoneNodeID: " + value);
-		    profileState.setDataoneNodeID(value);
+		//} else if (key.startsWith(matchDataoneNodeID)) {
+                    //if (DEBUG) System.out.println("[debug] dataoneNodeID: " + value);
+		    //profileState.setDataoneNodeID(value);
 		} else if (key.startsWith(matchEzidCoowner)) {
                     if (DEBUG) System.out.println("[debug] EZID co-owner found: " + value);
 		    profileState.setEzidCoowner(value);
@@ -352,6 +347,7 @@ public class ProfileUtil
                 File[] files = profileDirectory.listFiles();
                 for (File profile: files) {
 		   if (profile.isDirectory()) continue;
+		   if (! isValidProfile(profile.getName())) continue; 
                    ProfileState profileState = new ProfileState();
                    Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
                    profileState = ProfileUtil.getProfile(profileID, profileDir);
