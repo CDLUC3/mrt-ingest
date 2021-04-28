@@ -32,6 +32,8 @@ package org.cdlib.mrt.ingest.service;
 
 import java.io.File;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -50,6 +52,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
+import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
@@ -153,6 +156,14 @@ public class IngestService
         throws TException
     {
         return queueManager.postSubmissionAction(action);
+    }
+
+    @Override
+    public GenericState postProfileAction(String type, String environment, String notification, 
+	Map<String, String> profileParms)
+        throws TException
+    {
+        return adminManager.postProfileAction(type, environment, notification, profileParms);
     }
 
     @Override

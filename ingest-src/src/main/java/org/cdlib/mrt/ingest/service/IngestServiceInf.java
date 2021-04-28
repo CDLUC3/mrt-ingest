@@ -31,6 +31,8 @@ package org.cdlib.mrt.ingest.service;
 
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.cdlib.mrt.core.Identifier;
@@ -44,6 +46,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.ManifestsState;
+import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
@@ -96,7 +99,6 @@ public interface IngestServiceInf
     throws TException;
 
     /**
-    /**
      * Get state information about this Storage Service
      * @return IngestServiceState service state information
      * @throws TException Exception condition during storage service procssing
@@ -105,12 +107,20 @@ public interface IngestServiceInf
         throws TException;
 
     /**
-    /**
      * Alter the state of submissions freeze|thaw
      * @return IngestServiceState service state information
      * @throws TException Exception condition 
      */
     public IngestServiceState postSubmissionAction(String action)
+        throws TException;
+
+    /**
+     * Profile creation
+     * @return GenericState service state information
+     * @throws TException Exception condition 
+     */
+    public GenericState postProfileAction(String type, String environment, String notification,
+	 Map<String, String> profileParms)
         throws TException;
 
     /**

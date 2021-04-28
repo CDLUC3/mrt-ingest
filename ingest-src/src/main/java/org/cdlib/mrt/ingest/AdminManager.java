@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
+import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.Date;
@@ -58,6 +59,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import org.apache.commons.text.StringSubstitutor;
 import org.apache.log4j.Logger;
 
 import org.cdlib.mrt.core.DateState;
@@ -431,6 +433,80 @@ public class AdminManager {
 		}
 	}
 
+        public GenericState postProfileAction(String type, String environment, String notification, Map profileParms) throws TException {
+		try {
+			File profileTemplate = null;
+			String repoPath = ingestConf.getString("ingestServicePath") + "/profiles/";
+			String templateName = "TEMPLATE-" + type.toUpperCase();
+
+			if (! type.matches("profile")) 
+			   repoPath += "/admin/" + environment + "/" + type;
+			profileTemplate = new File(repoPath + "/" + templateName);
+			if ( ! profileTemplate.exists()) { 
+                    	   throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find profileTemplate: " + profileTemplate.getAbsolutePath());
+			}
+
+			// Populate Template
+			String templateString = FileUtil.file2String(profileTemplate);
+ 			StringSubstitutor sub = new StringSubstitutor(profileParms);
+ 			String profileString = sub.replace(templateString);
+
+			// Handle multi-line Notification format (unique)
+			String contacts[] = notification.split(",");
+			Map<String, String> hs = new HashMap();
+			for (int i=1; i<=contacts.length; i++) {
+			    String additional = "";
+			    profileString = profileString.replace("${NOTIFICATIONENUM}", String.format("%d", i));
+            		    if (i < contacts.length) additional += "\nNotification.${NOTIFICATIONENUM}: ${NOTIFICATION}";
+			    profileString = profileString.replace("${NOTIFICATION}", contacts[i-1] + additional);
+			}
+
+			// Create a profile state, as a submission would do
+			validateProfile(profileString);
+
+			GenericState genericState = new GenericState();
+			genericState.setString(profileString);
+
+			return genericState;
+                } catch (TException tex) {
+			logger.logError(MESSAGE + "Exception:" + tex, 0);
+
+                        throw tex;
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+		}
+	}
+
+
+	protected boolean validateProfile(String profileString) throws TException {
+	   File tempFile = null;
+	   try {
+
+		// Replace XML <CR> with unix
+		profileString = profileString.replaceAll("&#10;", "\n");
+
+		tempFile = File.createTempFile("temp", "_content");
+		FileUtil.string2File(tempFile, profileString);
+		ProfileState testProfileState = ProfileUtil.getProfile(new Identifier("test_content",  Identifier.Namespace.Local), tempFile);
+
+		return true;	// Exception is false
+            } catch (TException me) {
+                    logger.logError(MESSAGE + "TException:" + me, 0);
+		
+                    throw me;
+            } catch (Exception ex) {
+                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+                    throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+            } finally {
+		    if (tempFile != null) tempFile.delete();
+	    }
+	}
+
+
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
 	   try {
 		String SERVICENAME = "name";
@@ -506,7 +582,6 @@ public class AdminManager {
                     throw me;
 
             } catch (Exception ex) {
-                    System.out.println(StringUtil.stackTrace(ex));
                     logger.logError(MESSAGE + "Exception:" + ex, 0);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
             }

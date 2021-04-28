@@ -29,19 +29,20 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 package org.cdlib.mrt.ingest.app.jersey.admin;
 
-import com.sun.jersey.spi.CloseableService;
-
 import java.io.InputStream;
+import java.util.Map;
+import java.util.HashMap;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
-import javax.ws.rs.Consumes;                                                                                                                                
-import javax.ws.rs.core.Context;                                                                                                                            
+import com.sun.jersey.multipart.FormDataParam;
+import com.sun.jersey.spi.CloseableService;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;                                                                                                                           
-import javax.ws.rs.GET;                                                                                                                                     
-import javax.ws.rs.POST;                                                                                                                                    
-import javax.ws.rs.PUT;                                                                                                                                     
+import javax.ws.rs.core.Response;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.DefaultValue;
@@ -636,4 +637,67 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
+    // Create profile: submission or admin (collection/owner/sla)
+    @POST
+    @Path("/profile/{type: profile|collection|owner|sla}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
+    public Response postProfileAction(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+	    @PathParam("type") String type,
+            @DefaultValue("") @FormDataParam("environment") String environment,
+            @DefaultValue("") @FormDataParam("name") String name,
+            @DefaultValue("") @FormDataParam("description") String description,
+            @DefaultValue("") @FormDataParam("collection") String collection,
+            @DefaultValue("") @FormDataParam("ark") String ark,
+            @DefaultValue("") @FormDataParam("owner") String owner,
+            @DefaultValue("") @FormDataParam("notification") String notification,
+            @DefaultValue("") @FormDataParam("context") String context,
+            @DefaultValue("") @FormDataParam("storagenode") String storagenode,
+            @DefaultValue("") @FormDataParam("creationdate") String creationdate,
+            @DefaultValue("") @FormDataParam("modificationdate") String modificationdate,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            
+	    log("processing profile request: " + type);
+	    Map<String, String> profileParms = new HashMap();
+	    // Only add Template data in Map
+	    profileParms.put("NAME", name);
+	    profileParms.put("DESCRIPTION", description);
+	    profileParms.put("COLLECTION", collection);
+	    profileParms.put("ARK", ark);
+	    profileParms.put("OWNER", owner);
+	    profileParms.put("CONTEXT", context);
+	    profileParms.put("STORAGENODE", storagenode);
+	    profileParms.put("CREATIONDATE", creationdate);
+	    profileParms.put("MODIFICATIONDATE", modificationdate);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.postProfileAction(type, environment, notification, profileParms);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException.INVALID_CONFIGURATION ic) {
+            return getStateResponse(ic, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
 }
