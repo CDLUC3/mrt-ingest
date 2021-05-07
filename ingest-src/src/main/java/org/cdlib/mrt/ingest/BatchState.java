@@ -98,6 +98,11 @@ public class BatchState
       try {
           return batchReadiness.get(id);
       } catch (Exception e) {
+	  // Recovering from a Tomcat restart
+	  if (! batchReadiness.containsKey(id)) {
+		System.out.println("Recovering from a Shutdown.  Forcing batch ready: " + id);
+		return 1;
+	  }
 	  return 0;
       }
     } 

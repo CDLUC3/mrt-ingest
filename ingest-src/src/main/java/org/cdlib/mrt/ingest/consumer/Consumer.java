@@ -91,6 +91,7 @@ public class Consumer extends HttpServlet
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
     private String queueNode = "/server.1";	// default queue
+    private String queuePath = "/dpr2/ingest_home";  // default
     private int numThreads = 5;		// default size
     private int pollingInterval = 2;	// default interval (minutes)
 
@@ -132,6 +133,18 @@ public class Consumer extends HttpServlet
 	    System.err.println("[warn] " + MESSAGE + "Could not set queue node: " + queueNode +
 		 "  - using default: " + this.queueNode);
 	}
+
+	try {
+	    queuePath = ingestService.getIngestServiceProp() + "/queue/";
+	    if (StringUtil.isNotEmpty(queuePath)) {
+	    	System.out.println("[info] " + MESSAGE + "Setting queue path: " + queuePath);
+		this.queuePath = queuePath;
+	    }
+	} catch (Exception e) {
+	    System.err.println("[warn] " + MESSAGE + "Could not set queue path: " + queuePath +
+		 "  - using default: " + this.queuePath);
+	}
+
 
 	try {
 	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
@@ -250,8 +263,8 @@ public class Consumer extends HttpServlet
             while(iterator.hasNext()){
                 BatchState batchState = BatchState.getBatchState((String) iterator.next());
                 System.out.println("[warning] " + MESSAGE + "Shutdown detected, writing to disk: " + batchState.getBatchID().getValue());
-                System.out.println("[warning] " + MESSAGE + "queue path: " + BatchState.getQueuePath(batchState.getBatchID().getValue()));
-                ProfileUtil.writeTo(batchState, new File(BatchState.getQueuePath(batchState.getBatchID().getValue())).getParentFile());
+                System.out.println("[warning] " + MESSAGE + "queue path: " + queuePath + "/" + batchState.getBatchID().getValue());
+                ProfileUtil.writeTo(batchState, new File(queuePath + "/" + batchState.getBatchID().getValue()));
             }
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
