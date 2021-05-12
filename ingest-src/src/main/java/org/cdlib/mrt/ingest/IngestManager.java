@@ -777,12 +777,15 @@ public class IngestManager {
 				// update batch object on disk (must be synchronous)
 				batchState = new BatchState(jobState.grabBatchID());
 
-				// Does not scale!!
-				// batchState = ProfileUtil.readFrom(batchState,
-				// ingestRequest.getQueuePath().getParentFile());
-
-				batchState = BatchState.getBatchState(jobState.grabBatchID().getValue());
-				batchState.setBatchID(jobState.grabBatchID());
+				try {
+				   batchState = BatchState.getBatchState(jobState.grabBatchID().getValue());
+				   batchState.setBatchID(jobState.grabBatchID());
+				} catch (Exception eee) {
+				   // Recover from restart
+				   System.out.println("[info]" + MESSAGE + "Batch not defined. Read from serialized object on disk: " + jobState.getJobID());
+				   batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
+				   batchState.setBatchID(jobState.grabBatchID());
+				}
 
 				// remove old job and replace w/ new
 				Map<String, JobState> jobStates = (HashMap<String, JobState>) batchState.getJobStates();
