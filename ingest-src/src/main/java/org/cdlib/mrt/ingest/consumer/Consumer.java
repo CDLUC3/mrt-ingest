@@ -91,7 +91,7 @@ public class Consumer extends HttpServlet
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
     private String queueNode = "/server.1";	// default queue
-    private String queuePath = "/dpr2/ingest_home";  // default
+    private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 2;	// default interval (minutes)
 
