@@ -374,6 +374,9 @@ public class IngestManager {
 		ProfileState profileState = null;
 		JobState jobState = null;
 		try {
+			// add ingest queue path to request
+			ingestRequest.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
+
 			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
 

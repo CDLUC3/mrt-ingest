@@ -65,6 +65,7 @@ public class IngestConfig
     protected JSONObject queueConf = null;
     protected JSONObject storeConf = null;
     protected String ingestServicePath = null;
+    protected String ingestQueuePath = null;
 
     // ingest-info
     protected String ingestName = null;
@@ -118,7 +119,8 @@ public class IngestConfig
             ingestConfig.setIngestConf(ingestConf);
 	    // ingestServicePath var
 	    ingestConfig.setServicePath(ingestConf.getString("ingestServicePath"));
-
+	    // ingestQueuePath var
+	    ingestConfig.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
 
 	    // Store config object (store-info)
             JSONObject storeConf = jIngInfo.getJSONObject("store-info");
@@ -235,6 +237,10 @@ public class IngestConfig
         return servicePath;
     }
 
+    public String getIngestQueuePath() {
+        return ingestQueuePath;
+    }
+
     public JSONObject getIngestConf() {
         return ingestConf;
     }
@@ -258,6 +264,10 @@ public class IngestConfig
 
     public void setServicePath(String servicePath) {
         this.servicePath = servicePath;
+    }
+    
+    public void setIngestQueuePath(String ingestQueuePath) {
+        this.ingestQueuePath = ingestQueuePath;
     }
     
     public void setIngestConf(JSONObject ingestConf) {

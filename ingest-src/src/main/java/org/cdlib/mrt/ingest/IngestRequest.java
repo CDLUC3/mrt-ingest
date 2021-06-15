@@ -57,6 +57,7 @@ public class IngestRequest
     private String link = null;	// used to expose data to storage service via manifest
 
     private File queueDir;
+    private String ingestQueuePath;	// Shareable e.g. EFS
 
     private JobState jobState;
     private ResponseFormEnum responseForm;
@@ -306,11 +307,27 @@ public class IngestRequest
     }
 
     /**
+     * Get ingest queue path
+     * @return Shared queue pathname
+     */
+    public String getIngestQueuePath() {
+        return ingestQueuePath;
+    }
+
+    /**
      * Set queue path
      * @param File submission queuing directory
      */
     public void setQueuePath(File queueDir) {
         this.queueDir = queueDir;
+    }
+
+    /**
+     * Set ingest queue path
+     * @param String Shared queue pathname
+     */
+    public void setIngestQueuePath(String ingestQueuePath) {
+        this.ingestQueuePath = ingestQueuePath;
     }
 
     /**
