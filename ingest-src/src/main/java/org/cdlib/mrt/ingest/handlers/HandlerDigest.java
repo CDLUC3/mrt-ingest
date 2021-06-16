@@ -43,6 +43,7 @@ import org.cdlib.mrt.core.ManifestBuild;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
+import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 /**
@@ -75,16 +76,23 @@ public class HandlerDigest extends Handler<JobState>
             File manifest = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
             manifest.createNewFile();
 
+	    String sharedPath = ingestRequest.getIngestQueuePath();
+	    String baseURL = null;
 
-	    // requires symlink from webapps/ingestqueue to home ingest queue directory
-	    //URL link = new URL(ingestRequest.getLink());	
-	    //String port = "";
-	    //String path = link.getPath();
-	    //if (link.getPort() != -1) port = ":" + link.getPort();
-	    //String baseURL = link.getProtocol() + "://" + link.getHost() + port + path +
-		 //"/ingestqueue/" + ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
-	    String baseURL = "file://" + ingestRequest.getIngestQueuePath() + "/" +
-		ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
+	    if (StringUtil.isEmpty(sharedPath)) {
+	        // Use network protocol
+	        // Requires symlink from webapps/ingestqueue to home ingest queue directory
+	        URL link = new URL(ingestRequest.getLink());	
+	        String port = "";
+	        String path = link.getPath();
+	        if (link.getPort() != -1) port = ":" + link.getPort();
+	        baseURL = link.getProtocol() + "://" + link.getHost() + port + path +
+		     "/ingestqueue/" + ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
+	    } else {
+	        // Use file prototcol
+	        baseURL = "file:" + ingestRequest.getIngestQueuePath() + "/" +
+		    ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
+	    }
 
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " baseURL: " + baseURL);
 
