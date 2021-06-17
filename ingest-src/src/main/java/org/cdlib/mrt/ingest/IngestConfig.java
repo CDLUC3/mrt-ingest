@@ -57,7 +57,7 @@ public class IngestConfig
 {
     protected static final String NAME = "IngestConfig";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = false;
+    protected static final boolean DEBUG = true;
     
     protected LoggerInf logger = null;
     protected JSONObject loggerConf = null;
@@ -65,6 +65,7 @@ public class IngestConfig
     protected JSONObject queueConf = null;
     protected JSONObject storeConf = null;
     protected String ingestServicePath = null;
+    protected String ingestQueuePath = null;
 
     // ingest-info
     protected String ingestName = null;
@@ -118,7 +119,13 @@ public class IngestConfig
             ingestConfig.setIngestConf(ingestConf);
 	    // ingestServicePath var
 	    ingestConfig.setServicePath(ingestConf.getString("ingestServicePath"));
-
+	    // ingestQueuePath var
+	    try {
+	        ingestConfig.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
+	    } catch (org.json.JSONException je) {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
+	        ingestConfig.setIngestQueuePath(null);
+	    }
 
 	    // Store config object (store-info)
             JSONObject storeConf = jIngInfo.getJSONObject("store-info");
@@ -235,6 +242,10 @@ public class IngestConfig
         return servicePath;
     }
 
+    public String getIngestQueuePath() {
+        return ingestQueuePath;
+    }
+
     public JSONObject getIngestConf() {
         return ingestConf;
     }
@@ -258,6 +269,10 @@ public class IngestConfig
 
     public void setServicePath(String servicePath) {
         this.servicePath = servicePath;
+    }
+    
+    public void setIngestQueuePath(String ingestQueuePath) {
+        this.ingestQueuePath = ingestQueuePath;
     }
     
     public void setIngestConf(JSONObject ingestConf) {

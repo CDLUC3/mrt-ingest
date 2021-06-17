@@ -13,6 +13,7 @@ ingest:
     admin: "{!SSM: ingest/config/admin}"
     purl: "http://n2t.net/"
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
+    ingestQueuePath: "{!SSM: ingest/config/ingestQueuePath !DEFAULT: /apps/ingest-stg-shared/ingest_home/queue}"
 
   store-info:
     store.1: "{!SSM: ingest/config/store.1}"
@@ -53,6 +54,7 @@ ingest-docker:
     purl: "http://n2t.net/"
     mail-host: "smtp"
     ingestServicePath: "/tdr/ingest"
+    ingestQueuePath: "/tdr/ingest/queue"
 
   store-info:
     store.1: "http://store:8080/store"
