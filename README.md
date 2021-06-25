@@ -11,6 +11,9 @@ Merritt [manifest](https://github.com/CDLUC3/mrt-doc/wiki/Manifests) file.
 
 Once an ingest package has been prepared, it is sent to the [Merritt Storage Service](https://github.com/CDLUC3/mrt-store).
 
+## Original System Specifications
+- [Merritt Ingest Service](https://github.com/CDLUC3/mrt-doc/blob/main/doc/Merritt-ingest-service-latest.pdf)
+
 ## Component Diagram
 [![Flowchart](https://github.com/CDLUC3/mrt-doc/raw/main/diagrams/ingest.mmd.svg)](https://cdluc3.github.io/mrt-doc/diagrams/ingest)
 
