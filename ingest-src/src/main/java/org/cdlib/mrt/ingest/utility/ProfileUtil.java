@@ -224,7 +224,7 @@ public class ProfileUtil
 		    //profileState.setStatusURL(url);
 		} else if (key.startsWith(matchCollection)) {
                     if (DEBUG) System.out.println("[debug] collection: " + value);
-                    if ( ! value.startsWith("ark:/")) throw new TException.INVALID_CONFIGURATION("Collection ID is not a valid: " + value);
+                    if ((! value.startsWith("ark:/")) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Collection ID is not a valid: " + value);
 		    profileState.setCollection(value);
 		    // For display state only - assumes only on collection per object
 		    profileState.setCollectionName(value);
@@ -268,12 +268,12 @@ public class ProfileUtil
 		} else if (key.startsWith(matchCreationDate)) {
                     if (DEBUG) System.out.println("[debug] creation date: " + value);
 		    DateState ds = new DateState(value);
-		    if ( ds.getDate() == null) throw new TException.INVALID_CONFIGURATION("Creation Date parameter in profile is not a valid: " + value);
+		    if ((ds.getDate() == null) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Creation Date parameter in profile is not a valid: " + value);
 		    profileState.setCreationDate(ds);
 		} else if (key.startsWith(matchModificationDate)) {
                     if (DEBUG) System.out.println("[debug] modification date: " + value);
 		    DateState ds = new DateState(value);
-		    if ( ds.getDate() == null) throw new TException.INVALID_CONFIGURATION("Modification Date  parameter in profile is not a valid: " + value);
+		    if ((ds.getDate() == null) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Modification Date  parameter in profile is not a valid: " + value);
 		    profileState.setModificationDate(ds);
 		} else if (key.startsWith(matchType)) {
                     if (DEBUG) System.out.println("[debug] object type: " + value);
@@ -284,7 +284,7 @@ public class ProfileUtil
 		} else if (key.startsWith(matchAggregate)) {
                     if (DEBUG) System.out.println("[debug] aggregate: " + value);
 		    if (! profileState.setAggregateType(value))
-			if (StringUtil.isNotEmpty(profileState.getAggregateType())) throw new TException.INVALID_CONFIGURATION("Aggregate not valid: " + value);
+			if (StringUtil.isNotEmpty(profileState.getAggregateType()) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Aggregate not valid: " + value);
 		} else if (key.startsWith(matchOwner)) {
                     if (DEBUG) System.out.println("[debug] owner: " + value);
 		    if (! profileState.setOwner(value)) {
