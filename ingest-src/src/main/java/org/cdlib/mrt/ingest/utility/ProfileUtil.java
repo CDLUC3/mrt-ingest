@@ -347,7 +347,7 @@ public class ProfileUtil
                 File[] files = profileDirectory.listFiles();
                 for (File profile: files) {
 		   if (profile.isDirectory()) continue;
-		   if (! isValidProfile(profile.getName())) continue; 
+		   if (! isValidProfile(profile.getName()) && ! isTemplate(profile.getName())) continue; 
                    ProfileState profileState = new ProfileState();
                    Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
                    profileState = ProfileUtil.getProfile(profileID, profileDir);
@@ -379,7 +379,7 @@ public class ProfileUtil
 
                 for (File profile: files) {
                    if (profile.isDirectory()) continue;
-		   if (! isValidProfile(profile.getName())) continue; 
+		   if (! isValidProfile(profile.getName()) && ! isTemplate(profile.getName())) continue; 
 		   profilesState.addProfileInstance(profile);
 		}
 
@@ -427,6 +427,16 @@ public class ProfileUtil
             return profileName.endsWith("_content");
         } catch (Exception e) {
             System.err.println("[warning] " + MESSAGE + " could not determine if profile is valid: " + profileName);
+        }
+	return true;	// default
+   }
+
+    public static boolean isTemplate(String profileName) {
+        try {
+	    // Convention that all tempaltes start with "TEMPLATE"
+            return profileName.startsWith("TEMPLATE");
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine if file is a template: " + profileName);
         }
 	return true;	// default
    }
