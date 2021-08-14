@@ -193,14 +193,29 @@ public class MintUtil
 	    } catch (Exception e) { }
 
 	    // Is co-owner available?
-	    String coowner = "\n";
+	    String coowner = "";
 	    try {
 		if (profileState.getEzidCoowner() != null) {
 	            // coowner = "\n" + "_coowners: " + profileState.getEzidCoowner() + "\n";
-	            coowner = "\n" + "_owner: " + profileState.getEzidCoowner() + "\n";
+	            coowner = "_owner: " + profileState.getEzidCoowner();
                     System.out.println("[info] " + MESSAGE + "Found EZID co-owner: " + profileState.getEzidCoowner());
 		}
 	    } catch (Exception e) { }
+
+	    // Is this an admin object??
+	    String adminHeader = "";
+	    String aggregateType = profileState.getAggregateType();
+	    try {
+		if (aggregateType != null) {
+		    if (aggregateType.matches("MRT-collection|MRT-owner|MRT-service-level-agreement")) {
+                        System.out.println("[info] " + MESSAGE + "Object is admin.  Setting to not harvest and to make unavailable.");
+			// Do not harvest and make unavailable
+	                adminHeader = "_status: unavailable" + "\n" + "_export: no";
+		    }
+		}
+	    } catch (Exception e) {
+	        System.err.println("[warning] " + MESSAGE + "Could not determine if object is admin aggregate type: " + aggregateType);
+	    }
 
 	    try {
 	        httpCommand = new HttpPost(url);
@@ -210,8 +225,9 @@ public class MintUtil
 	    httpCommand.addHeader("Content-Type", "text/plain");
 	    String stringEntity = null;
 
-	    // Populate with ERC profile if supplied
-	    stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + coowner;
+	    // Populate with ERC profile and other fields, if supplied
+	    stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + "\n" + coowner + "\n" + adminHeader;
+            httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
 
             System.out.println("[info] POST stringEntity: " + stringEntity);
 
@@ -221,7 +237,7 @@ public class MintUtil
             int retryCount = 0;
             while (true) {
 	    	try {
-                     httpResponse = httpClient.execute(httpCommand);
+		     httpResponse = httpClient.execute(httpCommand);
 		     responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
 		     break;
 	    	} catch (HttpHostConnectException hhce) {
@@ -245,13 +261,8 @@ public class MintUtil
 	    }
 	    if (responseBody.startsWith("success")) {
                 System.out.println("[info] " + MESSAGE + responseBody);
-                System.out.println("[info] " + MESSAGE + url);
-                System.out.println("[info] " + MESSAGE +  getMetadata(jobState));
-                System.out.println("[info] " + MESSAGE + context);
-                System.out.println("[info] " + MESSAGE + target);
 	    }
 	    String expectedResponse = "success:";		// e.g. success: ark:/99999/fk42z13f2
-	    System.out.println("[info] POST " + responseBody);
 
 	    String id = new String(responseBody);
 	    if ( ! id.startsWith(expectedResponse)) {
@@ -259,7 +270,9 @@ public class MintUtil
 	            System.out.println("[info] " + MESSAGE + "could not update, attempting to create: " + url);
 	            httpCommand = new HttpPut(url);
 	    	    httpCommand.addHeader("Content-Type", "text/plain");
-	            httpCommand.setEntity(new StringEntity(getMetadata(jobState) + "\n" + context + "\n" + target, "UTF-8"));
+		    
+		    System.out.println("[info] PUT stringEntity: " + stringEntity);
+	            httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
 
 		    try {
                 	httpResponse = httpClient.execute(httpCommand);
