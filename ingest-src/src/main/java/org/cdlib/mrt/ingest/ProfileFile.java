@@ -51,7 +51,21 @@ public class ProfileFile
 
     public String getFile()
     {
-        return file.getName();
+	// start of admin pathname
+	String admin = "admin";
+	String canon = "";
+
+	try { 
+	   canon = file.getCanonicalPath();
+	} catch (java.io.IOException ioe) {
+	   return null;
+	}
+	if (! canon.contains(admin)) {
+           return file.getName();
+	} else {
+	   // admin profiles
+           return canon.substring(canon.indexOf(admin));
+	}
     }
 
     /**

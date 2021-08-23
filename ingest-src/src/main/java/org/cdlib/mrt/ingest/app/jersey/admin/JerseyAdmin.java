@@ -251,11 +251,12 @@ public class JerseyAdmin extends JerseyBase
     }
 
 
-    // Get profiles state - Names only
+    // Get profiles state user --> name, admin --> path and name
     @GET
-    @Path("/profiles")
+    @Path("{profilePath: profiles|profiles/admin}")
     public Response getProfilesState(
             @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("profilePath") String profilePath,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -267,6 +268,8 @@ public class JerseyAdmin extends JerseyBase
 
             // Accept is overridden by responseForm form parm
             String responseForm = "";
+	    boolean admin = false;
+
             try {
                 responseForm = processFormatType(request.getHeader("Accept"), "");
             } catch (Exception e) {}
@@ -275,7 +278,10 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getProfilesState();
+
+	    if (profilePath.contains("admin")) admin = true;
+
+            StateInf responseState = ingestService.getProfilesState(profilePath, admin);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
@@ -364,6 +370,48 @@ public class JerseyAdmin extends JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
+
+
+    // Profile state admin
+    @GET
+    @Path("/profile/admin/{env: docker|stage|production}/{type: collection|owner|sla}/{profile}")
+    public Response getProfileState(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("env") String env,
+            @PathParam("type") String type,
+            @PathParam("profile") String profile,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing getProfileState" + profile);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getProfileState("admin/" + env + "/" + type + "/" + profile);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
 
     // Queue File State
     @GET

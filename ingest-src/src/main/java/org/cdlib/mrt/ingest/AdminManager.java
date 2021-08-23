@@ -202,10 +202,10 @@ public class AdminManager {
 		}
 	}
 
-	public ProfilesState getProfilesState() throws TException {
+	public ProfilesState getProfilesState(String profilePath, boolean recurse) throws TException {
 		try {
 			ProfilesState profilesState = new ProfilesState();
-			profilesState = ProfileUtil.getProfiles(ingestFileS + "/profiles");
+			profilesState = ProfileUtil.getProfiles(ingestFileS + "/" + profilePath, recurse);
 
 			return profilesState;
 

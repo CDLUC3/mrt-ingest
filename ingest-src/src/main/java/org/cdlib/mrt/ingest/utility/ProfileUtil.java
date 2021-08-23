@@ -368,17 +368,27 @@ public class ProfileUtil
     }
 
 
-    public static synchronized ProfilesState getProfiles(String profileDir)
+    public static synchronized ProfilesState getProfiles(String profileDir, boolean recurse)
         throws TException
     {
 	ProfilesState profilesState = new ProfilesState();
         File profileDirectory = new File(profileDir);
 
 	try {
-                File[] files = profileDirectory.listFiles();
+                File[] files = null;
+		if (! recurse) {
+                   files = profileDirectory.listFiles();
+		} else {
+		   // admin
+		   Vector<File> vfiles = new Vector<File>();
+		   FileUtil.getDirectoryFiles(new File(profileDir), vfiles);
+		   files = (File[]) vfiles.toArray(new File[0]);
+		}
 
                 for (File profile: files) {
-                   if (profile.isDirectory()) continue;
+                   if (! recurse) {
+                      if (profile.isDirectory()) continue;
+		   }
 		   if (! isValidProfile(profile.getName()) && ! isTemplate(profile.getName())) continue; 
 		   profilesState.addProfileInstance(profile);
 		}
