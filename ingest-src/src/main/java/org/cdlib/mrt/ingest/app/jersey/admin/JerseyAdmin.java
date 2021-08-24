@@ -253,7 +253,7 @@ public class JerseyAdmin extends JerseyBase
 
     // Get profiles state user --> name, admin --> path and name
     @GET
-    @Path("{profilePath: profiles|profiles/admin}")
+    @Path("{profilePath: profiles|profiles/admin|profiles/admin/(collection|owner|sla)}")
     public Response getProfilesState(
             @DefaultValue("json") @QueryParam("t") String formatType,
             @PathParam("profilePath") String profilePath,

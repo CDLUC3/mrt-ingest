@@ -376,20 +376,34 @@ public class ProfileUtil
 
 	try {
                 File[] files = null;
+		String filter = isAdmin(profileDir);
 		if (! recurse) {
                    files = profileDirectory.listFiles();
 		} else {
 		   // admin
 		   Vector<File> vfiles = new Vector<File>();
-		   FileUtil.getDirectoryFiles(new File(profileDir), vfiles);
+		   if (filter == null) {
+		       // e.g. /tdr/ingest/profiles/admin
+		       FileUtil.getDirectoryFiles(new File(profileDir), vfiles);
+		   } else { 
+		       // e.g. /tdr/ingest/profiles/admin/docker/sla
+		       FileUtil.getDirectoryFiles(new File(profileDir).getParentFile(), vfiles);
+		   }
 		   files = (File[]) vfiles.toArray(new File[0]);
 		}
 
                 for (File profile: files) {
+		   String fname = profile.getName();
+		   String cpath = profile.getParentFile().getCanonicalPath();
                    if (! recurse) {
                       if (profile.isDirectory()) continue;
+		      if (! isValidProfile(fname) && ! isTemplate(fname)) continue; 
+		   } else {
+		      //filter if necessary
+		      if (filter != null ) {
+		          if (! cpath.endsWith(filter)) continue;
+		      }
 		   }
-		   if (! isValidProfile(profile.getName()) && ! isTemplate(profile.getName())) continue; 
 		   profilesState.addProfileInstance(profile);
 		}
 
@@ -449,6 +463,18 @@ public class ProfileUtil
             System.err.println("[warning] " + MESSAGE + " could not determine if file is a template: " + profileName);
         }
 	return true;	// default
+   }
+
+    public static String isAdmin(String profileName) {
+        try {
+	    // is this profile list to be filtered
+	    if (profileName.endsWith("/collection")) return "collection";
+	    if (profileName.endsWith("/owner")) return "owner";
+	    if (profileName.endsWith("/sla")) return "sla";
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine if profile is an admin to be filtered: " + profileName);
+        }
+	return null;	// default
    }
 
     public static boolean isDemoMode(ProfileState profileState) {
