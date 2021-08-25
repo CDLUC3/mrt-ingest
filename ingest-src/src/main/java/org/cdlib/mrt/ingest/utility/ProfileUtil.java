@@ -46,8 +46,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.utility.FileUtil;
+import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.BatchState;
@@ -395,6 +395,7 @@ public class ProfileUtil
                 for (File profile: files) {
 		   String fname = profile.getName();
 		   String cpath = profile.getParentFile().getCanonicalPath();
+		   String description = null;
                    if (! recurse) {
                       if (profile.isDirectory()) continue;
 		      if (! isValidProfile(fname) && ! isTemplate(fname)) continue; 
@@ -403,8 +404,9 @@ public class ProfileUtil
 		      if (filter != null ) {
 		          if (! cpath.endsWith(filter)) continue;
 		      }
+		      description = getDescription(new File(cpath + "/" + fname));
 		   }
-		   profilesState.addProfileInstance(profile);
+		   profilesState.addProfileInstance(profile, recurse, description);
 		}
 
 		return profilesState;
@@ -475,6 +477,19 @@ public class ProfileUtil
             System.err.println("[warning] " + MESSAGE + " could not determine if profile is an admin to be filtered: " + profileName);
         }
 	return null;	// default
+   }
+
+    public static String getDescription(File profile) {
+        try {
+	    ProfileState profileState = new ProfileState();
+	    Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
+	    profileState = getProfile(profileID, profile);
+
+	    return profileState.getProfileDescription();
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine retrieve profile description from profile: " + profile.getName());
+        }
+	return null;
    }
 
     public static boolean isDemoMode(ProfileState profileState) {
