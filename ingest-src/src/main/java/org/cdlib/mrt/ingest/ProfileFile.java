@@ -33,6 +33,7 @@ package org.cdlib.mrt.ingest;
 import java.io.File;
 import java.lang.String;
 import java.net.URL;
+import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.utility.StateInf;
 
 /**
@@ -44,6 +45,8 @@ public class ProfileFile
 {
 
     protected File file = null;
+    protected String description = null;
+    protected DateState modificationDate = null;
 
     // constructor
     ProfileFile() {
@@ -51,8 +54,33 @@ public class ProfileFile
 
     public String getFile()
     {
-        return file.getName();
+	// start of admin pathname
+	String admin = "admin";
+	String canon = "";
+
+	try { 
+	   canon = file.getCanonicalPath();
+	} catch (java.io.IOException ioe) {
+	   return null;
+	}
+	if (! canon.contains(admin)) {
+           return file.getName();
+	} else {
+	   // admin profiles
+           return canon.substring(canon.indexOf(admin));
+	}
     }
+
+    public DateState getModificationDate()
+    {
+        return this.modificationDate;
+    }
+
+    public String getDescription()
+    {
+	return this.description;
+    }
+
 
     /**
      * Set file
@@ -61,6 +89,23 @@ public class ProfileFile
     public void setFile(File file) {
         this.file = file;
     }
+
+    /**
+     * Set file description
+     * @param String description
+     */
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    /**
+     * Set modification date
+     * @param DateState modification date
+     */
+    public void setModificationDate(DateState modificationDate) {
+        this.modificationDate = modificationDate;
+    }
+
 
     public String dump(String header)
     {

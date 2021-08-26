@@ -46,8 +46,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.utility.FileUtil;
+import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.Notification;
 import org.cdlib.mrt.ingest.BatchState;
@@ -368,19 +368,45 @@ public class ProfileUtil
     }
 
 
-    public static synchronized ProfilesState getProfiles(String profileDir)
+    public static synchronized ProfilesState getProfiles(String profileDir, boolean recurse)
         throws TException
     {
 	ProfilesState profilesState = new ProfilesState();
         File profileDirectory = new File(profileDir);
 
 	try {
-                File[] files = profileDirectory.listFiles();
+                File[] files = null;
+		String filter = isAdmin(profileDir);
+		if (! recurse) {
+                   files = profileDirectory.listFiles();
+		} else {
+		   // admin
+		   Vector<File> vfiles = new Vector<File>();
+		   if (filter == null) {
+		       // e.g. /tdr/ingest/profiles/admin
+		       FileUtil.getDirectoryFiles(new File(profileDir), vfiles);
+		   } else { 
+		       // e.g. /tdr/ingest/profiles/admin/docker/sla
+		       FileUtil.getDirectoryFiles(new File(profileDir).getParentFile(), vfiles);
+		   }
+		   files = (File[]) vfiles.toArray(new File[0]);
+		}
 
                 for (File profile: files) {
-                   if (profile.isDirectory()) continue;
-		   if (! isValidProfile(profile.getName()) && ! isTemplate(profile.getName())) continue; 
-		   profilesState.addProfileInstance(profile);
+		   String fname = profile.getName();
+		   String cpath = profile.getParentFile().getCanonicalPath();
+		   String description = null;
+                   if (! recurse) {
+                      if (profile.isDirectory()) continue;
+		      if (! isValidProfile(fname) && ! isTemplate(fname)) continue; 
+		   } else {
+		      //filter if necessary
+		      if (filter != null ) {
+		          if (! cpath.endsWith(filter)) continue;
+		      }
+		      description = getDescription(new File(cpath + "/" + fname));
+		   }
+		   profilesState.addProfileInstance(profile, recurse, description);
 		}
 
 		return profilesState;
@@ -439,6 +465,31 @@ public class ProfileUtil
             System.err.println("[warning] " + MESSAGE + " could not determine if file is a template: " + profileName);
         }
 	return true;	// default
+   }
+
+    public static String isAdmin(String profileName) {
+        try {
+	    // is this profile list to be filtered
+	    if (profileName.endsWith("/collection")) return "collection";
+	    if (profileName.endsWith("/owner")) return "owner";
+	    if (profileName.endsWith("/sla")) return "sla";
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine if profile is an admin to be filtered: " + profileName);
+        }
+	return null;	// default
+   }
+
+    public static String getDescription(File profile) {
+        try {
+	    ProfileState profileState = new ProfileState();
+	    Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
+	    profileState = getProfile(profileID, profile);
+
+	    return profileState.getProfileDescription();
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine retrieve profile description from profile: " + profile.getName());
+        }
+	return null;
    }
 
     public static boolean isDemoMode(ProfileState profileState) {

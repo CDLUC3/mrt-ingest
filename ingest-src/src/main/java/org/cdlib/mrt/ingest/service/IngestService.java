@@ -181,10 +181,10 @@ public class IngestService
     }
 
     @Override
-    public ProfilesState getProfilesState()
+    public ProfilesState getProfilesState(String profilePath, boolean recurse)
         throws TException
     {
-        return adminManager.getProfilesState();
+        return adminManager.getProfilesState(profilePath, recurse);
     }
 
     @Override

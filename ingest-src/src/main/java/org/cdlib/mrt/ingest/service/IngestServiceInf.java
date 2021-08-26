@@ -162,7 +162,7 @@ public interface IngestServiceInf
      * @return ProfilesState state information
      * @throws TException Exception condition during queue service processing
      */
-    public ProfilesState getProfilesState()
+    public ProfilesState getProfilesState(String profilePath, boolean recurse)
         throws TException;
 
     /**
