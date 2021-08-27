@@ -77,13 +77,13 @@ public class ProfilesState
      * Add a profile instance to list
      * @param File profile  to be added
      */
-    public void addProfileInstance(File profile, boolean admin, String description)
+    public void addProfileInstance(File profile, boolean admin, String description, DateState modDate)
     {
         if (profile == null) return;
         ProfileFile file = new ProfileFile();
         file.setFile(profile);
 	if (admin) { 
-	   file.setModificationDate(new DateState(profile.lastModified()));
+	   file.setModificationDate(modDate);
 	   file.setDescription(description);
 	}
         profiles.add(file);

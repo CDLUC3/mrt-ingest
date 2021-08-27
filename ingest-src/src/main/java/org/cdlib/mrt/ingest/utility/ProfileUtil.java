@@ -396,6 +396,7 @@ public class ProfileUtil
 		   String fname = profile.getName();
 		   String cpath = profile.getParentFile().getCanonicalPath();
 		   String description = null;
+		   DateState modDate = null;
                    if (! recurse) {
                       if (profile.isDirectory()) continue;
 		      if (! isValidProfile(fname) && ! isTemplate(fname)) continue; 
@@ -405,8 +406,9 @@ public class ProfileUtil
 		          if (! cpath.endsWith(filter)) continue;
 		      }
 		      description = getDescription(new File(cpath + "/" + fname));
+		      modDate = getModDate(new File(cpath + "/" + fname));
 		   }
-		   profilesState.addProfileInstance(profile, recurse, description);
+		   profilesState.addProfileInstance(profile, recurse, description, modDate);
 		}
 
 		return profilesState;
@@ -492,6 +494,18 @@ public class ProfileUtil
 	return null;
    }
 
+    public static DateState getModDate(File profile) {
+        try {
+	    ProfileState profileState = new ProfileState();
+	    Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
+	    profileState = getProfile(profileID, profile);
+
+	    return profileState.getModificationDate();
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine retrieve profile mod date from profile: " + profile.getName());
+        }
+	return null;
+   }
     public static boolean isDemoMode(ProfileState profileState) {
         try {
             return profileState.getProfileID().getValue().startsWith("demo_");
