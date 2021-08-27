@@ -31,7 +31,7 @@ package org.cdlib.mrt.ingest.handlers;
 
 import java.io.File;
 
-import org.cdlib.mrt.dataone.map.FixEML;
+//import org.cdlib.mrt.dataone.map.FixEML;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
@@ -76,7 +76,8 @@ public class HandlerDataupHack extends Handler<JobState>
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Found EML file: " + emlFile.getName());
 	    String emlString = FileUtil.file2String(emlFile);
 
-	    String newEmlString = FixEML.fix(emlString);
+	    //String newEmlString = FixEML.fix(emlString);
+	    String newEmlString = emlString;
 	    FileUtil.string2File(emlFile, newEmlString);
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + "Fixed EML data ", 0);

@@ -8,25 +8,6 @@
   <name>UC3-mrtIngestSrc</name>
   <url>http://uc3.cdlib.org</url>
 
-  <repositories>
-    <repository>
-      <id>cdl-releases</id>
-      <url>http://mvn.cdlib.org/content/repositories/cdl-releases/</url>
-    </repository>
-    <repository>
-      <id>cdl-snapshots</id>
-      <url>http://mvn.cdlib.org/content/repositories/cdl-snapshots/</url>
-    </repository>
-    <repository>
-      <id>thirdparty</id>
-      <url>http://mvn.cdlib.org/content/repositories/thirdparty/</url>
-    </repository>
-    <repository>
-      <id>java.net</id>
-      <url>http://download.java.net/maven/2/</url>
-    </repository>
-  </repositories>
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <merritt-core.version>2.0-SNAPSHOT</merritt-core.version>
@@ -51,71 +32,6 @@
             </configuration>  
         </plugin>  
 -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-enforcer-plugin</artifactId>
-          <version>1.4.1</version>
-          <dependencies>
-            <dependency>
-              <groupId>com.redhat.victims</groupId>
-              <artifactId>enforce-victims-rule</artifactId>
-              <version>1.3.4</version>
-              <type>jar</type>
-            </dependency>
-          </dependencies>
-          <executions>
-            <execution>
-              <id>enforce-victims-rule</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <rule implementation="com.redhat.victims.VictimsRule">     
-                      <!-- 
-                        Check the project's dependencies against the database using 
-                        name and version. The default mode for this is 'warning'.
-
-                        Valid options are: 
-
-                        disabled: Rule is still run but only INFO level messages aand no errors.
-                        warning : Rule will spit out a warning message but doesn't result in a failure. 
-                        fatal   : Rule will spit out an error message and fail the build. 
-                      -->
-                      <metadata>warning</metadata>
-
-                      <!--
-                        Check the project's dependencies against the database using 
-                        the SHA-512 checksum of the artifact. The default is fatal. 
-
-                        Valid options are: 
-
-                        disabled: Rule is still run but only INFO level messages aand no errors.
-                        warning : Rule will spit out a warning message but doesn't result in a failure. 
-                        fatal   : Rule will spit out an error message and fail the build. 
-                      -->
-                      <fingerprint>warning</fingerprint>
-
-                      <!-- 
-                        Disables the synchronization mechansim. By default the rule will 
-                        attempt to update the database for each build. 
-
-                        Valid options are: 
-
-                        auto  : Automatically update the database entries on each build.
-                        daily : Update the database entries once per day.
-                        weekly: Update the database entries once per week.
-                        offline   : Disable the synchronization mechanism.
-                      -->  
-                      <updates>daily</updates>
-
-                    </rule>
-                  </rules>
-                </configuration>
-            </execution>
-          </executions>
-        </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -132,9 +48,10 @@
 
   <dependencies>
       <dependency>
-          <groupId>org.cdlib.mrt</groupId>
-          <artifactId>mrt-dataonesrc</artifactId>
-          <version>1.0-SNAPSHOT</version>
+          <groupId>com.sun.xml.ws</groupId>
+          <artifactId>jaxws-ri</artifactId>
+          <version>2.3.2</version>
+          <type>pom</type>
       </dependency>
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
@@ -216,11 +133,13 @@
         <artifactId>log4j</artifactId>
         <version>1.2.12</version>
       </dependency>
-      <dependency>
-	  <groupId>jargs</groupId>
-          <artifactId>jargs</artifactId>
-          <version>1.1.1</version>
-      </dependency>
+<dependency>
+  <groupId>com.talanlabs</groupId>
+    <artifactId>jargs</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+
       <dependency>
           <groupId>javax.servlet</groupId>
           <artifactId>servlet-api</artifactId>

@@ -29,7 +29,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.app.cmd.service;
 
-import jargs.gnu.*;
+import com.talanlabs.jargs.CmdLineParser;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
