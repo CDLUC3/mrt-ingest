@@ -108,6 +108,8 @@ public class QueueManager {
 	private String queueNode = null;
 	private String ingestQNames = null;
 	private String inventoryNode = "/inv"; // default
+	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
+	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
 
 	private boolean debugDump = false;
@@ -303,6 +305,37 @@ public class QueueManager {
 			   ingestQueueNameState.addEntry(node);
 			}
 			return ingestQueueNameState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		}
+	}
+
+	public IngestQueueNameState getInventoryQueueState() throws TException {
+		try {
+			IngestQueueNameState inventoryQueueNameState = new IngestQueueNameState();
+			// Assume a single Inventory ZK queue
+			inventoryQueueNameState.addEntry(inventoryNode);
+
+			return inventoryQueueNameState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		}
+	}
+
+	public IngestQueueNameState getAccessQueueState() throws TException {
+		try {
+			IngestQueueNameState accessQueueNameState = new IngestQueueNameState();
+			// get small and large queue
+			accessQueueNameState.addEntry(accessSmallNode);
+			accessQueueNameState.addEntry(accessLargeNode);
+
+			return accessQueueNameState;
 
 		} catch (Exception ex) {
 			System.out.println(StringUtil.stackTrace(ex));

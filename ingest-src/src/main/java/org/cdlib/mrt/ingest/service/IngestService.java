@@ -251,6 +251,20 @@ public class IngestService
     }
 
     @Override
+    public IngestQueueNameState getAccessQueueState()
+        throws TException
+    {
+        return queueManager.getAccessQueueState();
+    }
+
+    @Override
+    public IngestQueueNameState getInventoryQueueState()
+        throws TException
+    {
+        return queueManager.getInventoryQueueState();
+    }
+
+    @Override
     public String getIngestServiceProp()
     {
         return ingestManager.getIngestServiceProp();
