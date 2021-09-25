@@ -67,6 +67,13 @@ public class QueueEntryState
     private String fileType = null;
     private String queueNode = null;
 
+    private String queueToken = null;
+    private String queueCloudContentByte = null;
+    private String queueDeliveryNode = null;
+    private String queueQueueStatus = null;
+
+    private String queueManifestURL = null;
+
     /**
      * Set entry ID
      * @param String entry ID
@@ -289,6 +296,86 @@ public class QueueEntryState
      */
     public String getQueueNode() {
         return this.queueNode;
+    }
+
+    /**
+     * Set Token
+     * @param String token
+     */
+    public void setToken(String token) {
+        this.queueToken = token;
+    }
+
+    /**
+     * Get Token
+     * @return String token
+     */
+    public String getToken() {
+        return this.queueToken;
+    }
+
+    /**
+     * Set Cloud Content Byte
+     * @param String Cloud Content Byte
+     */
+    public void setCloudContentByte(String cloudContentByte) {
+        this.queueCloudContentByte = cloudContentByte;
+    }
+
+    /**
+     * Get Cloud Content Byte
+     * @return String Cloud Content Byte
+     */
+    public String getCloudContentByte() {
+        return this.queueCloudContentByte;
+    }
+
+    /**
+     * Set Delivery Node
+     * @param String Delivery Node
+     */
+    public void setDeliveryNode(String deliveryNode) {
+        this.queueDeliveryNode = deliveryNode;
+    }
+
+    /**
+     * Get Delivery Node
+     * @return String Delivery Node
+     */
+    public String getDeliveryNode() {
+        return this.queueDeliveryNode;
+    }
+
+    /**
+     * Set Queue Status
+     * @param String Queue Status
+     */
+    public void setQueueStatus(String queueStatus) {
+        this.queueQueueStatus = queueStatus;
+    }
+
+    /**
+     * Get Queue Status
+     * @return String Queue Status
+     */
+    public String getQueueStatus() {
+        return this.queueQueueStatus;
+    }
+
+    /**
+     * Set Manifest URL
+     * @param String Manifest URL
+     */
+    public void setManifestURL(String queueManifestURL) {
+        this.queueManifestURL = queueManifestURL;
+    }
+
+    /**
+     * Get Manifest URL
+     * @return String Manifest URL
+     */
+    public String getManifestURL() {
+        return this.queueManifestURL;
     }
 
     public String toString()

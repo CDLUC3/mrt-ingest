@@ -60,4 +60,12 @@ public interface QueueEntryStateInf
     public String getProfile();
     public String getQueueNode();
 
+    // Access
+    public String getToken();
+    public String getCloudContentByte();
+    public String getDeliveryNode();
+    public String getQueueStatus();
+
+    // Inventory
+    public String getManifestURL();
 }

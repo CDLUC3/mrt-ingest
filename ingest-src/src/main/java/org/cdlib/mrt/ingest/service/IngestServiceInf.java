@@ -166,6 +166,22 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Get access queue state information 
+     * @return QueueState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public QueueState getAccessQueueState(String queue)
+        throws TException;
+
+    /**
+     * Get inventory queue state information 
+     * @return QueueState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public QueueState getInventoryQueueState(String queue)
+        throws TException;
+
+    /**
      * Get profile state information 
      * @return ProfilesState state information
      * @throws TException Exception condition during queue service processing
