@@ -87,6 +87,7 @@ import org.cdlib.mrt.utility.SerializeUtil;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.ZooCodeUtil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -108,6 +109,8 @@ public class QueueManager {
 	private String queueNode = null;
 	private String ingestQNames = null;
 	private String inventoryNode = "/inv"; // default
+	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
+	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
 
 	private boolean debugDump = false;
@@ -294,6 +297,138 @@ public class QueueManager {
 		}
 	}
 
+        public QueueState getAccessQueueState(String queue) throws TException {
+                ZooKeeper zooKeeper = null;
+                try {
+                        QueueState accessQueueState = new QueueState();
+
+                        // open a single connection to zookeeper for all queue posting
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
+
+                        TreeMap<Long, String> orderedChildren;
+                        try {
+                                orderedChildren = distributedQueue.orderedChildren(null);
+                        } catch (KeeperException.NoNodeException e) {
+                                orderedChildren = null;
+                                // throw new NoSuchElementException();
+                        }
+                        if ( orderedChildren != null) {
+                           for (String headNode : orderedChildren.values()) {
+                                   String path = String.format("%s/%s", distributedQueue.dir, headNode);
+                                   try {
+                                        byte[] data = zooKeeper.getData(path, false, null);
+                                        Item item = Item.fromBytes(data);
+					JSONObject jo = new JSONObject(new String(item.getData()));
+
+                                        QueueEntryState queueEntryState = new QueueEntryState();
+                                        queueEntryState.setDate(item.getTimestamp().toString());
+                                        if (item.getStatus() == Item.PENDING)
+                                                queueEntryState.setStatus("Pending");
+                                        else if (item.getStatus() == Item.CONSUMED)
+                                                queueEntryState.setStatus("Consumed");
+                                        else if (item.getStatus() == Item.FAILED)
+                                                queueEntryState.setStatus("Failed");
+                                        else if (item.getStatus() == Item.COMPLETED)
+                                                queueEntryState.setStatus("Completed");
+                                        else if (item.getStatus() == Item.DELETED)
+                                                queueEntryState.setStatus("Deleted");
+                                        queueEntryState.setToken(jo.getString("token"));
+                                        queueEntryState.setCloudContentByte(String.valueOf(jo.getLong("cloud-content-byte")));
+                                        queueEntryState.setDeliveryNode(String.valueOf(jo.getLong("delivery-node")));
+                                        queueEntryState.setQueueStatus(String.valueOf(jo.getLong("status")));
+
+                                        accessQueueState.addEntry(queueEntryState);
+                                } catch (KeeperException.NoNodeException e) {
+                                        System.out.println("KeeperException.NoNodeException");
+                                        System.out.println(StringUtil.stackTrace(e));
+                                } catch (Exception ex) {
+                                        System.out.println("Exception");
+                                        System.out.println(StringUtil.stackTrace(ex));
+                                }
+                            }
+                        }
+
+                        return accessQueueState;
+
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+        }
+
+        public QueueState getInventoryQueueState(String queue) throws TException {
+                ZooKeeper zooKeeper = null;
+                try {
+                        QueueState inventoryQueueState = new QueueState();
+
+                        // open a single connection to zookeeper for all queue posting
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
+
+                        TreeMap<Long, String> orderedChildren;
+                        try {
+                                orderedChildren = distributedQueue.orderedChildren(null);
+                        } catch (KeeperException.NoNodeException e) {
+                                orderedChildren = null;
+                                // throw new NoSuchElementException();
+                        }
+                        if ( orderedChildren != null) {
+                           for (String headNode : orderedChildren.values()) {
+                                   String path = String.format("%s/%s", distributedQueue.dir, headNode);
+                                   try {
+                                        byte[] data = zooKeeper.getData(path, false, null);
+                                        Item item = Item.fromBytes(data);
+					Properties entry = ZooCodeUtil.decodeItem(item.getData());
+                                        String manifestURL = entry.getProperty("manifestURL");
+
+                                        QueueEntryState queueEntryState = new QueueEntryState();
+                                        queueEntryState.setDate(item.getTimestamp().toString());
+                                        if (item.getStatus() == Item.PENDING)
+                                                queueEntryState.setStatus("Pending");
+                                        else if (item.getStatus() == Item.CONSUMED)
+                                                queueEntryState.setStatus("Consumed");
+                                        else if (item.getStatus() == Item.FAILED)
+                                                queueEntryState.setStatus("Failed");
+                                        else if (item.getStatus() == Item.COMPLETED)
+                                                queueEntryState.setStatus("Completed");
+                                        else if (item.getStatus() == Item.DELETED)
+                                                queueEntryState.setStatus("Deleted");
+                                        queueEntryState.setManifestURL(manifestURL);
+
+                                        inventoryQueueState.addEntry(queueEntryState);
+                                } catch (KeeperException.NoNodeException e) {
+                                        System.out.println("KeeperException.NoNodeException");
+                                        System.out.println(StringUtil.stackTrace(e));
+                                } catch (Exception ex) {
+                                        System.out.println("Exception");
+                                        System.out.println(StringUtil.stackTrace(ex));
+                                }
+                            }
+                        }
+
+                        return inventoryQueueState;
+
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+        }
+
+
+
 	public IngestQueueNameState getIngestQueueState() throws TException {
 		try {
 			IngestQueueNameState ingestQueueNameState = new IngestQueueNameState();
@@ -303,6 +438,37 @@ public class QueueManager {
 			   ingestQueueNameState.addEntry(node);
 			}
 			return ingestQueueNameState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		}
+	}
+
+	public IngestQueueNameState getInventoryQueueState() throws TException {
+		try {
+			IngestQueueNameState inventoryQueueNameState = new IngestQueueNameState();
+			// Assume a single Inventory ZK queue
+			inventoryQueueNameState.addEntry(inventoryNode);
+
+			return inventoryQueueNameState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		}
+	}
+
+	public IngestQueueNameState getAccessQueueState() throws TException {
+		try {
+			IngestQueueNameState accessQueueNameState = new IngestQueueNameState();
+			// get small and large queue
+			accessQueueNameState.addEntry(accessSmallNode);
+			accessQueueNameState.addEntry(accessLargeNode);
+
+			return accessQueueNameState;
 
 		} catch (Exception ex) {
 			System.out.println(StringUtil.stackTrace(ex));

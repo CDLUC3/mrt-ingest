@@ -237,6 +237,27 @@ public class IngestService
     }
 
     @Override
+    public IngestQueueNameState getIngestQueueState()
+        throws TException
+    {
+        return queueManager.getIngestQueueState();
+    }
+
+    @Override
+    public IngestQueueNameState getAccessQueueState()
+        throws TException
+    {
+        return queueManager.getAccessQueueState();
+    }
+
+    @Override
+    public IngestQueueNameState getInventoryQueueState()
+        throws TException
+    {
+        return queueManager.getInventoryQueueState();
+    }
+
+    @Override
     public QueueState getQueueState(String queue)
         throws TException
     {
@@ -244,10 +265,17 @@ public class IngestService
     }
 
     @Override
-    public IngestQueueNameState getIngestQueueState()
+    public QueueState getAccessQueueState(String queue)
         throws TException
     {
-        return queueManager.getIngestQueueState();
+        return queueManager.getAccessQueueState(queue);
+    }
+
+    @Override
+    public QueueState getInventoryQueueState(String queue)
+        throws TException
+    {
+        return queueManager.getInventoryQueueState(queue);
     }
 
     @Override
