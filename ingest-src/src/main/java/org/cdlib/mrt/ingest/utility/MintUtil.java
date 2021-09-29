@@ -208,9 +208,9 @@ public class MintUtil
 	    try {
 		if (aggregateType != null) {
 		    if (aggregateType.matches("MRT-collection|MRT-owner|MRT-service-level-agreement")) {
-                        System.out.println("[info] " + MESSAGE + "Object is admin.  Setting to not harvest and to make unavailable.");
-			// Do not harvest and make unavailable
-	                adminHeader = "_status: unavailable" + "\n" + "_export: no";
+                        System.out.println("[info] " + MESSAGE + "Object is admin.  Setting to not harvest and to make reserved.");
+			// Do not harvest and flag as a reserved ID
+	                adminHeader = "_status: reserved" + "\n" + "_export: no";
 		    }
 		}
 	    } catch (Exception e) {
