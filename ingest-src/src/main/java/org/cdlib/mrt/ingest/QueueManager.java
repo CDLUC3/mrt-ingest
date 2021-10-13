@@ -333,6 +333,8 @@ public class QueueManager {
                                                 queueEntryState.setStatus("Completed");
                                         else if (item.getStatus() == Item.DELETED)
                                                 queueEntryState.setStatus("Deleted");
+                                        queueEntryState.setQueueNode(queue);
+                                        queueEntryState.setID(headNode);
                                         queueEntryState.setToken(jo.getString("token"));
                                         queueEntryState.setCloudContentByte(String.valueOf(jo.getLong("cloud-content-byte")));
                                         queueEntryState.setDeliveryNode(String.valueOf(jo.getLong("delivery-node")));
@@ -401,6 +403,8 @@ public class QueueManager {
                                         else if (item.getStatus() == Item.DELETED)
                                                 queueEntryState.setStatus("Deleted");
                                         queueEntryState.setManifestURL(manifestURL);
+                                        queueEntryState.setQueueNode(queue);
+                                        queueEntryState.setID(headNode);
 
                                         inventoryQueueState.addEntry(queueEntryState);
                                 } catch (KeeperException.NoNodeException e) {
