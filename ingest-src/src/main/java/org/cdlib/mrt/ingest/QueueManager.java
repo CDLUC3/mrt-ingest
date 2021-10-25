@@ -613,6 +613,59 @@ public class QueueManager {
         	return queueEntryState;
     	}
 
+        public QueueEntryState postDeleteq(String queue, String id, String fromState) throws TException {
+                ZooKeeper zooKeeper = null;
+                QueueEntryState queueEntryState = new QueueEntryState();
+                try {
+	    		Item item = null;
+			if ( ! queue.startsWith("/")) queue = "/" + queue;
+
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
+			if (fromState.contains("fail")) {
+	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Fail state: " + queue + ":" + id);
+				item = distributedQueue.deletef(id);
+			} else if (fromState.contains("consume")) {
+	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Consume state: " + queue + ":" + id);
+				item = distributedQueue.delete(id);
+			} else if (fromState.contains("complete")) {
+	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Complete state: " + queue + ":" + id);
+				item = distributedQueue.deletec(id);
+			} else if (fromState.contains("pending")) {
+	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Complete state: " + queue + ":" + id);
+				item = distributedQueue.deletep(id);
+			} else {
+	        		System.err.println("[ERROR]" + MESSAGE +  "Delete input not valid: " + queue + ":" + id);
+				return queueEntryState;
+			}
+
+
+                        queueEntryState.setDate(item.getTimestamp().toString());
+                        if (item.getStatus() == Item.PENDING)
+                        	queueEntryState.setStatus("Pending");
+                        else if (item.getStatus() == Item.CONSUMED)
+                        	queueEntryState.setStatus("Consumed");
+                        else if (item.getStatus() == Item.FAILED)
+                        	queueEntryState.setStatus("Failed");
+                        else if (item.getStatus() == Item.COMPLETED)
+                        	queueEntryState.setStatus("Completed");
+                        else if (item.getStatus() == Item.DELETED)
+                        	queueEntryState.setStatus("Deleted");
+                        queueEntryState.setID(id);
+			queueEntryState.setQueueNode(queue);
+
+	    		if (item != null) {
+				System.out.println("** [info] ** " + MESSAGE + "Successfully deleted: " + item.toString());
+	    		} else {
+	        		System.err.println("[error]" + MESSAGE +  "Could not delete: " + queue + ":" + id);
+			}
+        	} catch (Exception ex) {
+            		System.out.println(StringUtil.stackTrace(ex));
+            		logger.logError(MESSAGE + "Exception:" + ex, 0);
+            		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		}
+        	return queueEntryState;
+    	}
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
 	   try {

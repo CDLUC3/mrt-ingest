@@ -116,11 +116,19 @@ public interface IngestServiceInf
         throws TException;
 
     /**
-     * Requeue failed queue entry
-     * @return QueueState queue state information
+     * Requeue queue entry
+     * @return QueueEntryState queue state information
      * @throws TException Exception condition 
      */
     public QueueEntryState postRequeue(String queue, String id, String fromState)
+        throws TException;
+
+    /**
+     * Delete queue entry
+     * @return QueueEntryState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueEntryState postDeleteq(String queue, String id, String fromState)
         throws TException;
 
     /**

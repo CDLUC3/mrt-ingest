@@ -167,6 +167,13 @@ public class IngestService
     }
 
     @Override
+    public QueueEntryState postDeleteq(String queue, String id, String fromState)
+        throws TException
+    {
+        return queueManager.postDeleteq(queue, id, fromState);
+    }
+
+    @Override
     public GenericState postProfileAction(String type, String environment, String notification, 
 	Map<String, String> profileParms)
         throws TException

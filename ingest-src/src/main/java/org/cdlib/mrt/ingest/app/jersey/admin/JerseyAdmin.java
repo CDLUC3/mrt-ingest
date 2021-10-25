@@ -412,7 +412,7 @@ public class JerseyAdmin extends JerseyBase
     {
         LoggerInf logger = null;
         try {
-            log("processing requeue of failed entry: " + queue + ":" + id + ":" + fromState);
+            log("processing requeue of entry: " + queue + ":" + id + ":" + fromState);
 
             // Accept is overridden by responseForm form parm
             String responseForm = "";
@@ -425,6 +425,46 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
             StateInf responseState = ingestService.postRequeue(queue, id, fromState);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+    // Delete a queue entry
+    @POST
+    @Path("/deleteq/{queue}/{id}/{fromState}")
+    public Response postDeleteq(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("queue") String queue,
+            @PathParam("id") String id,
+            @PathParam("fromState") String fromState,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing delete of entry: " + queue + ":" + id);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.postDeleteq(queue, id, fromState);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
