@@ -48,6 +48,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.ingest.QueueState;
+import org.cdlib.mrt.ingest.QueueEntryState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.IngestQueueNameState;
@@ -156,6 +157,20 @@ public class IngestService
         throws TException
     {
         return queueManager.postSubmissionAction(action);
+    }
+
+    @Override
+    public QueueEntryState postRequeue(String queue, String id, String fromState)
+        throws TException
+    {
+        return queueManager.postRequeue(queue, id, fromState);
+    }
+
+    @Override
+    public QueueEntryState postDeleteq(String queue, String id, String fromState)
+        throws TException
+    {
+        return queueManager.postDeleteq(queue, id, fromState);
     }
 
     @Override

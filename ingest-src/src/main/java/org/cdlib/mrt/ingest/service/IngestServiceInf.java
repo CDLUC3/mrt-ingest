@@ -48,6 +48,7 @@ import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.QueueState;
+import org.cdlib.mrt.ingest.QueueEntryState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
@@ -112,6 +113,22 @@ public interface IngestServiceInf
      * @throws TException Exception condition 
      */
     public IngestServiceState postSubmissionAction(String action)
+        throws TException;
+
+    /**
+     * Requeue queue entry
+     * @return QueueEntryState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueEntryState postRequeue(String queue, String id, String fromState)
+        throws TException;
+
+    /**
+     * Delete queue entry
+     * @return QueueEntryState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueEntryState postDeleteq(String queue, String id, String fromState)
         throws TException;
 
     /**

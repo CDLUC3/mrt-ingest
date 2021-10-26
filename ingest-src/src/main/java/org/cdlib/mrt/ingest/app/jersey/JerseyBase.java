@@ -441,12 +441,14 @@ public class JerseyBase
            for (Field field : o.getClass().getDeclaredFields()) {
               field.setAccessible(true);
               if (field.getName().equals("batchID")) {
+		 if (field.get(o) == null) break;
 		 id = "BID";
 		 value = field.get(o).toString();
                  System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
 		 break;
 	      }
               if (field.getName().equals("jobID")) {
+		 if (field.get(o) == null) break;
 		 id = "JID";
 		 value = field.get(o).toString();
                  System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
