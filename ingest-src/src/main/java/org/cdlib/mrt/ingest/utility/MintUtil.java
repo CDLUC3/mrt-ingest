@@ -233,12 +233,16 @@ public class MintUtil
 
             String responseBody = null;
 	    HttpResponse httpResponse = null;
+	    String statusPhrase = null;
+	    int statusCode;
 
             int retryCount = 0;
             while (true) {
 	    	try {
 		     httpResponse = httpClient.execute(httpCommand);
 		     responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
+		     statusCode = httpResponse.getStatusLine().getStatusCode();
+		     statusPhrase = httpResponse.getStatusLine().getReasonPhrase();
 		     break;
 	    	} catch (HttpHostConnectException hhce) {
 		     retryCount++;
@@ -259,8 +263,10 @@ public class MintUtil
 		     responseBody = "failed";
 	    	}
 	    }
+            System.out.println("[info] " + MESSAGE + "response code: " + statusCode);
+            System.out.println("[info] " + MESSAGE + "response phrase: " + statusPhrase);
 	    if (responseBody.startsWith("success")) {
-                System.out.println("[info] " + MESSAGE + responseBody);
+                System.out.println("[info] " + MESSAGE + "response body: " + responseBody);
 	    }
 	    String expectedResponse = "success:";		// e.g. success: ark:/99999/fk42z13f2
 
@@ -292,7 +298,28 @@ public class MintUtil
 		    }
 		    System.out.println("[info] " + MESSAGE + "created new ID: " + url);
 	        } else {
-		    throw new TException.GENERAL_EXCEPTION("error in minting identifier: " + responseBody + " --- " + url);
+		    System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
+		    retryCount = 1;
+		    System.err.println("[error] " + MESSAGE + "Awaiting retry");
+
+                    while (true) {
+                        if (retryCount >= 5) {
+		            throw new TException.GENERAL_EXCEPTION("error in minting identifier: " + responseBody + " --- " + url);
+                        } else {
+                            Thread.sleep(30000);
+		        }
+		        System.err.println("[info] " + MESSAGE + "Attempting retry: " + retryCount);
+                        httpResponse = httpClient.execute(httpCommand);
+                        responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
+            	        id = new String(responseBody);
+                        retryCount++;
+                        statusCode = httpResponse.getStatusLine().getStatusCode();
+                        statusPhrase = httpResponse.getStatusLine().getReasonPhrase();
+
+                        if (statusCode < 500) break;
+		        System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
+                        System.err.println(MESSAGE + "Wait 30 seconds and retry attempt: " + retryCount);
+		    }
 		}
 	    }
 
