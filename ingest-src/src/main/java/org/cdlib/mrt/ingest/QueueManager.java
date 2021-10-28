@@ -632,7 +632,7 @@ public class QueueManager {
 	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Complete state: " + queue + ":" + id);
 				item = distributedQueue.deletec(id);
 			} else if (fromState.contains("pending")) {
-	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Complete state: " + queue + ":" + id);
+	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Pending state: " + queue + ":" + id);
 				item = distributedQueue.deletep(id);
 			} else {
 	        		System.err.println("[ERROR]" + MESSAGE +  "Delete input not valid: " + queue + ":" + id);
