@@ -534,7 +534,7 @@ public class IngestManager {
 					throw new TException.INVALID_CONFIGURATION("[error] Could not find handler: " + handlerS);
 				}
 				StateInf stateClass = jobState;
-				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.HandlerNotification.class)) {
+				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.HandlerNotification.class) && (handler.getClass() != org.cdlib.mrt.ingest.handlers.HandlerCallback.class)) {
 					System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 					continue;
 				}
@@ -564,7 +564,11 @@ public class IngestManager {
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerCallback.class) {
-					// stateClass = batchState;
+					if (isError) {
+						jobState.setJobStatus(JobStatusEnum.FAILED);
+						batchState.setBatchStatus(BatchStatusEnum.FAILED);
+						stateClass = jobState;
+					}
 				}
 
 				try {
