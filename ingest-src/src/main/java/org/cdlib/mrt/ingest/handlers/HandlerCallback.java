@@ -145,7 +145,7 @@ public class HandlerCallback extends Handler<JobState> {
 		formatType = profileState.getNotificationFormat();     
             	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format set as a Profile parameter: " + formatType);
 	    } else {
-		formatType = FormatType.valueOf("xml");		// default
+		formatType = FormatType.valueOf("json");		// default
             	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format not set.  Default: " + formatType);
 	    }
 
@@ -153,7 +153,7 @@ public class HandlerCallback extends Handler<JobState> {
 
             // make service request
             try {
-                clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, jobStateString);
+                clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, jobStateString);
             } catch (Exception e) {
 		e.printStackTrace();
                 error = true;
@@ -161,7 +161,8 @@ public class HandlerCallback extends Handler<JobState> {
             }
             if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());
 
-            if (clientResponse.getStatus() != 200) {
+	    // all 200s responses
+            if (clientResponse.getStatus() / 100 != 2) {
                 error = true;
                 try {
                     // most likely exception
