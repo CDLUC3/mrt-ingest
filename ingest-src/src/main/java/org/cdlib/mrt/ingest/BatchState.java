@@ -361,7 +361,14 @@ public class BatchState
 	return dump(header, true, false);
     }
 
-    public String dump(String header, boolean full, boolean jobonly)
+    // Default
+    public String dump(String header, boolean full, boolean jobonly) {
+	// not error only
+	return dump(header, full, jobonly, false);
+    }
+
+    // Support error notifications
+    public String dump(String header, boolean full, boolean jobonly, boolean errorOnly)
     {
         String batchIDS = (batchID != null) ? batchID.toString() : "";
         String batchLabelS = (batchLabel != null) ? batchLabel : "";
@@ -400,6 +407,7 @@ public class BatchState
 	        jobStateS = jobStateS + jobState.dump("", "\t", "\n", null) + "\n";
 	    } else {
 		if (jobonly) {
+	            if (errorOnly && (jobState.getJobStatus() != JobStatusEnum.FAILED)) continue;
 	            header += jobState.dump("", "\t", "\n", FormatType.valueOf("csv"));
 		} else {
 		    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) completed++;
