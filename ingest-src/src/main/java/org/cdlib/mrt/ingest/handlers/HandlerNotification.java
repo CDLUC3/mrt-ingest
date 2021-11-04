@@ -191,6 +191,12 @@ public class HandlerNotification extends Handler<BatchState>
 			 batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
 		}
 
+		if (! status.equals("OK")) {
+		    // Create CSV error attachment
+		    email.attach(new ByteArrayDataSource(batchState.dump("", false, true, true), "text/csv; header=present"),
+			 "error-" + batchID + ".csv", "Comma delimited Job Error Report for " +  batchID, EmailAttachment.ATTACHMENT);
+		}
+
                 // attachment: batch state with user defined formatting
                 if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
                 else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
