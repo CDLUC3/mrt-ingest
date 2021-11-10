@@ -568,6 +568,9 @@ public class IngestManager {
 						jobState.setJobStatus(JobStatusEnum.FAILED);
 						batchState.setBatchStatus(BatchStatusEnum.FAILED);
 						stateClass = jobState;
+					} else {
+						// Not needed.  If successful, we do not populate message
+                                                // jobState.setJobStatusMessage(handlerResult.getDescription());
 					}
 				}
 
