@@ -87,11 +87,17 @@ public class HandlerCallback extends Handler<JobState> {
 	FormatType formatType = null;
  
         try {
-
-            url = new URL(profileState.getCallbackURL().toString());
+	    try {
+	       // Add merritt callback and Job ID to pathname (e.g. mc/<jid>)
+               url = new URL(profileState.getCallbackURL().toString() + "/mc/" + jobState.getJobID().getValue());
+	    } catch (Exception e) {
+                System.err.println("[error] " + MESSAGE + " Callback URL not defined or not valid: " + profileState.getCallbackURL());
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + profileState.getCallbackURL());
+	    }
 	    String credentials = url.getUserInfo();
 	    String protocol = url.getProtocol();
             Client client = null;
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + " Callback URL and pathname: " + url.toString());
 
 	    // https - trust all certs
 	    if (protocol.equals("https")) {
