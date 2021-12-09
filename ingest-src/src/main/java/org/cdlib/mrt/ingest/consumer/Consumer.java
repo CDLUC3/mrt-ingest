@@ -44,6 +44,7 @@ import org.apache.zookeeper.KeeperException.SessionExpiredException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
@@ -522,6 +523,7 @@ class ConsumeData implements Runnable
 
     private Item item = null;
     private IngestServiceInf ingestService = null;
+    private JobState jobState = null;
 
     // Constructor
     public ConsumeData(IngestServiceInf ingestService, Item item, DistributedQueue distributedQueue, String queueConnectionString, String queueNode)
@@ -612,12 +614,21 @@ class ConsumeData implements Runnable
 
 	    BatchState.putQueuePath(p.getProperty("batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
-	    ingestService.submit(ingestRequest);
+	    jobState = ingestService.submit(ingestRequest);
+
+	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
+                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + item.toString());
+	    	distributedQueue.complete(item.getId());
+	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
+		System.out.println("[item]: FAILED queue data:" + item.toString());
+		System.out.println("Consume Daemon - job message: " + jobState.getJobStatusMessage());
+	    	distributedQueue.fail(item.getId());
+	    } else {
+		System.out.println("Consume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
+	    }
 
 	    // inform queue that we're done
-	    distributedQueue.complete(item.getId());
 
-            if (DEBUG) System.out.println("[item] END: completed queue data:" + item.toString());
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
             System.err.println("[warn] ConsumeData" + MESSAGE + "Session expired.  Attempting to recreate session.");
