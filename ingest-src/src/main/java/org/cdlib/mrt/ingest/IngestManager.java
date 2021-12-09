@@ -520,6 +520,7 @@ public class IngestManager {
 
 			// if we error during any one handler, skip remaining and update object
 			boolean isError = false;
+			boolean reQueue = false;
 			BatchState batchState = new BatchState();
 			HandlerResult handlerResult = null;
 
@@ -552,43 +553,49 @@ public class IngestManager {
 					try {
 						batchState = updateBatch(batchState, ingestRequest, jobState);
 					} catch (Exception e) {
-						System.out.println("----> Failed to update batch");
+						System.out.println("Failed to update batch.  Assume this to be a requeued object and skipping Notification");
+						reQueue = true;
 					}
-					stateClass = batchState;
+					if ( ! reQueue ) {
+						stateClass = batchState;
 
-					BatchState.putBatchCompletion(jobState.grabBatchID().getValue(),
+						BatchState.putBatchCompletion(jobState.grabBatchID().getValue(),
 							BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1); // increment
 
-					// update persistent URL if necessary
-					jobState.setPersistentURL(profileState.getPURL() + jobState.getPrimaryID());
+						// update persistent URL if necessary
+						jobState.setPersistentURL(profileState.getPURL() + jobState.getPrimaryID());
+					} else {
+						continue;
+					}
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerCallback.class) {
 					if (isError) {
 						jobState.setJobStatus(JobStatusEnum.FAILED);
-						batchState.setBatchStatus(BatchStatusEnum.FAILED);
+						// No batch for requeud jobs
+						if (! reQueue) batchState.setBatchStatus(BatchStatusEnum.FAILED);
 						stateClass = jobState;
 					} else {
 						// Not needed.  If successful, we do not populate message
-                                                // jobState.setJobStatusMessage(handlerResult.getDescription());
+                                               	// jobState.setJobStatusMessage(handlerResult.getDescription());
+					}
+				}
+
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue.class) {
+					if ( ! reQueue && (!batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID))
+							&& (batchState.grabTargetQueue() != null)) {
+						jobState.setMisc(batchState.grabTargetQueue());
+						jobState.setExtra(batchState.grabTargetInventoryNode());
+					} else {
+						// not a batch or in recovery mode or requeued job
+						System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
+						jobState.setMisc(queueConf.getString("QueueService"));
+						jobState.setExtra(queueConf.getString("InventoryName"));
+						jobState.setExtra(queueConf.getString("InventoryName"));
 					}
 				}
 
 				try {
-					if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue.class) {
-						if ((!batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID))
-								&& (batchState.grabTargetQueue() != null)) {
-							jobState.setMisc(batchState.grabTargetQueue());
-							jobState.setExtra(batchState.grabTargetInventoryNode());
-						} else {
-							// not a batch or in recovery mode
-                                                        System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
-                                                        jobState.setMisc(queueConf.getString("QueueService"));
-                                                        jobState.setExtra(queueConf.getString("InventoryName"));
-							jobState.setExtra(queueConf.getString("InventoryName"));
-						}
-					}
-
 					// Do some work
 					handlerResult = handler.handle(profileState, ingestRequest, stateClass);
 
@@ -618,7 +625,7 @@ public class IngestManager {
 			}
 
 			// batch complete?
-			if (!batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
+			if (! reQueue && ! batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
 				try {
 					if (BatchState.getBatchCompletion(batchState.getBatchID().getValue()) == BatchState
 							.getBatchState(batchState.getBatchID().getValue()).getJobStates().size()) {
