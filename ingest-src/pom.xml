@@ -18,7 +18,7 @@
     <snapshots>
         <updatePolicy>never</updatePolicy>
     </snapshots>
-</repository>
+    </repository>
   </repositories>
 
   <properties>
