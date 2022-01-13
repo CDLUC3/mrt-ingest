@@ -14,6 +14,7 @@ ingest:
     purl: "http://n2t.net/"
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
     ingestQueuePath: "{!SSM: ingest/config/ingestQueuePath !DEFAULT: /apps/ingest-stg-shared/ingest_home/queue}"
+    ingestLock: "{!SSM: ingest/zoo/lockName !DEFAULT: /mrt.lock}"
 
   store-info:
     store.1: "{!SSM: ingest/config/store.1}"
