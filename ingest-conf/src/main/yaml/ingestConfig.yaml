@@ -55,6 +55,7 @@ ingest-docker:
     mail-host: "smtp"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
+    ingestLock: "/mrt.lock"
 
   store-info:
     store.1: "http://store:8080/store"

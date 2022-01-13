@@ -78,6 +78,7 @@ public class IngestConfig
     protected String ingestSupportURI = null;
     protected String ingestAdmin = null;
     protected String ingestPurl = null;
+    protected String ingestLock = null;
     // store-info
     protected String storeStore = null;
     protected String storeAccess = null;

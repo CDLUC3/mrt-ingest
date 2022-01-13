@@ -591,8 +591,13 @@ public class IngestManager {
 						System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
 						jobState.setMisc(queueConf.getString("QueueService"));
 						jobState.setExtra(queueConf.getString("InventoryName"));
-						jobState.setExtra(queueConf.getString("InventoryName"));
 					}
+				}
+
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerTransfer.class) {
+					System.out.println("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
+					jobState.setMisc(queueConf.getString("QueueService"));
+					jobState.setExtra(ingestConf.getString("ingestLock"));
 				}
 
 				try {
