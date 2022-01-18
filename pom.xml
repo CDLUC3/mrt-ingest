@@ -11,7 +11,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+  </properties> 
 
   <modules>
       <module>ingest-init</module>
@@ -21,4 +21,3 @@
   </modules>
 
 </project>
-
