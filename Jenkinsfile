@@ -24,7 +24,7 @@ pipeline {
             steps {
                 sh "echo 'Building tag ${tagname}' > build.current.txt"
                 sh "echo 'tbd purge ${m2dir}'"
-                //sh "rm -rf ${m2dir}"
+                sh "rm -rf ${m2dir}"
             }
         }
         stage('Build Core') {
