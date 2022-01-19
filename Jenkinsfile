@@ -63,12 +63,14 @@ pipeline {
         stage('Build Ingest') {
             steps {
                 dir('mrt-ingest'){
+                    /*
                   checkout([
                         $class: 'GitSCM',
                         url: 'https://github.com/CDLUC3/mrt-ingest.git',
                         branches: [[name: "refs/tags/${tagname}"]],
                   ])
-                  //git branch: "${tagname}", url: 'https://github.com/CDLUC3/mrt-ingest.git'
+                  */
+                  git branch: "${tagname}", url: 'https://github.com/CDLUC3/mrt-ingest.git'
                   sh "git remote get-url origin >> ../build.current.txt"
                   sh "git rev-parse HEAD >> ../build.current.txt"
                   sh "mvn -Dmaven.repo.local=${m2dir} clean install -Denforcer.skip=true"
