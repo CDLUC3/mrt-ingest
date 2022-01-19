@@ -23,13 +23,11 @@ pipeline {
         stage('Purge Local') {
             steps {
                 sh "echo 'Building tag ${tagname}' > build.current.txt"
+                sh "date >> build.current.txt"
                 sh "echo 'Purge ${m2dir}: ${remove_local_m2}'"
                 script {
                     if (remove_local_m2.toBoolean()) {
-                        sh "echo 'purging local m2'"
                         sh "rm -rf ${m2dir}"
-                    } else {
-                        sh "echo 'retaining local m2'"
                     }
                 }
             }
@@ -39,7 +37,7 @@ pipeline {
                 dir('mrt-core2') {
                   git branch: "${env.BRANCH_CORE}", url: 'https://github.com/CDLUC3/mrt-core2.git'
                   sh "git remote get-url origin >> ../build.current.txt"
-                  sh "git rev-parse HEAD >> ../build.current.txt"
+                  sh "git log --pretty=medium -n 1' >> ../build.current.txt"
                   sh "mvn -Dmaven.repo.local=${m2dir} clean install -DskipTests"
                 }
             }
@@ -49,7 +47,7 @@ pipeline {
                 dir('cdl-zk-queue') {
                   git branch: "${env.BRANCH_ZK}", url: 'https://github.com/CDLUC3/cdl-zk-queue.git'
                   sh "git remote get-url origin >> ../build.current.txt"
-                  sh "git rev-parse HEAD >> ../build.current.txt"
+                  sh "git log --pretty=medium -n 1 >> ../build.current.txt"
                   sh "mvn -Dmaven.repo.local=${m2dir} clean install -DskipTests"
                 }
             }
@@ -69,7 +67,7 @@ pipeline {
                         branches: [[name: "refs/tags/${tagname}"]],
                   ])
                   sh "git remote get-url origin >> ../build.current.txt"
-                  sh "git rev-parse HEAD >> ../build.current.txt"
+                  sh "git log --pretty=medium -n 1 >> ../build.current.txt"
                   sh "mvn -Dmaven.repo.local=${m2dir} clean install -Denforcer.skip=true"
                 }
             }
@@ -78,7 +76,8 @@ pipeline {
         stage('Archive Resources') { // for display purposes
             steps {
                 script {
-                  archiveArtifacts artifacts: "build.current.txt, mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT.war, mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT-archive.zip", onlyIfSuccessful: true
+                  sh "ln -s build.current.txt ${tagname}"
+                  archiveArtifacts artifacts: "${tagname}, build.current.txt, mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT.war, mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT-archive.zip", onlyIfSuccessful: true
                 } 
             }
         }
