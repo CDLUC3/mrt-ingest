@@ -58,7 +58,7 @@ pipeline {
                 dir('mrt-ingest'){
                   checkout([
                         $class: 'GitSCM',
-                        url: 'https://github.com/CDLUC3/mrt-ingest.git'
+                        url: 'https://github.com/CDLUC3/mrt-ingest.git',
                         branches: [[name: "refs/tags/${tagname}"]],
                   ])
                   //git branch: "${tagname}", url: 'https://github.com/CDLUC3/mrt-ingest.git'
