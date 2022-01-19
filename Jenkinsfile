@@ -72,7 +72,7 @@ pipeline {
         stage('Archive Resources') { // for display purposes
             steps {
                 script {
-                  archiveArtifacts artifacts: "build.current.txt, mrt-ingest/mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT.war, mrt-ingest/mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT-archive.zip", onlyIfSuccessful: true
+                  archiveArtifacts artifacts: "build.current.txt, mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT.war, mrt-ingest/ingest-war/target/mrt-ingestwar-1.0-SNAPSHOT-archive.zip", onlyIfSuccessful: true
                 } 
             }
         }
