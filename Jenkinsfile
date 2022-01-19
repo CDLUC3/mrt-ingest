@@ -23,8 +23,12 @@ pipeline {
         stage('Purge Local') {
             steps {
                 sh "echo 'Building tag ${tagname}' > build.current.txt"
-                sh "echo 'tbd purge ${m2dir}'"
-                sh "rm -rf ${m2dir}"
+                sh "echo 'Purge ${m2dir}: ${remove_local_m2}'"
+                script {
+                    if (${remove_local_m2}) {
+                        sh "rm -rf ${m2dir}"
+                    }
+                }
             }
         }
         stage('Build Core') {
