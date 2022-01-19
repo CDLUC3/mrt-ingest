@@ -63,7 +63,7 @@ pipeline {
         stage('Build Ingest') {
             steps {
                 dir('mrt-ingest'){
-                  git 'https://github.com/CDLUC3/mrt-ingest.git'
+                  git branch: 'main', url: 'https://github.com/CDLUC3/mrt-ingest.git'
                   checkout([
                         $class: 'GitSCM',
                         branches: [[name: "refs/tags/${tagname}"]],
