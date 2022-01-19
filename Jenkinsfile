@@ -37,7 +37,7 @@ pipeline {
                 dir('mrt-core2') {
                   git branch: "${env.BRANCH_CORE}", url: 'https://github.com/CDLUC3/mrt-core2.git'
                   sh "git remote get-url origin >> ../build.current.txt"
-                  sh "git log --pretty=medium -n 1' >> ../build.current.txt"
+                  sh "git log --pretty=medium -n 1 >> ../build.current.txt"
                   sh "mvn -Dmaven.repo.local=${m2dir} clean install -DskipTests"
                 }
             }
