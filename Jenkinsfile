@@ -7,7 +7,7 @@ pipeline {
      * rev.current.txt - calculated semantic version for this build 
      *
      * if the major or minor version changes, reset patch to 0
-     * if build.current.txt differs from build.last.txt, increment patch
+     * if build.current.txt differs from build.last.txt, increment patch 
      */
     environment {
       REV_MAJOR = 1 //manually increment for NON-backwards compatible changes
