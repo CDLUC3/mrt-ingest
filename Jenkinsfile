@@ -15,7 +15,7 @@ pipeline {
     agent any
 
     tools {
-        // Install the Maven version configured as "M3" and add it to the path.
+        // Install the Maven version 3.8.4 and add it to the path.
         maven 'maven384'
     }
 
