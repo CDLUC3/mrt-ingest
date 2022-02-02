@@ -125,10 +125,9 @@ public class HandlerTransfer extends Handler<JobState>
 
 	zooConnectString = jobState.grabMisc();
 	zooLockNode = jobState.grabExtra();
-	boolean lock = getLock(jobState.getPrimaryID().getValue());
+	boolean lock = getLock(jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
 	try {
-
 	    storeNode = profileState.getTargetStorage();
 
 	    // build REST url 
@@ -365,9 +364,10 @@ public class HandlerTransfer extends Handler<JobState>
      * Lock on primary identifier.  Will loop unitil lock obtained.
      *
      * @param String primary ID of object (ark)
+     * @param String jobID
      * @return Boolean result of obtaining lock
      */
-    private boolean getLock(String primaryID) {
+    private boolean getLock(String primaryID, String payload) {
     try {
 
        // Zookeeper treats slashes as nodes
@@ -380,7 +380,7 @@ public class HandlerTransfer extends Handler<JobState>
 	while (! locked) {
 	    try {
                System.out.println("[info] " + MESSAGE + " Attempting to gain lock");
-	       locked = distributedLock.submit(lockID);
+	       locked = distributedLock.submit(payload);
 	    } catch (Exception e) {
               if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining lock: " + lockID);
 	    }
@@ -388,7 +388,7 @@ public class HandlerTransfer extends Handler<JobState>
             System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for ID: " + lockID + " Waiting 15 seconds before retry");
 	    Thread.currentThread().sleep(15 * 1000);	// Wait 15 seconds before attempting to gain lock for ID
 	}
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for ID: " + lockID);
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for ID: " + lockID + " -- " + payload);
 	    
 	} catch (Exception e) {
 	    e.printStackTrace();
