@@ -687,7 +687,12 @@ public class QueueManager {
             		System.out.println(StringUtil.stackTrace(ex));
             		logger.logError(MESSAGE + "Exception:" + ex, 0);
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		}
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
         	return queueEntryState;
     	}
 
@@ -741,7 +746,13 @@ public class QueueManager {
             		System.out.println(StringUtil.stackTrace(ex));
             		logger.logError(MESSAGE + "Exception:" + ex, 0);
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		}
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+
         	return queueEntryState;
     	}
 
