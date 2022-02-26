@@ -59,11 +59,6 @@ pipeline {
                 }
             }
         }
-        stage('Obsolete dependencies') {
-            steps {
-                sh "mvn -Dmaven.repo.local=${env.M2DIR} -s ${MAVEN_HOME}/conf/settings.xml dependency:get -Dmaven.legacyLocalRepo=true -DgroupId=jargs -DartifactId=jargs -Dversion=1.1.1 -Dpackaging=jar -DrepoUrl=https://mvn.cdlib.org/content/repositories/thirdparty/"
-            }
-        }
         stage('Build Ingest') {
             steps {
                 dir('mrt-ingest'){
