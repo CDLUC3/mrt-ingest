@@ -89,7 +89,6 @@ public class ProfileState
     private String context = null;
     private String misc = null;
     private String purl = null;
-    private String dataoneNodeID = null;
     private String ezidCoowner = null;
     private FormatType notificationFormat = null;	// response type
     private String notificationType = null;		// human readable notification 
@@ -553,14 +552,6 @@ public class ProfileState
 
     public void setPURL(String purl) {
         this.purl = purl;
-    }
-
-    public String getDataoneNodeID() {
-        return dataoneNodeID;
-    }
-
-    public void setDataoneNodeID(String dataoneNodeID) {
-        this.dataoneNodeID = dataoneNodeID;
     }
 
     public FormatType getNotificationFormat() {
