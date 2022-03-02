@@ -28,88 +28,6 @@
 
   <build>
   <plugins>
-<!--
-        <plugin>  
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>  
-            <version>3.0</version>
-            <configuration>  
-                <source>1.6</source>  
-                <target>1.6</target>  
-                <compilerArgument>-Xlint:all</compilerArgument>
-                <compilerArguments>
-                    <Xlint:all />
-                </compilerArguments>
-                <showWarnings>true</showWarnings>
-                <showDeprecation>true</showDeprecation>
-            </configuration>  
-        </plugin>  
--->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-enforcer-plugin</artifactId>
-          <version>1.4.1</version>
-          <dependencies>
-            <dependency>
-              <groupId>com.redhat.victims</groupId>
-              <artifactId>enforce-victims-rule</artifactId>
-              <version>1.3.4</version>
-              <type>jar</type>
-            </dependency>
-          </dependencies>
-          <executions>
-            <execution>
-              <id>enforce-victims-rule</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <rule implementation="com.redhat.victims.VictimsRule">     
-                      <!-- 
-                        Check the project's dependencies against the database using 
-                        name and version. The default mode for this is 'warning'.
-
-                        Valid options are: 
-
-                        disabled: Rule is still run but only INFO level messages aand no errors.
-                        warning : Rule will spit out a warning message but doesn't result in a failure. 
-                        fatal   : Rule will spit out an error message and fail the build. 
-                      -->
-                      <metadata>warning</metadata>
-
-                      <!--
-                        Check the project's dependencies against the database using 
-                        the SHA-512 checksum of the artifact. The default is fatal. 
-
-                        Valid options are: 
-
-                        disabled: Rule is still run but only INFO level messages aand no errors.
-                        warning : Rule will spit out a warning message but doesn't result in a failure. 
-                        fatal   : Rule will spit out an error message and fail the build. 
-                      -->
-                      <fingerprint>warning</fingerprint>
-
-                      <!-- 
-                        Disables the synchronization mechansim. By default the rule will 
-                        attempt to update the database for each build. 
-
-                        Valid options are: 
-
-                        auto  : Automatically update the database entries on each build.
-                        daily : Update the database entries once per day.
-                        weekly: Update the database entries once per week.
-                        offline   : Disable the synchronization mechanism.
-                      -->  
-                      <updates>daily</updates>
-
-                    </rule>
-                  </rules>
-                </configuration>
-            </execution>
-          </executions>
-        </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -119,7 +37,6 @@
           <target>1.8</target>
         </configuration>
       </plugin>
-
   </plugins>
   </build>
 
@@ -143,7 +60,7 @@
       <dependency>
           <groupId>org.jdom</groupId>
           <artifactId>jdom</artifactId>
-          <version>1.1</version>
+          <version>2.0.2</version>
       </dependency>
       <dependency>
           <groupId>jaxen</groupId>
@@ -167,11 +84,6 @@
       </dependency>
       <dependency>
           <groupId>org.apache.commons</groupId>
-          <artifactId>commons-compress</artifactId>
-          <version>1.0</version>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.commons</groupId>
           <artifactId>commons-email</artifactId>
           <version>1.2</version>
       </dependency>
@@ -183,12 +95,12 @@
       <dependency>
           <groupId>commons-fileupload</groupId>
           <artifactId>commons-fileupload</artifactId>
-          <version>1.2.2</version>
+          <version>1.3.3</version>
       </dependency>
       <dependency>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
-          <version>1.3.2</version>
+          <version>2.7</version>
       </dependency>
       <dependency>
           <groupId>com.hp.hpl.jena</groupId>
@@ -200,10 +112,10 @@
 	<artifactId>xml-apis</artifactId>
 	<version>1.4.01</version>
       </dependency>
-      <dependency>
+     <dependency>
         <groupId>log4j</groupId>
         <artifactId>log4j</artifactId>
-        <version>1.2.12</version>
+        <version>1.2.17</version>
       </dependency>
       <dependency>
           <groupId>javax.servlet</groupId>
@@ -214,18 +126,13 @@
       <dependency>
           <groupId>junit</groupId>
           <artifactId>junit</artifactId>
-          <version>4.12</version>
+          <version>4.13.1</version>
           <scope>test</scope>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.ant</groupId>
-          <artifactId>ant</artifactId>
-          <version>1.9.0</version>
       </dependency>
       <dependency>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
-          <version>4.5</version>
+          <version>4.5.13</version>
       </dependency>
       <dependency>
           <groupId>org.apache.httpcomponents</groupId>
@@ -245,7 +152,7 @@
       <dependency>
     	  <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
-          <version>3.4.5</version>
+          <version>3.5.5</version>
       </dependency>
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
@@ -265,7 +172,7 @@
       <dependency>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-compress</artifactId>
-          <version>1.4.1</version>
+          <version>1.21</version>
       </dependency>
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
