@@ -11,8 +11,8 @@ pipeline {
      */
     environment {      
       //Branch/tag names to incorporate into the build.  Create one var for each repo.
-      BRANCH_CORE = 'java-refactor'
-      BRANCH_ZK = 'java-refactor'
+      BRANCH_CORE = 'main'
+      BRANCH_ZK = 'main'
 
       //working vars
       M2DIR = "${HOME}/.m2-ingest"
