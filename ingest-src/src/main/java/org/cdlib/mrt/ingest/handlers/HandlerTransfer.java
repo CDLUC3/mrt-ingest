@@ -56,6 +56,12 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathExpression;
 
+import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -66,6 +72,8 @@ import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
+import org.cdlib.mrt.queue.DistributedLock;
+import org.cdlib.mrt.queue.DistributedLock.Ignorer;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -94,6 +102,11 @@ public class HandlerTransfer extends Handler<JobState>
     private Properties conf = null;
     private Integer defaultStorage = null;
     private StoreNode storeNode = null;
+    private ZooKeeper zooKeeper;
+    private String zooConnectString = null;
+    private String zooLockNode = null;
+    private DistributedLock distributedLock;
+
 
     /**
      * Adds a version of requested object to storage service
@@ -110,8 +123,11 @@ public class HandlerTransfer extends Handler<JobState>
   	ClientResponse clientResponse = null;
 	String action = "/add/";
 
-	try {
+	zooConnectString = jobState.grabMisc();
+	zooLockNode = jobState.grabExtra();
+	boolean lock = getLock(jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
+	try {
 	    storeNode = profileState.getTargetStorage();
 
 	    // build REST url 
@@ -216,6 +232,8 @@ public class HandlerTransfer extends Handler<JobState>
             return new HandlerResult(false, msg);
 	} finally {
 	    clientResponse = null;
+	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
+	    releaseLock();
 	}
     }
    
@@ -342,6 +360,61 @@ public class HandlerTransfer extends Handler<JobState>
 	return NAME;
     }
 
+    /**
+     * Lock on primary identifier.  Will loop unitil lock obtained.
+     *
+     * @param String primary ID of object (ark)
+     * @param String jobID
+     * @return Boolean result of obtaining lock
+     */
+    private boolean getLock(String primaryID, String payload) {
+    try {
+
+       // Zookeeper treats slashes as nodes
+       String lockID = primaryID.replace(":", "").replace("/", "-");
+
+       zooKeeper = new ZooKeeper(zooConnectString, DistributedLock.sessionTimeout, new Ignorer());
+       distributedLock = new DistributedLock(zooKeeper, zooLockNode, lockID, null);
+       boolean locked = false;
+
+	while (! locked) {
+	    try {
+               System.out.println("[info] " + MESSAGE + " Attempting to gain lock");
+	       locked = distributedLock.submit(payload);
+	    } catch (Exception e) {
+              if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining lock: " + lockID);
+	    }
+	    if (locked) break;
+            System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for ID: " + lockID + " Waiting 15 seconds before retry");
+	    Thread.currentThread().sleep(15 * 1000);	// Wait 15 seconds before attempting to gain lock for ID
+	}
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for ID: " + lockID + " -- " + payload);
+	    
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    return false;
+	}
+    return true;
+    }
+
+
+    /**
+     * Release lock
+     *
+     * @param none needed inputs are global
+     * @return void
+     */
+    private void releaseLock() {
+    	try {
+
+		this.distributedLock.cleanup();
+		this.distributedLock = null;
+		this.zooKeeper = null;
+	
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+    }
 
     // XML parser error handler
     public class SimpleErrorHandler implements ErrorHandler {

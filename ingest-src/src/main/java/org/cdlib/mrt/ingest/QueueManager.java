@@ -72,12 +72,15 @@ import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.JobStateInf;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.LockState;
 import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
+import org.cdlib.mrt.queue.DistributedLock;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.Item;
+import org.cdlib.mrt.queue.LockItem;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
@@ -108,6 +111,7 @@ public class QueueManager {
 	private String queueConnectionString = null;
 	private String queueNode = null;
 	private String ingestQNames = null;
+	private String ingestLName = null;
 	private String inventoryNode = "/inv"; // default
 	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
 	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
@@ -168,6 +172,7 @@ public class QueueManager {
 			String matchQueueService = "QueueService";
 			String matchQueueNode = "QueueName";
 			String matchIngestQNames = "IngestQNames";
+			String matchIngestLName = "ingestLock";
 			String matchInventoryNode = "InventoryName";
 			String matchAdmin = "admin";
 			String defaultIDKey = "IDDefault";
@@ -183,6 +188,8 @@ public class QueueManager {
 			this.inventoryNode = queueConf.getString(matchInventoryNode);
 			// All Ingest Queue Names - "ingest01,ingest02"
 			this.ingestQNames = queueConf.getString(matchIngestQNames);
+			// All Ingest Lock Names - "zkLock,..."
+			this.ingestLName = ingestConf.getString(matchIngestLName);
 
 			// email list
 			value = ingestConf.getString(matchAdmin);
@@ -432,6 +439,77 @@ public class QueueManager {
         }
 
 
+        public LockState getIngestLockState(String lockNode) throws TException {
+                ZooKeeper zooKeeper = null;
+                try {
+                        LockState ingestLockState = new LockState(); 
+			String pathID = null;  // Not needed for tree listing
+
+                        // open a single connection to zookeeper for all lock posting
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedLock.sessionTimeout, new Ignorer());
+                        DistributedLock distributedLock = new DistributedLock(zooKeeper, lockNode, pathID, null);
+
+                        TreeMap<Long, String> orderedChildren;
+                        try {
+                                orderedChildren = distributedLock.orderedChildren(null);
+                        } catch (KeeperException.NoNodeException e) {
+                                orderedChildren = null;
+                                // throw new NoSuchElementException();
+                        }
+                        if ( orderedChildren != null) {
+                           for (String headNode : orderedChildren.values()) {
+                                   String path = String.format("%s/%s", distributedLock.node, headNode);
+                                   try {
+                                        byte[] data = zooKeeper.getData(path, false, null);
+                                        LockItem lockItem = LockItem.fromBytes(data);
+
+                                        LockEntryState lockEntryState = new LockEntryState();
+                                        lockEntryState.setDate(lockItem.getTimestamp().toString());
+                                        lockEntryState.setJobID(lockItem.getData());
+                                        lockEntryState.setID(headNode);
+
+                                        ingestLockState.addEntry(lockEntryState);
+                                } catch (KeeperException.NoNodeException e) {
+                                        System.out.println("KeeperException.NoNodeException");
+                                        System.out.println(StringUtil.stackTrace(e));
+                                } catch (Exception ex) {
+                                        System.out.println("Exception");
+                                        System.out.println(StringUtil.stackTrace(ex));
+                                }
+                            }
+                        }
+
+                        return ingestLockState;
+
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+        }
+
+
+	public IngestLockNameState getIngestLockState() throws TException {
+		try {
+			IngestLockNameState ingestLockNameState = new IngestLockNameState();
+			// comma delimiter if multiple ingest ZK locks
+			String[] nodes = ingestLName.split(",");
+			for (String node: nodes) {
+			   ingestLockNameState.addEntry(node);
+			}
+			return ingestLockNameState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		}
+	}
 
 	public IngestQueueNameState getIngestQueueState() throws TException {
 		try {
@@ -609,7 +687,12 @@ public class QueueManager {
             		System.out.println(StringUtil.stackTrace(ex));
             		logger.logError(MESSAGE + "Exception:" + ex, 0);
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		}
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
         	return queueEntryState;
     	}
 
@@ -663,7 +746,13 @@ public class QueueManager {
             		System.out.println(StringUtil.stackTrace(ex));
             		logger.logError(MESSAGE + "Exception:" + ex, 0);
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		}
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+
         	return queueEntryState;
     	}
 
