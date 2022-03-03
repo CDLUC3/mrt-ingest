@@ -95,11 +95,6 @@ public class ProfileUtil
     private static final String matchCreationDate = "CreationDate";
     private static final String matchModificationDate = "ModificationDate";
     private static final String matchObjectMinterURL = "ObjectMinterURL";
-    // private static final String matchCharacterizationURL = "CharacterizationURL";
-    // private static final String matchFixityURL = "FixityURL";
-    // private static final String matchDataoneURL = "DataoneURL";
-    // private static final String matchCoordinatingNodeURL = "CoordinatingNodeURL";
-    // private static final String matchDataoneNodeID = "DataoneNodeID";
     private static final String matchCallbackURL = "CallbackURL";
     // private static final String matchStatusURL = "StatusURL";
     // private static final String matchStatusView = "StatusView";
@@ -298,9 +293,6 @@ public class ProfileUtil
 		} else if (key.startsWith(matchContext)) {
                     if (DEBUG) System.out.println("[debug] context: " + value);
 		    profileState.setContext(value);
-		//} else if (key.startsWith(matchDataoneNodeID)) {
-                    //if (DEBUG) System.out.println("[debug] dataoneNodeID: " + value);
-		    //profileState.setDataoneNodeID(value);
 		} else if (key.startsWith(matchEzidCoowner)) {
                     if (DEBUG) System.out.println("[debug] EZID co-owner found: " + value);
 		    profileState.setEzidCoowner(value);
