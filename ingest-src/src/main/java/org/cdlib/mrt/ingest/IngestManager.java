@@ -553,6 +553,7 @@ public class IngestManager {
 					try {
 						batchState = updateBatch(batchState, ingestRequest, jobState);
 					} catch (Exception e) {
+                                        	e.printStackTrace();
 						System.out.println("Failed to update batch.  Assume this to be a requeued object and skipping Notification");
 						reQueue = true;
 					}
@@ -809,6 +810,8 @@ public class IngestManager {
 				   batchState = BatchState.getBatchState(jobState.grabBatchID().getValue());
 				   batchState.setBatchID(jobState.grabBatchID());
 				} catch (Exception eee) {
+				   System.out.println("[error]" + MESSAGE + "---------- UPDATE BATCH class --------");
+                                   eee.printStackTrace();
 				   // Recover from restart
 				   System.out.println("[info]" + MESSAGE + "Batch not defined. Read from serialized object on disk: " + jobState.getJobID());
 				   batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
