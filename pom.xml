@@ -1,7 +1,7 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>org.cdlib.mrt</groupId>
   <artifactId>mrt-ingest</artifactId>
   <packaging>pom</packaging>
@@ -14,10 +14,10 @@
   </properties> 
 
   <modules>
-      <module>ingest-init</module>
-      <module>ingest-conf</module>
-      <module>ingest-src</module>
-      <module>ingest-war</module>
+    <module>ingest-init</module>
+    <module>ingest-conf</module>
+    <module>ingest-src</module>
+    <module>ingest-war</module>
   </modules>
 
 </project>
