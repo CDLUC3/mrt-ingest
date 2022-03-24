@@ -42,6 +42,8 @@
   </build>
 
   <dependencies>
+
+    <!-- Internal dependencies -->
     <dependency>
       <groupId>org.cdlib.mrt</groupId>
       <artifactId>mrt-core</artifactId>
@@ -49,51 +51,34 @@
     </dependency>
 
     <dependency>
-       <groupId>com.sun.jersey.contribs</groupId>
-       <artifactId>jersey-multipart</artifactId>
-       <version>1.18</version>
+      <groupId>org.cdlib.mrt</groupId>
+      <artifactId>cdl-zk-queue</artifactId>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
 
     <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-bundle</artifactId>
-      <version>1.18</version>
+      <groupId>org.cdlib.mrt</groupId>
+      <artifactId>mrt-tools</artifactId>
+      <version>2.0-SNAPSHOT</version>
+    </dependency>
+
+    <!-- 3rd party dependencies -->
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>3.1</version>
     </dependency>
 
     <dependency>
-      <groupId>org.jdom</groupId>
-      <artifactId>jdom</artifactId>
-      <version>1.1</version>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk</artifactId>
+      <version>1.11.438</version>
     </dependency>
 
     <dependency>
-      <groupId>jaxen</groupId>
-      <artifactId>jaxen</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jibx</groupId>
-      <artifactId>jibx-run</artifactId>
-      <version>1.2.3</version>
-    </dependency>
-
-    <dependency>
-      <groupId>jmimemagic</groupId>
-      <artifactId>jmimemagic</artifactId>
-      <version>0.1.2</version>
-    </dependency>
-
-    <dependency>
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>jsr311-api</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-email</artifactId>
-      <version>1.2</version>
+      <groupId>com.hp.hpl.jena</groupId>
+      <artifactId>jena</artifactId>
+      <version>2.6.4</version>
     </dependency>
 
     <dependency>
@@ -115,21 +100,15 @@
     </dependency>
 
     <dependency>
-      <groupId>com.hp.hpl.jena</groupId>
-      <artifactId>jena</artifactId>
-      <version>2.6.4</version>
+       <groupId>com.sun.jersey.contribs</groupId>
+       <artifactId>jersey-multipart</artifactId>
+       <version>1.18</version>
     </dependency>
 
     <dependency>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>
-      <version>1.4.01</version>
-    </dependency>
-
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.17</version>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-bundle</artifactId>
+      <version>1.18</version>
     </dependency>
 
     <dependency>
@@ -140,10 +119,64 @@
     </dependency>
 
     <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>jsr311-api</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>jaxen</groupId>
+      <artifactId>jaxen</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>jmimemagic</groupId>
+      <artifactId>jmimemagic</artifactId>
+      <version>0.1.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.8.1</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.sf.saxon</groupId>
+      <artifactId>Saxon-HE</artifactId>
+      <version>9.8.0-14</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-email</artifactId>
+      <version>1.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.21</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.3</version>
     </dependency>
 
     <dependency>
@@ -165,21 +198,21 @@
     </dependency>
 
     <dependency>
-      <groupId>xalan</groupId>
-      <artifactId>xalan</artifactId>
-      <version>2.7.1</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
       <version>3.5.5</version>
     </dependency>
 
     <dependency>
-      <groupId>org.cdlib.mrt</groupId>
-      <artifactId>cdl-zk-queue</artifactId>
-      <version>0.2-SNAPSHOT</version>
+      <groupId>org.jdom</groupId>
+      <artifactId>jdom</artifactId>
+      <version>1.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jibx</groupId>
+      <artifactId>jibx-run</artifactId>
+      <version>1.2.3</version>
     </dependency>
 
     <dependency>
@@ -189,45 +222,15 @@
     </dependency>
 
     <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm</artifactId>
-      <version>3.1</version>
+      <groupId>xalan</groupId>
+      <artifactId>xalan</artifactId>
+      <version>2.7.1</version>
     </dependency>
 
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <version>1.21</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.cdlib.mrt</groupId>
-      <artifactId>mrt-tools</artifactId>
-      <version>2.0-SNAPSHOT</version>
-    </dependency>
-
-    <dependency>
-      <groupId>net.sf.saxon</groupId>
-      <artifactId>Saxon-HE</artifactId>
-      <version>9.8.0-14</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk</artifactId>
-      <version>1.11.438</version>
-    </dependency>
-
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>2.8.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
-      <version>1.3</version>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+      <version>1.4.01</version>
     </dependency>
   </dependencies>
 
