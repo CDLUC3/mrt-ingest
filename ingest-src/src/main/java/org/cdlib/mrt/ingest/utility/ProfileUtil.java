@@ -96,6 +96,7 @@ public class ProfileUtil
     private static final String matchModificationDate = "ModificationDate";
     private static final String matchObjectMinterURL = "ObjectMinterURL";
     private static final String matchCallbackURL = "CallbackURL";
+    private static final String matchPriority = "Priority";
     // private static final String matchStatusURL = "StatusURL";
     // private static final String matchStatusView = "StatusView";
     private static final String matchCollection = "Collection.";
@@ -209,6 +210,9 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setCallbackURL(url);
+		} else if (key.startsWith(matchPriority)) {
+                    if (DEBUG) System.out.println("[debug] Priority: " + value);
+		    profileState.setPriority(value);
 		//} else if (key.startsWith(matchStatusURL)) {
                     //if (DEBUG) System.out.println("[debug] status URL: " + value);
                     //try {

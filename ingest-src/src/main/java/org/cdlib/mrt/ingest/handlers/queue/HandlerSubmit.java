@@ -111,6 +111,10 @@ public class HandlerSubmit extends Handler<BatchState>
             // todo: create an interface
             zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), DistributedQueue.sessionTimeout, new Ignorer());
 	    String priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
+	    if (profileState.getPriority() != null) {
+		priority = profileState.getPriority();
+	    	System.out.println("[info] Overwriting calculated queue priority: " + priority);
+	    }
 	    System.out.println("[info] queue priority: " + priority);
             DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority, null);	// default priority
 
@@ -286,13 +290,15 @@ public class HandlerSubmit extends Handler<BatchState>
 	return NAME;
     }
 
-    // very simple priority queue algorithm
+    // very simple priority queue algorithm  (05 - 99)
     private String calculatePriority(int batchSize) {
 	
-	Double a = new Double(Math.log(new Integer(batchSize).doubleValue()) * 10.0d);
+	Double a = new Double((Math.log(new Integer(batchSize).doubleValue()) * 10.0d) + 5);
 	if (a > 99.0d) a = 99.0d;
 	if (a < 0.0d) a = 0.0d;
-	return String.format("%02d", a.intValue());
+	String priority = String.format("%02d", a.intValue());
+	System.out.println("[info] Calculated queue priority: " + priority);
+	return priority;
     }
 
    public static class Ignorer implements Watcher {

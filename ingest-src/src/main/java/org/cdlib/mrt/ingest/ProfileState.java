@@ -70,6 +70,7 @@ public class ProfileState
     private URL dataONEURL = null;
     private URL coordinatingNodeURL = null;
     private URL callbackURL = null;
+    private String priority = null;
     private URL statusURL = null;
     private File statusView = null;
     private Vector<Notification> contactsEmail = new Vector<Notification>();
@@ -254,6 +255,14 @@ public class ProfileState
     }
 
     /**
+     * Set Priority
+     * @param String Zookeeper priority for collection
+     */
+    public void setPriority(String priority) {
+        this.priority = priority;
+    }
+
+    /**
      * Set status URL
      * @param URL status URL
      */
@@ -323,6 +332,14 @@ public class ProfileState
      */
     public URL getCallbackURL() {
         return this.callbackURL; 
+    }
+
+    /**
+     * Get collection priority
+     * @return priority
+     */
+    public String getPriority() {
+        return this.priority;
     }
 
     /**
