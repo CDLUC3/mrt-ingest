@@ -65,7 +65,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.NoSuchElementException;
 
-import javax.xml.soap.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.*;
