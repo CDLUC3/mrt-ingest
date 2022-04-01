@@ -31,9 +31,7 @@ package org.cdlib.mrt.ingest;
 
 import java.net.URL;
 import java.util.Vector;
-import java.util.List;
 import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.ingest.StorageURL;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.TException;
 

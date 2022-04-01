@@ -29,25 +29,16 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.lang.String;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Vector;
-
-import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.IngestLockNameStateInf;
-import org.cdlib.mrt.ingest.IngestLock;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Ingest Lock Name State information
  * @author mreyes
  */
 public class IngestLockNameState
-        implements IngestLockNameStateInf, StateInf, Serializable
+        implements IngestLockNameStateInf, Serializable
 
 {
 

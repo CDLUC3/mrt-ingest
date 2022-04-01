@@ -31,7 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import java.net.URL;
 import java.util.Collection;
-import java.util.Date;
 import java.util.SortedMap;
 import java.util.Vector;
 import java.io.File;
@@ -40,16 +39,13 @@ import java.io.Serializable;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.Notification;
-import org.cdlib.mrt.ingest.StoreNode;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Profile State information
  * @author mreyes
  */
 public class ProfileState
-        implements ProfileStateInf, StateInf, Serializable
+        implements ProfileStateInf, Serializable
 {
 
     private static final String NAME = "ProfileState";

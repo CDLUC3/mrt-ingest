@@ -31,8 +31,6 @@ package org.cdlib.mrt.ingest.app.jersey.ingest;
 
 import com.sun.jersey.spi.CloseableService;
 
-import java.io.InputStream;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.Consumes;
@@ -41,11 +39,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.QueryParam;
 
 import org.cdlib.mrt.formatter.FormatterInf;
@@ -53,10 +48,8 @@ import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.app.jersey.JerseyBase;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
-import org.cdlib.mrt.ingest.utility.ResponseFormEnum;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.TException;
-import org.cdlib.mrt.utility.TFrame;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 

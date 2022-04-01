@@ -30,19 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
-import java.net.URL;
 import java.util.ArrayList;
-
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Jobs State information
  * @author mreyes
  */
 public class JobsState
-        implements JobsStateInf, StateInf, Serializable
+        implements JobsStateInf, Serializable
 {
 
     private String ingestServer = null;

@@ -33,25 +33,16 @@ package org.cdlib.mrt.ingest.utility;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.UUID;
-import java.net.URL;
 
 import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
-import org.cdlib.mrt.utility.URLEncoder;
-
 
 /**
  * Simple formatting util

@@ -30,14 +30,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.service;
 
 
-import java.io.File;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Iterator;
-import java.util.Properties;
 
-import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
@@ -57,8 +51,6 @@ import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.ManifestsState;
-import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 import org.json.JSONObject;

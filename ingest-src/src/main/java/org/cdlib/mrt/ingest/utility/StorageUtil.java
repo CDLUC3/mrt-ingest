@@ -33,50 +33,26 @@ package org.cdlib.mrt.ingest.utility;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.lang.Integer;
 import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.Vector;
-import java.net.URL;
 import java.util.List;
 
 import javax.ws.rs.core.MediaType;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathExpression;
 
 import org.cdlib.mrt.cloud.VersionMap;
 import org.cdlib.mrt.cloud.ManifestXML;
 
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.IngestRequest;
-import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 /**
  * Storage wrapper methods
  * @author mreyes

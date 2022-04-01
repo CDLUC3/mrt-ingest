@@ -31,9 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import java.io.File;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.LinkedHashMap;
 
@@ -44,9 +41,7 @@ import org.cdlib.mrt.tools.YamlParser;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
-import org.cdlib.mrt.utility.TFileLogger;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**

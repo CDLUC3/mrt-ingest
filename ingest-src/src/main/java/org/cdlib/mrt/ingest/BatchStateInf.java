@@ -31,9 +31,7 @@ package org.cdlib.mrt.ingest;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.StateInf;
 
 /**

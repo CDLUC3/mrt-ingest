@@ -29,23 +29,20 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.util.*;
-import com.hp.hpl.jena.vocabulary.*;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.util.FileManager;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.ResourceFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.lang.Runnable;
 import java.net.URL;
-import java.text.ParseException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -54,9 +51,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.cdlib.mrt.ingest.handlers.*;
 import org.cdlib.mrt.core.FileComponent;
-import org.cdlib.mrt.core.FileComponentContentInf;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
 import org.cdlib.mrt.core.ManifestRowInf;
@@ -64,12 +59,10 @@ import org.cdlib.mrt.core.ManifestRowIngest;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
-import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;

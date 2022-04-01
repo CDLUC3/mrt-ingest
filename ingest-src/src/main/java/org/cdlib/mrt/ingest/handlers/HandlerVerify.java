@@ -36,12 +36,9 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
-import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.MessageDigestType;
 import org.cdlib.mrt.utility.MessageDigestValue;
-import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 

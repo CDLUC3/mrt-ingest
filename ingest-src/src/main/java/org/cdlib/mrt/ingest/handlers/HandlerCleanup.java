@@ -35,11 +35,8 @@ import java.util.Properties;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.FileUtil;
-import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.TException;
 
 /**

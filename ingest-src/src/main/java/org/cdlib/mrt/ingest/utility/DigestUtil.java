@@ -31,21 +31,12 @@ package org.cdlib.mrt.ingest.utility;
 
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.UUID;
-import java.net.URL;
 
 import org.cdlib.mrt.core.FileComponent;
-import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.core.MessageDigest;
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.PropertiesUtil;
-import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
-import org.cdlib.mrt.utility.URLEncoder;
 
 import org.cdlib.mrt.utility.MessageDigestType;
 import org.cdlib.mrt.utility.FixityTests;

@@ -29,24 +29,17 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.lang.String;
 import java.util.Vector;
-
-import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.BatchFile;
-import org.cdlib.mrt.ingest.BatchManifest;
-import org.cdlib.mrt.ingest.BatchFileStateInf;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Batch File State information
  * @author mreyes
  */
 public class BatchFileState
-        implements BatchFileStateInf, StateInf, Serializable
+        implements BatchFileStateInf, Serializable
 
 {
 

@@ -30,17 +30,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.handlers.queue;
 
 import java.io.*;
-import java.security.MessageDigest;
-import java.util.Properties;
 
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.TException;
-import org.cdlib.mrt.utility.TExceptionEnum;
-import org.cdlib.mrt.utility.TRuntimeException;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.StringUtil;
 
 /**
  * Handler

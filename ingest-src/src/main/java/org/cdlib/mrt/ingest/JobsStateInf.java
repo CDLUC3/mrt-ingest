@@ -31,7 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import java.util.ArrayList;
 
-import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.utility.StateInf;
 
 /**

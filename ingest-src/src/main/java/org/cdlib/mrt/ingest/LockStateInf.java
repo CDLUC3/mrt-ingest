@@ -30,8 +30,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.util.Vector;
-import org.cdlib.mrt.ingest.LockEntryState;
-import org.cdlib.mrt.utility.LinkedHashList;
 import org.cdlib.mrt.utility.StateInf;
 
 /**

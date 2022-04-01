@@ -30,15 +30,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.File;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,31 +45,21 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
-import org.cdlib.mrt.ingest.IdentifierState;
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.JobStateInf;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.DateUtil;
-import org.cdlib.mrt.utility.FileUtil;
-import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
-import org.cdlib.mrt.utility.SerializeUtil;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
