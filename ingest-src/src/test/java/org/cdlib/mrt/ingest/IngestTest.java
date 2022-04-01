@@ -7,17 +7,18 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Properties;
 
 import com.ibm.icu.util.Calendar;
 
 import java.util.Arrays;
 
-import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
 import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -25,6 +26,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerVerify;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.TFileLogger;
 import org.apache.commons.io.FileUtils;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
@@ -92,11 +94,21 @@ public class IngestTest {
     }
 
     public JobState getJobState() throws TException {
+        //Blank aglorithm and value will be skipped
+        return getJobStateWithChecksum("test.txt", "", "");
+    }
+
+    public JobState getJobStateHello() throws TException {
+        //md5 for "Hello"
+        return getJobStateWithChecksum("test.txt", "md5", "8b1a9953c4611296a827abf8c47804d7");
+    }
+
+    public JobState getJobStateWithChecksum(String fname, String alg, String digest) throws TException {
         JobState js = new JobState(
             "user", 
-            "package", 
-            "sha256", 
-            "value", 
+            fname, 
+            alg,
+            digest, //no digest value 
             "primaryID",
             "objectCreator", 
             "objectTitle", 
@@ -110,8 +122,8 @@ public class IngestTest {
         return js;
     }
 
-
     Path tempdir;
+    //IngestConfig ingestConfig;
 
     @Before 
     public void createTestDirectory() throws IOException {
@@ -119,6 +131,10 @@ public class IngestTest {
         System.out.println("Creating " + tempdir);
         Files.createDirectory(tempdir.resolve("producer"));
         Files.createDirectory(tempdir.resolve("system"));
+        //ingestConfig = new IngestConfig();
+        //TFileLogger logger = new TFileLogger("test", 0, 0);
+        //logger.initialize(tempdir.resolve("log").toString());
+        //ingestConfig.setLogger(logger);
     }
 
     @After 
@@ -181,10 +197,27 @@ public class IngestTest {
         assertTrue(hr.getSuccess());
         assertEquals(0, hr.getReturnCode());
         assertTrue(system.resolve("mrt-ingest.txt").toFile().exists());
+        assertEquals("", fileContent(system.resolve("mrt-ingest.txt")));
+        
         assertTrue(system.resolve("mrt-membership.txt").toFile().exists());
+        assertEquals(ps.getCollection().firstElement(), fileContent(system.resolve("mrt-membership.txt")));
+        
         assertTrue(system.resolve("mrt-mom.txt").toFile().exists());
+        Properties p = new Properties();
+        p.load(new FileReader(system.resolve("mrt-mom.txt").toFile()));
+        assertEquals(js.getPrimaryID().getValue(), p.getProperty("primaryIdentifier"));
+        assertEquals(ps.getObjectType(), p.getProperty("type"));
+        assertEquals(ps.getObjectRole(), p.getProperty("role"));
+        assertEquals(ps.getAggregateType(), p.getProperty("aggregate"));
+
         assertTrue(system.resolve("mrt-object-map.ttl").toFile().exists());
+        
         assertTrue(system.resolve("mrt-owner.txt").toFile().exists());
+        assertEquals(ps.getOwner(), fileContent(system.resolve("mrt-owner.txt")));
+    }
+
+    public String fileContent(Path p) throws IOException {
+        return new String(Files.readAllBytes(p)).trim();
     }
 
     @Test
@@ -222,6 +255,42 @@ public class IngestTest {
     @Test
     public void HandlerVerifyTest() throws TException, IOException {
         JobState js = getJobState();
+
+        ProfileState ps = getProfileState();
+        
+        String testfile = "test.txt";
+
+        Path input = Paths.get(RESOURCES, "data", testfile);
+        Path copyloc = tempdir.resolve(testfile);
+        Path output = tempdir.resolve("producer").resolve(testfile);
+
+        Files.copy(input, copyloc);
+
+        assertTrue(copyloc.toFile().exists());
+        assertEquals(input.toFile().length(), copyloc.toFile().length());
+
+        IngestRequest ir = getIngestRequest(tempdir.toFile());
+
+        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+
+        hr = new HandlerAccept().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+
+        hr = new HandlerVerify().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+
+        assertFalse(copyloc.toFile().exists());
+        assertTrue(output.toFile().exists());
+        assertEquals(input.toFile().length(), output.toFile().length());
+    }
+
+    @Test
+    public void HandlerVerifyTestWithDigest() throws TException, IOException {
+        JobState js = getJobStateHello();
 
         ProfileState ps = getProfileState();
         
