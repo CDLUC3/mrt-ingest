@@ -1,18 +1,28 @@
 package org.cdlib.mrt.ingest;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 
 import com.ibm.icu.util.Calendar;
 
 import java.util.Arrays;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerAccept;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
+import org.apache.commons.io.FileUtils;
 import org.cdlib.mrt.core.Identifier;
 
 /*
@@ -60,12 +70,40 @@ public class IngestTest {
         return cal.getTime();
     }
 
+    public static final String RESOURCES = "src/test/resources/";
+
+    public ProfileState getProfileState() throws TException {
+        File f = Paths.get(RESOURCES, "profile/merritt_test_content").toFile();
+        Identifier id = new Identifier("profile");
+        return ProfileUtil.getProfile(id, f);
+    }
+
+    public IngestRequest getIngestRequest(File f) {
+        IngestRequest ir = new IngestRequest();
+        // where processing will happen
+        ir.setQueuePath(f);
+        return ir;
+    }
+
+    Path tempdir;
+
+    @Before 
+    public void createTestDirectory() throws IOException {
+        tempdir = Files.createTempDirectory("ingestTest");
+        System.out.println("Creating " + tempdir);
+        Files.createDirectory(tempdir.resolve("producer"));
+        Files.createDirectory(tempdir.resolve("system"));
+    }
+
+    @After 
+    public void clearTestDirectory() throws IOException {
+        System.out.println("Deleting " + tempdir);
+        FileUtils.deleteDirectory(tempdir.toFile());
+    }
+
     @Test
     public void ReadProfileFile() throws TException {
-        ProfileFile pf = new ProfileFile();
-        File f = new File("src/test/resources/merritt_test_content");
-        Identifier id = new Identifier("profile");
-        ProfileState ps = ProfileUtil.getProfile(id, f);
+        ProfileState ps = getProfileState();
         assertEquals("merritt_test_content", ps.getProfileID().getValue());
         assertEquals("Merritt Test", ps.getProfileDescription());
         assertEquals(Identifier.Namespace.ARK.name(), ps.getIdentifierScheme().name());
@@ -94,17 +132,41 @@ public class IngestTest {
     }
 
     @Test
-    public void JobStateTest() {
+    public void JobStateTest() throws TException, IOException {
         JobState js = new JobState(
             "user", 
             "package", 
             "sha256", 
             "value", 
             "primaryID",
-			"objectCreator", 
+            "objectCreator", 
             "objectTitle", 
             "2022-01-01", 
             "note"
         );
+
+        ProfileState ps = getProfileState();
+        
+        String testfile = "test.txt";
+
+        Path input = Paths.get(RESOURCES, "data", testfile);
+        Path copyloc = tempdir.resolve(testfile);
+        Path output = tempdir.resolve("producer").resolve(testfile);
+
+        Files.copy(input, copyloc);
+
+        assertTrue(copyloc.toFile().exists());
+        assertEquals(input.toFile().length(), copyloc.toFile().length());
+
+        IngestRequest ir = getIngestRequest(tempdir.toFile());
+
+        Handler<JobState> h = new HandlerAccept();
+        HandlerResult hr = h.handle(ps, ir, js);
+
+        assertEquals(0, hr.getReturnCode());
+
+        assertFalse(copyloc.toFile().exists());
+        assertTrue(output.toFile().exists());
+        assertEquals(input.toFile().length(), output.toFile().length());
     }
 }
