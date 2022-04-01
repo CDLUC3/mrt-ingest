@@ -19,6 +19,7 @@ import com.ibm.icu.util.Calendar;
 
 import java.util.Arrays;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
 import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -103,6 +104,11 @@ public class IngestTest {
         return getJobStateWithChecksum("test.txt", "md5", "8b1a9953c4611296a827abf8c47804d7");
     }
 
+    public JobState getJobStateHelloInvalid() throws TException {
+        //md5 for "Hello"
+        return getJobStateWithChecksum("test.txt", "md5", "8b1a9953c4611296a827abf8c47804d8");
+    }
+
     public JobState getJobStateWithChecksum(String fname, String alg, String digest) throws TException {
         JobState js = new JobState(
             "user", 
@@ -123,18 +129,44 @@ public class IngestTest {
     }
 
     Path tempdir;
+    ProfileState ps;
+    JobState js;
+
+    String testfile = "test.txt";
+    Path input = Paths.get(RESOURCES, "data", testfile);
+
+    Path copyloc;
+    Path system;
+    Path producer;
+
+    IngestRequest ir;
+
     //IngestConfig ingestConfig;
 
     @Before 
-    public void createTestDirectory() throws IOException {
+    public void createTestDirectory() throws IOException, TException {
         tempdir = Files.createTempDirectory("ingestTest");
         System.out.println("Creating " + tempdir);
         Files.createDirectory(tempdir.resolve("producer"));
         Files.createDirectory(tempdir.resolve("system"));
+
         //ingestConfig = new IngestConfig();
         //TFileLogger logger = new TFileLogger("test", 0, 0);
         //logger.initialize(tempdir.resolve("log").toString());
         //ingestConfig.setLogger(logger);
+
+        copyloc = tempdir.resolve(testfile);
+        system = tempdir.resolve("system");
+        producer = tempdir.resolve("producer");
+
+        ps = getProfileState();
+        js = getJobState();
+
+        Files.copy(input, copyloc);
+        assertTrue(copyloc.toFile().exists());
+        assertEquals(input.toFile().length(), copyloc.toFile().length());
+
+        ir = getIngestRequest(tempdir.toFile());
     }
 
     @After 
@@ -145,7 +177,6 @@ public class IngestTest {
 
     @Test
     public void ReadProfileFile() throws TException {
-        ProfileState ps = getProfileState();
         assertEquals("merritt_test_content", ps.getProfileID().getValue());
         assertEquals("Merritt Test", ps.getProfileDescription());
         assertEquals(Identifier.Namespace.ARK.name(), ps.getIdentifierScheme().name());
@@ -173,29 +204,23 @@ public class IngestTest {
         assertNull(ps.getPURL());
     }
 
-    @Test
-    public void HandlerInitializeTest() throws TException, IOException {
-        JobState js = getJobState();
-
-        ProfileState ps = getProfileState();
-        
-        String testfile = "test.txt";
-
-        Path input = Paths.get(RESOURCES, "data", testfile);
-        Path copyloc = tempdir.resolve(testfile);
-        Path system = tempdir.resolve("system");
-
-        Files.copy(input, copyloc);
-
-        assertTrue(copyloc.toFile().exists());
-        assertEquals(input.toFile().length(), copyloc.toFile().length());
-
-        IngestRequest ir = getIngestRequest(tempdir.toFile());
-
-        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
+    public HandlerResult runHandler(Handler<JobState> h) throws TException {
+        HandlerResult hr = h.handle(ps, ir, js);
 
         assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
+        return hr;        
+    }
+
+    public HandlerResult runHandlerFail(Handler<JobState> h) throws TException {
+        HandlerResult hr = h.handle(ps, ir, js);
+
+        assertFalse(hr.getSuccess());
+        return hr;        
+    }
+
+    @Test
+    public void HandlerInitializeTest() throws TException, IOException {    
+        runHandler(new HandlerInitialize());   
         assertTrue(system.resolve("mrt-ingest.txt").toFile().exists());
         assertEquals("", fileContent(system.resolve("mrt-ingest.txt")));
         
@@ -222,105 +247,34 @@ public class IngestTest {
 
     @Test
     public void HandlerAcceptTest() throws TException, IOException {
-        JobState js = getJobState();
-
-        ProfileState ps = getProfileState();
-        
-        String testfile = "test.txt";
-
-        Path input = Paths.get(RESOURCES, "data", testfile);
-        Path copyloc = tempdir.resolve(testfile);
-        Path output = tempdir.resolve("producer").resolve(testfile);
-
-        Files.copy(input, copyloc);
-
-        assertTrue(copyloc.toFile().exists());
-        assertEquals(input.toFile().length(), copyloc.toFile().length());
-
-        IngestRequest ir = getIngestRequest(tempdir.toFile());
-
-        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        hr = new HandlerAccept().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+ 
         assertFalse(copyloc.toFile().exists());
-        assertTrue(output.toFile().exists());
-        assertEquals(input.toFile().length(), output.toFile().length());
+        assertTrue(producer.resolve(testfile).toFile().exists());
+        assertEquals(input.toFile().length(), producer.resolve(testfile).toFile().length());
     }
 
     @Test
     public void HandlerVerifyTest() throws TException, IOException {
-        JobState js = getJobState();
-
-        ProfileState ps = getProfileState();
-        
-        String testfile = "test.txt";
-
-        Path input = Paths.get(RESOURCES, "data", testfile);
-        Path copyloc = tempdir.resolve(testfile);
-        Path output = tempdir.resolve("producer").resolve(testfile);
-
-        Files.copy(input, copyloc);
-
-        assertTrue(copyloc.toFile().exists());
-        assertEquals(input.toFile().length(), copyloc.toFile().length());
-
-        IngestRequest ir = getIngestRequest(tempdir.toFile());
-
-        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        hr = new HandlerAccept().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        hr = new HandlerVerify().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        assertFalse(copyloc.toFile().exists());
-        assertTrue(output.toFile().exists());
-        assertEquals(input.toFile().length(), output.toFile().length());
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
     }
 
     @Test
     public void HandlerVerifyTestWithDigest() throws TException, IOException {
-        JobState js = getJobStateHello();
+        js = getJobStateHello();
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
+    }
 
-        ProfileState ps = getProfileState();
-        
-        String testfile = "test.txt";
-
-        Path input = Paths.get(RESOURCES, "data", testfile);
-        Path copyloc = tempdir.resolve(testfile);
-        Path output = tempdir.resolve("producer").resolve(testfile);
-
-        Files.copy(input, copyloc);
-
-        assertTrue(copyloc.toFile().exists());
-        assertEquals(input.toFile().length(), copyloc.toFile().length());
-
-        IngestRequest ir = getIngestRequest(tempdir.toFile());
-
-        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        hr = new HandlerAccept().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        hr = new HandlerVerify().handle(ps, ir, js);
-        assertTrue(hr.getSuccess());
-        assertEquals(0, hr.getReturnCode());
-
-        assertFalse(copyloc.toFile().exists());
-        assertTrue(output.toFile().exists());
-        assertEquals(input.toFile().length(), output.toFile().length());
+    @Test
+    public void HandlerVerifyTestWithInvalidDigest() throws TException, IOException {
+        js = getJobStateHelloInvalid();
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandlerFail(new HandlerVerify());   
     }
 }
