@@ -19,10 +19,14 @@ import java.util.Arrays;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
+import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
+import org.cdlib.mrt.ingest.handlers.HandlerVerify;
+import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
 import org.apache.commons.io.FileUtils;
+import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 
 /*
@@ -78,12 +82,34 @@ public class IngestTest {
         return ProfileUtil.getProfile(id, f);
     }
 
-    public IngestRequest getIngestRequest(File f) {
+    public IngestRequest getIngestRequest(File f) throws TException {
         IngestRequest ir = new IngestRequest();
         // where processing will happen
         ir.setQueuePath(f);
+        ir.setServiceState(new IngestServiceState());
+        ir.setPackageType(PackageTypeEnum.file.getValue());
         return ir;
     }
+
+    public JobState getJobState() throws TException {
+        JobState js = new JobState(
+            "user", 
+            "package", 
+            "sha256", 
+            "value", 
+            "primaryID",
+            "objectCreator", 
+            "objectTitle", 
+            "2022-01-01", 
+            "note"
+        );
+        js.setSubmissionDate(new DateState());
+        js.setBatchID(new Identifier("batchid"));
+        js.setJobID(new Identifier("jobid"));
+        
+        return js;
+    }
+
 
     Path tempdir;
 
@@ -132,18 +158,38 @@ public class IngestTest {
     }
 
     @Test
-    public void JobStateTest() throws TException, IOException {
-        JobState js = new JobState(
-            "user", 
-            "package", 
-            "sha256", 
-            "value", 
-            "primaryID",
-            "objectCreator", 
-            "objectTitle", 
-            "2022-01-01", 
-            "note"
-        );
+    public void HandlerInitializeTest() throws TException, IOException {
+        JobState js = getJobState();
+
+        ProfileState ps = getProfileState();
+        
+        String testfile = "test.txt";
+
+        Path input = Paths.get(RESOURCES, "data", testfile);
+        Path copyloc = tempdir.resolve(testfile);
+        Path system = tempdir.resolve("system");
+
+        Files.copy(input, copyloc);
+
+        assertTrue(copyloc.toFile().exists());
+        assertEquals(input.toFile().length(), copyloc.toFile().length());
+
+        IngestRequest ir = getIngestRequest(tempdir.toFile());
+
+        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
+
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+        assertTrue(system.resolve("mrt-ingest.txt").toFile().exists());
+        assertTrue(system.resolve("mrt-membership.txt").toFile().exists());
+        assertTrue(system.resolve("mrt-mom.txt").toFile().exists());
+        assertTrue(system.resolve("mrt-object-map.ttl").toFile().exists());
+        assertTrue(system.resolve("mrt-owner.txt").toFile().exists());
+    }
+
+    @Test
+    public void HandlerAcceptTest() throws TException, IOException {
+        JobState js = getJobState();
 
         ProfileState ps = getProfileState();
         
@@ -160,9 +206,48 @@ public class IngestTest {
 
         IngestRequest ir = getIngestRequest(tempdir.toFile());
 
-        Handler<JobState> h = new HandlerAccept();
-        HandlerResult hr = h.handle(ps, ir, js);
+        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
 
+        hr = new HandlerAccept().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+
+        assertFalse(copyloc.toFile().exists());
+        assertTrue(output.toFile().exists());
+        assertEquals(input.toFile().length(), output.toFile().length());
+    }
+
+    @Test
+    public void HandlerVerifyTest() throws TException, IOException {
+        JobState js = getJobState();
+
+        ProfileState ps = getProfileState();
+        
+        String testfile = "test.txt";
+
+        Path input = Paths.get(RESOURCES, "data", testfile);
+        Path copyloc = tempdir.resolve(testfile);
+        Path output = tempdir.resolve("producer").resolve(testfile);
+
+        Files.copy(input, copyloc);
+
+        assertTrue(copyloc.toFile().exists());
+        assertEquals(input.toFile().length(), copyloc.toFile().length());
+
+        IngestRequest ir = getIngestRequest(tempdir.toFile());
+
+        HandlerResult hr = new HandlerInitialize().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+
+        hr = new HandlerAccept().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
+        assertEquals(0, hr.getReturnCode());
+
+        hr = new HandlerVerify().handle(ps, ir, js);
+        assertTrue(hr.getSuccess());
         assertEquals(0, hr.getReturnCode());
 
         assertFalse(copyloc.toFile().exists());
