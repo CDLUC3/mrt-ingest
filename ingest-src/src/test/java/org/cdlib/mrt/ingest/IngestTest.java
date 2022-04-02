@@ -23,6 +23,7 @@ import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
 import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
+import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
 import org.cdlib.mrt.ingest.handlers.HandlerVerify;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -276,5 +277,14 @@ public class IngestTest {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
         runHandlerFail(new HandlerVerify());   
+    }
+
+    @Test
+    public void HandlerRetrieveTest() throws TException, IOException {
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
+        //No retrieval for a simple file... need to retrieve a real file
+        runHandler(new HandlerRetrieve());   
     }
 }
