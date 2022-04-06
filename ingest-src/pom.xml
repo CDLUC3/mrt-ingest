@@ -42,6 +42,8 @@
   </build>
 
   <dependencies>
+
+<!--
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
@@ -53,6 +55,7 @@
       <artifactId>aws-java-sdk</artifactId>
       <version>1.11.438</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>com.hp.hpl.jena</groupId>
@@ -60,11 +63,13 @@
       <version>2.6.4</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>1.9</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>commons-fileupload</groupId>
@@ -79,22 +84,30 @@
     </dependency>
 
     <dependency>
-       <groupId>com.sun.jersey.contribs</groupId>
-       <artifactId>jersey-multipart</artifactId>
-       <version>1.18</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-bundle</artifactId>
       <version>1.18</version>
     </dependency>
 
     <dependency>
+       <groupId>com.sun.jersey.contribs</groupId>
+       <artifactId>jersey-multipart</artifactId>
+       <version>1.18</version>
+       <exclusions>
+         <exclusion>
+           <groupId>com.sun.jersey</groupId>
+           <artifactId>jersey-core</artifactId>
+         </exclusion>
+       </exclusions>
+    </dependency>
+
+<!--
+    <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-core</artifactId>
       <version>1.18</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>javax.activation</groupId>
@@ -115,6 +128,7 @@
       <scope>provided</scope>
     </dependency>
 
+<!--
     <dependency>
       <groupId>javax.ws.rs</groupId>
       <artifactId>jsr311-api</artifactId>
@@ -138,6 +152,7 @@
       <artifactId>joda-time</artifactId>
       <version>2.8.1</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>junit</groupId>
@@ -146,6 +161,7 @@
       <scope>test</scope>
     </dependency>
 
+<!--
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
@@ -157,6 +173,7 @@
       <artifactId>Saxon-HE</artifactId>
       <version>9.8.0-14</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>org.apache.ant</groupId>
@@ -236,6 +253,7 @@
       <version>2.0-SNAPSHOT</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>org.jdom</groupId>
       <artifactId>jdom</artifactId>
@@ -247,6 +265,7 @@
       <artifactId>jibx-run</artifactId>
       <version>1.2.3</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>net.sf.opencsv</groupId>
@@ -260,11 +279,13 @@
       <version>1.0.1</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>xalan</groupId>
       <artifactId>xalan</artifactId>
       <version>2.7.1</version>
     </dependency>
+-->
 
     <dependency>
       <groupId>xerces</groupId>
@@ -278,6 +299,7 @@
       <version>1.4.01</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>xml-apis</groupId>
       <artifactId>xmlParserAPIs</artifactId>
@@ -289,6 +311,39 @@
       <artifactId>xpp3</artifactId>
       <version>1.1.3.4.O</version>
     </dependency>
+--> 
+
   </dependencies>
 
 </project>
+
+
+<!--
+[INFO] - maven-dependency-plugin:2.1:analyze (default-cli) @ mrt-ingestsrc -
+[WARNING] Unused declared dependencies found:
+[WARNING]    asm:asm:jar:3.1:compile
+[WARNING]    com.amazonaws:aws-java-sdk:jar:1.11.438:compile
+[WARNING]    commons-codec:commons-codec:jar:1.9:compile
+[WARNING]    com.sun.jersey:jersey-core:jar:1.18:compile
+[WARNING]    javax.ws.rs:jsr311-api:jar:1.1.1:compile
+[WARNING]    jaxen:jaxen:jar:1.1.1:compile
+[WARNING]    jmimemagic:jmimemagic:jar:0.1.2:compile
+[WARNING]    joda-time:joda-time:jar:2.8.1:compile
+[WARNING]    junit:junit:jar:4.13.1:test
+[WARNING]    log4j:log4j:jar:1.2.17:compile
+[WARNING]    net.sf.saxon:Saxon-HE:jar:9.8.0-14:compile
+[WARNING]    org.jdom:jdom:jar:1.1:compile
+[WARNING]    org.jibx:jibx-run:jar:1.2.3:compile
+[WARNING]    xalan:xalan:jar:2.7.1:compile
+[WARNING]    xml-apis:xmlParserAPIs:jar:2.0.2:compile
+[WARNING]    xpp3:xpp3:jar:1.1.3.4.O:compile
+
+Regarding com.sun.jersey:jersey-core:
+  if I remove from deps, I get warning from dep analyzer:
+    [WARNING] Used undeclared dependencies found:
+    [WARNING]    com.sun.jersey:jersey-core:jar:1.18:compile
+  but if I also exclude it from dep jersey-multipart all warnings are
+  cleared, and the package compiles just fine.
+
+-->
+
