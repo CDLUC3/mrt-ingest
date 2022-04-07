@@ -35,6 +35,7 @@ import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
+import org.json.JSONException;
 import org.apache.commons.io.FileUtils;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
@@ -96,10 +97,7 @@ public class IngestTest {
         IngestRequest ir = new IngestRequest();
         // where processing will happen
         ir.setQueuePath(f);
-        IngestServiceInit ingestServiceInit = new IngestServiceInit(null, "n/a");
-        IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-        IngestServiceState iss = ingestService.getServiceState();
-        ir.setServiceState(iss);
+        ir.setServiceState(im.getServiceState());
         ir.setPackageType(PackageTypeEnum.file.getValue());
         return ir;
     }
@@ -153,6 +151,13 @@ public class IngestTest {
     IngestRequest ir;
 
     IngestConfig ingestConfig;
+    IngestManager im;
+
+    public IngestTest() throws TException {
+        ingestConfig = IngestConfig.useYaml();
+        im = new IngestManager(ingestConfig.getLogger(), ingestConfig.getStoreConf(), ingestConfig.getIngestConf(), ingestConfig.getQueueConf()); 
+        im.init(ingestConfig.getStoreConf(), ingestConfig.getIngestConf(), ingestConfig.getQueueConf());
+    }
 
     @Before 
     public void createTestDirectory() throws IOException, TException {
@@ -162,7 +167,6 @@ public class IngestTest {
         Files.createDirectory(tempdir.resolve("producer"));
         Files.createDirectory(tempdir.resolve("system"));
 
-        ingestConfig = new IngestConfig();
         ingestConfig.setIngestQueuePath(tempdir.toAbsolutePath().toString());
 
         copyloc = tempdir.resolve(testfile);
@@ -331,8 +335,9 @@ public class IngestTest {
         runHandler(new HandlerCharacterize());   
     }
 
-    @Test
-    public void HandlerMinter() throws TException, IOException {
+    //Not a unit test, this calls out to EZID
+    //@Test
+    public void HandlerMinter() throws TException, IOException, JSONException {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
         runHandler(new HandlerVerify());   
@@ -340,5 +345,5 @@ public class IngestTest {
         runHandler(new HandlerCorroborate());  
         runHandler(new HandlerCharacterize());   
         runHandler(new HandlerMinter());   
-    }
+     }
 }
