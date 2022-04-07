@@ -8,19 +8,20 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 import com.ibm.icu.util.Calendar;
 
 import java.util.Arrays;
 
-import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
 import org.cdlib.mrt.ingest.handlers.HandlerCharacterize;
@@ -28,14 +29,13 @@ import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
 import org.cdlib.mrt.ingest.handlers.HandlerVerify;
-import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
 import org.cdlib.mrt.ingest.handlers.HandlerDescribe;
+import org.cdlib.mrt.ingest.handlers.HandlerDocument;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
-import org.cdlib.mrt.utility.TFileLogger;
 import org.json.JSONException;
 import org.apache.commons.io.FileUtils;
 import org.cdlib.mrt.core.DateState;
@@ -235,33 +235,54 @@ public class IngestTest {
         return hr;        
     }
 
+    public boolean sysFileExists(String name) {
+        File f = system.resolve(name).toFile();
+        return f.exists();
+    }
+
+    public Properties sysFileProperties(String name) throws FileNotFoundException, IOException {
+        Properties p = new Properties();
+        File f = system.resolve(name).toFile();
+        if (f.exists()) {
+            p.load(new FileReader(f));
+        }
+        return p;
+    }
+
+    public String fileContent(Path p) throws IOException {
+        return new String(Files.readAllBytes(p)).trim();
+    }
+
+    public String sysFileContent(String name) throws FileNotFoundException, IOException {
+        return sysFileExists(name) ? fileContent(system.resolve(name)) : "";
+    }
+
+    public List<String> sysFileLines(String name) throws FileNotFoundException, IOException {
+        return Arrays.asList(sysFileContent(name).split("\n"));
+    }
+
     @Test
     public void HandlerInitializeTest() throws TException, IOException {    
         runHandler(new HandlerInitialize());   
-        assertTrue(system.resolve("mrt-ingest.txt").toFile().exists());
-        Properties p = new Properties();
-        p.load(new FileReader(system.resolve("mrt-ingest.txt").toFile()));
+        assertTrue(sysFileExists("mrt-ingest.txt"));
+        Properties p = sysFileProperties("mrt-ingest.txt");
         assertEquals("Unit Test Ingest", p.getProperty("ingest"));
+        assertFalse(p.containsKey("handlers"));
         
-        assertTrue(system.resolve("mrt-membership.txt").toFile().exists());
-        assertEquals(ps.getCollection().firstElement(), fileContent(system.resolve("mrt-membership.txt")));
+        assertTrue(sysFileExists("mrt-membership.txt"));
+        assertEquals(ps.getCollection().firstElement(), sysFileContent("mrt-membership.txt"));
         
-        assertTrue(system.resolve("mrt-mom.txt").toFile().exists());
-        p = new Properties();
-        p.load(new FileReader(system.resolve("mrt-mom.txt").toFile()));
+        assertTrue(sysFileExists("mrt-mom.txt"));
+        p = sysFileProperties("mrt-mom.txt");
         assertEquals(js.getPrimaryID().getValue(), p.getProperty("primaryIdentifier"));
         assertEquals(ps.getObjectType(), p.getProperty("type"));
         assertEquals(ps.getObjectRole(), p.getProperty("role"));
         assertEquals(ps.getAggregateType(), p.getProperty("aggregate"));
 
-        assertTrue(system.resolve("mrt-object-map.ttl").toFile().exists());
+        assertTrue(sysFileExists("mrt-object-map.ttl"));
         
-        assertTrue(system.resolve("mrt-owner.txt").toFile().exists());
-        assertEquals(ps.getOwner(), fileContent(system.resolve("mrt-owner.txt")));
-    }
-
-    public String fileContent(Path p) throws IOException {
-        return new String(Files.readAllBytes(p)).trim();
+        assertTrue(sysFileExists("mrt-owner.txt"));
+        assertEquals(ps.getOwner(), sysFileContent("mrt-owner.txt"));
     }
 
     @Test
@@ -345,15 +366,29 @@ public class IngestTest {
          //Code seems disabled in Merritt
          //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
          runHandler(new HandlerDescribe());   
-         assertTrue(system.resolve("mrt-dc.xml").toFile().exists());
-         assertTrue(system.resolve("mrt-erc.txt").toFile().exists());
-         Properties p = new Properties();
-         p.load(new FileReader(system.resolve("mrt-erc.txt").toFile()));
+         
+         assertTrue(sysFileExists("mrt-dc.xml"));
+
+         assertTrue(sysFileExists("mrt-erc.txt"));
+         Properties p = sysFileProperties("mrt-erc.txt");
          assertEquals("objectCreator", p.getProperty("who"));
          assertEquals("objectTitle", p.getProperty("what"));
          //where element may exist more than once and cannot be read as a property
-         String[] lines = fileContent(system.resolve("mrt-erc.txt")).split("\n");
-         assertTrue(Arrays.asList(lines).contains("where: "+this.ark));
+         assertTrue(sysFileLines("mrt-erc.txt").contains("where: "+this.ark));
      }
- 
+
+     @Test
+     public void HandlerDocument() throws TException, IOException {
+         runHandler(new HandlerInitialize());   
+         runHandler(new HandlerAccept());   
+         //Code seems disabled in Merritt
+         //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
+         runHandler(new HandlerDescribe());   
+         Properties p = sysFileProperties("mrt-ingest.txt");
+         assertFalse(p.containsKey("handlers"));
+         runHandler(new HandlerDocument());   
+         p = sysFileProperties("mrt-ingest.txt");
+         assertTrue(p.containsKey("handlers"));
+       }
+
 }
