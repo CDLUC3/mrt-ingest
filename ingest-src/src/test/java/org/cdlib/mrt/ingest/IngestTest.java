@@ -30,6 +30,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
 import org.cdlib.mrt.ingest.handlers.HandlerVerify;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
+import org.cdlib.mrt.ingest.handlers.HandlerDescribe;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -124,7 +125,7 @@ public class IngestTest {
             fname, 
             alg,
             digest, //no digest value 
-            "ark:/99999/ab12345678",
+            this.ark,
             "objectCreator", 
             "objectTitle", 
             "2022-01-01", 
@@ -141,6 +142,7 @@ public class IngestTest {
     ProfileState ps;
     JobState js;
 
+    String ark = "ark:/99999/ab12345678";
     String testfile = "test.txt";
     Path input = Paths.get(RESOURCES, "data", testfile);
 
@@ -299,7 +301,6 @@ public class IngestTest {
     public void HandlerRetrieveTest() throws TException, IOException {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
         //No retrieval for a simple file... need to retrieve a real file
         runHandler(new HandlerRetrieve());   
     }
@@ -308,7 +309,6 @@ public class IngestTest {
     public void HandlerRetrieveTestWithRetrieve() throws TException, IOException {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
         //No retrieval for a simple file... need to retrieve a real file
         runHandler(new HandlerRetrieve());   
     }
@@ -317,8 +317,6 @@ public class IngestTest {
     public void HandlerCorroborate() throws TException, IOException {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
-        runHandler(new HandlerRetrieve());   
         //no corroborate for a single file, need to process a real manifest
         runHandler(new HandlerCorroborate());   
     }
@@ -327,9 +325,6 @@ public class IngestTest {
     public void HandlerCharacterize() throws TException, IOException {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
-        runHandler(new HandlerRetrieve());   
-        runHandler(new HandlerCorroborate());  
         //Code seems disabled in Merritt
         //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
         runHandler(new HandlerCharacterize());   
@@ -340,10 +335,25 @@ public class IngestTest {
     public void HandlerMinter() throws TException, IOException, JSONException {
         runHandler(new HandlerInitialize());   
         runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
-        runHandler(new HandlerRetrieve());   
-        runHandler(new HandlerCorroborate());  
-        runHandler(new HandlerCharacterize());   
         runHandler(new HandlerMinter());   
      }
+
+     @Test
+     public void HandlerDescribe() throws TException, IOException {
+         runHandler(new HandlerInitialize());   
+         runHandler(new HandlerAccept());   
+         //Code seems disabled in Merritt
+         //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
+         runHandler(new HandlerDescribe());   
+         assertTrue(system.resolve("mrt-dc.xml").toFile().exists());
+         assertTrue(system.resolve("mrt-erc.txt").toFile().exists());
+         Properties p = new Properties();
+         p.load(new FileReader(system.resolve("mrt-erc.txt").toFile()));
+         assertEquals("objectCreator", p.getProperty("who"));
+         assertEquals("objectTitle", p.getProperty("what"));
+         //where element may exist more than once and cannot be read as a property
+         String[] lines = fileContent(system.resolve("mrt-erc.txt")).split("\n");
+         assertTrue(Arrays.asList(lines).contains("where: "+this.ark));
+     }
+ 
 }
