@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileReader;
@@ -19,12 +20,17 @@ import com.ibm.icu.util.Calendar;
 
 import java.util.Arrays;
 
+import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
+import org.cdlib.mrt.ingest.handlers.HandlerCharacterize;
 import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
 import org.cdlib.mrt.ingest.handlers.HandlerVerify;
+import org.cdlib.mrt.ingest.service.IngestServiceInf;
+import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
+import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
@@ -90,7 +96,10 @@ public class IngestTest {
         IngestRequest ir = new IngestRequest();
         // where processing will happen
         ir.setQueuePath(f);
-        ir.setServiceState(new IngestServiceState());
+        IngestServiceInit ingestServiceInit = new IngestServiceInit(null, "n/a");
+        IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+        IngestServiceState iss = ingestService.getServiceState();
+        ir.setServiceState(iss);
         ir.setPackageType(PackageTypeEnum.file.getValue());
         return ir;
     }
@@ -102,6 +111,7 @@ public class IngestTest {
 
     public JobState getJobStateHello() throws TException {
         //md5 for "Hello"
+        //md5sum src/test/resources/data/test.txt
         return getJobStateWithChecksum("test.txt", "md5", "8b1a9953c4611296a827abf8c47804d7");
     }
 
@@ -116,7 +126,7 @@ public class IngestTest {
             fname, 
             alg,
             digest, //no digest value 
-            "primaryID",
+            "ark:/99999/ab12345678",
             "objectCreator", 
             "objectTitle", 
             "2022-01-01", 
@@ -142,25 +152,25 @@ public class IngestTest {
 
     IngestRequest ir;
 
-    //IngestConfig ingestConfig;
+    IngestConfig ingestConfig;
 
     @Before 
     public void createTestDirectory() throws IOException, TException {
+
         tempdir = Files.createTempDirectory("ingestTest");
         System.out.println("Creating " + tempdir);
         Files.createDirectory(tempdir.resolve("producer"));
         Files.createDirectory(tempdir.resolve("system"));
 
-        //ingestConfig = new IngestConfig();
-        //TFileLogger logger = new TFileLogger("test", 0, 0);
-        //logger.initialize(tempdir.resolve("log").toString());
-        //ingestConfig.setLogger(logger);
+        ingestConfig = new IngestConfig();
+        ingestConfig.setIngestQueuePath(tempdir.toAbsolutePath().toString());
 
         copyloc = tempdir.resolve(testfile);
         system = tempdir.resolve("system");
         producer = tempdir.resolve("producer");
 
         ps = getProfileState();
+        
         js = getJobState();
 
         Files.copy(input, copyloc);
@@ -223,13 +233,15 @@ public class IngestTest {
     public void HandlerInitializeTest() throws TException, IOException {    
         runHandler(new HandlerInitialize());   
         assertTrue(system.resolve("mrt-ingest.txt").toFile().exists());
-        assertEquals("", fileContent(system.resolve("mrt-ingest.txt")));
+        Properties p = new Properties();
+        p.load(new FileReader(system.resolve("mrt-ingest.txt").toFile()));
+        assertEquals("Unit Test Ingest", p.getProperty("ingest"));
         
         assertTrue(system.resolve("mrt-membership.txt").toFile().exists());
         assertEquals(ps.getCollection().firstElement(), fileContent(system.resolve("mrt-membership.txt")));
         
         assertTrue(system.resolve("mrt-mom.txt").toFile().exists());
-        Properties p = new Properties();
+        p = new Properties();
         p.load(new FileReader(system.resolve("mrt-mom.txt").toFile()));
         assertEquals(js.getPrimaryID().getValue(), p.getProperty("primaryIdentifier"));
         assertEquals(ps.getObjectType(), p.getProperty("type"));
@@ -286,5 +298,47 @@ public class IngestTest {
         runHandler(new HandlerVerify());   
         //No retrieval for a simple file... need to retrieve a real file
         runHandler(new HandlerRetrieve());   
+    }
+
+    //@Test
+    public void HandlerRetrieveTestWithRetrieve() throws TException, IOException {
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
+        //No retrieval for a simple file... need to retrieve a real file
+        runHandler(new HandlerRetrieve());   
+    }
+
+    @Test
+    public void HandlerCorroborate() throws TException, IOException {
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
+        runHandler(new HandlerRetrieve());   
+        //no corroborate for a single file, need to process a real manifest
+        runHandler(new HandlerCorroborate());   
+    }
+
+    @Test
+    public void HandlerCharacterize() throws TException, IOException {
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
+        runHandler(new HandlerRetrieve());   
+        runHandler(new HandlerCorroborate());  
+        //Code seems disabled in Merritt
+        //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
+        runHandler(new HandlerCharacterize());   
+    }
+
+    @Test
+    public void HandlerMinter() throws TException, IOException {
+        runHandler(new HandlerInitialize());   
+        runHandler(new HandlerAccept());   
+        runHandler(new HandlerVerify());   
+        runHandler(new HandlerRetrieve());   
+        runHandler(new HandlerCorroborate());  
+        runHandler(new HandlerCharacterize());   
+        runHandler(new HandlerMinter());   
     }
 }

@@ -1,0 +1,41 @@
+# default code will read "ingest-info" unless specific ENV vars are set
+#which-ingest: ingest-test
+#ingest-test:
+ingest-info:
+  ingest-info:
+    name: "Unit Test Ingest"
+    identifier: "ingest"
+    target: "http://my-minio-localhost-alias:8086"
+    description: "UC3 ingest docker micro-service"
+    service-scheme: "Ingest/0.1"
+    access-uri: "http://ingest:8080"
+    ezid: "example:value"
+    support-uri: "http://www.cdlib.org/services/uc3/contact.html"
+    admin: "test@email"
+    purl: "http://n2t.net/"
+    mail-host: "smtp"
+    ingestServicePath: "/tmp/ingest"
+    ingestQueuePath: "/tmp/ingest/queue"
+    ingestLock: "/mrt.lock"
+
+  store-info:
+    store.1: "http://store:8080/store"
+    access.1: "http://store:8080/store"
+    localID: "http://inventory:8080/inventory"
+
+  queue-info:
+    QueueService: "zoo:2181"
+    QueueName: "/ingest"
+    IngestQNames: "ingest"
+    InventoryName: "/mrt.inventory.full"
+    QueueHoldFile: "/tmp/ingest/queue/HOLD"
+    PollingInterval: "10"
+    NumThreads: "5"
+
+  logger-info:
+    messageMaximumLevel: 5
+    messageMaximumError: 10
+    path: "/tmp"
+    name: "ingest"
+    qualifier: "yyMMdd"
+    trace: 5
