@@ -31,6 +31,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
 import org.cdlib.mrt.ingest.handlers.HandlerVerify;
 import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
 import org.cdlib.mrt.ingest.handlers.HandlerDescribe;
+import org.cdlib.mrt.ingest.handlers.HandlerDigest;
 import org.cdlib.mrt.ingest.handlers.HandlerDocument;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
@@ -178,12 +179,15 @@ public class IngestTest {
         ps = getProfileState();
         
         js = getJobState();
+        js.setBatchID(new Identifier("batch"));        
 
         Files.copy(input, copyloc);
         assertTrue(copyloc.toFile().exists());
         assertEquals(input.toFile().length(), copyloc.toFile().length());
 
         ir = getIngestRequest(tempdir.toFile());
+        ir.setIngestQueuePath(tempdir.toString());
+        ir.setJob(js);
     }
 
     @After 
@@ -363,8 +367,6 @@ public class IngestTest {
      public void HandlerDescribe() throws TException, IOException {
          runHandler(new HandlerInitialize());   
          runHandler(new HandlerAccept());   
-         //Code seems disabled in Merritt
-         //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
          runHandler(new HandlerDescribe());   
          
          assertTrue(sysFileExists("mrt-dc.xml"));
@@ -381,8 +383,6 @@ public class IngestTest {
      public void HandlerDocument() throws TException, IOException {
          runHandler(new HandlerInitialize());   
          runHandler(new HandlerAccept());   
-         //Code seems disabled in Merritt
-         //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
          runHandler(new HandlerDescribe());   
          Properties p = sysFileProperties("mrt-ingest.txt");
          assertFalse(p.containsKey("handlers"));
@@ -391,4 +391,14 @@ public class IngestTest {
          assertTrue(p.containsKey("handlers"));
        }
 
+       @Test
+       public void HandlerDigest() throws TException, IOException {
+           runHandler(new HandlerInitialize());   
+           runHandler(new HandlerAccept());   
+           runHandler(new HandlerDescribe());   
+           runHandler(new HandlerDigest());
+           assertTrue(sysFileExists("mrt-manifest.txt"));
+           assertEquals(15, sysFileLines("mrt-manifest.txt").size());
+        }
+  
 }
