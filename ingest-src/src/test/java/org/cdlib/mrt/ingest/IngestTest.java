@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import com.ibm.icu.util.Calendar;
+import java.util.Calendar;
 
 import java.util.Arrays;
 
@@ -34,6 +34,8 @@ import org.cdlib.mrt.ingest.handlers.HandlerDescribe;
 import org.cdlib.mrt.ingest.handlers.HandlerDigest;
 import org.cdlib.mrt.ingest.handlers.HandlerDocument;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
+import org.cdlib.mrt.ingest.handlers.HandlerTransfer;
+import org.cdlib.mrt.ingest.handlers.HandlerCleanup;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.TException;
@@ -401,4 +403,23 @@ public class IngestTest {
            assertEquals(15, sysFileLines("mrt-manifest.txt").size());
         }
   
+        //@Test
+        public void HandlerTransfer() throws TException, IOException {
+            runHandler(new HandlerInitialize());   
+            runHandler(new HandlerAccept());   
+            runHandler(new HandlerDescribe()); 
+            //Requires a storage service  
+            runHandler(new HandlerTransfer());
+         }
+
+        @Test
+        public void HandlerCleanup() throws TException, IOException {
+            runHandler(new HandlerInitialize());   
+            runHandler(new HandlerAccept());   
+            runHandler(new HandlerDescribe()); 
+            assertTrue(producer.toFile().exists());
+            runHandler(new HandlerCleanup());
+            assertFalse(producer.toFile().exists());
+        }
+    
 }
