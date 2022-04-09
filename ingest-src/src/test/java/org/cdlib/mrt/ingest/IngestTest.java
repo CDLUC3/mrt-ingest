@@ -391,35 +391,35 @@ public class IngestTest {
          runHandler(new HandlerDocument());   
          p = sysFileProperties("mrt-ingest.txt");
          assertTrue(p.containsKey("handlers"));
-       }
+     }
 
-       @Test
-       public void HandlerDigest() throws TException, IOException {
-           runHandler(new HandlerInitialize());   
-           runHandler(new HandlerAccept());   
-           runHandler(new HandlerDescribe());   
-           runHandler(new HandlerDigest());
-           assertTrue(sysFileExists("mrt-manifest.txt"));
-           assertEquals(15, sysFileLines("mrt-manifest.txt").size());
-        }
+     @Test
+     public void HandlerDigest() throws TException, IOException {
+         runHandler(new HandlerInitialize());   
+         runHandler(new HandlerAccept());   
+         runHandler(new HandlerDescribe());   
+         runHandler(new HandlerDigest());
+         assertTrue(sysFileExists("mrt-manifest.txt"));
+         assertEquals(15, sysFileLines("mrt-manifest.txt").size());
+     }
   
-        //@Test
-        public void HandlerTransfer() throws TException, IOException {
-            runHandler(new HandlerInitialize());   
-            runHandler(new HandlerAccept());   
-            runHandler(new HandlerDescribe()); 
-            //Requires a storage service  
-            runHandler(new HandlerTransfer());
-         }
+     //@Test
+     public void HandlerTransfer() throws TException, IOException {
+         runHandler(new HandlerInitialize());   
+         runHandler(new HandlerAccept());   
+         runHandler(new HandlerDescribe()); 
+         //Requires a storage service  
+         runHandler(new HandlerTransfer());
+     }
 
-        @Test
-        public void HandlerCleanup() throws TException, IOException {
-            runHandler(new HandlerInitialize());   
-            runHandler(new HandlerAccept());   
-            runHandler(new HandlerDescribe()); 
-            assertTrue(producer.toFile().exists());
-            runHandler(new HandlerCleanup());
-            assertFalse(producer.toFile().exists());
-        }
+     @Test
+     public void HandlerCleanup() throws TException, IOException {
+         runHandler(new HandlerInitialize());   
+         runHandler(new HandlerAccept());   
+         runHandler(new HandlerDescribe()); 
+         assertTrue(producer.toFile().exists());
+         runHandler(new HandlerCleanup());
+         assertFalse(producer.toFile().exists());
+     }
     
 }
