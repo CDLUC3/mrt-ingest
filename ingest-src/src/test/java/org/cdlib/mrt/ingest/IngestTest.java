@@ -45,6 +45,14 @@ import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 
 /*
+ * Covrage checks:
+ * 
+ * mvn verify
+ * 
+ * Open target/site/jacoco/index.html in browser
+ */
+
+/*
  * Sample inner class with constructor
  * 
  *  class Foo {
