@@ -29,56 +29,45 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.app.jersey;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.InterruptedException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
-import java.net.URI;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import com.sun.jersey.spi.CloseableService;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.ServletInputStream;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
-import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
 import org.cdlib.mrt.core.ManifestRowBatch;
 import org.cdlib.mrt.core.ManifestRowIngest;
 import org.cdlib.mrt.core.ManifestRowInf;
-import org.cdlib.mrt.core.MessageDigest;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.BatchState;
-import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestRequest;
-import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.app.ValidateCmdParms;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
-import org.cdlib.mrt.ingest.utility.ResponseFormEnum;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.SerializeUtil;
 import org.cdlib.mrt.utility.FileUtil;

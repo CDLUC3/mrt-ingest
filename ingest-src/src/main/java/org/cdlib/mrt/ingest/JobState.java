@@ -31,7 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-import java.util.Date;
 import java.io.Serializable;
 import java.io.StringWriter;
 
@@ -40,20 +39,17 @@ import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.utility.StringUtil;
-import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
-import org.cdlib.mrt.ingest.StoreNode;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Job State information
  * @author mreyes
  */
 public class JobState
-        implements JobStateInf, StateInf, Serializable
+        implements JobStateInf, Serializable
 {
 
 	private Identifier jobID = null;

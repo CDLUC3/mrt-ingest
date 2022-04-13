@@ -31,7 +31,6 @@ package org.cdlib.mrt.ingest;
 
 import java.util.Vector;
 
-import org.cdlib.mrt.ingest.ManifestEntryState;
 import org.cdlib.mrt.utility.StateInf;
 
 /**

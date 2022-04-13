@@ -29,9 +29,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 package org.cdlib.mrt.ingest.service;
 
-
-import java.util.Properties;
-
 import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.AdminManager;
 import org.cdlib.mrt.ingest.IngestManager;

@@ -29,10 +29,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
 import java.lang.String;
 import java.util.Map;
-import java.util.LinkedHashMap;
 
 import org.cdlib.mrt.utility.StateInf;
 

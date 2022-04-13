@@ -30,19 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
-import java.net.URL;
 import java.util.Vector;
-
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Manifests State information
  * @author mreyes
  */
 public class ManifestsState
-        implements ManifestsStateInf, StateInf, Serializable
+        implements ManifestsStateInf, Serializable
 {
 
     private Vector<ManifestEntryState> manifestsState = new Vector<ManifestEntryState>(); 

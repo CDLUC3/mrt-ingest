@@ -32,17 +32,14 @@ package org.cdlib.mrt.ingest;
 import java.util.Iterator;
 import java.io.Serializable;
 import java.lang.Cloneable;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 
 /**
@@ -50,7 +47,7 @@ import org.cdlib.mrt.utility.StringUtil;
  * @author mreyes
  */
 public class BatchState
-        implements BatchStateInf, StateInf, Serializable, Cloneable
+        implements BatchStateInf, Serializable, Cloneable
 {
 
     private Identifier batchID = null;

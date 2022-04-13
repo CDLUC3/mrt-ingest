@@ -33,12 +33,9 @@ import java.io.File;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ResponseFormEnum;
 import org.cdlib.mrt.ingest.utility.ResourceTypeEnum;
-import org.cdlib.mrt.utility.TException;
 
 /**
  *

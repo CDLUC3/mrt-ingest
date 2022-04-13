@@ -29,23 +29,17 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.lang.String;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.JobFileStateInf;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Job File State information
  * @author mreyes
  */
 public class JobFileState
-        implements JobFileStateInf, StateInf, Serializable
+        implements JobFileStateInf, Serializable
 
 {
 

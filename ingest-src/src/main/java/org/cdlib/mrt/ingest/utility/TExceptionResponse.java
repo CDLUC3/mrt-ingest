@@ -31,17 +31,9 @@ package org.cdlib.mrt.ingest.utility;
 
 import java.io.Serializable;  
   
-import javax.xml.bind.annotation.XmlAccessType;  
-import javax.xml.bind.annotation.XmlAnyElement;
-import javax.xml.bind.annotation.XmlAccessorType;  
-import javax.xml.bind.annotation.XmlAttribute;  
 import javax.xml.bind.annotation.XmlElement;  
-import javax.xml.bind.annotation.XmlNsForm;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
 
 @XmlRootElement
 public class TExceptionResponse implements Serializable {

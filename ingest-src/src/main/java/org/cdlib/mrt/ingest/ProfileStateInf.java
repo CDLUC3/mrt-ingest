@@ -35,9 +35,6 @@ import java.util.Vector;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
-import org.cdlib.mrt.ingest.HandlerState;
-import org.cdlib.mrt.ingest.Notification;
-import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.StateInf;
 
 /**

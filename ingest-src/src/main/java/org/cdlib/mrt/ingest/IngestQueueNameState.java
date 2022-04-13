@@ -29,25 +29,16 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.lang.String;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Vector;
-
-import org.cdlib.mrt.formatter.FormatType;
-import org.cdlib.mrt.ingest.IngestQueueNameStateInf;
-import org.cdlib.mrt.ingest.IngestQueue;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Ingest Queue Name State information
  * @author mreyes
  */
 public class IngestQueueNameState
-        implements IngestQueueNameStateInf, StateInf, Serializable
+        implements IngestQueueNameStateInf, Serializable
 
 {
 

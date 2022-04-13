@@ -30,19 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.handlers;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Properties;
 
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.DistributedQueue.Ignorer;
 import org.cdlib.mrt.utility.TException;

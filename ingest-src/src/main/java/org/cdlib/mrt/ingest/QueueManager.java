@@ -29,70 +29,41 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.lang.IllegalArgumentException;
 import java.lang.Thread;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.Date;
 
 import java.io.File;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
 
 import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.handlers.queue.Handler;
 import org.cdlib.mrt.ingest.handlers.queue.HandlerResult;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
-import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.JobStateInf;
-import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.LockState;
-import org.cdlib.mrt.ingest.QueueState;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.queue.DistributedLock;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.queue.LockItem;
 import org.cdlib.mrt.utility.DateUtil;
-import org.cdlib.mrt.utility.FileUtil;
-import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
-import org.cdlib.mrt.utility.PropertiesUtil;
-import org.cdlib.mrt.utility.SerializeUtil;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.ZooCodeUtil;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**

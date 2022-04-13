@@ -29,11 +29,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest;
 
-import java.io.File;
-import java.lang.String;
 import java.util.Vector;
 
-import org.cdlib.mrt.ingest.IngestLock;
 import org.cdlib.mrt.utility.StateInf;
 
 /**

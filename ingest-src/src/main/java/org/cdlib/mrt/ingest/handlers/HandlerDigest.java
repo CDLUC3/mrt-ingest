@@ -33,15 +33,11 @@ import java.io.File;
 import java.net.URL;
 import java.util.Properties;
 
-import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.ingest.StoreNode;
-import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.core.ManifestBuild;
 import org.cdlib.mrt.utility.FileUtil;
-import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;

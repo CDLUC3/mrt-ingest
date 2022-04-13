@@ -32,7 +32,6 @@ package org.cdlib.mrt.ingest;
 
 import java.io.File;
 import java.lang.String;
-import java.net.URL;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.utility.StateInf;
 

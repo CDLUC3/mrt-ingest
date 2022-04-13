@@ -30,20 +30,18 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.net.URL;
-import java.util.Date;
 import java.io.Serializable;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Notification State information
  * @author mreyes
  */
 public class NotificationState
-        implements NotificationStateInf, StateInf, Serializable
+        implements NotificationStateInf, Serializable
 {
 
     private Identifier jobID = null;
