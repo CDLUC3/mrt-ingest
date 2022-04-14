@@ -1,5 +1,6 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "editor.tabSize": 8,
-    "editor.detectIndentation": false
+"editor.detectIndentation": false,
+"liveServer.settings.port": 8101
 }
