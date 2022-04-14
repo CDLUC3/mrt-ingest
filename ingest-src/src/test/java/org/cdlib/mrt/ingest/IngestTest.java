@@ -13,7 +13,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,7 +52,8 @@ import org.cdlib.mrt.core.Identifier;
 public class IngestTest {
 
     public static final String RESOURCES = "src/test/resources/";
-    public static String ARK = "ark:/99999/ab12345678";
+    public static final String ARK = "ark:/99999/ab12345678";
+    public static final String SAMPLES = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/";
 
     public enum SampleFile {
         SingleFileNoDigest("test.txt", PackageTypeEnum.file, ""),
@@ -67,7 +67,13 @@ public class IngestTest {
         },
         ZipFileAsFile("test.zip", PackageTypeEnum.file, ""),
         ZipFileAsContainer("test.zip", PackageTypeEnum.container, "test.txt,foo.txt"),
-        FourBlocks("https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/4blocks.checkm", PackageTypeEnum.manifest, "4blocks.jpg,4blocks.txt");
+        FourBlocks(SAMPLES + "4blocks.checkm", PackageTypeEnum.manifest, "4blocks.jpg,4blocks.txt"),
+        BigHunt(SAMPLES + "bigHunt.checkm", PackageTypeEnum.manifest, "bigHunt.txt,bigHunt2.jpg,bigHunt3.jpg"),
+        Call911(SAMPLES + "call911.checkm", PackageTypeEnum.manifest, "call911.txt,call911.jpg"),
+        BatchContainers(SAMPLES + "sampleBatchOfContainers.checkm", PackageTypeEnum.batchManifestContainer, "call911.txt,call911.jpg"),
+        BatchFiles(SAMPLES + "sampleBatchOfFiles.checkm", PackageTypeEnum.batchManifestFile, "call911.txt,call911.jpg"),
+        BatchManifests(SAMPLES + "sampleBatchOfManifests.checkm", PackageTypeEnum.batchManifestFile, "call911.txt,call911.jpg")
+        ;
 
         private PackageTypeEnum type = PackageTypeEnum.file;
         private String path;
@@ -473,8 +479,9 @@ public class IngestTest {
         runHandler(new HandlerDisaggregate(), ir, ingestInput.getJobState());   
         if (ingestInput.sampleFile.type == PackageTypeEnum.container) {
             assertFalse(ingestInput.getProducerPath().toFile().exists());
-            assertTrue(getProducerPath().resolve("foo.txt").toFile().exists());
-            assertTrue(getProducerPath().resolve("test.txt").toFile().exists());
+            for(String s: ingestInput.sampleFile.files) {
+                assertTrue(getProducerPath().resolve(s).toFile().exists());
+            }
         } else {
             assertTrue(ingestInput.getProducerPath().toFile().exists());
         }
@@ -493,7 +500,10 @@ public class IngestTest {
 
     public void runHandlerRetrieveTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
         runHandler(new HandlerRetrieve(), ir, ingestInput.getJobState());   
-    }
+        for(String s: ingestInput.sampleFile.files) {
+            assertTrue(getProducerPath().resolve(s).toFile().exists());
+        }
+}
 
     @Test
     public void HandlerRetrieveTest() throws TException, IOException {
@@ -707,4 +717,55 @@ public class IngestTest {
 
         runAllHandlers(ingestInput, ir);
     }
+
+    @Test
+    public void AllHandlersCheckmBigHunt() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BigHunt, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    @Test
+    public void AllHandlersCheckmCall911() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.Call911, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    //@Test
+    public void AllHandlersCheckmBatchContainers() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BatchContainers, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    //@Test
+    public void AllHandlersCheckmBatchFiles() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BatchFiles, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    //@Test
+    public void AllHandlersCheckmBatchManifests() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BatchManifests, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
 }
