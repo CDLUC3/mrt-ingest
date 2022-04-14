@@ -4,25 +4,28 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
+//import static org.mockito.Mockito.*;
+//import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
 import java.util.Calendar;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerAccept;
 import org.cdlib.mrt.ingest.handlers.HandlerCharacterize;
 import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
@@ -32,6 +35,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerVerify;
 import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
 import org.cdlib.mrt.ingest.handlers.HandlerDescribe;
 import org.cdlib.mrt.ingest.handlers.HandlerDigest;
+import org.cdlib.mrt.ingest.handlers.HandlerDisaggregate;
 import org.cdlib.mrt.ingest.handlers.HandlerDocument;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.ingest.handlers.HandlerTransfer;
@@ -44,50 +48,239 @@ import org.apache.commons.io.FileUtils;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 
-/*
- * Covrage checks:
- * 
- * mvn verify
- * 
- * Open target/site/jacoco/index.html in browser
- */
-
-/*
- * Sample inner class with constructor
- * 
- *  class Foo {
- *      String s;
- *      Foo(String s) {
- *         this.s = s;
- *      }
- *      public String toString() {
- *          return s;
- *      }
- * 
- *      //mock cannot be made on final method, therefore a new one is shown here
- *      public int length() {
- *          return s.length();
- *      }
- *  }
- *
- * Sample Mock with constructor
- * 
- *   Foo mockedString = mock(Foo.class, "ABC");
- *   when(mockedString.length()).thenReturn(777);
- *   System.out.println(mockedString.length());
- */
-
 public class IngestTest {
-    class Foo {
-        String s;
-        Foo(String s) {
-            this.s = s;
+
+    public static final String RESOURCES = "src/test/resources/";
+    public static final String ARK = "ark:/99999/ab12345678";
+    public static final String SAMPLES = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/";
+    public static final String JOBID = "jobID";
+    public static final String BATCHID = "batchid";
+
+    public enum SampleFile {
+        SingleFileNoDigest("test.txt", PackageTypeEnum.file, ""),
+        SingleFileWithDigest("test.txt", PackageTypeEnum.file, ""){
+            public String getAlg() {return "md5";}
+            public String getDigest(){return "8b1a9953c4611296a827abf8c47804d7";}
+        }, 
+        SingleFileBadDigest("test.txt", PackageTypeEnum.file, ""){
+            public String getAlg() {return "md5";}
+            public String getDigest(){return "8b1a9953c4611296a827abf8c47804d8";}
+        },
+        ZipFileAsFile("test.zip", PackageTypeEnum.file, ""),
+        ZipFileAsContainer("test.zip", PackageTypeEnum.container, "test.txt,foo.txt"),
+        FourBlocks(SAMPLES + "4blocks.checkm", PackageTypeEnum.manifest, "4blocks.jpg,4blocks.txt"),
+        BigHunt(SAMPLES + "bigHunt.checkm", PackageTypeEnum.manifest, "bigHunt.txt,bigHunt2.jpg,bigHunt3.jpg"),
+        Call911(SAMPLES + "call911.checkm", PackageTypeEnum.manifest, "call911.txt,call911.jpg"),
+        BatchContainers(SAMPLES + "sampleBatchOfContainers.checkm", PackageTypeEnum.batchManifestContainer, "huskyChicken.zip,souvenirs.zip,outdoorStore.zip"),
+        BatchFiles(SAMPLES + "sampleBatchOfFiles.checkm", PackageTypeEnum.batchManifestFile, "tumbleBug.jpg,goldenDragon.jpg,generalDrapery.jpg"),
+        BatchManifests(SAMPLES + "sampleBatchOfManifests.checkm", PackageTypeEnum.batchManifest, "bigHunt.checkm,call911.checkm,4blocks.checkm")
+        ;
+
+        private PackageTypeEnum type = PackageTypeEnum.file;
+        private String path;
+        private String alg = "";
+        private String digest = "";
+        private URL url;
+        private ArrayList<String> files = new ArrayList<>();
+
+        SampleFile(String path, PackageTypeEnum type, String list) {
+            this.type = type;
+            if (path.startsWith("http")) {
+                try {
+                    this.url = new URL(path);
+                    Path p = Paths.get(this.url.getFile());
+                    this.path = p.getFileName().toString();
+                } catch(MalformedURLException e) {
+                    System.err.println(e);
+                }
+            } else {
+                this.path = path;
+            }
+            if (list.isEmpty()) {
+                files.add(path);
+            } else {
+                for(String s: list.split(",")){
+                    files.add(s);
+                }
+            }
         }
-        public String toString() {
-            return s;
+        public boolean isManifest() {
+            if (type == PackageTypeEnum.file || type == PackageTypeEnum.container) {
+                return false;
+            }
+            return true;
         }
-        public int length() {
-            return s.length();
+        public boolean isBatch() {
+            if (type == PackageTypeEnum.batchManifest || type == PackageTypeEnum.batchManifestContainer || type == PackageTypeEnum.batchManifestFile) {
+                return true;
+            }
+            return false;
+        }
+        public Path getPath() {
+            return Paths.get(RESOURCES, "data", path);
+        } 
+        public File getFile() {
+            return getPath().toFile();
+        }
+        public String getAlg() {
+            return alg;
+        }
+        public String getDigest(){
+            return digest;
+        }
+        public URL getUrl() {
+            return url;
+        }
+        public int getListSizeCount() {
+            return 14 + files.size() + (isManifest() ? 1 : 0);
+        }
+   }
+
+    public class InputFile {
+        SampleFile sampleFile;
+        Path tempdir;
+        private BatchState batch;
+        private JobState js;
+
+        public InputFile(SampleFile inputType, Path tempdir) throws TException {
+            this.sampleFile = inputType;
+            this.tempdir = tempdir;
+        }
+
+        public IngestRequest getIngestRequest(IngestManager im, JobState js) throws TException {
+            IngestRequest ir = new IngestRequest();
+            ir.setQueuePath(this.tempdir.toFile());
+            ir.setServiceState(im.getServiceState());
+            ir.setPackageType(sampleFile.type.getValue());
+            ir.setIngestQueuePath(this.tempdir.toString());
+            ir.setJob(js);
+            return ir;        
+        }
+    
+        public Path getCopyPath() {
+            return this.tempdir.resolve(this.sampleFile.path);
+        }
+
+        public Path getProducerPath() {
+            return this.tempdir.resolve("producer").resolve(this.sampleFile.path);
+        }
+    
+        public void moveToIngestDir() throws IOException {
+            Files.copy(this.sampleFile.getPath(), getCopyPath());
+        }
+
+        public BatchState getBatchState() throws TException{
+            if (this.batch == null) {
+                this.batch = new BatchState(new Identifier(BATCHID));
+            }
+            return this.batch;
+        }
+
+        public JobState getJobState() throws TException {
+            if (this.js == null) {
+                this.js = new JobState(
+                    "user", 
+                    sampleFile.path, 
+                    sampleFile.getAlg(),
+                    sampleFile.getDigest(), 
+                    ARK,
+                    "objectCreator", 
+                    "objectTitle", 
+                    "2022-01-01", 
+                    "note"
+                );
+                js.setSubmissionDate(new DateState());        
+            }
+            BatchState b = this.getBatchState();
+            js.setJobID(new Identifier(JOBID));
+            b.addJob(js.getJobID().getValue(), js);
+            js.setBatchID(b.getBatchID());
+            return this.js;
+        }
+    }
+
+    public enum IngestProfile {
+        merritt_test_content;
+        private String path;
+        IngestProfile(String path) {
+            this.path = path;
+        }
+        IngestProfile() {
+            this.path = this.name();
+        }
+        public Path getPath() {
+            return Paths.get(RESOURCES, "profile", path);
+        } 
+        public File getFile() {
+            return getPath().toFile();
+        }
+        public Identifier getIdentifier() throws TException {
+            return new Identifier(this.name());
+        }
+    }
+
+    public enum SystemFile {
+        mrt_ingest("mrt-ingest.txt"),
+        mrt_membership("mrt-membership.txt"),
+        mrt_mom("mrt-mom.txt"),
+        mrt_object_map("mrt-object-map.ttl"),
+        mrt_owner("mrt-owner.txt"),
+        mrt_dc("mrt-dc.xml"),
+        mrt_erc("mrt-erc.txt"),
+        mrt_manifest("mrt-manifest.txt"),
+        mrt_submission_manifest("mrt-submission-manifest.txt");
+
+        String path;
+        SystemFile(String path) {
+            this.path = path;
+        }
+    }
+
+    public class SystemFileInstance {
+        SystemFile sysfile;
+
+        SystemFileInstance(SystemFile sysfile) {
+            this.sysfile = sysfile;
+        }
+
+        public Path getPath() {
+            return IngestTest.this.getSystemPath().resolve(sysfile.path);
+        }
+
+        public File getFile() {
+            return getPath().toFile();
+        }
+
+        public boolean exists() {
+            return getFile().exists();
+        }
+    
+        public Properties sysFileProperties() throws FileNotFoundException, IOException {
+            Properties p = new Properties();
+            if (exists()) {
+                p.load(new FileReader(getFile()));
+            }
+            return p;
+        }
+
+        public boolean hasProperty(String name) throws FileNotFoundException, IOException {
+            return sysFileProperties().containsKey(name);
+        }
+
+        public String getProperty(String name) throws FileNotFoundException, IOException {
+            return sysFileProperties().getProperty(name);
+        }    
+        
+        public String getContent() throws IOException {
+            return exists() ? new String(Files.readAllBytes(getPath())).trim() : "";
+        }
+        
+        public List<String> sysFileLines() throws FileNotFoundException, IOException {
+            return Arrays.asList(getContent().split("\n"));
+        }
+
+        public boolean contains(String val) throws FileNotFoundException, IOException {
+            return sysFileLines().contains(val);
         }
     }
 
@@ -97,71 +290,14 @@ public class IngestTest {
         return cal.getTime();
     }
 
-    public static final String RESOURCES = "src/test/resources/";
 
     public ProfileState getProfileState() throws TException {
-        File f = Paths.get(RESOURCES, "profile/merritt_test_content").toFile();
-        Identifier id = new Identifier("profile");
-        return ProfileUtil.getProfile(id, f);
-    }
-
-    public IngestRequest getIngestRequest(File f) throws TException {
-        IngestRequest ir = new IngestRequest();
-        // where processing will happen
-        ir.setQueuePath(f);
-        ir.setServiceState(im.getServiceState());
-        ir.setPackageType(PackageTypeEnum.file.getValue());
-        return ir;
-    }
-
-    public JobState getJobState() throws TException {
-        //Blank aglorithm and value will be skipped
-        return getJobStateWithChecksum("test.txt", "", "");
-    }
-
-    public JobState getJobStateHello() throws TException {
-        //md5 for "Hello"
-        //md5sum src/test/resources/data/test.txt
-        return getJobStateWithChecksum("test.txt", "md5", "8b1a9953c4611296a827abf8c47804d7");
-    }
-
-    public JobState getJobStateHelloInvalid() throws TException {
-        //md5 for "Hello"
-        return getJobStateWithChecksum("test.txt", "md5", "8b1a9953c4611296a827abf8c47804d8");
-    }
-
-    public JobState getJobStateWithChecksum(String fname, String alg, String digest) throws TException {
-        JobState js = new JobState(
-            "user", 
-            fname, 
-            alg,
-            digest, //no digest value 
-            this.ark,
-            "objectCreator", 
-            "objectTitle", 
-            "2022-01-01", 
-            "note"
-        );
-        js.setSubmissionDate(new DateState());
-        js.setBatchID(new Identifier("batchid"));
-        js.setJobID(new Identifier("jobid"));
-        
-        return js;
+        IngestProfile ip = IngestProfile.merritt_test_content;
+        return ProfileUtil.getProfile(ip.getIdentifier(), ip.getFile());
     }
 
     Path tempdir;
     ProfileState ps;
-    JobState js;
-
-    String ark = "ark:/99999/ab12345678";
-    String testfile = "test.txt";
-    Path input = Paths.get(RESOURCES, "data", testfile);
-
-    Path copyloc;
-    Path system;
-    Path producer;
-
-    IngestRequest ir;
 
     IngestConfig ingestConfig;
     IngestManager im;
@@ -172,33 +308,26 @@ public class IngestTest {
         im.init(ingestConfig.getStoreConf(), ingestConfig.getIngestConf(), ingestConfig.getQueueConf());
     }
 
+    public Path getSystemPath() {
+        return tempdir.resolve("system");
+    }
+
+    public Path getProducerPath() {
+        return tempdir.resolve("producer");
+    }
+
     @Before 
     public void createTestDirectory() throws IOException, TException {
 
         tempdir = Files.createTempDirectory("ingestTest");
         System.out.println("Creating " + tempdir);
-        Files.createDirectory(tempdir.resolve("producer"));
-        Files.createDirectory(tempdir.resolve("system"));
+        Files.createDirectory(getProducerPath());
+        Files.createDirectory(getSystemPath());
 
         ingestConfig.setIngestQueuePath(tempdir.toAbsolutePath().toString());
 
-        copyloc = tempdir.resolve(testfile);
-        system = tempdir.resolve("system");
-        producer = tempdir.resolve("producer");
-
         ps = getProfileState();
-        
-        js = getJobState();
-        js.setBatchID(new Identifier("batch"));        
-
-        Files.copy(input, copyloc);
-        assertTrue(copyloc.toFile().exists());
-        assertEquals(input.toFile().length(), copyloc.toFile().length());
-
-        ir = getIngestRequest(tempdir.toFile());
-        ir.setIngestQueuePath(tempdir.toString());
-        ir.setJob(js);
-    }
+     }
 
     @After 
     public void clearTestDirectory() throws IOException {
@@ -235,199 +364,443 @@ public class IngestTest {
         assertNull(ps.getPURL());
     }
 
-    public HandlerResult runHandler(Handler<JobState> h) throws TException {
-        HandlerResult hr = h.handle(ps, ir, js);
+    public void runHandlerInitializeTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
 
+        assertTrue(ingestInput.getCopyPath().toFile().exists());
+        HandlerResult hr = new HandlerInitialize().handle(ps, ir, ingestInput.getJobState());
         assertTrue(hr.getSuccess());
-        return hr;        
-    }
 
-    public HandlerResult runHandlerFail(Handler<JobState> h) throws TException {
-        HandlerResult hr = h.handle(ps, ir, js);
+        SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_ingest);
+        assertTrue(sfi.exists());
+        assertEquals("Unit Test Ingest", sfi.getProperty("ingest"));
+        assertFalse(sfi.hasProperty("handlers"));
+        
+        sfi = new SystemFileInstance(SystemFile.mrt_membership);
+        assertTrue(sfi.exists());
+        assertEquals(ps.getCollection().firstElement(), sfi.getContent());
+        
+        sfi = new SystemFileInstance(SystemFile.mrt_mom);
+        assertTrue(sfi.exists());
+        assertEquals(ingestInput.getJobState().getPrimaryID().getValue(), sfi.getProperty("primaryIdentifier"));
+        assertEquals(ps.getObjectType(), sfi.getProperty("type"));
+        assertEquals(ps.getObjectRole(), sfi.getProperty("role"));
+        assertEquals(ps.getAggregateType(), sfi.getProperty("aggregate"));
 
-        assertFalse(hr.getSuccess());
-        return hr;        
+        sfi = new SystemFileInstance(SystemFile.mrt_object_map);
+        assertTrue(sfi.exists());
+        
+        sfi = new SystemFileInstance(SystemFile.mrt_owner);
+        assertTrue(sfi.exists());
+        assertEquals(ps.getOwner(), sfi.getContent());        
     }
-
-    public boolean sysFileExists(String name) {
-        File f = system.resolve(name).toFile();
-        return f.exists();
-    }
-
-    public Properties sysFileProperties(String name) throws FileNotFoundException, IOException {
-        Properties p = new Properties();
-        File f = system.resolve(name).toFile();
-        if (f.exists()) {
-            p.load(new FileReader(f));
-        }
-        return p;
-    }
-
-    public String fileContent(Path p) throws IOException {
-        return new String(Files.readAllBytes(p)).trim();
-    }
-
-    public String sysFileContent(String name) throws FileNotFoundException, IOException {
-        return sysFileExists(name) ? fileContent(system.resolve(name)) : "";
-    }
-
-    public List<String> sysFileLines(String name) throws FileNotFoundException, IOException {
-        return Arrays.asList(sysFileContent(name).split("\n"));
-    }
+    
 
     @Test
     public void HandlerInitializeTest() throws TException, IOException {    
-        runHandler(new HandlerInitialize());   
-        assertTrue(sysFileExists("mrt-ingest.txt"));
-        Properties p = sysFileProperties("mrt-ingest.txt");
-        assertEquals("Unit Test Ingest", p.getProperty("ingest"));
-        assertFalse(p.containsKey("handlers"));
-        
-        assertTrue(sysFileExists("mrt-membership.txt"));
-        assertEquals(ps.getCollection().firstElement(), sysFileContent("mrt-membership.txt"));
-        
-        assertTrue(sysFileExists("mrt-mom.txt"));
-        p = sysFileProperties("mrt-mom.txt");
-        assertEquals(js.getPrimaryID().getValue(), p.getProperty("primaryIdentifier"));
-        assertEquals(ps.getObjectType(), p.getProperty("type"));
-        assertEquals(ps.getObjectRole(), p.getProperty("role"));
-        assertEquals(ps.getAggregateType(), p.getProperty("aggregate"));
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileNoDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
 
-        assertTrue(sysFileExists("mrt-object-map.ttl"));
-        
-        assertTrue(sysFileExists("mrt-owner.txt"));
-        assertEquals(ps.getOwner(), sysFileContent("mrt-owner.txt"));
+        runHandlerInitializeTests(ingestInput, ir);
+    }
+
+    public void runHandlerAcceptTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerAccept().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+ 
+        assertFalse(ingestInput.getCopyPath().toFile().exists());
+        assertTrue(ingestInput.getProducerPath().toFile().exists());
     }
 
     @Test
     public void HandlerAcceptTest() throws TException, IOException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
- 
-        assertFalse(copyloc.toFile().exists());
-        assertTrue(producer.resolve(testfile).toFile().exists());
-        assertEquals(input.toFile().length(), producer.resolve(testfile).toFile().length());
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileNoDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+    }
+
+    public void runHandlerVerifyTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerVerify().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+    }
+
+    public void failHandlerVerifyTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerVerify().handle(ps, ir, ingestInput.getJobState());
+        assertFalse(hr.getSuccess());
     }
 
     @Test
     public void HandlerVerifyTest() throws TException, IOException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileNoDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerVerifyTests(ingestInput, ir);
     }
 
     @Test
     public void HandlerVerifyTestWithDigest() throws TException, IOException {
-        js = getJobStateHello();
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
-        runHandler(new HandlerVerify());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerVerifyTests(ingestInput, ir);
     }
 
     @Test
     public void HandlerVerifyTestWithInvalidDigest() throws TException, IOException {
-        js = getJobStateHelloInvalid();
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
-        runHandlerFail(new HandlerVerify());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        failHandlerVerifyTests(ingestInput, ir);
+    }
+
+    public void runHandlerDisaggregateTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerDisaggregate().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+
+        if (ingestInput.sampleFile.type == PackageTypeEnum.container) {
+            assertFalse(ingestInput.getProducerPath().toFile().exists());
+            for(String s: ingestInput.sampleFile.files) {
+                assertTrue(getProducerPath().resolve(s).toFile().exists());
+            }
+        } else {
+            assertTrue(ingestInput.getProducerPath().toFile().exists());
+        }
+    }
+
+    @Test
+    public void HandlerDisaggregateTest() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerDisaggregateTests(ingestInput, ir);
+    }
+
+    public void runHandlerRetrieveTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerRetrieve().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+
+        if (!ingestInput.sampleFile.isBatch()) {
+            for(String s: ingestInput.sampleFile.files) {
+                assertTrue(getProducerPath().resolve(s).toFile().exists());
+            }            
+        }
     }
 
     @Test
     public void HandlerRetrieveTest() throws TException, IOException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
         //No retrieval for a simple file... need to retrieve a real file
-        runHandler(new HandlerRetrieve());   
+        runHandlerRetrieveTests(ingestInput, ir);
     }
 
     //@Test
     public void HandlerRetrieveTestWithRetrieve() throws TException, IOException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
         //No retrieval for a simple file... need to retrieve a real file
-        runHandler(new HandlerRetrieve());   
+        runHandlerRetrieveTests(ingestInput, ir);
+    }
+
+    public void runHandlerCorroborateTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerCorroborate().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
     }
 
     @Test
     public void HandlerCorroborate() throws TException, IOException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
         //no corroborate for a single file, need to process a real manifest
-        runHandler(new HandlerCorroborate());   
+        runHandlerCorroborateTests(ingestInput, ir);
+    }
+
+    public void runHandlerCharacterizeTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerCharacterize().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
     }
 
     @Test
     public void HandlerCharacterize() throws TException, IOException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
         //Code seems disabled in Merritt
         //[warn] HandlerCharacterize: URL has not been set.  Skipping characterization. 
-        runHandler(new HandlerCharacterize());   
+        runHandlerCharacterizeTests(ingestInput, ir);
     }
 
     //Not a unit test, this calls out to EZID
     //@Test
     public void HandlerMinter() throws TException, IOException, JSONException {
-        runHandler(new HandlerInitialize());   
-        runHandler(new HandlerAccept());   
-        runHandler(new HandlerMinter());   
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        
+        HandlerResult hr = new HandlerMinter().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+     }
+
+     public void runHandlerDescribeTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerDescribe().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+ 
+        SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_dc);
+        assertTrue(sfi.exists());
+
+        sfi = new SystemFileInstance(SystemFile.mrt_erc);
+        assertTrue(sfi.exists());
+        assertEquals("objectCreator", sfi.getProperty("who"));
+        assertEquals("objectTitle", sfi.getProperty("what"));
+        //where element may exist more than once and cannot be read as a property
+        assertTrue(sfi.contains("where: " + ARK));
      }
 
      @Test
      public void HandlerDescribe() throws TException, IOException {
-         runHandler(new HandlerInitialize());   
-         runHandler(new HandlerAccept());   
-         runHandler(new HandlerDescribe());   
-         
-         assertTrue(sysFileExists("mrt-dc.xml"));
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
 
-         assertTrue(sysFileExists("mrt-erc.txt"));
-         Properties p = sysFileProperties("mrt-erc.txt");
-         assertEquals("objectCreator", p.getProperty("who"));
-         assertEquals("objectTitle", p.getProperty("what"));
-         //where element may exist more than once and cannot be read as a property
-         assertTrue(sysFileLines("mrt-erc.txt").contains("where: "+this.ark));
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerDescribeTests(ingestInput, ir);
+    }
+
+    public void runHandlerDocumentTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_ingest);
+        assertFalse(sfi.hasProperty("handlers"));
+        HandlerResult hr = new HandlerDocument().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+   
+        assertTrue(sfi.hasProperty("handlers"));
      }
 
      @Test
      public void HandlerDocument() throws TException, IOException {
-         runHandler(new HandlerInitialize());   
-         runHandler(new HandlerAccept());   
-         runHandler(new HandlerDescribe());   
-         Properties p = sysFileProperties("mrt-ingest.txt");
-         assertFalse(p.containsKey("handlers"));
-         runHandler(new HandlerDocument());   
-         p = sysFileProperties("mrt-ingest.txt");
-         assertTrue(p.containsKey("handlers"));
-     }
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
 
-     @Test
-     public void HandlerDigest() throws TException, IOException {
-         runHandler(new HandlerInitialize());   
-         runHandler(new HandlerAccept());   
-         runHandler(new HandlerDescribe());   
-         runHandler(new HandlerDigest());
-         assertTrue(sysFileExists("mrt-manifest.txt"));
-         assertEquals(15, sysFileLines("mrt-manifest.txt").size());
-     }
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerDescribeTests(ingestInput, ir);
+        runHandlerDocumentTests(ingestInput, ir);
+    }
+
+    public void runHandlerDigestTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        HandlerResult hr = new HandlerDigest().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+
+        SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_manifest);
+        assertTrue(sfi.exists());
+        assertEquals(ingestInput.sampleFile.getListSizeCount(), sfi.sysFileLines().size());
+    }
+
+    @Test
+    public void HandlerDigest() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerDescribeTests(ingestInput, ir);
+        runHandlerDigestTests(ingestInput, ir);
+    }
   
-     //@Test
-     public void HandlerTransfer() throws TException, IOException {
-         runHandler(new HandlerInitialize());   
-         runHandler(new HandlerAccept());   
-         runHandler(new HandlerDescribe()); 
-         //Requires a storage service  
-         runHandler(new HandlerTransfer());
-     }
+    //@Test
+    public void HandlerTransfer() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
 
-     @Test
-     public void HandlerCleanup() throws TException, IOException {
-         runHandler(new HandlerInitialize());   
-         runHandler(new HandlerAccept());   
-         runHandler(new HandlerDescribe()); 
-         assertTrue(producer.toFile().exists());
-         runHandler(new HandlerCleanup());
-         assertFalse(producer.toFile().exists());
-     }
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerDescribeTests(ingestInput, ir);
+        //Requires a storage service  
+        HandlerResult hr = new HandlerTransfer().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+
+    }
+
+    public void runHandlerCleanupTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        assertTrue(getProducerPath().toFile().exists());
+        HandlerResult hr = new HandlerCleanup().handle(ps, ir, ingestInput.getJobState());
+        assertTrue(hr.getSuccess());
+
+        assertFalse(getProducerPath().toFile().exists());
+    }
+
+    @Test
+    public void HandlerCleanup() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerVerifyTests(ingestInput, ir);
+        runHandlerDescribeTests(ingestInput, ir);
+        runHandlerCleanupTests(ingestInput, ir);
+    }
     
+    public void runAllHandlers(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+        runHandlerInitializeTests(ingestInput, ir);
+        runHandlerAcceptTests(ingestInput, ir);
+        runHandlerVerifyTests(ingestInput, ir);
+        runHandlerDisaggregateTests(ingestInput, ir);
+        runHandlerRetrieveTests(ingestInput, ir);
+        runHandlerCorroborateTests(ingestInput, ir);
+        runHandlerCharacterizeTests(ingestInput, ir);
+        runHandlerDescribeTests(ingestInput, ir);
+        runHandlerDocumentTests(ingestInput, ir);
+        runHandlerDigestTests(ingestInput, ir);
+        runHandlerCleanupTests(ingestInput, ir);    }
+
+    @Test
+    public void AllHandlersSingleFile() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    @Test
+    public void AllHandlersZipFile() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.ZipFileAsFile, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    @Test
+    public void AllHandlersZipFileContainer() throws TException, IOException {
+        InputFile ingestInput = new InputFile(SampleFile.ZipFileAsContainer, tempdir);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+        ingestInput.moveToIngestDir();
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    @Test
+    public void AllHandlersCheckm4Blocks() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.FourBlocks, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    @Test
+    public void AllHandlersCheckmBigHunt() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BigHunt, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    public Path createBatchDir() throws IOException {
+        Path bdir = tempdir.resolve("batch");
+        Files.createDirectories(bdir);
+        return bdir; 
+    }
+
+    @Test
+    public void AllHandlersCheckmCall911() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.Call911, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    public void runQueueHandlerTests(InputFile ingestInput, IngestRequest ir, PackageTypeEnum newtype) throws TException {
+        BatchState batch = ingestInput.getBatchState();
+        assertEquals(1, batch.getJobStates().size());
+        org.cdlib.mrt.ingest.handlers.queue.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate().handle(
+            ps, 
+            ir, 
+            batch
+        );
+        assertTrue(hr.getSuccess());
+        assertEquals(ingestInput.sampleFile.files.size() + 1, batch.getJobStates().size());      
+        for(JobState tjs: batch.getJobStates().values()) {
+            if (tjs.getJobID().getValue().equals(JOBID)) {
+                continue;
+            }
+            assertTrue(ingestInput.sampleFile.files.contains(tjs.getPackageName()));
+            assertEquals(newtype.getValue(), tjs.getObjectType());
+        }
+    }
+
+    @Test
+    public void AllHandlersCheckmBatchContainers() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BatchContainers, createBatchDir());
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runQueueHandlerTests(ingestInput, ir, PackageTypeEnum.container);
+    }
+
+    @Test
+    public void AllHandlersCheckmBatchFiles() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BatchFiles, createBatchDir());
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runQueueHandlerTests(ingestInput, ir, PackageTypeEnum.file);
+    }
+
+    @Test
+    public void AllHandlersCheckmBatchManifests() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.BatchManifests, createBatchDir());
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+        runQueueHandlerTests(ingestInput, ir, PackageTypeEnum.manifest);
+    }
+
 }
