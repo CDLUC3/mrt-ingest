@@ -11,15 +11,20 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
 import java.util.Calendar;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
@@ -51,24 +56,52 @@ public class IngestTest {
     public static String ARK = "ark:/99999/ab12345678";
 
     public enum SampleFile {
-        SingleFileNoDigest("test.txt", PackageTypeEnum.file),
-        SingleFileWithDigest("test.txt", PackageTypeEnum.file, "md5", "8b1a9953c4611296a827abf8c47804d7"),
-        SingleFileBadDigest("test.txt", PackageTypeEnum.file, "md5", "8b1a9953c4611296a827abf8c47804d8"),
-        ZipFileAsFile("test.zip", PackageTypeEnum.file),
-        ZipFileAsContainer("test.zip", PackageTypeEnum.container);
+        SingleFileNoDigest("test.txt", PackageTypeEnum.file, ""),
+        SingleFileWithDigest("test.txt", PackageTypeEnum.file, ""){
+            public String getAlg() {return "md5";}
+            public String getDigest(){return "8b1a9953c4611296a827abf8c47804d7";}
+        }, 
+        SingleFileBadDigest("test.txt", PackageTypeEnum.file, ""){
+            public String getAlg() {return "md5";}
+            public String getDigest(){return "8b1a9953c4611296a827abf8c47804d8";}
+        },
+        ZipFileAsFile("test.zip", PackageTypeEnum.file, ""),
+        ZipFileAsContainer("test.zip", PackageTypeEnum.container, "test.txt,foo.txt"),
+        FourBlocks("https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/4blocks.checkm", PackageTypeEnum.manifest, "4blocks.jpg,4blocks.txt");
 
         private PackageTypeEnum type = PackageTypeEnum.file;
         private String path;
         private String alg = "";
         private String digest = "";
-        SampleFile(String path, PackageTypeEnum type, String alg, String digest) {
-            this.path = path;
-            this.alg = alg;
-            this.digest = digest;
+        private URL url;
+        private ArrayList<String> files = new ArrayList<>();
+
+        SampleFile(String path, PackageTypeEnum type, String list) {
             this.type = type;
+            if (isManifest()) {
+                try {
+                    this.url = new URL(path);
+                    Path p = Paths.get(this.url.getFile());
+                    this.path = p.getFileName().toString();
+                } catch(MalformedURLException e) {
+                    System.err.println(e);
+                }
+            } else {
+                this.path = path;
+            }
+            if (list.isEmpty()) {
+                files.add(path);
+            } else {
+                for(String s: list.split(",")){
+                    files.add(s);
+                }
+            }
         }
-        SampleFile(String path, PackageTypeEnum type) {
-            this(path, type, "", "");
+        public boolean isManifest() {
+            if (type == PackageTypeEnum.file || type == PackageTypeEnum.container) {
+                return false;
+            }
+            return true;
         }
         public Path getPath() {
             return Paths.get(RESOURCES, "data", path);
@@ -81,6 +114,12 @@ public class IngestTest {
         }
         public String getDigest(){
             return digest;
+        }
+        public URL getUrl() {
+            return url;
+        }
+        public int getListSizeCount() {
+            return 14 + files.size() + (isManifest() ? 1 : 0);
         }
 
         public JobState createJobState(String ark) throws TException {
@@ -114,8 +153,8 @@ public class IngestTest {
             this.js = new JobState(
                 "user", 
                 inputType.path, 
-                inputType.alg,
-                inputType.digest, 
+                inputType.getAlg(),
+                inputType.getDigest(), 
                 ARK,
                 "objectCreator", 
                 "objectTitle", 
@@ -182,7 +221,8 @@ public class IngestTest {
         mrt_owner("mrt-owner.txt"),
         mrt_dc("mrt-dc.xml"),
         mrt_erc("mrt-erc.txt"),
-        mrt_manifest("mrt-manifest.txt");
+        mrt_manifest("mrt-manifest.txt"),
+        mrt_submission_manifest("mrt-submission-manifest.txt");
 
         String path;
         SystemFile(String path) {
@@ -496,7 +536,7 @@ public class IngestTest {
     }
 
     public void runHandlerCharacterizeTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-        runHandler(new HandlerCorroborate(), ir, ingestInput.getJobState());   
+        runHandler(new HandlerCharacterize(), ir, ingestInput.getJobState());   
     }
 
     @Test
@@ -571,11 +611,7 @@ public class IngestTest {
         runHandler(new HandlerDigest(), ir, ingestInput.getJobState());
         SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_manifest);
         assertTrue(sfi.exists());
-        if (ingestInput.sampleFile.type == PackageTypeEnum.container) {
-            assertEquals(16, sfi.sysFileLines().size());
-        } else {
-            assertEquals(15, sfi.sysFileLines().size());
-        }
+        assertEquals(ingestInput.sampleFile.getListSizeCount(), sfi.sysFileLines().size());
     }
 
     @Test
@@ -658,6 +694,16 @@ public class IngestTest {
         InputFile ingestInput = new InputFile(SampleFile.ZipFileAsContainer, tempdir);
         IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
         ingestInput.moveToIngestDir();
+
+        runAllHandlers(ingestInput, ir);
+    }
+
+    @Test
+    public void AllHandlersCheckm4Blocks() throws IOException, TException {
+        InputFile ingestInput = new InputFile(SampleFile.FourBlocks, tempdir);
+        InputStream in = ingestInput.sampleFile.getUrl().openStream();
+        Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()), StandardCopyOption.REPLACE_EXISTING);
+        IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
 
         runAllHandlers(ingestInput, ir);
     }
