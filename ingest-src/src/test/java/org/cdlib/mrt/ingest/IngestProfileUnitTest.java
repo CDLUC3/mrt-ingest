@@ -39,7 +39,7 @@ public class IngestProfileUnitTest extends IngestTestCore {
                 assertEquals("03", ps.getPriority());
                 assertTrue(ps.getCreationDate().getDate().after(jan1_2022()));
                 assertTrue(ps.getModificationDate().getDate().after(jan1_2022()));
-                assertEquals("https://ezid.cdlib.org/shoulder/ark:/99999/fk4", ps.getObjectMinterURL().toString());
+                assertEquals("http://localhost:4567/shoulder/ark:/99999/fk4", ps.getObjectMinterURL().toString());
                 assertEquals("additional", ps.getNotificationType());
                 assertEquals("merritt_test", ps.getContext());
                 assertNull(ps.getAccessURL());

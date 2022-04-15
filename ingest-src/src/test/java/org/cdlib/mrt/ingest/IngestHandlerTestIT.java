@@ -9,7 +9,9 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -64,7 +66,15 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
 
         @Test
         public void HandlerMinter() throws TException, IOException, JSONException {
+                String url  = ps.getObjectMinterURL().toString();
+                url = url.replace("4567", Integer.toString(port));
+                ps.setObjectMinterURL(new URL(url));
+
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
+
+                // force minter to set primary id
+                ingestInput.getJobState().setPrimaryID(null);
+
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
 
@@ -72,8 +82,10 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
                 runHandlerAcceptTests(ingestInput, ir);
 
                 ps.setMisc(ingestConfig.getIngestConf().getString("ezid"));
+                assertNull(ingestInput.getJobState().getPrimaryID());
                 HandlerResult hr = new HandlerMinter().handle(ps, ir, ingestInput.getJobState());
                 assertTrue(hr.getSuccess());
+                assertTrue(ingestInput.getJobState().getPrimaryID().getValue().matches("^ark:/99999/fk[0-9]{8,8}$"));
         }
 
 }

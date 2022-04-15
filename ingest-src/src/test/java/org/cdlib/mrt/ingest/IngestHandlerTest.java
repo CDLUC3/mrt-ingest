@@ -365,7 +365,8 @@ public class IngestHandlerTest extends IngestTestCore {
 
                 sfi = new SystemFileInstance(SystemFile.mrt_mom);
                 assertTrue(sfi.exists());
-                assertEquals(ingestInput.getJobState().getPrimaryID().getValue(), sfi.getProperty("primaryIdentifier"));
+                Identifier pi = ingestInput.getJobState().getPrimaryID();
+                assertEquals(pi == null ? null : pi.getValue(), sfi.getProperty("primaryIdentifier"));
                 assertEquals(ps.getObjectType(), sfi.getProperty("type"));
                 assertEquals(ps.getObjectRole(), sfi.getProperty("role"));
                 assertEquals(ps.getAggregateType(), sfi.getProperty("aggregate"));
