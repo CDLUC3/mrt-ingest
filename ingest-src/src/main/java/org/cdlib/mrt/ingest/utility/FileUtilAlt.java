@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -43,13 +44,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Vector;
-import org.apache.commons.io.FileUtils;
 
 
 /**
@@ -196,6 +198,42 @@ public class FileUtilAlt {
             String err = MESSAGE + "submissionAction() - Exception:" + ex;
             throw new TException.GENERAL_EXCEPTION( err);
         }
+    }
 
+    /**
+     * Get held collections
+     * @param File held directory
+     * @param String regex for collection holds
+     * @throws org.cdlib.mrt.utility.MException
+     */
+    public static String getHeldCollections(File checkDir, String collectionRegex)
+        throws Exception
+    {
+        try {
+	    String delimiter = ",";
+	    String collectionHeld = "";
+
+	    FileFilter fileFilter = new WildcardFileFilter(collectionRegex);
+	    File[] files = checkDir.listFiles(fileFilter);
+
+	    boolean first = true;
+            for (File f : files) {
+		
+		String fs = f.getName().substring("HOLD_".length());
+	        if (! first) {
+		    fs = delimiter + fs;
+		} else {
+		    first = false;
+		}
+
+		collectionHeld = collectionHeld + fs;
+	    }
+
+            return collectionHeld;
+        } catch(Exception ex) {
+	    ex.printStackTrace();
+            String err = MESSAGE + "getHeldCollections() - Exception:" + ex;
+            throw new TException.GENERAL_EXCEPTION( err);
+        }
     }
 }

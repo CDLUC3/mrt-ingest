@@ -839,6 +839,12 @@ public class QueueManager {
 		}
 		ingestState.setSubmissionState(onHold);
 
+                // collection submission state
+		File parent = queueHoldFile.getParentFile();
+		String regex = queueHoldFile.getName() + "_*";
+                String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
+		ingestState.setCollectionSubmissionState(heldCollections);
+
             } catch (TException me) {
                     throw me;
 
