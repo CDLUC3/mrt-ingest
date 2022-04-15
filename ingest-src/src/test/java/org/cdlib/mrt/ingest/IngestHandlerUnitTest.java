@@ -21,9 +21,9 @@ import org.cdlib.mrt.ingest.handlers.HandlerDisaggregate;
 import org.cdlib.mrt.ingest.handlers.HandlerDocument;
 import org.cdlib.mrt.ingest.handlers.HandlerCleanup;
 
-public class IngestHandlerTestUnit extends IngestHandlerTest {
+public class IngestHandlerUnitTest extends IngestHandlerTest {
 
-        public IngestHandlerTestUnit() throws TException {
+        public IngestHandlerUnitTest() throws TException {
                 super();
         }
 

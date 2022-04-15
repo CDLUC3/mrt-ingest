@@ -10,7 +10,7 @@ import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.utility.TException;
 import org.junit.Test;
 
-public class IngestProfileUnit extends IngestTestCore {
+public class IngestProfileUnitTest extends IngestTestCore {
         public Date jan1_2022() {
                 Calendar cal = Calendar.getInstance();
                 cal.set(122, 1, 1);

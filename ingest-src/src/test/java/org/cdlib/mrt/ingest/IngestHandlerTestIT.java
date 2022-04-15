@@ -47,12 +47,6 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
                 assertTrue(ark.matches(re));
         }
 
-        @Test
-        public void pretend() {
-                BatchState bs = new BatchState();
-                System.out.println(bs);
-        }
-
         // @Test
         public void HandlerTransfer() throws TException, IOException {
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
@@ -68,8 +62,7 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
 
         }
 
-        // Not a unit test, this calls out to EZID
-        // @Test
+        @Test
         public void HandlerMinter() throws TException, IOException, JSONException {
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
@@ -78,6 +71,7 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
                 runHandlerInitializeTests(ingestInput, ir);
                 runHandlerAcceptTests(ingestInput, ir);
 
+                ps.setMisc(ingestConfig.getIngestConf().getString("ezid"));
                 HandlerResult hr = new HandlerMinter().handle(ps, ir, ingestInput.getJobState());
                 assertTrue(hr.getSuccess());
         }

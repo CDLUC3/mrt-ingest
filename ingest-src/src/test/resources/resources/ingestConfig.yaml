@@ -21,7 +21,7 @@ ingest-info:
   store-info:
     store.1: "http://store:8080/store"
     access.1: "http://store:8080/store"
-    localID: "http://inventory:8080/inventory"
+    localID: "http://it-server:{!ENV: it-server.port !DEFAULT: 4567}"
 
   queue-info:
     QueueService: "zoo:2181"
