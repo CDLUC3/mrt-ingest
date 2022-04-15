@@ -155,10 +155,10 @@ public class IngestService
     }
 
     @Override
-    public IngestServiceState postSubmissionAction(String action)
+    public IngestServiceState postSubmissionAction(String action, String collection)
         throws TException
     {
-        return queueManager.postSubmissionAction(action);
+        return queueManager.postSubmissionAction(action, collection);
     }
 
     @Override

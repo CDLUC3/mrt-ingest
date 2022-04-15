@@ -114,7 +114,7 @@ public interface IngestServiceInf
      * @return IngestServiceState service state information
      * @throws TException Exception condition 
      */
-    public IngestServiceState postSubmissionAction(String action)
+    public IngestServiceState postSubmissionAction(String action, String collection)
         throws TException;
 
     /**

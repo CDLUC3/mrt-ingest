@@ -620,9 +620,11 @@ public class QueueManager {
 		}
 	}
 
-        public IngestServiceState postSubmissionAction(String action) throws TException {
+        public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
                 try {
-			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile")));
+			String append = "";
+			if (StringUtil.isNotEmpty(collection)) append = "_" + collection;
+			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile") + append));
 
                         IngestServiceState ingestState = new IngestServiceState();
                         URL storageInstance = null;
