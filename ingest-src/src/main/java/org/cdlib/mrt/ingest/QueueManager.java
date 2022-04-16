@@ -698,6 +698,50 @@ public class QueueManager {
         	return queueEntryState;
     	}
 
+        public QueueEntryState postHoldRelease(String action, String queue, String id) throws TException {
+                ZooKeeper zooKeeper = null;
+                QueueEntryState queueEntryState = new QueueEntryState();
+                try {
+	    		Item item = null;
+			if ( ! queue.startsWith("/")) queue = "/" + queue;
+
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
+
+			if (action.matches("release")) {
+	        	    System.out.println("[INFO]" + MESSAGE +  "Release: " + queue + ":" + id);
+			    item = distributedQueue.release(id);
+			} else if (action.matches("hold")) {
+	        	    System.out.println("[INFO]" + MESSAGE +  "Hold: " + queue + ":" + id);
+			    item = distributedQueue.hold(id);
+			}
+
+                        queueEntryState.setDate(item.getTimestamp().toString());
+                        if (item.getStatus() == Item.PENDING)
+                        	queueEntryState.setStatus("Pending");
+                        if (item.getStatus() == Item.HELD)
+                        	queueEntryState.setStatus("Held");
+                        queueEntryState.setID(id);
+			queueEntryState.setQueueNode(queue);
+
+	    		if (item != null) {
+				System.out.println("** [info] ** " + MESSAGE + "Successfully released: " + item.toString());
+	    		} else {
+	        		System.err.println("[error]" + MESSAGE +  "Could not released: " + queue + ":" + id);
+			}
+        	} catch (Exception ex) {
+            		System.out.println(StringUtil.stackTrace(ex));
+            		logger.logError(MESSAGE + "Exception:" + ex, 0);
+            		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+        	return queueEntryState;
+    	}
+
         public QueueEntryState postDeleteq(String queue, String id, String fromState) throws TException {
                 ZooKeeper zooKeeper = null;
                 QueueEntryState queueEntryState = new QueueEntryState();

@@ -126,6 +126,14 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Release queue entry
+     * @return QueueEntryState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueEntryState postHoldRelease(String action, String queue, String id)
+        throws TException;
+
+    /**
      * Delete queue entry
      * @return QueueEntryState queue state information
      * @throws TException Exception condition 

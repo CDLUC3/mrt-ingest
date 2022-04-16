@@ -169,6 +169,13 @@ public class IngestService
     }
 
     @Override
+    public QueueEntryState postHoldRelease(String action, String queue, String id)
+        throws TException
+    {
+        return queueManager.postHoldRelease(action, queue, id);
+    }
+
+    @Override
     public QueueEntryState postDeleteq(String queue, String id, String fromState)
         throws TException
     {
