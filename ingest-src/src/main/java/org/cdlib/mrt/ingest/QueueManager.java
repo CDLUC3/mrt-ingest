@@ -266,6 +266,8 @@ public class QueueManager {
 						queueEntryState.setStatus("Completed");
 					else if (item.getStatus() == Item.DELETED) 
 						queueEntryState.setStatus("Deleted");
+					else if (item.getStatus() == Item.HELD) 
+						queueEntryState.setStatus("Held");
 					queueEntryState.setID(headNode);
 					queueEntryState.setJobID(p.getProperty("jobID"));
 					queueEntryState.setBatchID(p.getProperty("batchID"));
