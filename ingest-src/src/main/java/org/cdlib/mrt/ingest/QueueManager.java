@@ -713,7 +713,7 @@ public class QueueManager {
 			    item = distributedQueue.release(id);
 			} else if (action.matches("hold")) {
 	        	    System.out.println("[INFO]" + MESSAGE +  "Hold: " + queue + ":" + id);
-			    item = distributedQueue.hold(id);
+			    item = distributedQueue.holdPending(id);
 			}
 
                         queueEntryState.setDate(item.getTimestamp().toString());

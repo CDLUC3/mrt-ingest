@@ -550,7 +550,7 @@ class ConsumeData implements Runnable
                 try {
                     zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                     distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-	            distributedQueue.hold(item.getId());
+	            distributedQueue.holdConsumed(item.getId());
                     System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
                 } catch (ConnectionLossException cle) {
                     System.err.println("[error] " + MESSAGE + "Queueing service is down.");
