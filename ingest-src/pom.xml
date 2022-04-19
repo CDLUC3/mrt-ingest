@@ -24,8 +24,23 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <merritt-core.version>2.0-SNAPSHOT</merritt-core.version>
+    <itDockerRegistry>itDockerRegistry</itDockerRegistry>
   </properties>
-
+   
+  <profiles>
+       <profile>
+           <id>aws</id>
+           <activation>
+               <property>
+                   <name>env.AWS_ACCOUNT_ID</name>
+               </property>
+           </activation>
+           <properties>
+               <!-- Override only if necessary -->
+               <itDockerRegistry>${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com</itDockerRegistry>
+           </properties>
+       </profile>
+   </profiles>
   <build>
     <plugins>
       <plugin>
@@ -68,16 +83,13 @@
                 <id>prepare-it-server</id>
                 <phase>pre-integration-test</phase>
                 <goals>
-                    <goal>build</goal>
                     <goal>start</goal>
                 </goals>
                 <configuration>
                     <images>
                         <image>
-                            <name>it-server-image</name>
-                            <build>
-                              <dockerFile>${project.basedir}/src/test/docker/it-server/Dockerfile</dockerFile>
-                            </build>
+                            <!-- https://github.com/CDLUC3/merritt-docker/tree/main/mrt-services/ezid_mock -->
+                            <name>${itDockerRegistry}/ezid_mock</name>
                             <alias>it-server</alias>
                             <run>
                                 <ports>
@@ -86,6 +98,15 @@
                                 <wait>
                                     <time>2000</time>
                                 </wait>
+                            </run>
+                        </image>
+                        <image>
+                            <alias>it-zoo</alias>
+                            <name>zookeeper:3.4</name>
+                            <run>
+                                <ports>
+                                    <port>it-zoo.port:2181</port>
+                                </ports>
                             </run>
                         </image>
                     </images>
