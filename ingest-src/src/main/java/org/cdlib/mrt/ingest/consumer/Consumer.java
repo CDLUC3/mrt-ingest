@@ -774,8 +774,13 @@ class CleanupDaemon implements Runnable
                     // To prevent long shutdown, no more than poolsize tasks queued.
                     while (true) {
                         System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
-			distributedQueue.cleanup(Item.COMPLETED);
+			try {
+			    distributedQueue.cleanup(Item.COMPLETED);
+			} catch (NoSuchElementException nsee) {
+			    // No more data
+			} 
                         System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
+			// Will throw NoSuchElementException to break tight loop
 			distributedQueue.cleanup(Item.DELETED);
 
                         Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
