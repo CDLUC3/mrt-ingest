@@ -29,29 +29,16 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 
 package org.cdlib.mrt.ingest.utility;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.URL;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.cdlib.mrt.utility.TException;
-import org.cdlib.mrt.utility.URLEncoder;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Vector;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import java.io.FileFilter;
 
 
 /**
