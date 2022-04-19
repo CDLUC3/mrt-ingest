@@ -237,6 +237,8 @@ public class QueueManager {
 						queueEntryState.setStatus("Completed");
 					else if (item.getStatus() == Item.DELETED) 
 						queueEntryState.setStatus("Deleted");
+					else if (item.getStatus() == Item.HELD) 
+						queueEntryState.setStatus("Held");
 					queueEntryState.setID(headNode);
 					queueEntryState.setJobID(p.getProperty("jobID"));
 					queueEntryState.setBatchID(p.getProperty("batchID"));
@@ -684,7 +686,7 @@ public class QueueManager {
 			    item = distributedQueue.release(id);
 			} else if (action.matches("hold")) {
 	        	    System.out.println("[INFO]" + MESSAGE +  "Hold: " + queue + ":" + id);
-			    item = distributedQueue.hold(id);
+			    item = distributedQueue.holdPending(id);
 			}
 
                         queueEntryState.setDate(item.getTimestamp().toString());
