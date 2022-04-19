@@ -204,16 +204,18 @@ public class FileUtilAlt {
 	    File[] files = checkDir.listFiles(fileFilter);
 
 	    boolean first = true;
-            for (File f : files) {
+	    if (files != null ) {
+                for (File f : files) {
 		
-		String fs = f.getName().substring("HOLD_".length());
-	        if (! first) {
-		    fs = delimiter + fs;
-		} else {
-		    first = false;
-		}
+		    String fs = f.getName().substring("HOLD_".length());
+	            if (! first) {
+		        fs = delimiter + fs;
+		    } else {
+		        first = false;
+		    }
 
-		collectionHeld = collectionHeld + fs;
+		    collectionHeld = collectionHeld + fs;
+	        }
 	    }
 
             return collectionHeld;
