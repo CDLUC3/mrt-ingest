@@ -147,10 +147,10 @@ public class IngestService
     }
 
     @Override
-    public IngestServiceState postSubmissionAction(String action)
+    public IngestServiceState postSubmissionAction(String action, String collection)
         throws TException
     {
-        return queueManager.postSubmissionAction(action);
+        return queueManager.postSubmissionAction(action, collection);
     }
 
     @Override
@@ -158,6 +158,13 @@ public class IngestService
         throws TException
     {
         return queueManager.postRequeue(queue, id, fromState);
+    }
+
+    @Override
+    public QueueEntryState postHoldRelease(String action, String queue, String id)
+        throws TException
+    {
+        return queueManager.postHoldRelease(action, queue, id);
     }
 
     @Override

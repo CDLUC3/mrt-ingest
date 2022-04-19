@@ -60,6 +60,7 @@ public class IngestServiceState
     private String commands = null;
     private String mailHost = null;
     private String submissionState = null;
+    private String collectionSubmissionState = null;
 
     public IngestServiceState()
             throws TException
@@ -264,12 +265,25 @@ public class IngestServiceState
         return submissionState;
     }
 
+    @Override
+    public String getCollectionSubmissionState() {
+        return collectionSubmissionState;
+    }
+
     /**
      * Set submission state
      * @param String submission state
      */
     public void setSubmissionState(String submissionState) {
         this.submissionState = submissionState;
+    }
+
+    /**
+     * Set collection submission state
+     * @param String collection submission state
+     */
+    public void setCollectionSubmissionState(String collectionSubmissionState) {
+        this.collectionSubmissionState = collectionSubmissionState;
     }
 
     /**

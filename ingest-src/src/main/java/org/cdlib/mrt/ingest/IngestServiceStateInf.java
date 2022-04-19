@@ -116,6 +116,12 @@ public interface IngestServiceStateInf
     public String getSubmissionState();
 
     /**
+     * Get collection submission state
+     * @return String collection submission state - frozen only
+     */
+    public String getCollectionSubmissionState();
+
+    /**
      * Commands supported by service
      * @return String of supported commands
      */

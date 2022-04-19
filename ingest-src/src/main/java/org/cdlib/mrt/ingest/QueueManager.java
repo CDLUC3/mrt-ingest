@@ -591,9 +591,11 @@ public class QueueManager {
 		}
 	}
 
-        public IngestServiceState postSubmissionAction(String action) throws TException {
+        public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
                 try {
-			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile")));
+			String append = "";
+			if (StringUtil.isNotEmpty(collection)) append = "_" + collection;
+			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile") + append));
 
                         IngestServiceState ingestState = new IngestServiceState();
                         URL storageInstance = null;
@@ -653,6 +655,50 @@ public class QueueManager {
 				System.out.println("** [info] ** " + MESSAGE + "Successfully requeued: " + item.toString());
 	    		} else {
 	        		System.err.println("[error]" + MESSAGE +  "Could not requeue: " + queue + ":" + id);
+			}
+        	} catch (Exception ex) {
+            		System.out.println(StringUtil.stackTrace(ex));
+            		logger.logError(MESSAGE + "Exception:" + ex, 0);
+            		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+        	return queueEntryState;
+    	}
+
+        public QueueEntryState postHoldRelease(String action, String queue, String id) throws TException {
+                ZooKeeper zooKeeper = null;
+                QueueEntryState queueEntryState = new QueueEntryState();
+                try {
+	    		Item item = null;
+			if ( ! queue.startsWith("/")) queue = "/" + queue;
+
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
+
+			if (action.matches("release")) {
+	        	    System.out.println("[INFO]" + MESSAGE +  "Release: " + queue + ":" + id);
+			    item = distributedQueue.release(id);
+			} else if (action.matches("hold")) {
+	        	    System.out.println("[INFO]" + MESSAGE +  "Hold: " + queue + ":" + id);
+			    item = distributedQueue.hold(id);
+			}
+
+                        queueEntryState.setDate(item.getTimestamp().toString());
+                        if (item.getStatus() == Item.PENDING)
+                        	queueEntryState.setStatus("Pending");
+                        if (item.getStatus() == Item.HELD)
+                        	queueEntryState.setStatus("Held");
+                        queueEntryState.setID(id);
+			queueEntryState.setQueueNode(queue);
+
+	    		if (item != null) {
+				System.out.println("** [info] ** " + MESSAGE + "Successfully released: " + item.toString());
+	    		} else {
+	        		System.err.println("[error]" + MESSAGE +  "Could not released: " + queue + ":" + id);
 			}
         	} catch (Exception ex) {
             		System.out.println(StringUtil.stackTrace(ex));
@@ -809,6 +855,12 @@ public class QueueManager {
 		   onHold = "thawed";
 		}
 		ingestState.setSubmissionState(onHold);
+
+                // collection submission state
+		File parent = queueHoldFile.getParentFile();
+		String regex = queueHoldFile.getName() + "_*";
+                String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
+		ingestState.setCollectionSubmissionState(heldCollections);
 
             } catch (TException me) {
                     throw me;

@@ -549,6 +549,46 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
+    // Release a queue entry
+    @POST
+    @Path("/{action: hold|release}/{queue}/{id}")
+    public Response postHoldRelease(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("action") String action,
+            @PathParam("queue") String queue,
+            @PathParam("id") String id,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing Releasing of Zookeeper entry: " + queue + ":" + id);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.postHoldRelease(action, queue, id);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
     // Get profiles state user --> name, admin --> path and name
     @GET
     @Path("{profilePath: profiles|profiles/admin|profiles/admin/(collection|owner|sla)}")
@@ -943,14 +983,14 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
-    // Pause or Thaw submissions
+    // Collection Pause or Thaw submissions
     @POST
-    @Path("/submissions/{request: freeze|thaw}")
+    @Path("/submission/{request: freeze|thaw}/{collection}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
     public Response postSubmissionAction(
             @DefaultValue("json") @QueryParam("t") String formatType,
-            // @PathParam("action") String action,
             @PathParam("request") String action,
+            @PathParam("collection") String collection,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -958,7 +998,7 @@ public class JerseyAdmin extends JerseyBase
     {
         LoggerInf logger = null;
         try {
-            log("processing submission request: " + action);
+            log("Collection processing submission request: " + action + " collection: " + collection);
 
             // Accept is overridden by responseForm form parm
             String responseForm = "";
@@ -970,7 +1010,46 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
-            StateInf responseState = ingestService.postSubmissionAction(action);
+            StateInf responseState = ingestService.postSubmissionAction(action, collection);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+    // Pause or Thaw all submissions
+    @POST
+    @Path("/submissions/{request: freeze|thaw}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
+    public Response postSubmissionAction(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("request") String action,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("Global processing submission request: " + action);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.postSubmissionAction(action, null);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {

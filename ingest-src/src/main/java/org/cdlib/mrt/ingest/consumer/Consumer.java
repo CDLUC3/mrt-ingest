@@ -440,11 +440,11 @@ class ConsumerDaemon implements Runnable
     private boolean onHold()
     {
         try {
-	    File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile"));
-	    if (holdFile.exists()) {
-	        System.out.println("[info]" + NAME + ": hold file exists, not processing queue: " + holdFile.getAbsolutePath());
-	        return true;
-	    }
+            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile"));
+            if (holdFile.exists()) {
+                System.out.println("[info]" + NAME + ": hold file exists, not processing queue: " + holdFile.getAbsolutePath());
+                return true;
+            }
         } catch (Exception e) {
             return false;
         }
@@ -529,6 +529,23 @@ class ConsumeData implements Runnable
 
             ois = new ObjectInputStream(new ByteArrayInputStream(item.getData()));
             Properties p = (Properties) ois.readObject();
+
+            // Check if collection level hold
+            if (onHold(p.getProperty("profile"))) {
+                try {
+                    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                    distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	            distributedQueue.hold(item.getId());
+                    System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
+                } catch (ConnectionLossException cle) {
+                    System.err.println("[error] " + MESSAGE + "Queueing service is down.");
+                    cle.printStackTrace(System.err);
+                } catch (Exception e) {
+                    System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
+                    e.printStackTrace(System.err);
+                }
+            } else {
+
 	    IngestRequest ingestRequest = new IngestRequest(p.getProperty("submitter"), p.getProperty("profile"),
 			    p.getProperty("filename"), p.getProperty("type"), p.getProperty("size"), p.getProperty("digestType"),
 			    p.getProperty("digestValue"), p.getProperty("objectID"), p.getProperty("creator"), p.getProperty("title"),
@@ -611,6 +628,7 @@ class ConsumeData implements Runnable
 	    } else {
 		System.out.println("Consume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
+	}	// end of else
 
 	    // inform queue that we're done
 
@@ -645,6 +663,24 @@ class ConsumeData implements Runnable
 	    } catch (IOException ioe) {
 	    }
 	} 
+    }
+
+    // Support collection level hold
+    private boolean onHold(String collection)
+    {
+        String append = "";
+        try {
+            if (collection != null) append = "_" + collection;
+            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile") + append);
+            System.out.println("[info]" + NAME + ": Checking for collection hold: " + holdFile.getAbsolutePath());
+            if (holdFile.exists()) {
+                System.out.println("[info]" + NAME + ": Hold file exists for collection, not processing: " + holdFile.getAbsolutePath());
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
     }
 
    public class Ignorer implements Watcher {
@@ -722,8 +758,10 @@ class CleanupDaemon implements Runnable
 
                     // To prevent long shutdown, no more than poolsize tasks queued.
                     while (true) {
-                        System.out.println(MESSAGE + "Cleaning queue: " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
 			distributedQueue.cleanup(Item.COMPLETED);
+                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
+			distributedQueue.cleanup(Item.DELETED);
 
                         Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
                     }

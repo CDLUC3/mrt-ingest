@@ -48,6 +48,7 @@ import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
@@ -768,6 +769,12 @@ public class IngestManager {
                    onHold = "thawed";
                 }
                 ingestState.setSubmissionState(onHold);
+
+                // collection submission state
+                File parent = queueHoldFile.getParentFile();
+                String regex = queueHoldFile.getName() + "_*";
+                String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
+                ingestState.setCollectionSubmissionState(heldCollections);
             } catch (TException me) {
                     throw me;
 

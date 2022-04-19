@@ -110,7 +110,7 @@ public interface IngestServiceInf
      * @return IngestServiceState service state information
      * @throws TException Exception condition 
      */
-    public IngestServiceState postSubmissionAction(String action)
+    public IngestServiceState postSubmissionAction(String action, String collection)
         throws TException;
 
     /**
@@ -119,6 +119,14 @@ public interface IngestServiceInf
      * @throws TException Exception condition 
      */
     public QueueEntryState postRequeue(String queue, String id, String fromState)
+        throws TException;
+
+    /**
+     * Release queue entry
+     * @return QueueEntryState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueEntryState postHoldRelease(String action, String queue, String id)
         throws TException;
 
     /**
