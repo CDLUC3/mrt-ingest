@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  zoo:
+    container_name: it-zoo
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mrt-zookeeper:dev
+    ports:
+    - published: 2181
+      target: 2181
+    stdin_open: true
+    tty: true
+  ezid:
+    container_name: it-server
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mrt-ezid-store-mock:dev
+    ports:
+    - published: 4567
+      target: 4567

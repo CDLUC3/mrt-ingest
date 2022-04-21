@@ -29,7 +29,7 @@ Handler.15: org.cdlib.mrt.ingest.handlers.HandlerCleanup
 HandlerQueue.1: org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate
 HandlerQueue.2: org.cdlib.mrt.ingest.handlers.queue.HandlerSubmit
 HandlerQueue.3: org.cdlib.mrt.ingest.handlers.queue.HandlerNotification
-StorageService: http://storage-service.test.domain
+StorageService: http://localhost:4567
 StorageNode: 9999
 Priority: 03
 CreationDate: 2022-03-30T13:28:14-08:00

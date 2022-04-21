@@ -3,7 +3,6 @@ package org.cdlib.mrt.ingest;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.TException;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,107 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import org.cdlib.mrt.ingest.handlers.HandlerCharacterize;
-import org.cdlib.mrt.ingest.handlers.HandlerResult;
-import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
-import org.cdlib.mrt.ingest.handlers.HandlerVerify;
-import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
-import org.cdlib.mrt.ingest.handlers.HandlerDigest;
-import org.cdlib.mrt.ingest.handlers.HandlerDisaggregate;
-import org.cdlib.mrt.ingest.handlers.HandlerDocument;
-import org.cdlib.mrt.ingest.handlers.HandlerCleanup;
-
 public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         public IngestHandlerUnitTest() throws TException {
                 super();
-        }
-
-        public void runHandlerVerifyTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                HandlerResult hr = new HandlerVerify().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-        }
-
-        public void failHandlerVerifyTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                HandlerResult hr = new HandlerVerify().handle(ps, ir, ingestInput.getJobState());
-                assertFalse(hr.getSuccess());
-        }
-
-        public void runHandlerDisaggregateTests(InputFile ingestInput, IngestRequest ir)
-                        throws TException, IOException {
-                HandlerResult hr = new HandlerDisaggregate().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-
-                if (ingestInput.sampleFile().type() == PackageTypeEnum.container) {
-                        assertFalse(ingestInput.getProducerPath().toFile().exists());
-                        for (String s : ingestInput.sampleFile().files()) {
-                                assertTrue(getProducerPath().resolve(s).toFile().exists());
-                        }
-                } else {
-                        assertTrue(ingestInput.getProducerPath().toFile().exists());
-                }
-        }
-
-        public void runHandlerRetrieveTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                HandlerResult hr = new HandlerRetrieve().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-
-                if (!ingestInput.sampleFile().isBatch()) {
-                        for (String s : ingestInput.sampleFile().files()) {
-                                assertTrue(getProducerPath().resolve(s).toFile().exists());
-                        }
-                }
-        }
-
-        public void runHandlerCorroborateTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                HandlerResult hr = new HandlerCorroborate().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-        }
-
-        public void runHandlerCharacterizeTests(InputFile ingestInput, IngestRequest ir)
-                        throws TException, IOException {
-                HandlerResult hr = new HandlerCharacterize().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-        }
-
-        public void runHandlerDocumentTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_ingest);
-                assertFalse(sfi.hasProperty("handlers"));
-                HandlerResult hr = new HandlerDocument().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-
-                assertTrue(sfi.hasProperty("handlers"));
-        }
-
-        public void runHandlerDigestTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                HandlerResult hr = new HandlerDigest().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-
-                SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_manifest);
-                assertTrue(sfi.exists());
-                assertEquals(ingestInput.sampleFile().getListSizeCount(), sfi.sysFileLines().size());
-        }
-
-        public void runHandlerCleanupTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                assertTrue(getProducerPath().toFile().exists());
-                HandlerResult hr = new HandlerCleanup().handle(ps, ir, ingestInput.getJobState());
-                assertTrue(hr.getSuccess());
-
-                assertFalse(getProducerPath().toFile().exists());
-        }
-
-        public void runAllHandlers(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
-                runHandlerInitializeTests(ingestInput, ir);
-                runHandlerAcceptTests(ingestInput, ir);
-                runHandlerVerifyTests(ingestInput, ir);
-                runHandlerDisaggregateTests(ingestInput, ir);
-                runHandlerRetrieveTests(ingestInput, ir);
-                runHandlerCorroborateTests(ingestInput, ir);
-                runHandlerCharacterizeTests(ingestInput, ir);
-                runHandlerDescribeTests(ingestInput, ir);
-                runHandlerDocumentTests(ingestInput, ir);
-                runHandlerDigestTests(ingestInput, ir);
-                runHandlerCleanupTests(ingestInput, ir);
         }
 
         @Test

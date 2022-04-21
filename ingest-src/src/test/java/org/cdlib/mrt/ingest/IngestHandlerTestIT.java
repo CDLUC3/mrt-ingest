@@ -2,6 +2,7 @@ package org.cdlib.mrt.ingest;
 
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.handlers.HandlerTransfer;
+import org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.utility.TException;
 import org.json.JSONException;
@@ -9,13 +10,16 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class IngestHandlerTestIT extends IngestHandlerTest {
         private int port = 4567;
@@ -87,5 +91,34 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
                 assertTrue(hr.getSuccess());
                 assertTrue(ingestInput.getJobState().getPrimaryID().getValue().matches("^ark:/99999/fk[0-9]{8,8}$"));
         }
+
+        public void runHandlerTransferTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+                HandlerResult hr = new HandlerTransfer().handle(ps, ir, ingestInput.getJobState());
+                assertTrue(hr.getSuccess());
+        }
+
+        public void runHandlerInventoryQueueTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {
+                HandlerResult hr = new HandlerInventoryQueue().handle(ps, ir, ingestInput.getJobState());
+                assertTrue(hr.getSuccess());
+        }
+
+        @Test
+        public void AllHandlersCheckm4BlocksWithQueue() throws IOException, TException, JSONException {
+                InputFile ingestInput = new InputFile(SampleFile.FourBlocks, tempdir);
+                InputStream in = ingestInput.sampleFile().getUrl().openStream();
+                Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),
+                                StandardCopyOption.REPLACE_EXISTING);
+                IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
+
+                JobState js = ingestInput.getJobState();
+                js.setMisc(ingestConfig.getQueueConf().getString("QueueService"));
+                js.setExtra(ingestConfig.getIngestConf().getString("ingestLock"));
+                js.setTargetStorage(ps.getTargetStorage());
+
+                js.setObjectState("foo");
+
+                runAllHandlers(ingestInput, ir);
+        }
+
 
 }
