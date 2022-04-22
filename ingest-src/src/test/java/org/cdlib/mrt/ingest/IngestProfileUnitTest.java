@@ -2,6 +2,7 @@ package org.cdlib.mrt.ingest;
 
 import static org.junit.Assert.*;
 
+import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -18,7 +19,7 @@ public class IngestProfileUnitTest extends IngestTestCore {
         }
 
         @Test
-        public void ReadProfileFile() throws TException {
+        public void ReadProfileFile() throws TException, MalformedURLException {
                 ProfileState ps = getProfileState();
                 assertEquals("merritt_test_content", ps.getProfileID().getValue());
                 assertEquals("Merritt Test", ps.getProfileDescription());

@@ -19,9 +19,9 @@ ingest-info:
     ingestLock: "/mrt.lock"
 
   store-info:
-    store.1: "http://localhost:4567"
-    access.1: "http://localhost:4567"
-    localID: "http://localhost:4567"
+    store.1: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
+    access.1: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
+    localID: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
 
   queue-info:
     QueueService: "localhost:{!ENV: it-zoo.port !DEFAULT: 2181}"

@@ -2,6 +2,7 @@ package org.cdlib.mrt.ingest;
 
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.handlers.HandlerTransfer;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.utility.TException;
@@ -11,6 +12,7 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -24,6 +26,19 @@ import java.nio.file.StandardCopyOption;
 public class IngestHandlerTestIT extends IngestHandlerTest {
         private int port = 4567;
         public static final String SHOULDER = "99999/aa";
+
+        public ProfileState getProfileState() throws TException, MalformedURLException {
+                IngestProfile ip = IngestProfile.merritt_test_content;
+                ProfileState ps = ProfileUtil.getProfile(ip.getIdentifier(), ip.getFile());
+                StoreNode sn = ps.getTargetStorage();
+                String url = sn.getStorageLink().toString().replace("4567", Integer.toString(port));
+                sn.setStorageLink(new URL(url));
+                ps.setTargetStorage(sn);
+                url  = ps.getObjectMinterURL().toString();
+                url = url.replace("4567", Integer.toString(port));
+                ps.setObjectMinterURL(new URL(url));
+                return ps;
+        }
 
         public IngestHandlerTestIT() throws TException {
                 super();
@@ -70,10 +85,6 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
 
         @Test
         public void HandlerMinter() throws TException, IOException, JSONException {
-                String url  = ps.getObjectMinterURL().toString();
-                url = url.replace("4567", Integer.toString(port));
-                ps.setObjectMinterURL(new URL(url));
-
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
 
                 // force minter to set primary id

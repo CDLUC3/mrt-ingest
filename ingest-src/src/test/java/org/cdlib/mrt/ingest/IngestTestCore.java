@@ -1,6 +1,7 @@
 package org.cdlib.mrt.ingest;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -36,7 +37,7 @@ public class IngestTestCore {
                 }
         }
 
-        public ProfileState getProfileState() throws TException {
+        public ProfileState getProfileState() throws TException, MalformedURLException {
                 IngestProfile ip = IngestProfile.merritt_test_content;
                 return ProfileUtil.getProfile(ip.getIdentifier(), ip.getFile());
         }

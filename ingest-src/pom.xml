@@ -89,7 +89,7 @@
                     <images>
                         <image>
                             <!-- https://github.com/CDLUC3/merritt-docker/tree/main/mrt-services/ezid_mock -->
-                            <name>${itDockerRegistry}/ezid_mock</name>
+                            <name>${itDockerRegistry}/mrt-ezid-store-mock:dev</name>
                             <alias>it-server</alias>
                             <run>
                                 <ports>
@@ -107,6 +107,9 @@
                                 <ports>
                                     <port>it-zoo.port:2181</port>
                                 </ports>
+                                <wait>
+                                    <time>2000</time>
+                                </wait>
                             </run>
                         </image>
                     </images>
@@ -139,6 +142,7 @@
           </includes>
           <environmentVariables>
             <it-server.port>${it-server.port}</it-server.port>
+            <it-zoo.port>${it-zoo.port}</it-zoo.port>
           </environmentVariables>
         </configuration>
       </plugin>
