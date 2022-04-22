@@ -19,12 +19,12 @@ ingest-info:
     ingestLock: "/mrt.lock"
 
   store-info:
-    store.1: "http://store:8080/store"
-    access.1: "http://store:8080/store"
-    localID: "http://inventory:8080/inventory"
+    store.1: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
+    access.1: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
+    localID: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
 
   queue-info:
-    QueueService: "zoo:2181"
+    QueueService: "localhost:{!ENV: it-zoo.port !DEFAULT: 2181}"
     QueueName: "/ingest"
     IngestQNames: "ingest"
     InventoryName: "/mrt.inventory.full"
