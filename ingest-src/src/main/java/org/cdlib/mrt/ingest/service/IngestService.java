@@ -183,6 +183,13 @@ public class IngestService
     }
 
     @Override
+    public QueueState postReleaseAll(String queue, String profile)
+        throws TException
+    {
+        return queueManager.postReleaseAll(queue, profile);
+    }
+
+    @Override
     public GenericState postProfileAction(String type, String environment, String notification, 
 	Map<String, String> profileParms)
         throws TException

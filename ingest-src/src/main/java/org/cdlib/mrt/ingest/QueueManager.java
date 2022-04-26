@@ -306,6 +306,95 @@ public class QueueManager {
 		}
 	}
 
+
+	public QueueState postReleaseAll(String queue, String profile) throws TException {
+		ZooKeeper zooKeeper = null;
+		try {
+			QueueState queueState = new QueueState();
+
+			if (queue == null) queue = queueNode;
+                        if ( ! queue.startsWith("/")) queue = "/" + queue;
+
+			// open a single connection to zookeeper for all queue posting
+			zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+			DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
+
+			TreeMap<Long, String> orderedChildren;
+			try {
+				orderedChildren = distributedQueue.orderedChildren(null);
+			} catch (KeeperException.NoNodeException e) {
+				orderedChildren = null;
+				// throw new NoSuchElementException();
+			}
+			if ( orderedChildren != null) {
+			   for (String headNode : orderedChildren.values()) {
+				   String path = String.format("%s/%s", distributedQueue.dir, headNode);
+				   System.out.println("[INFO]" + MESSAGE + "Checking queue entry: " + path);
+				   try {
+
+				 	byte[] data = zooKeeper.getData(path, false, null);
+				   	Item item = Item.fromBytes(data);
+					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
+					ObjectInputStream ois = new ObjectInputStream(bis);
+					Properties p = (Properties) ois.readObject();
+
+					QueueEntryState queueEntryState = new QueueEntryState();
+					queueEntryState.setDate(item.getTimestamp().toString());
+					if (item.getStatus() == Item.HELD && p.getProperty("profile").matches(profile)) {
+						String id = headNode;
+						System.out.println("[INFO]" + MESSAGE + "Release held collection entry: " + id);
+						item = distributedQueue.release(id);
+
+                        			queueEntryState.setDate(item.getTimestamp().toString());
+                        			if (item.getStatus() == Item.PENDING)
+                        				queueEntryState.setStatus("Pending");
+                        			queueEntryState.setID(item.getId());
+						queueEntryState.setQueueNode(queue);
+	    					if (item != null) {
+							System.out.println("** [info] ** " + MESSAGE + "Successfully released: " + item.toString());
+	    					} else {
+	        					System.err.println("[error]" + MESSAGE +  "Could not released: " + queue + ":" + id);
+						}
+						queueEntryState.setID(headNode);
+						queueEntryState.setJobID(p.getProperty("jobID"));
+						queueEntryState.setBatchID(p.getProperty("batchID"));
+						queueEntryState.setFileType(p.getProperty("type"));
+						queueEntryState.setUser(p.getProperty("submitter"));
+						queueEntryState.setProfile(p.getProperty("profile"));
+						queueEntryState.setName(p.getProperty("filename"));
+						queueEntryState.setObjectCreator(p.getProperty("creator"));
+						queueEntryState.setObjectTitle(p.getProperty("title"));
+						queueEntryState.setObjectDate(p.getProperty("date"));
+						queueEntryState.setLocalID(p.getProperty("localID"));
+						queueEntryState.setQueueNode(queue);
+
+						queueState.addEntry(queueEntryState);
+					}
+
+				} catch (KeeperException.NoNodeException e) {
+					System.out.println("KeeperException.NoNodeException");
+					System.out.println(StringUtil.stackTrace(e));
+				} catch (Exception ex) { 
+					System.out.println("Exception");
+					System.out.println(StringUtil.stackTrace(ex));
+				}
+			    }
+			}
+
+			return queueState;
+
+		} catch (Exception ex) {
+			System.out.println(StringUtil.stackTrace(ex));
+			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+			try {
+				zooKeeper.close();
+			} catch (Exception e) {
+			}
+		}
+	}
+
         public QueueState getAccessQueueState(String queue) throws TException {
                 ZooKeeper zooKeeper = null;
                 try {
