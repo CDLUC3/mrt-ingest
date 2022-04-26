@@ -3,6 +3,13 @@ package org.cdlib.mrt.ingest;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.handlers.HandlerTransfer;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue;
 import org.cdlib.mrt.ingest.handlers.HandlerMinter;
 import org.cdlib.mrt.utility.TException;
@@ -15,10 +22,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+/*
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+*/
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -57,15 +66,25 @@ public class IngestHandlerTestIT extends IngestHandlerTest {
         @Test
         public void callMockEzid() throws IOException, InterruptedException {
                 String url = String.format("http://localhost:%d/shoulder/%s", port, SHOULDER);
+                /*
+                When using java11 libraries, the following classes can be used...
+
                 HttpClient client = HttpClient.newHttpClient();
                 HttpRequest request = HttpRequest.newBuilder()
                                 .uri(URI.create(url))
                                 .build();
                 HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-                String ark = response.body().trim().replace("success: ", "");
-                System.out.println(ark);
-                String re = "^" + SHOULDER + "[0-9]{7,7}$";
-                assertTrue(ark.matches(re));
+                */
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                    HttpGet request = new HttpGet(url);
+                    HttpResponse response = client.execute(request);
+                    String responseString = new BasicResponseHandler().handleResponse(response);
+                    String ark = responseString.trim().replace("success: ", "");
+                    System.out.println(ark);
+                    String re = "^" + SHOULDER + "[0-9]{7,7}$";
+                    assertTrue(ark.matches(re));
+              }
+                        
         }
 
         // @Test
