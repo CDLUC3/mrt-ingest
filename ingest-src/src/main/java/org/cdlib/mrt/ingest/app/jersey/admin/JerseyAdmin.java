@@ -589,6 +589,45 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
+    // Release all held entries in an Ingest queue for a given collection
+    @POST
+    @Path("/release-all/{queue}/{profile}")
+    public Response postReleaseAll(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("queue") String queue,
+            @PathParam("profile") String profile,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing Release All of queue: " + queue + ":" +  " For collection:" + profile);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.postReleaseAll(queue, profile);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
     // Get profiles state user --> name, admin --> path and name
     @GET
     @Path("{profilePath: profiles|profiles/admin|profiles/admin/(collection|owner|sla)}")

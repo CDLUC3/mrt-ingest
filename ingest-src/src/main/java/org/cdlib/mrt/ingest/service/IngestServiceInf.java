@@ -138,6 +138,14 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Release queue entries at a collection level
+     * @return QueueState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueState postReleaseAll(String queue, String profile)
+        throws TException;
+
+    /**
      * Profile creation
      * @return GenericState service state information
      * @throws TException Exception condition 
