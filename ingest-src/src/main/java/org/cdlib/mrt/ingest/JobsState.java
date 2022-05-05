@@ -31,13 +31,14 @@ package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Jobs State information
  * @author mreyes
  */
 public class JobsState
-        implements JobsStateInf, Serializable
+        implements JobsStateInf, StateInf, Serializable
 {
 
     private String ingestServer = null;

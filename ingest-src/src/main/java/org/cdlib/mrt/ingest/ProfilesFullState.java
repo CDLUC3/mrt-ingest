@@ -33,13 +33,14 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.lang.String;
 import java.util.Vector;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Profiles State information
  * @author mreyes
  */
 public class ProfilesFullState
-        implements ProfilesFullStateInf, Serializable
+        implements ProfilesFullStateInf, StateInf, Serializable
 
 {
 

@@ -32,12 +32,14 @@ package org.cdlib.mrt.ingest;
 import java.util.Iterator;
 import java.util.Vector;
 import java.io.Serializable;
+import org.cdlib.mrt.utility.StateInf;
+
 /**
  * Lock State information
  * @author mreyes
  */
 public class LockState
-        implements LockStateInf, Serializable
+        implements LockStateInf, StateInf, Serializable
 {
 
     protected Vector<LockEntryState> lockEntries = new Vector<LockEntryState>();

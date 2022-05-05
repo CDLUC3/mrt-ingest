@@ -33,13 +33,14 @@ import java.io.Serializable;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Handler State information
  * @author mreyes
  */
 public class HandlerState
-        implements HandlerStateInf, Serializable
+        implements HandlerStateInf, StateInf, Serializable
 {
 
     private String handlerName = null;

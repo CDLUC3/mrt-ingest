@@ -31,13 +31,14 @@ package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
 import java.util.Vector;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Manifests State information
  * @author mreyes
  */
 public class ManifestsState
-        implements ManifestsStateInf, Serializable
+        implements ManifestsStateInf, StateInf, Serializable
 {
 
     private Vector<ManifestEntryState> manifestsState = new Vector<ManifestEntryState>(); 

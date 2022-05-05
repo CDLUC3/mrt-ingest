@@ -33,13 +33,14 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.lang.String;
 import java.util.Vector;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Batch File State information
  * @author mreyes
  */
 public class BatchFileState
-        implements BatchFileStateInf, Serializable
+        implements BatchFileStateInf, StateInf, Serializable
 
 {
 
