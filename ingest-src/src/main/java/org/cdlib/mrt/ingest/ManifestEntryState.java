@@ -30,13 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Manifest entry information
  * @author mreyes
  */
 public class ManifestEntryState
-        implements ManifestEntryStateInf, Serializable
+        implements ManifestEntryStateInf, StateInf, Serializable
 {
 
     // nfo:fileURL | nfo:hashAlgorithm | nfo:hashValue | nfo:fileSize | nfo:fileLastModified | nfo:fileName | nie:mimeType 

@@ -30,13 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Queue entry information
  * @author mreyes
  */
 public class QueueEntryState
-        implements QueueEntryStateInf, Serializable
+        implements QueueEntryStateInf, StateInf, Serializable
 {
 
     private String id = null;

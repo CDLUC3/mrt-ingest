@@ -43,13 +43,14 @@ import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Job State information
  * @author mreyes
  */
 public class JobState
-        implements JobStateInf, Serializable
+        implements JobStateInf, StateInf, Serializable
 {
 
 	private Identifier jobID = null;

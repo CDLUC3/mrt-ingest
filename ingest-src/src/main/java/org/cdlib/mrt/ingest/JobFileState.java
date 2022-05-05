@@ -33,13 +33,14 @@ import java.io.Serializable;
 import java.lang.String;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Job File State information
  * @author mreyes
  */
 public class JobFileState
-        implements JobFileStateInf, Serializable
+        implements JobFileStateInf, StateInf, Serializable
 
 {
 

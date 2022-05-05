@@ -35,13 +35,14 @@ import java.io.Serializable;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Notification State information
  * @author mreyes
  */
 public class NotificationState
-        implements NotificationStateInf, Serializable
+        implements NotificationStateInf, StateInf, Serializable
 {
 
     private Identifier jobID = null;

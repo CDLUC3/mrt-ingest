@@ -39,13 +39,14 @@ import java.io.Serializable;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Profile State information
  * @author mreyes
  */
 public class ProfileState
-        implements ProfileStateInf, Serializable
+        implements ProfileStateInf, StateInf, Serializable
 {
 
     private static final String NAME = "ProfileState";

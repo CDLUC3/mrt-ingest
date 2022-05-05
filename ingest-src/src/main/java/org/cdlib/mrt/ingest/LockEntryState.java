@@ -30,13 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Lock entry information
  * @author mreyes
  */
 public class LockEntryState
-        implements LockEntryStateInf, Serializable
+        implements LockEntryStateInf, StateInf, Serializable
 {
 
     private String id = null;

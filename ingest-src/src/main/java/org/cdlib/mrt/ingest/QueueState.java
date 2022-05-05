@@ -32,13 +32,14 @@ package org.cdlib.mrt.ingest;
 import java.util.Iterator;
 import java.util.Vector;
 import java.io.Serializable;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Queue State information
  * @author mreyes
  */
 public class QueueState
-        implements QueueStateInf, Serializable
+        implements QueueStateInf, StateInf, Serializable
 {
 
     protected Vector<QueueEntryState> queueEntries = new Vector<QueueEntryState>();

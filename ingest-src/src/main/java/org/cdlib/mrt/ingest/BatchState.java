@@ -40,6 +40,7 @@ import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 
 /**
@@ -47,7 +48,7 @@ import org.cdlib.mrt.utility.StringUtil;
  * @author mreyes
  */
 public class BatchState
-        implements BatchStateInf, Serializable, Cloneable
+        implements BatchStateInf, StateInf, Serializable, Cloneable
 {
 
     private Identifier batchID = null;

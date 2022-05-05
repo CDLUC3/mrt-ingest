@@ -30,13 +30,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest;
 
 import java.io.Serializable;
+import org.cdlib.mrt.utility.StateInf;
+
 
 /**
  * Generic information
  * @author mreyes
  */
 public class GenericState
-        implements GenericStateInf, Serializable
+        implements GenericStateInf, StateInf, Serializable
 {
 
     private String string  = null;

@@ -36,13 +36,14 @@ import java.lang.String;
 import java.util.Vector;
 
 import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Profiles State information
  * @author mreyes
  */
 public class ProfilesState
-        implements ProfilesStateInf, Serializable
+        implements ProfilesStateInf, StateInf, Serializable
 
 {
 

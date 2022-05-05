@@ -32,13 +32,14 @@ package org.cdlib.mrt.ingest;
 import java.io.Serializable;
 import java.lang.String;
 import java.util.Vector;
+import org.cdlib.mrt.utility.StateInf;
 
 /**
  * Ingest Queue Name State information
  * @author mreyes
  */
 public class IngestQueueNameState
-        implements IngestQueueNameStateInf, Serializable
+        implements IngestQueueNameStateInf, StateInf, Serializable
 
 {
 
