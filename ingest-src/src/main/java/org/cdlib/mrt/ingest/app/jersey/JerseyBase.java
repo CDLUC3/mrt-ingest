@@ -612,27 +612,35 @@ public class JerseyBase
 		    } else if (item.getFieldName().equals("creator")){
 		       field = "creator";
 		       ingestRequest.getJob().setObjectCreator(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] Creator: " + ingestRequest.getJob().getObjectCreator());
 		    } else if (item.getFieldName().equals("title")){
 		       field = "title";
 		       ingestRequest.getJob().setObjectTitle(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] Title: " + ingestRequest.getJob().getObjectTitle());
 		    } else if (item.getFieldName().equals("date")){
 		       field = "date";
 		       ingestRequest.getJob().setObjectDate(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] Date: " + ingestRequest.getJob().getObjectDate());
 		    } else if (item.getFieldName().equals("localIdentifier")){
 		       field = "localIdentifier";
 		       ingestRequest.getJob().setLocalID(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] LocalID: " + ingestRequest.getJob().getLocalID());
 		    } else if (item.getFieldName().equals("primaryIdentifier")){
 		       field = "primaryIdentifier";
 		       ingestRequest.getJob().setPrimaryID(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] PrimaryID: " + ingestRequest.getJob().getPrimaryID());
 		    } else if (item.getFieldName().equals("note")){
 		       field = "note";
 		       ingestRequest.getJob().setNote(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] Note: " + ingestRequest.getJob().getNote());
 		    } else if (item.getFieldName().equals("erc")){
 		       field = "erc";
 		       ingestRequest.getJob().setERC(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] ERC: " + ingestRequest.getJob().grabERC());
 		    } else if (item.getFieldName().equals("notification")){
 		       field = "notification";
 		       ingestRequest.getJob().setAltNotification(item.getString("utf-8"));
+		       if (DEBUG) System.err.println("[debug] Alt. Notification: " + ingestRequest.getJob().grabAltNotification());
 		    } else if (item.getFieldName().equals("responseForm")) {
 		       field = "responseForm";
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));
