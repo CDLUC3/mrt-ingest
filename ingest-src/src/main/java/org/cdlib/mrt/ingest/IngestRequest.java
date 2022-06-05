@@ -50,6 +50,7 @@ public class IngestRequest
 
     private Identifier profile = null;
     private int packageSize;
+    private int numDownloadThreads = 0;
     private String note = null;
     private String link = null;	// used to expose data to storage service via manifest
 
@@ -390,6 +391,22 @@ public class IngestRequest
      */
     public boolean getSynchronousMode() {
         return synchronousMode;
+    }
+
+    /**
+     * Set download thread size
+     * @param int Size of download thread pool
+     */
+    public void setNumDownloadThreads(int numDownloadThreads) {
+        this.numDownloadThreads = numDownloadThreads;
+    }
+
+    /**
+     * Get download thread size
+     * @return int num threads
+     */
+    public int getNumDownloadThreads() {
+        return numDownloadThreads;
     }
 
     public String dump(String header)

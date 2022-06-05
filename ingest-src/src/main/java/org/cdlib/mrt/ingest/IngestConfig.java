@@ -86,6 +86,7 @@ public class IngestConfig
     protected String QueueHoldFile = null;
     protected Integer QueuePollingInterval = null;
     protected Integer QueueNumThreads = null;
+    protected Integer QueueNumDownloadThreads = null;
     // config-info
     protected Integer messageMaximumLevel = null;
     protected Integer messageMaximumError = null;

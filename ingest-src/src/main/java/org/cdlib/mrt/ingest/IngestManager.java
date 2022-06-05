@@ -85,8 +85,11 @@ public class IngestManager {
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
 	private String m_localID = null;
 	private String m_ezid = null;
-	private String m_purl = null; // persistent URL
-	private String ingestFileS = null; // prop "IngestService"
+	private String m_purl = null;          // persistent URL
+	private String ingestFileS = null;     // prop "IngestService"
+        private String sNumDownloadThreads = null; 
+        private int numDownloadThreads = 4;    // default download thread pool
+
 
 	public String getIngestServiceProp() {
 		return this.ingestFileS;
@@ -151,6 +154,7 @@ public class IngestManager {
 			String matchAdmin = "admin";
 			String matchEZID = "ezid";
 			String matchPURL = "purl";
+			String matchNumDownloadThreads = "NumDownloadThreads";
 			String defaultIDKey = "IDDefault";
 			Integer id = null;
 
@@ -214,6 +218,17 @@ public class IngestManager {
 
 			// ezid 
 			m_ezid = ingestConf.getString(matchEZID);
+
+			// Download thread pool size
+        		try {
+            		   sNumDownloadThreads = ingestConf.getString("NumDownloadThreads");
+            		   if (StringUtil.isNotEmpty(sNumDownloadThreads)) {
+                	      System.out.println("[info] " + MESSAGE + "Setting download thread pool size: " + sNumDownloadThreads);
+                	      this.numDownloadThreads = new Integer(sNumDownloadThreads).intValue();
+            		}
+        		} catch (Exception e) {
+            		   System.err.println("[warn] " + MESSAGE + "Could not set download thread pool size: " + sNumDownloadThreads + "  - using default: " + this.numDownloadThreads);
+        		}
 
 			// purl
 			m_purl = ingestConf.getString(matchPURL);
@@ -373,6 +388,9 @@ public class IngestManager {
 
 			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
+
+			// add download thread pool size
+			ingestRequest.setNumDownloadThreads(numDownloadThreads);
 
 			// assign preliminary job info
 			jobState = ingestRequest.getJob();
