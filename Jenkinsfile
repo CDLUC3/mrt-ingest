@@ -65,7 +65,7 @@ pipeline {
                   script {
                     new BuildFunctions().build_war(
                         'https://github.com/CDLUC3/mrt-ingest.git',
-                        '-Denforcer.skip=true -DskipITs -Ddocker.skip'
+                        '-Denforcer.skip=true'
                     )
                   }
                 }
