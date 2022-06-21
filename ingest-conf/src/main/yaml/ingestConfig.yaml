@@ -15,6 +15,7 @@ ingest:
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
     ingestQueuePath: "{!SSM: ingest/config/ingestQueuePath !DEFAULT: /apps/ingest-stg-shared/ingest_home/queue}"
     ingestLock: "{!SSM: ingest/zoo/lockName !DEFAULT: /mrt.lock}"
+    NumDownloadThreads: "{!SSM: ingest/config/numDownloadThreads !DEFAULT: 4}"
 
   store-info:
     store.1: "{!SSM: ingest/config/store.1}"
@@ -57,6 +58,7 @@ ingest-docker:
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
     ingestLock: "/mrt.lock"
+    NumDownloadThreads: "2"
 
   store-info:
     store.1: "http://store:8080/store"
@@ -70,7 +72,7 @@ ingest-docker:
     InventoryName: "/mrt.inventory.full"
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
     PollingInterval: "10"
-    NumThreads: "5"
+    NumThreads: "3"
 
   logger-info:
     messageMaximumLevel: 5

@@ -84,7 +84,7 @@ public class HandlerRetrieve extends Handler<JobState>
 
     private static final String NAME = "HandlerRetrieve";
     private static final String MESSAGE = NAME + ": ";
-    private static final int THREAD_POOL_SIZE = 4;
+    private int thread_pool_size = 4;	// Default
     private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
@@ -168,7 +168,12 @@ public class HandlerRetrieve extends Handler<JobState>
                     ManifestRowIngest rowIn = null;
                     FileComponent fileComponent = null;
 
-		    executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+		    if (ingestRequest.getNumDownloadThreads() != 0) {
+			thread_pool_size = ingestRequest.getNumDownloadThreads();
+                        System.out.println("[HandlerRetrieve] INFO: Setting download pool size to: " + thread_pool_size);
+		    }
+			
+		    executorService = Executors.newFixedThreadPool(thread_pool_size);
 
     		    List<Future<String>> tasks = new ArrayList<Future<String>>();
 
