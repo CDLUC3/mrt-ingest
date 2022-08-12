@@ -3,3 +3,4 @@ target/
 .classpath
 .settings/
 ingest-src/.attach_*
+ingest-war/war/mrtingest.war

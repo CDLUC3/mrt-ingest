@@ -18,6 +18,7 @@
       <module>ingest-conf</module>
       <module>ingest-src</module>
       <module>ingest-war</module>
+      <module>ingest-it</module>
   </modules>
 
 </project>
