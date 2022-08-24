@@ -125,8 +125,6 @@ public class HandlerTransfer extends Handler<JobState>
 	    String url = storeNode.getStorageLink().toString() + action + storeNode.getNodeID() + 
 			"/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
 
-            System.out.println("***"+url);
-
 	    Client client = Client.create();	// reuse?  creation is expensive
 
             /* fix client timeout problem */
@@ -134,7 +132,6 @@ public class HandlerTransfer extends Handler<JobState>
             client.setReadTimeout(new Integer(StorageUtil.STORAGE_READ_TIMEOUT));
 
 	    WebResource webResource = client.resource(url);
-            System.out.println("****" + url);
 	    Form formData = new Form();
   	    formData.add("t", "xml");
 
