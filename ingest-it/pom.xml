@@ -98,6 +98,14 @@
             </goals>
             <configuration>
               <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
+              <volumes>
+                <volume>
+                  <name>ingest</name>
+                </volume>
+                <volume>
+                  <name>queue</name>
+                </volume>
+              </volumes>
               <images>
                 <image>
                   <name>${itDockerRegistry}/mock-merritt-it:dev</name>
@@ -132,6 +140,9 @@
                     <volumes>
                       <bind>
                         <volume>${project.basedir}/target/mrt-ingest-it-1.0-SNAPSHOT.war:/usr/local/tomcat/webapps/mrtingest.war</volume>
+                        <volume>ingest:/tdr/ingest</volume>
+                        <volume>queue:/tdr/ingest/queue</volume>
+                        <volume>${project.basedir}/src/test/resources/profiles:/tdr/ingest/profiles</volume>
                       </bind>
                     </volumes>
                     <env>
@@ -146,6 +157,16 @@
                     <network>
                       <name>network</name>
                       <alias>zoo-it</alias>
+                    </network>
+                   </run>
+                </image>
+                <image>
+                  <name>namshi/smtp</name>
+                  <alias>smtp</alias>
+                  <run>
+                    <network>
+                      <name>network</name>
+                      <alias>smtp</alias>
                     </network>
                   </run>
                 </image>

@@ -21,6 +21,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -133,5 +135,85 @@ public class ServiceDriverIT {
                 String status = json.getJSONObject("ing:ingestServiceState").getString("ing:submissionState");
                 assertEquals("thawed", status);
         }
+
+        public void ingestFile(String url, File file, String localId) throws IOException, JSONException {
+                System.out.println(url);
+                System.out.println(file.getName());
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpPost post = new HttpPost(url);
+                        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                        /*
+                        URL payload = new URL("http://localhost:8096/static/hello.txt");
+                        builder.addBinaryBody(
+                          "file", payload.openStream(), ContentType.DEFAULT_TEXT, "hello.txt"
+                        );
+                         */
+                        builder.addBinaryBody(
+                          "file", file, ContentType.DEFAULT_TEXT, file.getName()
+                        );
+                        builder.addTextBody("profile", "merritt_test_content");
+                        if (localId != null) {
+                                if (!localId.isEmpty()) {
+                                        builder.addTextBody("localIdentifier", localId);
+                                }
+                        }
+                        builder.addTextBody("responseForm", "json");
+                        HttpEntity multipart = builder.build();
+                        post.setEntity(multipart);
+                        
+                        HttpResponse response = client.execute(post);
+                        assertEquals(200, response.getStatusLine().getStatusCode());
+
+                        System.out.println(response.getStatusLine());
+    
+                        String s = new BasicResponseHandler().handleResponse(response).trim();
+                        assertFalse(s.isEmpty());
+
+                        JSONObject json =  new JSONObject(s);
+                        assertNotNull(json);
+                        System.out.println(json.toString(2));
+                        assertTrue(json.has("job:jobState"));
+                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));
+                }
+
+        }
+
+
+        @Test
+        public void SimpleFileIngest() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), "");
+        }
+
+        //@Test
+        public void SimpleFileIngestWithUpdate() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                ingestFile(url, new File("src/test/resources/data/test.txt"), "localId");
+                url = String.format("http://localhost:%d/%s/update-object", port, cp);
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), "localId");
+        }
+
+        @Test
+        public void SimpleZipIngest() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                ingestFile(url, new File("src/test/resources/data/test.zip"), "");
+        }
+
+        //POST submit-object - direct
+        // submit file
+        // submit zip
+        // submit manifest
+        //POST submit-object/scheme/shoulder/ark - direct
+        //POST update-object - direct
+        //POST update-object/scheme/shoulder/ark - direct
+        //POST request-identifier (from ezid)
+
+        //POST add - queue
+        //POST submit - queue
+        //POST add/scheme/shoulder/ark -  queue
+        //POST update - queue
+        //POST update/scheme/shoulder/ark - queue 
+
+        //admin functions
 
 }
