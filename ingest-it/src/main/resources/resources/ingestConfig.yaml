@@ -18,9 +18,9 @@ ingest-info:
     NumDownloadThreads: "2"
 
   store-info:
-    store.1: "http://mock-merritt-it:8080/store"
-    access.1: "http://mock-merritt-it:8080/store"
-    localID: "http://mock-merritt-it:8080/inventory"
+    store.1: "http://mock-merritt-it:4567/store"
+    access.1: "http://mock-merritt-it:4567/store"
+    localID: "http://mock-merritt-it:4567/inventory"
 
   queue-info:
     QueueService: "zoo-it:2181"

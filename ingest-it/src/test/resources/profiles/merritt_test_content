@@ -9,7 +9,7 @@ Role: MRT-content
 Aggregate:
 Owner: ark:/99999/j2000000
 Notification.1: test.email@test.edu
-\# --- handler ingest processing
+# --- handler ingest processing
 Handler.1: org.cdlib.mrt.ingest.handlers.HandlerInitialize
 Handler.2: org.cdlib.mrt.ingest.handlers.HandlerAccept
 Handler.3: org.cdlib.mrt.ingest.handlers.HandlerVerify

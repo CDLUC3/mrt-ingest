@@ -136,18 +136,43 @@ public class ServiceDriverIT {
                 assertEquals("thawed", status);
         }
 
-        public void ingestFile(String url, File file, String localId) throws IOException, JSONException {
+        public JSONObject ingestFile(String url, File file, boolean batch) throws IOException, JSONException {
+                return ingestFile(url, file, "", "", batch);
+        }
+
+        public JSONObject ingestFile(String url, File file, String localId, boolean batch) throws IOException, JSONException {
+                return ingestFile(url, file, localId, "", batch);
+        }
+
+        public JSONObject submitResponse(HttpResponse response, boolean batch) throws IOException, JSONException {
+                assertEquals(200, response.getStatusLine().getStatusCode());
+
+                System.out.println(response.getStatusLine());
+
+                String s = new BasicResponseHandler().handleResponse(response).trim();
+                assertFalse(s.isEmpty());
+
+                JSONObject json =  new JSONObject(s);
+                assertNotNull(json);
+                System.out.println(json.toString(2));
+                if (batch) {
+                        assertTrue(json.has("bat:batchState"));
+                        assertEquals("QUEUED", json.getJSONObject("bat:batchState").getString("bat:batchStatus"));
+
+                } else {
+                        assertTrue(json.has("job:jobState"));
+                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));        
+                }
+                return json;
+
+        }
+
+        public JSONObject ingestFile(String url, File file, String localId, String primaryId, boolean batch) throws IOException, JSONException {
                 System.out.println(url);
                 System.out.println(file.getName());
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
                         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-                        /*
-                        URL payload = new URL("http://localhost:8096/static/hello.txt");
-                        builder.addBinaryBody(
-                          "file", payload.openStream(), ContentType.DEFAULT_TEXT, "hello.txt"
-                        );
-                         */
                         builder.addBinaryBody(
                           "file", file, ContentType.DEFAULT_TEXT, file.getName()
                         );
@@ -157,46 +182,114 @@ public class ServiceDriverIT {
                                         builder.addTextBody("localIdentifier", localId);
                                 }
                         }
+                        if (primaryId != null) {
+                                if (!primaryId.isEmpty()) {
+                                        builder.addTextBody("primaryIdentifier", primaryId);
+                                }
+                        }
+                        builder.addTextBody("submitter", "integration-tests");
                         builder.addTextBody("responseForm", "json");
                         HttpEntity multipart = builder.build();
                         post.setEntity(multipart);
                         
                         HttpResponse response = client.execute(post);
-                        assertEquals(200, response.getStatusLine().getStatusCode());
-
-                        System.out.println(response.getStatusLine());
-    
-                        String s = new BasicResponseHandler().handleResponse(response).trim();
-                        assertFalse(s.isEmpty());
-
-                        JSONObject json =  new JSONObject(s);
-                        assertNotNull(json);
-                        System.out.println(json.toString(2));
-                        assertTrue(json.has("job:jobState"));
-                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));
+                        return submitResponse(response, batch);
                 }
 
         }
 
+        public JSONObject ingestFromUrl(String url, String contenturl, String filename, String type, boolean batch) throws IOException, JSONException {
+                System.out.println(url);
+                System.out.println(contenturl);
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpPost post = new HttpPost(url);
+                        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                        URL payload = new URL(contenturl);
+                        builder.addBinaryBody(
+                          "file", payload.openStream(), ContentType.DEFAULT_TEXT, filename
+                        );
+                        builder.addTextBody("submitter", "integration-tests");
+                        builder.addTextBody("type", type);
+                        builder.addTextBody("profile", "merritt_test_content");
+                        builder.addTextBody("responseForm", "json");
+                        HttpEntity multipart = builder.build();
+                        post.setEntity(multipart);
+                        
+                        HttpResponse response = client.execute(post);
+                        return submitResponse(response, batch);
+                }
+
+        }
+
+        @Test
+        public void FileManifestIngest() throws IOException, JSONException {
+                String filename = "4blocks.checkm";
+                String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
+                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                ingestFromUrl(url, contenturl, filename, "manifest", false);
+        }
+
+        @Test
+        public void BatchManifestIngest() throws IOException, JSONException {
+                String filename = "sampleBatchOfManifests.checkm";
+                String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
+        }
+
+        @Test
+        public void BatchFilesIngest() throws IOException, JSONException {
+                String filename = "sampleBatchOfFiles.checkm";
+                String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
+        }
 
         @Test
         public void SimpleFileIngest() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), "");
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
         }
 
-        //@Test
+        @Test
+        public void QueueFileIngest() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+        }
+
+        @Test
+        public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
+        }
+
+        @Test
+        public void SimpleFileIngestWithArk() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+        }
+
+        @Test
+        public void SimpleFileIngestWithArkAndUpdate() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
+                ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+                url = String.format("http://localhost:%d/%s/update-object/ark/1111/2222", port, cp);
+                ingestFile(url, new File("src/test/resources/data/test.txt"), false);
+        }
+
+        @Test
         public void SimpleFileIngestWithUpdate() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/test.txt"), "localId");
+                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+                String prim = json.getJSONObject("job:jobState").getString("job:primaryID");
                 url = String.format("http://localhost:%d/%s/update-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), "localId");
+                ingestFile(url, new File("src/test/resources/data/test.txt"), "", prim, false);
         }
 
         @Test
         public void SimpleZipIngest() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/test.zip"), "");
+                ingestFile(url, new File("src/test/resources/data/test.zip"), false);
         }
 
         //POST submit-object - direct
