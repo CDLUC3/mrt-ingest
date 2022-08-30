@@ -15,7 +15,7 @@ ingest-info:
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
     ingestLock: "/mrt.lock"
-    NumDownloadThreads: "2"
+    NumDownloadThreads: "3"
 
   store-info:
     store.1: "http://mock-merritt-it:4567/store"
@@ -28,7 +28,7 @@ ingest-info:
     IngestQNames: "ingest"
     InventoryName: "/mrt.inventory.full"
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
-    PollingInterval: "10"
+    PollingInterval: "2"
     NumThreads: "3"
 
   logger-info:

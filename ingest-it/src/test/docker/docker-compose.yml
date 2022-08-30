@@ -11,6 +11,8 @@ services:
     ports:
     - published: 8096
       target: 4567
+    volumes:
+    - "queue:/tdr/ingest/queue"
     networks:
       merrittnet:
   it-server:

@@ -121,7 +121,12 @@
                     <wait>
                       <time>1000</time>
                     </wait>
-                  </run>
+                    <volumes>
+                        <bind>
+                          <volume>queue:/tdr/ingest/queue</volume>
+                        </bind>
+                      </volumes>
+                    </run>
                 </image>
                 <image>
                   <name>tomcat:8-jre8</name>
@@ -200,6 +205,7 @@
           </includes>
           <environmentVariables>
             <it-server.port>${it-server.port}</it-server.port>
+            <mock-merritt-it.port>${mock-merritt-it.port}</mock-merritt-it.port>
           </environmentVariables>
         </configuration>
       </plugin>

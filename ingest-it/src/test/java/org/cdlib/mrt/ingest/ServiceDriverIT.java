@@ -1,10 +1,12 @@
 package org.cdlib.mrt.ingest;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
@@ -48,27 +50,9 @@ import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.*;
 
-/*
- * curl --verbose  -H "Accept: application/json" 
- *   -F "@ingest-it/src/test/resources/data/test.zip" 
- *   -F "type=container" -F "submitter=tb" -F "profile=merritt_test_content" 
- *   -F "responseForm=xml"
- *   http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/poster/submit
-
-Tests to write
-- submit file
-- submit container
-- submit manifest
-- submit manifest of manifests
-- update file
-- submit file synchronously
-- admin calls
-
-
- */
-
 public class ServiceDriverIT {
         private int port = 8080;
+        private int mockport = 8096;
         private String cp = "mrtingest";
         private DocumentBuilder db;
         private XPathFactory xpathfactory;
@@ -76,8 +60,10 @@ public class ServiceDriverIT {
         public ServiceDriverIT() throws ParserConfigurationException {
                 try {
                         port = Integer.parseInt(System.getenv("it-server.port"));
+                        mockport = Integer.parseInt(System.getenv("mock-merritt-it.port"));
                 } catch (NumberFormatException e) {
-                        System.err.println("it-server.port not set, defaulting to " + port);
+                        System.err.println("it-server.port = " + port);
+                        System.err.println("mock-merritt-it.port = " + mockport);
                 }
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
@@ -126,6 +112,94 @@ public class ServiceDriverIT {
                 }
         }
 
+        public String getJsonString(JSONObject j, String key, String def) throws JSONException {
+                return j.has(key) ? j.get(key).toString() :  def;
+        }
+
+
+        public JSONObject getJsonObject(JSONObject j, String key) throws JSONException {
+                if (j.has(key) && (j.get(key) instanceof JSONObject)) {
+                        return j.getJSONObject(key);
+                }
+                return new JSONObject();
+        }
+
+        public JSONArray getJsonArray(JSONObject j, String key) throws JSONException {
+                JSONArray ja = new JSONArray();
+                if (j.has(key)) {
+                        if (j.get(key) instanceof JSONArray) {
+                                return j.getJSONArray(key);
+                        }
+                        if (j.get(key) instanceof JSONObject) {
+                                ja.put(j.get(key));
+                        }
+                }
+                return ja;
+        }
+
+        public void clearQueue(String endpoint, String queue) throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
+                JSONObject json = getJsonContent(url, 200);
+
+                JSONObject j = getJsonObject(json,"que:queueState"); 
+                j = getJsonObject(j, "que:queueEntries");
+                JSONArray ja = getJsonArray(j, "que:queueEntryState");
+                for (int i=0; i < ja.length(); i++) {
+                        JSONObject jo = ja.getJSONObject(i);
+                        String status = getJsonString(jo, "que:status", "").toLowerCase();
+                        if (status.equals("deleted")) {
+                                continue;
+                        }
+                        String id = getJsonString(jo, "que:iD", "");
+                        clearQueueEntry(queue, id, status);
+                }
+        }
+
+        public int countQueue(int sleep, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
+                Thread.sleep(sleep);
+                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
+                JSONObject json = getJsonContent(url, 200);
+                int count = 0;
+
+                JSONObject j = getJsonObject(json,"que:queueState"); 
+                j = getJsonObject(j, "que:queueEntries");
+                JSONArray ja = getJsonArray(j, "que:queueEntryState");
+                for (int i=0; i < ja.length(); i++) {
+                        JSONObject jo = ja.getJSONObject(i);
+                        String status = getJsonString(jo, "que:status", "").toLowerCase();
+                        if (status.equals("deleted")) {
+                                continue;
+                        }
+                        count++;
+                }
+                System.out.println(String.format("%s/%s: %d", endpoint, queue, count));
+                return count;
+        }
+
+        public void clearQueueEntry(String queue, String id, String status) throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/deleteq/%s/%s/%s", port, cp, queue, id, status);
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpPost post = new HttpPost(url);                        
+                        HttpResponse response = client.execute(post);
+                        String s = new BasicResponseHandler().handleResponse(response).trim();
+                        assertEquals(200, response.getStatusLine().getStatusCode());
+                }
+
+        }
+
+        @Before
+        public void clearQueueDirectory() throws IOException, JSONException {
+                clearQueue("queue", "ingest");
+                clearQueue("queue-inv", "mrt.inventory.full");
+                String url = String.format("http://localhost:%d/ingest-queue", mockport);
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpDelete post = new HttpDelete(url);                        
+                        HttpResponse response = client.execute(post);
+                        String s = new BasicResponseHandler().handleResponse(response).trim();
+                        assertEquals(200, response.getStatusLine().getStatusCode());
+                }
+
+        }
 
         @Test
         public void SimpleTest() throws IOException, JSONException {
@@ -147,29 +221,29 @@ public class ServiceDriverIT {
         public JSONObject submitResponse(HttpResponse response, boolean batch) throws IOException, JSONException {
                 assertEquals(200, response.getStatusLine().getStatusCode());
 
-                System.out.println(response.getStatusLine());
 
                 String s = new BasicResponseHandler().handleResponse(response).trim();
                 assertFalse(s.isEmpty());
 
                 JSONObject json =  new JSONObject(s);
                 assertNotNull(json);
-                System.out.println(json.toString(2));
                 if (batch) {
                         assertTrue(json.has("bat:batchState"));
                         assertEquals("QUEUED", json.getJSONObject("bat:batchState").getString("bat:batchStatus"));
 
                 } else {
                         assertTrue(json.has("job:jobState"));
-                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));        
+                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));
+                        String jobid =  json.getJSONObject("job:jobState").getString("job:jobID");
+                        String primaryid = json.getJSONObject("job:jobState").getString("job:primaryID");
+                        //GET http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue-inv/mrt.inventory.full
+                        //POST /deleteq/{queue}/{id}/{fromState}
                 }
                 return json;
 
         }
 
         public JSONObject ingestFile(String url, File file, String localId, String primaryId, boolean batch) throws IOException, JSONException {
-                System.out.println(url);
-                System.out.println(file.getName());
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
                         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -199,8 +273,6 @@ public class ServiceDriverIT {
         }
 
         public JSONObject ingestFromUrl(String url, String contenturl, String filename, String type, boolean batch) throws IOException, JSONException {
-                System.out.println(url);
-                System.out.println(contenturl);
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
                         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -222,45 +294,81 @@ public class ServiceDriverIT {
         }
 
         @Test
-        public void FileManifestIngest() throws IOException, JSONException {
+        public void FileManifestIngest() throws IOException, JSONException, InterruptedException {
                 String filename = "4blocks.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFromUrl(url, contenturl, filename, "manifest", false);
+                assertEquals(0, countQueue(1000, "queue", "ingest"));
+                assertEquals(1, countQueue(1000, "queue-inv", "mrt.inventory.full"));
         }
 
         @Test
-        public void BatchManifestIngest() throws IOException, JSONException {
+        public void BatchManifestIngest() throws IOException, JSONException, InterruptedException {
                 String filename = "sampleBatchOfManifests.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
+                assertEquals(3, countQueue(2000, "queue", "ingest"));
+                assertEquals(3, countQueue(60000, "queue-inv", "mrt.inventory.full"));
         }
 
         @Test
-        public void BatchFilesIngest() throws IOException, JSONException {
+        public void BatchFilesIngest() throws IOException, JSONException, InterruptedException {
                 String filename = "sampleBatchOfFiles.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
+                assertEquals(3, countQueue(2000, "queue", "ingest"));
+                assertEquals(3, countQueue(40000, "queue-inv", "mrt.inventory.full"));
         }
 
         @Test
-        public void SimpleFileIngest() throws IOException, JSONException {
+        public void SimpleFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+                assertEquals(0, countQueue(1000, "queue", "ingest"));
+                assertEquals(1, countQueue(1000, "queue-inv", "mrt.inventory.full"));
         }
 
         @Test
-        public void QueueFileIngest() throws IOException, JSONException {
+        public void QueueFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                assertEquals(1, countQueue(1000, "queue", "ingest"));
+                assertEquals(1, countQueue(20000, "queue-inv", "mrt.inventory.full"));
         }
 
         @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
+                /*
+
+http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue/ingest
+{
+que:queueState: {
+xmlns:que: "http://uc3.cdlib.org/ontology/mrt/ingest/queue",
+que:queueEntries: {
+que:queueEntryState: {
+que:user: "integration-tests",
+que:fileType: "file",
+que:queueNode: "/ingest",
+que:jobID: "jid-04af2cb5-380d-4b48-a7af-95bae851f4f5",
+que:batchID: "bid-4bbf8b26-686f-49e6-b1b9-134a823fa25b",
+que:profile: "merritt_test_content",
+que:date: "Fri Aug 26 23:58:45 UTC 2022",
+que:status: "Completed",
+que:name: "foo.txt",
+que:iD: "mrtQ-030000000000"
+}
+}
+}
+}
+
+http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue-inv/mrt.inventory.full
+{"que:queueState":{"xmlns:que":"http://uc3.cdlib.org/ontology/mrt/ingest/queue","que:queueEntries":{"que:queueEntryState":{"que:queueNode":"/mrt.inventory.full","que:manifestURL":"http://mock-merritt-it:4567/manifest/7777/ark%3A%2F99999%2Ffk46558509","que:date":"Fri Aug 26 23:58:45 UTC 2022","que:status":"Pending","que:iD":"mrtQ-000000000000"}}}}
+                 */
         }
 
         @Test
