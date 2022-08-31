@@ -103,6 +103,7 @@ public class HandlerTransfer extends Handler<JobState>
     private String hostKey = "canonicalHostname";
     private String hostDomain = "cdlib.org";
     private String hostDockerDomain = "store";
+    private String hostIntegrationTestDomain = "it-server|mock-merritt-it";
     private URL storeURL = null;
     private File tempFile = null;
 
@@ -441,7 +442,7 @@ public class HandlerTransfer extends Handler<JobState>
            JSONObject jsonResponse = JSONUtil.string2json(stringResponse);
 	   String hostname = jsonResponse.getString(hostKey);
 
-	if ( ! (hostname.contains(hostDomain) || hostname.equalsIgnoreCase(hostDockerDomain))) {
+	if ( ! (hostname.contains(hostDomain) || hostname.equalsIgnoreCase(hostDockerDomain) || hostname.matches(hostIntegrationTestDomain))) {
            if (DEBUG) System.out.println("[warning] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname);
             // String msg = "[error] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname;
             // throw new Exception(msg);
