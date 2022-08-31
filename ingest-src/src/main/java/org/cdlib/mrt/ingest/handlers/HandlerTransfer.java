@@ -103,7 +103,7 @@ public class HandlerTransfer extends Handler<JobState>
     private String hostKey = "canonicalHostname";
     private String hostDomain = "cdlib.org";
     private String hostDockerDomain = "store";
-    private String hostIntegrationTestDomain = "it-server|mock-merritt-it";
+    private String hostIntegrationTestDomain = "(it-server|mock-merritt-it|localhost)";
     private URL storeURL = null;
     private File tempFile = null;
 
