@@ -195,6 +195,7 @@ public class ServiceDriverIT {
         public void clearQueueDirectory() throws IOException, JSONException {
                 clearQueue("queue", "ingest");
                 clearQueue("queue-inv", "mrt.inventory.full");
+                /*
                 String url = String.format("http://localhost:%d/ingest-queue", mockport);
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpDelete post = new HttpDelete(url);                        
@@ -202,7 +203,7 @@ public class ServiceDriverIT {
                         String s = new BasicResponseHandler().handleResponse(response).trim();
                         assertEquals(200, response.getStatusLine().getStatusCode());
                 }
-
+                */
         }
 
         @Test
@@ -302,7 +303,8 @@ public class ServiceDriverIT {
                 String filename = "4blocks.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFromUrl(url, contenturl, filename, "manifest", false);
+                JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest", false);
+                System.out.println(json.toString(2));
                 countQueue(3, 0, "queue", "ingest");
                 countQueue(3, 1,"queue-inv", "mrt.inventory.full");
         }
@@ -312,7 +314,8 @@ public class ServiceDriverIT {
                 String filename = "sampleBatchOfManifests.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
+                JSONObject json = ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
+                System.out.println(json.toString(2));
                 countQueue(3, 3, "queue", "ingest");
                 countQueue(60, 3, "queue-inv", "mrt.inventory.full");
         }
@@ -336,43 +339,75 @@ public class ServiceDriverIT {
         }
 
         @Test
+        public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException {
+                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+                json = getJsonObject(json, "job:jobState");
+                String bid = "JOB_ONLY";
+                String jid = getJsonString(json, "job:jobID", "");
+                String ark = getJsonString(json, "job:primaryID", "");
+
+                countQueue(3, 0, "queue", "ingest");
+                countQueue(3, 1, "queue-inv", "mrt.inventory.full");
+
+                url = String.format("http://localhost:%d/%s/admin/jid-erc/%s/%s", port, cp, bid, jid);
+                json = getJsonContent(url, 200);
+                json = getJsonObject(json, "fil:jobFileState");
+                json = getJsonObject(json, "fil:jobFile");
+                assertEquals(ark, getJsonString(json, "fil:where-primary", ""));
+
+                url = String.format("http://localhost:%d/%s/admin/jid-file/%s/%s", port, cp, bid, jid);
+                json = getJsonContent(url, 200);
+                // 8 system files will remain after submission is complete
+                assertEquals(8, getFiles(json).size());
+
+                url = String.format("http://localhost:%d/%s/admin/jid-manifest/%s/%s", port, cp, bid, jid);
+                json = getJsonContent(url, 200);
+                json = getJsonObject(json, "ingmans:manifestsState");
+                assertEquals("", getJsonString(json, "ingmans:manifests", "N/A"));
+        }
+
+        public List<String> getFiles(JSONObject json) throws JSONException {
+                json = getJsonObject(json, "fil:batchFileState");
+                json = getJsonObject(json, "fil:jobFile");
+                JSONArray jarr = getJsonArray(json, "fil:batchFile");
+                ArrayList<String> files = new ArrayList<>();
+                for(int i = 0; i < jarr.length(); i++) {
+                        String f = getJsonString(jarr.getJSONObject(i), "fil:file", "");
+                        files.add(f);
+                }
+                return files;
+        }
+
+        public List<String> getBids() throws JSONException, HttpResponseException, IOException {
+                String url = String.format("http://localhost:%d/%s/admin/bids/1", port, cp);
+                JSONObject json = getJsonContent(url, 200);
+                return getFiles(json);
+        }
+
+        public List<String> getJobs(String bid) throws JSONException, HttpResponseException, IOException {
+                String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bid);
+                JSONObject json = getJsonContent(url, 200);
+                return getFiles(json);
+        }
+
+        @Test
         public void QueueFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                json = getJsonObject(json, "bat:batchState");
+                String bat = getJsonString(json, "bat:batchID", "");
                 countQueue(3, 1, "queue", "ingest");
                 countQueue(20, 1, "queue-inv", "mrt.inventory.full");
+
+                assertTrue(getBids().contains(bat));
+                assertEquals(1, getJobs(bat).size());
         }
 
         @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
-                /*
-
-http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue/ingest
-{
-que:queueState: {
-xmlns:que: "http://uc3.cdlib.org/ontology/mrt/ingest/queue",
-que:queueEntries: {
-que:queueEntryState: {
-que:user: "integration-tests",
-que:fileType: "file",
-que:queueNode: "/ingest",
-que:jobID: "jid-04af2cb5-380d-4b48-a7af-95bae851f4f5",
-que:batchID: "bid-4bbf8b26-686f-49e6-b1b9-134a823fa25b",
-que:profile: "merritt_test_content",
-que:date: "Fri Aug 26 23:58:45 UTC 2022",
-que:status: "Completed",
-que:name: "foo.txt",
-que:iD: "mrtQ-030000000000"
-}
-}
-}
-}
-
-http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue-inv/mrt.inventory.full
-{"que:queueState":{"xmlns:que":"http://uc3.cdlib.org/ontology/mrt/ingest/queue","que:queueEntries":{"que:queueEntryState":{"que:queueNode":"/mrt.inventory.full","que:manifestURL":"http://mock-merritt-it:4567/manifest/7777/ark%3A%2F99999%2Ffk46558509","que:date":"Fri Aug 26 23:58:45 UTC 2022","que:status":"Pending","que:iD":"mrtQ-000000000000"}}}}
-                 */
         }
 
         @Test
@@ -455,23 +490,52 @@ http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue-inv/mrt.invent
                 assertEquals("", getJsonString(json, "loc:lockEntries", "N/A"));
         }
 
+        @Test
+        public void TestProfileNames() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/profiles", port, cp);
+                JSONObject json = getJsonContent(url, 200);
+                json = getJsonObject(json, "pros:profilesState");
+                json = getJsonObject(json, "pros:profiles");
+                json = getJsonObject(json, "pros:profileFile");
+                assertEquals("merritt_test_content", getJsonString(json, "pros:file", ""));
+        }
+
+        @Test
+        public void TestAdminProfileNames() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/profiles/admin", port, cp);
+                JSONObject json = getJsonContent(url, 200);
+                json = getJsonObject(json, "pros:profilesState");
+                json = getJsonObject(json, "pros:profiles");
+                json = getJsonObject(json, "pros:profileFile");
+                assertEquals("admin/docker/collection/merritt_test", getJsonString(json, "pros:file", ""));
+        }
+
+        @Test
+        public void TestProfileFull() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/profiles-full", port, cp);
+                JSONObject json = getJsonContent(url, 200);
+                json = getJsonObject(json, "prosf:profilesFullState");
+                json = getJsonObject(json, "prosf:profilesFull");
+                json = getJsonObject(json, "prosf:profileState");
+                assertEquals("merritt_test_content", getJsonString(json, "prosf:profileID", ""));
+        }
+
+        @Test
+        public void TestProfileByName() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/profile/merritt_test_content", port, cp);
+                JSONObject json = getJsonContent(url, 200);
+                json = getJsonObject(json, "pro:profileState");
+                assertEquals("merritt_test_content", getJsonString(json, "pro:profileID", ""));
+        }
+
         /*
-    @Path("/requeue/{queue}/{id}/{fromState}")
-    @Path("/deleteq/{queue}/{id}/{fromState}")
-    @Path("/{action: hold|release}/{queue}/{id}")
-    @Path("/release-all/{queue}/{profile}")
-    @Path("{profilePath: profiles|profiles/admin|profiles/admin/(collection|owner|sla)}")
-    @Path("/profiles-full")
-    @Path("/profile/{profile}")
-    @Path("/profile/admin/{env: docker|stage|production}/{type: collection|owner|sla}/{profile}")
-    @Path("/bids/{batchAge}")
-    @Path("/bid/{batchID}")
-    @Path("/bid/{batchID}/{batchAge}")
-    @Path("/jid-erc/{batchID}/{jobID}")
-    @Path("/jid-file/{batchID}/{jobID}")
-    @Path("/jid-manifest/{batchID}/{jobID}")
-    @Path("/submission/{request: freeze|thaw}/{collection}")
-    @Path("/submissions/{request: freeze|thaw}")
-    @Path("/profile/{type: profile|collection|owner|sla}")
+        POST @Path("/requeue/{queue}/{id}/{fromState}")
+        POST @Path("/deleteq/{queue}/{id}/{fromState}")
+        POST @Path("/{action: hold|release}/{queue}/{id}")
+        POST @Path("/release-all/{queue}/{profile}")
+        GET @Path("/profile/admin/{env: docker|stage|production}/{type: collection|owner|sla}/{profile}")
+        POST @Path("/submission/{request: freeze|thaw}/{collection}")
+        POST @Path("/submissions/{request: freeze|thaw}")
+        POST @Path("/profile/{type: profile|collection|owner|sla}")
         */
 }
