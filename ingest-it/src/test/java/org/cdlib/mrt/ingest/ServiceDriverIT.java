@@ -62,8 +62,8 @@ public class ServiceDriverIT {
                         port = Integer.parseInt(System.getenv("it-server.port"));
                         mockport = Integer.parseInt(System.getenv("mock-merritt-it.port"));
                 } catch (NumberFormatException e) {
-                        System.err.println("it-server.port = " + port);
-                        System.err.println("mock-merritt-it.port = " + mockport);
+                        //System.err.println("it-server.port = " + port);
+                        //System.err.println("mock-merritt-it.port = " + mockport);
                 }
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
@@ -155,24 +155,28 @@ public class ServiceDriverIT {
                 }
         }
 
-        public int countQueue(int sleep, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
-                Thread.sleep(sleep);
-                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
-                JSONObject json = getJsonContent(url, 200);
+        public int countQueue(int tries, int expected, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
                 int count = 0;
-
-                JSONObject j = getJsonObject(json,"que:queueState"); 
-                j = getJsonObject(j, "que:queueEntries");
-                JSONArray ja = getJsonArray(j, "que:queueEntryState");
-                for (int i=0; i < ja.length(); i++) {
-                        JSONObject jo = ja.getJSONObject(i);
-                        String status = getJsonString(jo, "que:status", "").toLowerCase();
-                        if (status.equals("deleted")) {
-                                continue;
-                        }
-                        count++;
+                for(int ii = 0; ii < tries && count != expected; ii++) {
+                        Thread.sleep(1000);
+                        count = 0;
+                        String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
+                        JSONObject json = getJsonContent(url, 200);
+        
+                        JSONObject j = getJsonObject(json,"que:queueState"); 
+                        j = getJsonObject(j, "que:queueEntries");
+                        JSONArray ja = getJsonArray(j, "que:queueEntryState");
+                        for (int i=0; i < ja.length(); i++) {
+                                JSONObject jo = ja.getJSONObject(i);
+                                String status = getJsonString(jo, "que:status", "").toLowerCase();
+                                if (status.equals("deleted")) {
+                                        continue;
+                                }
+                                count++;
+                        }        
                 }
-                System.out.println(String.format("%s/%s: %d", endpoint, queue, count));
+                //System.out.println(String.format("%s/%s: %d -- %d", endpoint, queue, count, expected));
+                assertEquals(expected, count);
                 return count;
         }
 
@@ -299,8 +303,8 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFromUrl(url, contenturl, filename, "manifest", false);
-                assertEquals(0, countQueue(1000, "queue", "ingest"));
-                assertEquals(1, countQueue(1000, "queue-inv", "mrt.inventory.full"));
+                countQueue(3, 0, "queue", "ingest");
+                countQueue(3, 1,"queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -309,8 +313,8 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
-                assertEquals(3, countQueue(2000, "queue", "ingest"));
-                assertEquals(3, countQueue(60000, "queue-inv", "mrt.inventory.full"));
+                countQueue(3, 3, "queue", "ingest");
+                countQueue(60, 3, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -319,24 +323,24 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
-                assertEquals(3, countQueue(2000, "queue", "ingest"));
-                assertEquals(3, countQueue(40000, "queue-inv", "mrt.inventory.full"));
+                countQueue(3, 3, "queue", "ingest");
+                countQueue(40, 3, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
         public void SimpleFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
-                assertEquals(0, countQueue(1000, "queue", "ingest"));
-                assertEquals(1, countQueue(1000, "queue-inv", "mrt.inventory.full"));
+                countQueue(3, 0, "queue", "ingest");
+                countQueue(3, 1, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
         public void QueueFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
-                assertEquals(1, countQueue(1000, "queue", "ingest"));
-                assertEquals(1, countQueue(20000, "queue-inv", "mrt.inventory.full"));
+                countQueue(3, 1, "queue", "ingest");
+                countQueue(20, 1, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -400,21 +404,74 @@ http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue-inv/mrt.invent
                 ingestFile(url, new File("src/test/resources/data/test.zip"), false);
         }
 
-        //POST submit-object - direct
-        // submit file
-        // submit zip
-        // submit manifest
-        //POST submit-object/scheme/shoulder/ark - direct
-        //POST update-object - direct
-        //POST update-object/scheme/shoulder/ark - direct
-        //POST request-identifier (from ezid)
+        public List<String> getQueueNames(String endpoint) throws HttpResponseException, IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/%s", port, cp, endpoint);
+                JSONObject json = getJsonContent(url, 200);
+                json = getJsonObject(json, "ingq:ingestQueueNameState");
+                json = getJsonObject(json, "ingq:ingestQueueName");
+                JSONArray jarr = getJsonArray(json, "ingq:ingestQueue");
 
-        //POST add - queue
-        //POST submit - queue
-        //POST add/scheme/shoulder/ark -  queue
-        //POST update - queue
-        //POST update/scheme/shoulder/ark - queue 
+                ArrayList<String> arr = new ArrayList<>();
+                for(int i = 0; i < jarr.length(); i++) {
+                        String s = getJsonString(jarr.getJSONObject(i), "ingq:node", "");
+                        if (s.isEmpty()) {
+                                continue;
+                        }
+                        arr.add(s);
+                }
+                return arr;
+        }
 
-        //admin functions
+        public void testQueueValues(String endpoint, String list) throws HttpResponseException, IOException, JSONException {
+                List<String> queues = getQueueNames(endpoint);
+                String[] vals = list.split(",");
+                assertEquals(vals.length, queues.size());
+                for(String s: vals) {
+                        assertTrue(queues.contains(s));
+                }
+        }
 
+        @Test
+        public void TestQueueNames() throws IOException, JSONException {
+                testQueueValues("queues", "ingest");
+                testQueueValues("queues-inv", "/mrt.inventory.full");
+                testQueueValues("queues-acc", "/accessSmall.1,/accessLarge.1");
+        }
+
+
+        @Test
+        public void TestLocks() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/locks", port, cp);
+                JSONObject json = getJsonContent(url, 200);
+                json = getJsonObject(json, "ingl:ingestLockNameState");
+                json = getJsonObject(json, "ingl:ingestLockName");
+                json = getJsonObject(json, "ingl:ingestLock");
+                assertEquals("/mrt.lock", getJsonString(json, "ingl:node", ""));
+
+                url = String.format("http://localhost:%d/%s/admin/lock/mrt.lock", port, cp);
+                json = getJsonContent(url, 200);
+                json = getJsonObject(json, "loc:lockState");
+                assertTrue(json.has("loc:lockEntries"));
+                assertEquals("", getJsonString(json, "loc:lockEntries", "N/A"));
+        }
+
+        /*
+    @Path("/requeue/{queue}/{id}/{fromState}")
+    @Path("/deleteq/{queue}/{id}/{fromState}")
+    @Path("/{action: hold|release}/{queue}/{id}")
+    @Path("/release-all/{queue}/{profile}")
+    @Path("{profilePath: profiles|profiles/admin|profiles/admin/(collection|owner|sla)}")
+    @Path("/profiles-full")
+    @Path("/profile/{profile}")
+    @Path("/profile/admin/{env: docker|stage|production}/{type: collection|owner|sla}/{profile}")
+    @Path("/bids/{batchAge}")
+    @Path("/bid/{batchID}")
+    @Path("/bid/{batchID}/{batchAge}")
+    @Path("/jid-erc/{batchID}/{jobID}")
+    @Path("/jid-file/{batchID}/{jobID}")
+    @Path("/jid-manifest/{batchID}/{jobID}")
+    @Path("/submission/{request: freeze|thaw}/{collection}")
+    @Path("/submissions/{request: freeze|thaw}")
+    @Path("/profile/{type: profile|collection|owner|sla}")
+        */
 }
