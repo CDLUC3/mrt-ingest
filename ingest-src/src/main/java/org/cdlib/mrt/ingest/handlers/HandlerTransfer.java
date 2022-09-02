@@ -441,7 +441,13 @@ public class HandlerTransfer extends Handler<JobState>
 	   String stringResponse = FileUtil.file2String(tempFile);
 
            JSONObject jsonResponse = JSONUtil.string2json(stringResponse);
-	   String hostname = jsonResponse.getString(hostKey);
+	   String hostname = null;
+	   if (jsonResponse == null) {
+	      // Response not in JSON format
+	      hostname = stringResponse;
+	   } else {
+	      hostname = jsonResponse.getString(hostKey);
+	   }
 
 	if ( hostname.matches(hostIgnoreDomain)) {
            if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage endpoint should not change: " + hostname);
