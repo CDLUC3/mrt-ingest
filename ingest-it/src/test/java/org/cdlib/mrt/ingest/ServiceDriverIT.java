@@ -409,6 +409,38 @@ public class ServiceDriverIT {
         }
 
         @Test
+        public void QueueFileIngestCatchLock() throws IOException, JSONException, InterruptedException {
+                //This ark has a time delay in mock-merritt-it to allow the catch of a lock
+                String url = String.format("http://localhost:%d/%s/poster/submit/ark/9999/2222", port, cp);
+                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                json = getJsonObject(json, "bat:batchState");
+                String bat = getJsonString(json, "bat:batchID", "");
+
+                for(int ii=0; ii<10; ii++) {
+                        Thread.sleep(1000);
+                        url = String.format("http://localhost:%d/%s/admin/lock/mrt.lock", port, cp);
+                        json = getJsonContent(url, 200);
+        
+                        json = getJsonObject(json, "loc:lockState");
+                        json = getJsonObject(json, "loc:lockEntries");
+                        JSONArray jarr = getJsonArray(json, "loc:lockEntryState");
+                        if (jarr.length() > 0) {
+                                ArrayList<String> ids = new ArrayList<>();
+                                for(int i = 0; i < jarr.length(); i++) {
+                                        ids.add(getJsonString(jarr.getJSONObject(i), "loc:iD", ""));
+                                }
+                                assertTrue(ids.contains("ark-9999-2222"));        
+                        }
+                }
+
+                countQueue(3, 1, "queue", "ingest");
+                countQueue(30, 1, "queue-inv", "mrt.inventory.full");
+
+                assertTrue(getBids().contains(bat));
+                assertEquals(1, getJobs(bat).size());
+        }
+
+        @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
@@ -540,7 +572,6 @@ public class ServiceDriverIT {
         POST @Path("/deleteq/{queue}/{id}/{fromState}")
         POST @Path("/{action: hold|release}/{queue}/{id}")
         POST @Path("/release-all/{queue}/{profile}")
-        GET @Path("/profile/admin/{env: docker|stage|production}/{type: collection|owner|sla}/{profile}")
         POST @Path("/submission/{request: freeze|thaw}/{collection}")
         POST @Path("/submissions/{request: freeze|thaw}")
         POST @Path("/profile/{type: profile|collection|owner|sla}")

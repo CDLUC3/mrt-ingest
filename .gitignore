@@ -4,3 +4,4 @@ target/
 .settings/
 ingest-src/.attach_*
 ingest-war/war/mrtingest.war
+ingest-it/.attach_*
