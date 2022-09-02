@@ -231,6 +231,7 @@ public class ServiceDriverIT {
                 assertFalse(s.isEmpty());
 
                 JSONObject json =  new JSONObject(s);
+                System.out.println(json.toString(2));
                 assertNotNull(json);
                 if (batch) {
                         assertTrue(json.has("bat:batchState"));
@@ -317,7 +318,7 @@ public class ServiceDriverIT {
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
                 System.out.println(json.toString(2));
                 countQueue(3, 3, "queue", "ingest");
-                //countQueue(60, 3, "queue-inv", "mrt.inventory.full");
+                countQueue(90, 3, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -327,7 +328,7 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
                 countQueue(3, 3, "queue", "ingest");
-                //countQueue(40, 3, "queue-inv", "mrt.inventory.full");
+                countQueue(60, 3, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
