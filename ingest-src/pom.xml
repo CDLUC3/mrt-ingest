@@ -24,23 +24,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <merritt-core.version>2.0-SNAPSHOT</merritt-core.version>
-    <itDockerRegistry>itDockerRegistry</itDockerRegistry>
   </properties>
    
-  <profiles>
-       <profile>
-           <id>aws</id>
-           <activation>
-               <property>
-                   <name>env.AWS_ACCOUNT_ID</name>
-               </property>
-           </activation>
-           <properties>
-               <!-- Override only if necessary -->
-               <itDockerRegistry>${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com</itDockerRegistry>
-           </properties>
-       </profile>
-   </profiles>
   <build>
     <plugins>
       <plugin>
