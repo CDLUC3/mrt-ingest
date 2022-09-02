@@ -317,7 +317,7 @@ public class ServiceDriverIT {
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
                 System.out.println(json.toString(2));
                 countQueue(3, 3, "queue", "ingest");
-                countQueue(60, 3, "queue-inv", "mrt.inventory.full");
+                //countQueue(60, 3, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -327,7 +327,7 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
                 countQueue(3, 3, "queue", "ingest");
-                countQueue(40, 3, "queue-inv", "mrt.inventory.full");
+                //countQueue(40, 3, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -398,7 +398,7 @@ public class ServiceDriverIT {
                 json = getJsonObject(json, "bat:batchState");
                 String bat = getJsonString(json, "bat:batchID", "");
                 countQueue(3, 1, "queue", "ingest");
-                countQueue(20, 1, "queue-inv", "mrt.inventory.full");
+                countQueue(30, 1, "queue-inv", "mrt.inventory.full");
 
                 assertTrue(getBids().contains(bat));
                 assertEquals(1, getJobs(bat).size());
@@ -425,10 +425,13 @@ public class ServiceDriverIT {
         }
 
         @Test
-        public void SimpleFileIngestWithUpdate() throws IOException, JSONException {
+        public void SimpleFileIngestWithUpdate() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
                 String prim = json.getJSONObject("job:jobState").getString("job:primaryID");
+
+                countQueue(20, 1, "queue-inv", "mrt.inventory.full");
+
                 url = String.format("http://localhost:%d/%s/update-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/test.txt"), "", prim, false);
         }
