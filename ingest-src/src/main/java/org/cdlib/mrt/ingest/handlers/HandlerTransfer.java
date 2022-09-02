@@ -60,6 +60,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
@@ -71,6 +72,8 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
+
+import org.json.JSONObject;
 
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
@@ -91,11 +94,19 @@ public class HandlerTransfer extends Handler<JobState>
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
-    private StoreNode storeNode = null;
+    private StoreNode storeNode = null;			// Worker
+    private StoreNode originalStoreNode = null;		// Load balancer
     private ZooKeeper zooKeeper;
     private String zooConnectString = null;
     private String zooLockNode = null;
     private DistributedLock distributedLock;
+    private String hostKey = "canonicalHostname";
+    private String hostDomain = "cdlib.org";
+    private String hostDockerDomain = "store";
+    private String hostIntegrationTestDomain = "(it-server|mock-merritt-it)";
+    private String hostIgnoreDomain = "(localhost|N/A)";
+    private URL storeURL = null;
+    private File tempFile = null;
 
 
     /**
@@ -118,7 +129,14 @@ public class HandlerTransfer extends Handler<JobState>
 	boolean lock = getLock(jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
 	try {
-	    storeNode = profileState.getTargetStorage();
+	    originalStoreNode = profileState.getTargetStorage();
+            if (DEBUG) System.out.println("[info] " + MESSAGE + " Original Storage endpoint: " + originalStoreNode.getStorageLink().toString());
+	    storeURL = getStoreHost(originalStoreNode.getStorageLink());
+	    if (StringUtil.isEmpty(storeURL.toString())) {
+	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Unable to request a Storage worker");
+	       throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(MESSAGE + "Unable to request a Storage worker");
+	    }
+	    storeNode = new StoreNode(storeURL, originalStoreNode.getNodeID());
 
 	    // build REST url 
 	    if (jobState.grabUpdateFlag()) action = "/update/";
@@ -404,6 +422,51 @@ public class HandlerTransfer extends Handler<JobState>
 	
 	} catch (Exception e) {
 	    e.printStackTrace();
+	}
+    }
+
+    /**
+     * Request storage worker
+     *
+     * @param String Hostname API
+     * @return hostname
+     */
+    private URL getStoreHost(URL storeHostURL) {
+	String newHostURL = null;
+    	try {
+           tempFile = File.createTempFile("hostname", "txt");
+
+           // retry 3 times
+           FileUtil.url2File(null, storeHostURL.toString() + "/hostname", tempFile, 3);
+	   String stringResponse = FileUtil.file2String(tempFile);
+
+           JSONObject jsonResponse = JSONUtil.string2json(stringResponse);
+	   String hostname = null;
+	   if (jsonResponse == null) {
+	      // Response not in JSON format
+	      hostname = stringResponse;
+	   } else {
+	      hostname = jsonResponse.getString(hostKey);
+	   }
+
+	if ( hostname.matches(hostIgnoreDomain)) {
+           if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage endpoint should not change: " + hostname);
+	   newHostURL = storeHostURL.toString();
+	} else if ( ! (hostname.contains(hostDomain) || hostname.equalsIgnoreCase(hostDockerDomain) || hostname.matches(hostIntegrationTestDomain))) {
+           if (DEBUG) System.out.println("[warning] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname);
+            // String msg = "[error] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname;
+            // throw new Exception(msg);
+	} else {
+	   newHostURL = storeHostURL.getProtocol() + "://" + hostname + ":" + storeHostURL.getPort() + storeHostURL.getPath();
+           if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage worker endpoint: " + newHostURL);
+	}
+	return new URL(newHostURL);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    return null;
+	} finally {
+	    tempFile.delete();
+	    tempFile = null;
 	}
     }
 
