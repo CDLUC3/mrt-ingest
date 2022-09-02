@@ -1,0 +1,40 @@
+which-ingest: ingest-info
+ingest-info:
+  ingest-info:
+    name: "Ingest Integration Testing"
+    identifier: "ingest"
+    target: "http://mock-merritt-it:4567"
+    description: "UC3 ingest integration test micro-service"
+    service-scheme: "Ingest/0.1"
+    access-uri: "http://localhost:{!ENV: it-server.port !DEFAULT: 8080}"
+    ezid: "example:value"
+    support-uri: "http://www.cdlib.org/services/uc3/contact.html"
+    mail-host: "smtp"
+    admin: "test@email"
+    purl: "http://n2t.net/"
+    ingestServicePath: "/tdr/ingest"
+    ingestQueuePath: "/tdr/ingest/queue"
+    ingestLock: "/mrt.lock"
+    NumDownloadThreads: "3"
+
+  store-info:
+    store.1: "http://mock-merritt-it:4567/store"
+    access.1: "http://mock-merritt-it:4567/store"
+    localID: "http://mock-merritt-it:4567/inventory"
+
+  queue-info:
+    QueueService: "zoo-it:2181"
+    QueueName: "/ingest"
+    IngestQNames: "ingest"
+    InventoryName: "/mrt.inventory.full"
+    QueueHoldFile: "/tdr/ingest/queue/HOLD"
+    PollingInterval: "2"
+    NumThreads: "3"
+
+  logger-info:
+    messageMaximumLevel: 5
+    messageMaximumError: 10
+    path: "logs"
+    name: "ingest"
+    qualifier: "yyMMdd"
+    trace: 5

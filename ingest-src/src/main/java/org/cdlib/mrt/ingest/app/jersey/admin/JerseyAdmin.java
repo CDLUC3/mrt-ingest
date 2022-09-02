@@ -71,6 +71,7 @@ public class JerseyAdmin extends JerseyBase
     protected static final String NL = System.getProperty("line.separator");
 
     // Show service status
+    @Deprecated
     @GET
     @Path("/state")
     public Response getServiceState(
@@ -103,6 +104,7 @@ public class JerseyAdmin extends JerseyBase
 
 
     // Show service help
+    @Deprecated
     @GET
     @Path("/help")
     public Response getHelp(
