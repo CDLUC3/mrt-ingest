@@ -112,19 +112,19 @@ public class ServiceDriverIT {
                 }
         }
 
-        public String getJsonString(JSONObject j, String key, String def) throws JSONException {
+        public static String getJsonString(JSONObject j, String key, String def) throws JSONException {
                 return j.has(key) ? j.get(key).toString() :  def;
         }
 
 
-        public JSONObject getJsonObject(JSONObject j, String key) throws JSONException {
+        public static JSONObject getJsonObject(JSONObject j, String key) throws JSONException {
                 if (j.has(key) && (j.get(key) instanceof JSONObject)) {
                         return j.getJSONObject(key);
                 }
                 return new JSONObject();
         }
 
-        public JSONArray getJsonArray(JSONObject j, String key) throws JSONException {
+        public static JSONArray getJsonArray(JSONObject j, String key) throws JSONException {
                 JSONArray ja = new JSONArray();
                 if (j.has(key)) {
                         if (j.get(key) instanceof JSONArray) {
@@ -153,6 +153,24 @@ public class ServiceDriverIT {
                         String id = getJsonString(jo, "que:iD", "");
                         clearQueueEntry(queue, id, status);
                 }
+        }
+
+        public JSONObject findQueueEntry(String endpoint, String queue, String bid, String jid) throws IOException, JSONException, InterruptedException {
+                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
+                JSONObject json = getJsonContent(url, 200);
+
+                JSONObject j = getJsonObject(json,"que:queueState"); 
+                j = getJsonObject(j, "que:queueEntries");
+                JSONArray ja = getJsonArray(j, "que:queueEntryState");
+                for (int i=0; i < ja.length(); i++) {
+                        JSONObject jo = ja.getJSONObject(i);
+                        if (getJsonString(jo, "que:batchID", "").equals(bid)) {
+                                if (getJsonString(jo, "que:jobID", "").equals(jid)) {
+                                        return jo;
+                                }         
+                        } 
+                }
+                return new JSONObject(); 
         }
 
         public int countQueue(int tries, int expected, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
@@ -440,6 +458,132 @@ public class ServiceDriverIT {
                 assertEquals(1, getJobs(bat).size());
         }
 
+        public JSONObject freezeThaw(String url, String key, String state) throws IOException, JSONException {
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpPost post = new HttpPost(url);
+                        HttpResponse response = client.execute(post);
+                        assertEquals(200, response.getStatusLine().getStatusCode());
+                        String s = new BasicResponseHandler().handleResponse(response).trim();
+                        JSONObject json =  new JSONObject(s);
+                        System.out.println(json.toString(2));
+
+                        assertEquals(
+                                state, 
+                                getJsonString(
+                                        getJsonObject(
+                                                json, 
+                                                "ing:ingestServiceState"
+                                        ), 
+                                        key, 
+                                        ""
+                                )
+                        );
+                        return json;
+                }
+
+        }
+
+        class BidJid {
+                private String bid = "";
+                private String jid = "";
+
+                BidJid(JSONObject json) throws JSONException {
+                        JSONObject jsonbs = getJsonObject(
+                                json,
+                                "bat:batchState"
+                        );
+        
+                        bid = getJsonString(
+                                jsonbs,
+                                "bat:batchID",
+                                ""
+                        );
+        
+                        JSONObject jsonjs = getJsonObject(
+                                getJsonObject(
+                                        jsonbs,
+                                        "bat:jobStates"
+                                ),
+                                "bat:jobState"
+                        );
+        
+                        jid = getJsonString(
+                                jsonjs,
+                                "bat:jobID",
+                                ""
+                        );
+        
+                } 
+
+                public String bid() {
+                        return this.bid;
+                }
+
+                public String jid() {
+                        return this.jid;
+                }
+        }
+
+        @Test
+        public void QueueFileIngestPauseSubmissions() throws IOException, JSONException, InterruptedException {
+                String url = String.format("http://localhost:%d/%s/admin/submissions/freeze", port, cp);
+                JSONObject json = freezeThaw(url, "ing:submissionState", "frozen");
+
+                url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+
+                System.out.println(json.toString(2));
+
+                BidJid bidjid = new BidJid(json);
+
+                Thread.sleep(5000);
+
+                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+                assertEquals("Pending", getJsonString(json, "que:status", ""));
+
+                url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
+                json = freezeThaw(url, "ing:submissionState", "thawed");
+
+                Thread.sleep(5000);
+
+                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+                assertEquals("Completed", getJsonString(json, "que:status", ""));
+        }
+
+        //TODO are deleteq and requeue working??
+        @Test
+        public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException {
+                String profile = "merritt_test_content";
+                String url = String.format("http://localhost:%d/%s/admin/submission/freeze/%s", port, cp, profile);
+                JSONObject json = freezeThaw(url, "ing:collectionSubmissionState", profile);
+
+                url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+
+                System.out.println(json.toString(2));
+
+                BidJid bidjid = new BidJid(json);
+
+                Thread.sleep(3000);
+
+                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+                assertEquals("Held", getJsonString(json, "que:status", ""));
+
+                url = String.format("http://localhost:%d/%s/admin/submission/thaw/%s", port, cp, profile);
+                json = freezeThaw(url, "ing:collectionSubmissionState", "");
+
+                Thread.sleep(3000);
+
+                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+                assertEquals("Held", getJsonString(json, "que:status", ""));
+
+                String qid = getJsonString(json, "que:iD", "");
+                assertNotEquals("", qid);
+
+                url = String.format("http://localhost:%d/%s/admin/requeue/ingest/%s/held", port, cp, qid);
+
+        }
+
         @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
@@ -569,11 +713,9 @@ public class ServiceDriverIT {
 
         /*
         POST @Path("/requeue/{queue}/{id}/{fromState}")
-        POST @Path("/deleteq/{queue}/{id}/{fromState}")
         POST @Path("/{action: hold|release}/{queue}/{id}")
         POST @Path("/release-all/{queue}/{profile}")
         POST @Path("/submission/{request: freeze|thaw}/{collection}")
-        POST @Path("/submissions/{request: freeze|thaw}")
         POST @Path("/profile/{type: profile|collection|owner|sla}")
         */
 }
