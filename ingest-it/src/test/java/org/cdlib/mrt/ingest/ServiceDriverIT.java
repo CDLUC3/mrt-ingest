@@ -1,18 +1,13 @@
 package org.cdlib.mrt.ingest;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.BasicResponseHandler;
@@ -23,30 +18,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
 
 import javax.xml.xpath.XPathFactory;
 //https://stackoverflow.com/a/22939742/3846548
 import org.apache.xpath.jaxp.XPathFactoryImpl;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.*;
 
@@ -56,6 +40,7 @@ public class ServiceDriverIT {
         private String cp = "mrtingest";
         private DocumentBuilder db;
         private XPathFactory xpathfactory;
+        private String profile = "merritt_test_content";
 
         public ServiceDriverIT() throws ParserConfigurationException {
                 try {
@@ -69,47 +54,36 @@ public class ServiceDriverIT {
                 xpathfactory = new XPathFactoryImpl();
         }
 
-        public String getContent(String url, int status) throws HttpResponseException, IOException {
+        public String getContent(HttpRequestBase request, int status) throws HttpResponseException, IOException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
-                    HttpGet request = new HttpGet(url);
-                    HttpResponse response = client.execute(request);
-                    if (status > 0) {
-                        assertEquals(status, response.getStatusLine().getStatusCode());
+                        HttpResponse response = client.execute(request);
+                        if (status > 0) {
+                            assertEquals(status, response.getStatusLine().getStatusCode());
+                        }
+    
+                        if (status > 300) {
+                            return "";
+                        }
+                        String s = new BasicResponseHandler().handleResponse(response).trim();
+                        assertFalse(s.isEmpty());
+                        return s;
                     }
-
-                    if (status > 300) {
-                        return "";
-                    }
-                    String s = new BasicResponseHandler().handleResponse(response).trim();
-                    assertFalse(s.isEmpty());
-                    return s;
-                }
+                    
         }
 
-        public JSONObject getJsonContent(String url, int status) throws HttpResponseException, IOException, JSONException {
-                String s = getContent(url, status);
+        public String getContent(String url, int status) throws HttpResponseException, IOException {
+                return getContent(new HttpGet(url), status);
+        }
+
+        public JSONObject getJsonContent(HttpRequestBase request, int status) throws HttpResponseException, IOException, JSONException {
+                String s = getContent(request, status);
                 JSONObject json =  new JSONObject(s);
                 assertNotNull(json);
                 return json;
         }
 
-        public List<String> getZipContent(String url, int status) throws HttpResponseException, IOException {
-                try (CloseableHttpClient client = HttpClients.createDefault()) {
-                    HttpGet request = new HttpGet(url);
-                    HttpResponse response = client.execute(request);
-                    assertEquals(status, response.getStatusLine().getStatusCode());
-
-                    List<String> entries = new ArrayList<>();
-                    if (status < 300) {
-                            try(ZipInputStream zis = new ZipInputStream(response.getEntity().getContent())){
-                                    for(ZipEntry ze = zis.getNextEntry(); ze != null; ze = zis.getNextEntry()) {
-                                            entries.add(ze.getName());
-                                    }
-                            }
-                    }
-
-                    return entries;
-                }
+        public JSONObject getJsonContent(String url, int status) throws HttpResponseException, IOException, JSONException {
+                return getJsonContent(new HttpGet(url), status);
         }
 
         public static String getJsonString(JSONObject j, String key, String def) throws JSONException {
@@ -174,6 +148,10 @@ public class ServiceDriverIT {
         }
 
         public int countQueue(int tries, int expected, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
+                return countQueue(tries, expected, endpoint, queue, "");
+        }
+
+        public int countQueue(int tries, int expected, String endpoint, String queue, String teststatus) throws IOException, JSONException, InterruptedException {
                 int count = 0;
                 for(int ii = 0; ii < tries && count != expected; ii++) {
                         Thread.sleep(1000);
@@ -187,24 +165,32 @@ public class ServiceDriverIT {
                         for (int i=0; i < ja.length(); i++) {
                                 JSONObject jo = ja.getJSONObject(i);
                                 String status = getJsonString(jo, "que:status", "").toLowerCase();
-                                if (status.equals("deleted")) {
-                                        continue;
+                                if (teststatus.isEmpty()) {
+                                        if (!status.equals("deleted")) {
+                                                count++;
+                                        }        
+                                } else if (teststatus.equals(status)){
+                                        count++;                                        
                                 }
-                                count++;
                         }        
                 }
-                //System.out.println(String.format("%s/%s: %d -- %d", endpoint, queue, count, expected));
                 assertEquals(expected, count);
                 return count;
         }
 
         public void clearQueueEntry(String queue, String id, String status) throws IOException, JSONException {
+                if (status.equals("held")) {
+                        String url = String.format("http://localhost:%d/%s/admin/release/%s/%s", port, cp, queue, id);
+                        try (CloseableHttpClient client = HttpClients.createDefault()) {
+                                JSONObject json = getJsonContent(new HttpPost(url), 200);
+                                json = getJsonObject(json, "ques:queueEntryState");
+                                status = getJsonString(json, "ques:status", "NA").toLowerCase();
+                        }        
+                }
+
                 String url = String.format("http://localhost:%d/%s/admin/deleteq/%s/%s/%s", port, cp, queue, id, status);
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        HttpPost post = new HttpPost(url);                        
-                        HttpResponse response = client.execute(post);
-                        String s = new BasicResponseHandler().handleResponse(response).trim();
-                        assertEquals(200, response.getStatusLine().getStatusCode());
+                        getJsonContent(new HttpPost(url), 200);
                 }
 
         }
@@ -213,15 +199,12 @@ public class ServiceDriverIT {
         public void clearQueueDirectory() throws IOException, JSONException {
                 clearQueue("queue", "ingest");
                 clearQueue("queue-inv", "mrt.inventory.full");
-                /*
-                String url = String.format("http://localhost:%d/ingest-queue", mockport);
-                try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        HttpDelete post = new HttpDelete(url);                        
-                        HttpResponse response = client.execute(post);
-                        String s = new BasicResponseHandler().handleResponse(response).trim();
-                        assertEquals(200, response.getStatusLine().getStatusCode());
-                }
-                */
+                String url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
+                freezeThaw(url, "ing:submissionState", "thawed");
+                url = String.format("http://localhost:%d/%s/admin/submission/thaw/%s", port, cp, profile);
+                freezeThaw(url, "ing:collectionSubmissionState", "");
+                url = String.format("http://localhost:%d/status/start", mockport, cp);
+                getJsonContent(new HttpPost(url), 200);
         }
 
         @Test
@@ -284,6 +267,9 @@ public class ServiceDriverIT {
                                         builder.addTextBody("primaryIdentifier", primaryId);
                                 }
                         }
+                        if (file.getName().endsWith(".checkm")){
+                                builder.addTextBody("type", "manifest");
+                        }
                         builder.addTextBody("submitter", "integration-tests");
                         builder.addTextBody("responseForm", "json");
                         HttpEntity multipart = builder.build();
@@ -322,11 +308,44 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest", false);
-                
-                //System.out.println(json.toString(2));
-                
+                               
                 countQueue(3, 0, "queue", "ingest");
                 countQueue(3, 1,"queue-inv", "mrt.inventory.full");
+        }
+
+        @Test
+        public void TestManifest() throws IOException, JSONException, InterruptedException {
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                JSONObject json = ingestFile(url, new File("src/test/resources/data/mock.checkm"), true);
+                            
+                countQueue(3, 0, "queue", "ingest");
+                countQueue(30, 1,"queue-inv", "mrt.inventory.full");
+        }
+
+        @Test
+        public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException {
+                String url = String.format("http://localhost:%d/status/stop", mockport, cp);
+                getJsonContent(new HttpPost(url), 200);
+
+                url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                JSONObject json = ingestFile(url, new File("src/test/resources/data/mock.checkm"), true);
+                
+                BidJid bidjid = new BidJid(json);
+                verifyJid(bidjid);
+                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+
+                String qid = getJsonString(json, "que:iD", "");
+
+                countQueue(30, 1, "queue", "ingest", "failed");
+
+                url = String.format("http://localhost:%d/status/start", mockport, cp);
+                getJsonContent(new HttpPost(url), 200);
+
+                url = String.format("http://localhost:%d/%s/admin/requeue/ingest/%s/failed", port, cp, qid);
+                json = getJsonContent(new HttpPost(url), 200);
+
+                countQueue(30, 0, "queue", "ingest");
+                countQueue(30, 1, "queue-inv", "mrt.inventory.full");
         }
 
         @Test
@@ -335,9 +354,7 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
-                
-                //System.out.println(json.toString(2));
-                
+                                
                 countQueue(3, 3, "queue", "ingest");
                 countQueue(90, 3, "queue-inv", "mrt.inventory.full");
         }
@@ -460,13 +477,7 @@ public class ServiceDriverIT {
 
         public JSONObject freezeThaw(String url, String key, String state) throws IOException, JSONException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        HttpPost post = new HttpPost(url);
-                        HttpResponse response = client.execute(post);
-                        assertEquals(200, response.getStatusLine().getStatusCode());
-                        String s = new BasicResponseHandler().handleResponse(response).trim();
-                        JSONObject json =  new JSONObject(s);
-                        System.out.println(json.toString(2));
-
+                        JSONObject json = getJsonContent(new HttpPost(url), 200);
                         assertEquals(
                                 state, 
                                 getJsonString(
@@ -522,6 +533,10 @@ public class ServiceDriverIT {
                 public String jid() {
                         return this.jid;
                 }
+
+                public void setJid(String s) {
+                        this.jid = s;
+                }
         }
 
         @Test
@@ -532,13 +547,13 @@ public class ServiceDriverIT {
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
 
-                System.out.println(json.toString(2));
-
                 BidJid bidjid = new BidJid(json);
+                verifyJid(bidjid);
 
                 Thread.sleep(5000);
 
                 json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+
                 assertEquals("Pending", getJsonString(json, "que:status", ""));
 
                 url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
@@ -550,19 +565,29 @@ public class ServiceDriverIT {
                 assertEquals("Completed", getJsonString(json, "que:status", ""));
         }
 
-        //TODO are deleteq and requeue working??
+        public void verifyJid(BidJid bidjid) throws HttpResponseException, IOException, JSONException {
+                if (bidjid.jid().isEmpty()) {
+                        String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bidjid.bid());
+                        JSONObject json = getJsonContent(url, 200);
+                        json = getJsonObject(json, "fil:batchFileState");
+                        json = getJsonObject(json, "fil:jobFile");
+                        json = getJsonObject(json, "fil:batchFile");
+                        String jid = getJsonString(json, "fil:file", "");
+                        bidjid.setJid(jid);
+                }
+
+        }
+
         @Test
         public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException {
-                String profile = "merritt_test_content";
                 String url = String.format("http://localhost:%d/%s/admin/submission/freeze/%s", port, cp, profile);
                 JSONObject json = freezeThaw(url, "ing:collectionSubmissionState", profile);
 
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
 
-                System.out.println(json.toString(2));
-
                 BidJid bidjid = new BidJid(json);
+                verifyJid(bidjid);
 
                 Thread.sleep(3000);
 
@@ -580,7 +605,20 @@ public class ServiceDriverIT {
                 String qid = getJsonString(json, "que:iD", "");
                 assertNotEquals("", qid);
 
-                url = String.format("http://localhost:%d/%s/admin/requeue/ingest/%s/held", port, cp, qid);
+                assertEquals(
+                        1, 
+                        countQueue(3, 1, "queue", "ingest", "held")
+                );
+
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        url = String.format("http://localhost:%d/%s/admin/release-all/ingest/%s", port, cp, profile);
+                        json = getJsonContent(new HttpPost(url), 200);
+                }
+
+                assertEquals(
+                        1, 
+                        countQueue(3, 1, "queue", "ingest")
+                );
 
         }
 
@@ -712,10 +750,6 @@ public class ServiceDriverIT {
         }
 
         /*
-        POST @Path("/requeue/{queue}/{id}/{fromState}")
-        POST @Path("/{action: hold|release}/{queue}/{id}")
-        POST @Path("/release-all/{queue}/{profile}")
-        POST @Path("/submission/{request: freeze|thaw}/{collection}")
         POST @Path("/profile/{type: profile|collection|owner|sla}")
         */
 }
