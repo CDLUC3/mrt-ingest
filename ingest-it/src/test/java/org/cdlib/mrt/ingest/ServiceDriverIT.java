@@ -717,8 +717,12 @@ public class ServiceDriverIT {
                 JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "pros:profilesState");
                 json = getJsonObject(json, "pros:profiles");
-                json = getJsonObject(json, "pros:profileFile");
-                assertEquals("merritt_test_content", getJsonString(json, "pros:file", ""));
+                JSONArray arr = getJsonArray(json, "pros:profileFile");
+                ArrayList<String> names = new ArrayList<>();
+                for(int i = 0; i < arr.length(); i++) {
+                        names.add(getJsonString(arr.getJSONObject(i), "pros:file", ""));
+                }
+                assertTrue(names.contains("merritt_test_content"));
         }
 
         @Test
@@ -737,8 +741,12 @@ public class ServiceDriverIT {
                 JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "prosf:profilesFullState");
                 json = getJsonObject(json, "prosf:profilesFull");
-                json = getJsonObject(json, "prosf:profileState");
-                assertEquals("merritt_test_content", getJsonString(json, "prosf:profileID", ""));
+                JSONArray arr = getJsonArray(json, "prosf:profileState");
+                ArrayList<String> names = new ArrayList<>();
+                for(int i = 0; i < arr.length(); i++) {
+                        names.add(getJsonString(arr.getJSONObject(i), "prosf:profileID", ""));
+                }
+                assertTrue(names.contains("merritt_test_content"));
         }
 
         @Test
