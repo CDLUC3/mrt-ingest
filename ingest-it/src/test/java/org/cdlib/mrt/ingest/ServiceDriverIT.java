@@ -757,7 +757,32 @@ public class ServiceDriverIT {
                 assertEquals("merritt_test_content", getJsonString(json, "pro:profileID", ""));
         }
 
-        /*
-        POST @Path("/profile/{type: profile|collection|owner|sla}")
-        */
+        @Test 
+        public void TestProfileSubmit() throws IOException, JSONException {
+                String url = String.format("http://localhost:%d/%s/admin/profile/profile", port, cp);
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpPost post = new HttpPost(url);
+                        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                        builder.addTextBody("name", "name");
+                        builder.addTextBody("description", "description");
+                        builder.addTextBody("collection", "ark:/1111/2222");
+                        builder.addTextBody("ark", "ark:/1111/2222");
+                        builder.addTextBody("owner", "ark:/1111/2222");
+                        builder.addTextBody("storagenode", "7777");
+                        builder.addTextBody("modificationdate", "2021-08-09T11:28:22-0700");
+                        builder.addTextBody("creationdate", "2021-08-09T11:28:22-0700");
+                        HttpEntity multipart = builder.build();
+                        post.setEntity(multipart);
+                        
+                        HttpResponse response = client.execute(post);
+                        String s = new BasicResponseHandler().handleResponse(response).trim();
+                        JSONObject json =  new JSONObject(s);
+                        json = getJsonObject(json, "ing:genericState");
+                        String profileText = getJsonString(json, "ing:string", "");
+                        //System.out.println(profileText.replaceAll("&#10;", "\n"));
+                        assertNotEquals("", profileText);
+                }
+
+        }
+
 }
