@@ -34,6 +34,34 @@ import java.io.IOException;
 
 import static org.junit.Assert.*;
 
+/**
+ * Merritt Ingest Integration Test Driver
+ * 
+ * This test driver depends on the following stack of services in order to execute.  These services can be launched with docker-compose or with docker-maven-plugin.
+ *
+ * - tomcat: runs the latest built version of the ingest service.  The ingest-it sub project contains a specialized configuration to workin within the integration test stack.
+ * - mock-merritt-it: mock implementation of merritt services (storage, inventory, ezid) as well as a content provider of test data
+ *   - https://github.com/CDLUC3/merritt-docker/tree/main/mrt-inttest-services/mock-merritt-it
+ * - zookeeper
+ * - smtp: for ingest handlers that send mail
+ * 
+ * This code also re-uses sample test data in https://github.com/CDLUC3/mrt-doc/tree/main/sampleFiles.
+ * - An internet connection is required to retrieve these assets.
+ * 
+ * The mock-merritt-it service can be sent a "/status/stop" command to tell it to return a 404 for test data requests.  The service can be re-enabled with a "/status/start" command.
+ * - This is useful to trigger a queue failure that can be re-queued.
+ * 
+ * Note about Merritt's use of JSON
+ * 
+ * The Merritt Core libraries handle JSON in a non-standard fashion.
+ * 
+ * When a JSON Object can contain a JSON array, the following behavior occurs
+ * - If more than 2 items exist, they are serialized as a JSONArray
+ * - If 1 item exists, it is serialized as a JSONObject
+ * - If no items exist, it is serialized as an empty string.
+ * 
+ * This test code has not been written to trap all serialization variations.
+ */
 public class ServiceDriverIT {
         private int port = 8080;
         private int mockport = 8096;
@@ -42,18 +70,26 @@ public class ServiceDriverIT {
         private XPathFactory xpathfactory;
         private String profile = "merritt_test_content";
 
+        /*
+         * Initialize the test class
+         */
         public ServiceDriverIT() throws ParserConfigurationException {
                 try {
                         port = Integer.parseInt(System.getenv("it-server.port"));
                         mockport = Integer.parseInt(System.getenv("mock-merritt-it.port"));
                 } catch (NumberFormatException e) {
-                        //System.err.println("it-server.port = " + port);
-                        //System.err.println("mock-merritt-it.port = " + mockport);
+                        //use default ports
                 }
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
         }
 
+        /**
+         * Make an http request, verify the http response status, return the result as a string
+         * @param request HttpGet, HttpPost or HttpDelete request to execute
+         * @param status Expected status code value.  If zero, do not validate the return status
+         * @return the response from the rquest as a String
+         */
         public String getContent(HttpRequestBase request, int status) throws HttpResponseException, IOException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpResponse response = client.execute(request);
@@ -71,10 +107,22 @@ public class ServiceDriverIT {
                     
         }
 
+        /**
+         * Create an HttpGet request for the specified url
+         * @param url to retrieve 
+         * @param status Expected status code value.  If zero, do not validate the return status
+         * @return the response from the rquest as a String
+         */
         public String getContent(String url, int status) throws HttpResponseException, IOException {
                 return getContent(new HttpGet(url), status);
         }
 
+        /**
+         * Make an http request, verify the http response status, return the result as a string
+         * @param request HttpGet, HttpPost or HttpDelete request to execute
+         * @param status Expected status code value.  If zero, do not validate the return status
+         * @return the response from the rquest as a JsonObject
+         */
         public JSONObject getJsonContent(HttpRequestBase request, int status) throws HttpResponseException, IOException, JSONException {
                 String s = getContent(request, status);
                 JSONObject json =  new JSONObject(s);
@@ -82,15 +130,34 @@ public class ServiceDriverIT {
                 return json;
         }
 
+        /**
+         * Create an HttpGet request for the specified url
+         * @param url to retrieve 
+         * @param status Expected status code value.  If zero, do not validate the return status
+         * @return the response from the rquest as a Json object
+         */
         public JSONObject getJsonContent(String url, int status) throws HttpResponseException, IOException, JSONException {
                 return getJsonContent(new HttpGet(url), status);
         }
 
+        /**
+         * Helper method to return a Json string from a Json object
+         * @param j json object to parse
+         * @param key key to look up in the json object
+         * @param def default value if a key is not present
+         * @return the String value from the JsonObject or the default value
+         */
         public static String getJsonString(JSONObject j, String key, String def) throws JSONException {
                 return j.has(key) ? j.get(key).toString() :  def;
         }
 
 
+       /**
+         * Helper method to return a Json object from a Json object
+         * @param j json object to parse
+         * @param key key to look up in the json object
+         * @return the found JSONObject, otherwise an empty JSON object is returned
+         */
         public static JSONObject getJsonObject(JSONObject j, String key) throws JSONException {
                 if (j.has(key) && (j.get(key) instanceof JSONObject)) {
                         return j.getJSONObject(key);
@@ -98,6 +165,12 @@ public class ServiceDriverIT {
                 return new JSONObject();
         }
 
+       /**
+         * Helper method to return a Json array from a Json object
+         * @param j json object to parse
+         * @param key key to look up in the json object
+         * @return the found JSONArray, otherwise an empty JSON array is returned.  A single JSONObject will be placed into an array if necessary.
+         */
         public static JSONArray getJsonArray(JSONObject j, String key) throws JSONException {
                 JSONArray ja = new JSONArray();
                 if (j.has(key)) {
@@ -111,6 +184,11 @@ public class ServiceDriverIT {
                 return ja;
         }
 
+        /**
+         * Identify all entries of a queue that are not in a Deleted state.  Call clearQueueEntry to set the queue entry state to deleted.
+         * @param endpoint queue, queue-inv, or queue-acc
+         * @param queue name of the specific queue. For integration test purposes, only 1 ingest queue will exist
+         */
         public void clearQueue(String endpoint, String queue) throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
                 JSONObject json = getJsonContent(url, 200);
@@ -129,7 +207,41 @@ public class ServiceDriverIT {
                 }
         }
 
-        public JSONObject findQueueEntry(String endpoint, String queue, String bid, String jid) throws IOException, JSONException, InterruptedException {
+        /**
+         * Change the status of a specific queue entry to "Deleted".  Note that this does not delete the actual entry from the queue.
+         * Queue entries will remain present until the docker stack is deleted and restarted.
+         * @param queue name of the queue
+         * @param id id of the queue entry
+         * @param status current status of the queue entry
+         * @throws IOException
+         * @throws JSONException
+         */
+        public void clearQueueEntry(String queue, String id, String status) throws IOException, JSONException {
+                if (status.equals("held")) {
+                        String url = String.format("http://localhost:%d/%s/admin/release/%s/%s", port, cp, queue, id);
+                        try (CloseableHttpClient client = HttpClients.createDefault()) {
+                                JSONObject json = getJsonContent(new HttpPost(url), 200);
+                                json = getJsonObject(json, "ques:queueEntryState");
+                                status = getJsonString(json, "ques:status", "NA").toLowerCase();
+                        }        
+                }
+
+                String url = String.format("http://localhost:%d/%s/admin/deleteq/%s/%s/%s", port, cp, queue, id, status);
+                try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        getJsonContent(new HttpPost(url), 200);
+                }
+
+        }
+
+        /**
+         * Find an ingest queue entry by batch id and job id
+         * @param endpoint should always be "queue"
+         * @param queue should always be "ingest"
+         * @param bid batch id to locate
+         * @param jid job id to locate
+         * @return a JSON representation of the queue entry
+         */
+        public JSONObject findQueueEntry(String endpoint, String queue, String bid, String jid) throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
                 JSONObject json = getJsonContent(url, 200);
 
@@ -147,10 +259,28 @@ public class ServiceDriverIT {
                 return new JSONObject(); 
         }
 
+        /**
+         * Count the number of items in a queue that are not in a deleted status
+         * @param tries Number of times to repeat the test before quitting - there will be a sleep delay between tries
+         * @param expected Expected count to find
+         * @param endpoint queue endpoint to query
+         * @param queue queue name to query
+         * @return the count of items found
+          */
         public int countQueue(int tries, int expected, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
                 return countQueue(tries, expected, endpoint, queue, "");
         }
 
+        /**
+         * 
+        * Count the number of items in a queue that have a specific status
+         * @param tries Number of times to repeat the test before quitting - there will be a sleep delay between tries
+         * @param expected Expected count to find
+         * @param endpoint queue endpoint to query
+         * @param queue queue name to query
+         * @param teststatus Status value to verify.  If blank, count the number of items that are not in a deleted status
+         * @return the count of items found
+         */
         public int countQueue(int tries, int expected, String endpoint, String queue, String teststatus) throws IOException, JSONException, InterruptedException {
                 int count = 0;
                 for(int ii = 0; ii < tries && count != expected; ii++) {
@@ -178,23 +308,14 @@ public class ServiceDriverIT {
                 return count;
         }
 
-        public void clearQueueEntry(String queue, String id, String status) throws IOException, JSONException {
-                if (status.equals("held")) {
-                        String url = String.format("http://localhost:%d/%s/admin/release/%s/%s", port, cp, queue, id);
-                        try (CloseableHttpClient client = HttpClients.createDefault()) {
-                                JSONObject json = getJsonContent(new HttpPost(url), 200);
-                                json = getJsonObject(json, "ques:queueEntryState");
-                                status = getJsonString(json, "ques:status", "NA").toLowerCase();
-                        }        
-                }
-
-                String url = String.format("http://localhost:%d/%s/admin/deleteq/%s/%s/%s", port, cp, queue, id, status);
-                try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        getJsonContent(new HttpPost(url), 200);
-                }
-
-        }
-
+        /**
+         * Reset that status of the test stack before each rest case.
+         * - Mark all ingest queue items as deleted
+         * - Mark all inventory queue items as deleted
+         * - Thaw submission processing (in case it had been frozen)
+         * - Thaw submission processing for the test collection (in case it had been frozen)
+         * - Tell the mock test service to serve data (in case it had been set to not return data)
+         */
         @Before
         public void clearQueueDirectory() throws IOException, JSONException {
                 clearQueue("queue", "ingest");
@@ -207,6 +328,9 @@ public class ServiceDriverIT {
                 getJsonContent(new HttpPost(url), 200);
         }
 
+        /**
+         * Test the Ingest state endpoint
+         */
         @Test
         public void SimpleTest() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/state?t=json", port, cp);
@@ -216,39 +340,38 @@ public class ServiceDriverIT {
                 assertEquals("thawed", status);
         }
 
+        /**
+         * Formulate a POST request to trigger an ingest submission
+         * @param url to the submission endpoint
+         * @param file file to be ingested
+         * @param batch set to true if the endpoint will queue jobs (sync vs async)
+         * @return Json object conveying submission status
+         */
         public JSONObject ingestFile(String url, File file, boolean batch) throws IOException, JSONException {
                 return ingestFile(url, file, "", "", batch);
         }
 
+        /**
+         * Formulate a POST request to trigger an ingest submission
+         * @param url to the submission endpoint
+         * @param file file to be ingested
+         * @param localId if not empty, set a localid for the submission
+         * @param batch set to true if the endpoint will queue jobs (sync vs async)
+         * @return Json object conveying submission status
+         */
         public JSONObject ingestFile(String url, File file, String localId, boolean batch) throws IOException, JSONException {
                 return ingestFile(url, file, localId, "", batch);
         }
 
-        public JSONObject submitResponse(HttpResponse response, boolean batch) throws IOException, JSONException {
-                assertEquals(200, response.getStatusLine().getStatusCode());
-
-
-                String s = new BasicResponseHandler().handleResponse(response).trim();
-                assertFalse(s.isEmpty());
-
-                JSONObject json =  new JSONObject(s);
-                assertNotNull(json);
-                if (batch) {
-                        assertTrue(json.has("bat:batchState"));
-                        assertEquals("QUEUED", json.getJSONObject("bat:batchState").getString("bat:batchStatus"));
-
-                } else {
-                        assertTrue(json.has("job:jobState"));
-                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));
-                        String jobid =  json.getJSONObject("job:jobState").getString("job:jobID");
-                        String primaryid = json.getJSONObject("job:jobState").getString("job:primaryID");
-                        //GET http://uc3-mrtdocker01x2-dev.cdlib.org:8080/mrtingest/admin/queue-inv/mrt.inventory.full
-                        //POST /deleteq/{queue}/{id}/{fromState}
-                }
-                return json;
-
-        }
-
+        /**
+         * Formulate a POST request to trigger ingest submission.  Call submitResponse to verify the response status.
+         * @param url to the submission endpoint
+         * @param file file to be ingested
+         * @param localId if not empty, set a localid for the submission
+         * @param primaryId if not empty, set a primary id for the submission
+         * @param batch set to true if the endpoint will queue jobs (sync vs async)
+         * @return Json object conveying submission status
+         */
         public JSONObject ingestFile(String url, File file, String localId, String primaryId, boolean batch) throws IOException, JSONException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
@@ -281,6 +404,42 @@ public class ServiceDriverIT {
 
         }
 
+        /**
+         * Verify the response status from an ingest submission.  The response will vary for async vs sync requests.
+         * @param response HttpResponse object from the submission request
+         * @param batch If true, handle the response as a batch request that will be queued.  If not, handle the response as a single job.
+         * @return the json response object
+         */
+        public JSONObject submitResponse(HttpResponse response, boolean batch) throws IOException, JSONException {
+                assertEquals(200, response.getStatusLine().getStatusCode());
+
+
+                String s = new BasicResponseHandler().handleResponse(response).trim();
+                assertFalse(s.isEmpty());
+
+                JSONObject json =  new JSONObject(s);
+                assertNotNull(json);
+                if (batch) {
+                        assertTrue(json.has("bat:batchState"));
+                        assertEquals("QUEUED", json.getJSONObject("bat:batchState").getString("bat:batchStatus"));
+
+                } else {
+                        assertTrue(json.has("job:jobState"));
+                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));
+                }
+                return json;
+
+        }
+
+        /**
+         * Formulate a POST request to submit content to ingest by URL
+         * @param url to the submission endpoint
+         * @param contenturl url to the content to submit
+         * @param filename filename to use for the submitted content
+         * @param type submission type to assign to the submission
+         * @param batch set to true if the endpoint will queue jobs (sync vs async)
+         * @return Json object conveying submission status
+         */
         public JSONObject ingestFromUrl(String url, String contenturl, String filename, String type, boolean batch) throws IOException, JSONException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
@@ -302,6 +461,11 @@ public class ServiceDriverIT {
 
         }
 
+        /**
+         * Test the submission of a manifest by URL.
+         * 
+         * Note: this test downloads data from github.  An internet connection is needed to run the test.
+         */
         @Test
         public void FileManifestIngest() throws IOException, JSONException, InterruptedException {
                 String filename = "4blocks.checkm";
@@ -309,21 +473,47 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest", false);
                                
+                // due to async processing, no jobs should exist in the ingest queue
                 countQueue(3, 0, "queue", "ingest");
+                // one object should be reside on the inventory queue 
                 countQueue(3, 1,"queue-inv", "mrt.inventory.full");
         }
 
+        /**
+         * Test the submission of a manifest file.
+         * 
+         * Note: this test retrieves test content from the mock-merritt-it container.
+         */
         @Test
         public void TestManifest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 JSONObject json = ingestFile(url, new File("src/test/resources/data/mock.checkm"), true);
                             
+                // once complete, no jobs should remain in the ingest queue
+                // TODO should teh tries be increased?
                 countQueue(3, 0, "queue", "ingest");
+                // once complete, one object should reside in the inventory queue
                 countQueue(30, 1,"queue-inv", "mrt.inventory.full");
         }
 
+        /**
+         * Test the submission of a manifest file while forcing a submission failure
+         * 
+         * Note: this test retrieves test content from the mock-merritt-it container.
+         * 
+         * The mock-merritt-it service will be instructed to not deliver content.
+         * 
+         * Initially, the mock-merritt-it service will return a 404 when retrieving content.
+         * 
+         * The job will fail.
+         * 
+         * Next, the mock-merritt-it service will be instructed to resume content delivery.
+         * 
+         * The job will be re-queued and will succeed.
+         */
         @Test
         public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException {
+                // tell the mock-merritt-it service to temporarily suspend content delivery
                 String url = String.format("http://localhost:%d/status/stop", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
 
@@ -336,15 +526,20 @@ public class ServiceDriverIT {
 
                 String qid = getJsonString(json, "que:iD", "");
 
+                // expect one failed job on the ingest queue
                 countQueue(30, 1, "queue", "ingest", "failed");
 
+                // tell the mock-merritt-it service to resume content delivery
                 url = String.format("http://localhost:%d/status/start", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
 
+                // requeue the failed job
                 url = String.format("http://localhost:%d/%s/admin/requeue/ingest/%s/failed", port, cp, qid);
                 json = getJsonContent(new HttpPost(url), 200);
 
+                // once processing is complete, no jobs shoudl remain on the ingest queue
                 countQueue(30, 0, "queue", "ingest");
+                // one object should exist in the inventory queue
                 countQueue(30, 1, "queue-inv", "mrt.inventory.full");
         }
 
@@ -355,28 +550,47 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
                                 
+                // exepect to see 3 queued jobs 
                 countQueue(3, 3, "queue", "ingest");
+                // once processing is complete, expect to see 3 objects in the inventory queue
                 countQueue(90, 3, "queue-inv", "mrt.inventory.full");
         }
 
+        /**
+         * Test the submission of a batch-manifest by URL.
+         * 
+         * Note: this test downloads data from github.  An internet connection is needed to run the test.
+         */
         @Test
         public void BatchFilesIngest() throws IOException, JSONException, InterruptedException {
                 String filename = "sampleBatchOfFiles.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
+
+                // exepect to see 3 queued jobs 
                 countQueue(3, 3, "queue", "ingest");
+                // once processing is complete, expect to see 3 objects in the inventory queue
                 countQueue(60, 3, "queue-inv", "mrt.inventory.full");
         }
 
+        /**
+         * Test the submission of a single file.
+         */
         @Test
         public void SimpleFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+
+                // exepect to see 0 queued jobs 
                 countQueue(3, 0, "queue", "ingest");
+                // once processing is complete, expect to see 1 objectin the inventory queue
                 countQueue(3, 1, "queue-inv", "mrt.inventory.full");
         }
 
+        /**
+         * Test the submission of a single file.  Test the endpoints to view job-related data.
+        */
         @Test
         public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
@@ -386,7 +600,9 @@ public class ServiceDriverIT {
                 String jid = getJsonString(json, "job:jobID", "");
                 String ark = getJsonString(json, "job:primaryID", "");
 
+                // exepect to see 0 queued jobs 
                 countQueue(3, 0, "queue", "ingest");
+                // once processing is complete, expect to see 1 objectin the inventory queue
                 countQueue(3, 1, "queue-inv", "mrt.inventory.full");
 
                 url = String.format("http://localhost:%d/%s/admin/jid-erc/%s/%s", port, cp, bid, jid);
@@ -406,6 +622,9 @@ public class ServiceDriverIT {
                 assertEquals("", getJsonString(json, "ingmans:manifests", "N/A"));
         }
 
+        /**
+         * Extract (from json) the set of files associated with a job
+         */
         public List<String> getFiles(JSONObject json) throws JSONException {
                 json = getJsonObject(json, "fil:batchFileState");
                 json = getJsonObject(json, "fil:jobFile");
@@ -418,31 +637,46 @@ public class ServiceDriverIT {
                 return files;
         }
 
+        /**
+         * Get a set of recently processed batch ids
+         */
         public List<String> getBids() throws JSONException, HttpResponseException, IOException {
                 String url = String.format("http://localhost:%d/%s/admin/bids/1", port, cp);
                 JSONObject json = getJsonContent(url, 200);
                 return getFiles(json);
         }
 
+        /**
+         * Get the set set of jobs assoicated with a batch
+         */
         public List<String> getJobs(String bid) throws JSONException, HttpResponseException, IOException {
                 String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bid);
                 JSONObject json = getJsonContent(url, 200);
                 return getFiles(json);
         }
 
+        /**
+         * Queue the submission of a single file
+         */
         @Test
         public void QueueFileIngest() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
                 json = getJsonObject(json, "bat:batchState");
                 String bat = getJsonString(json, "bat:batchID", "");
+
+                // expect 1 queued job
                 countQueue(3, 1, "queue", "ingest");
+                // expect 1 object in the inventory queue
                 countQueue(30, 1, "queue-inv", "mrt.inventory.full");
 
                 assertTrue(getBids().contains(bat));
                 assertEquals(1, getJobs(bat).size());
         }
 
+        /**
+         * Queue the submission of a single file.  Detect the zookeeper lock in place as the submission processes.
+         */
         @Test
         public void QueueFileIngestCatchLock() throws IOException, JSONException, InterruptedException {
                 //This ark has a time delay in mock-merritt-it to allow the catch of a lock
@@ -451,6 +685,8 @@ public class ServiceDriverIT {
                 json = getJsonObject(json, "bat:batchState");
                 String bat = getJsonString(json, "bat:batchID", "");
 
+                // look for the presence of a zookeeper lock
+                // the lock name should be derived from the submission's primary id (ark)
                 for(int ii=0; ii<10; ii++) {
                         Thread.sleep(1000);
                         url = String.format("http://localhost:%d/%s/admin/lock/mrt.lock", port, cp);
@@ -468,13 +704,22 @@ public class ServiceDriverIT {
                         }
                 }
 
+                // expect 1 queue job
                 countQueue(3, 1, "queue", "ingest");
+                // expect 1 object in the inventory queue
                 countQueue(30, 1, "queue-inv", "mrt.inventory.full");
 
                 assertTrue(getBids().contains(bat));
                 assertEquals(1, getJobs(bat).size());
         }
 
+        /**
+         * Post a request to freeze/thaw submissions
+         * @param url endpont to use for freeze/thaw
+         * @param key key to use to confirm the resulting state
+         * @param state value to verify for the freeze/thawed state
+         * @return response fro the freeze/thaw endpoint
+         */
         public JSONObject freezeThaw(String url, String key, String state) throws IOException, JSONException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         JSONObject json = getJsonContent(new HttpPost(url), 200);
@@ -494,6 +739,9 @@ public class ServiceDriverIT {
 
         }
 
+        /**
+         * Helper class to extract a bid and jid from a submission response.
+         */
         class BidJid {
                 private String bid = "";
                 private String jid = "";
@@ -539,6 +787,26 @@ public class ServiceDriverIT {
                 }
         }
 
+        /**
+         * If a bid / jid cannot be extracted from a submission response, perform a lookup to locate the jid.
+         * TODO: ask Mark why this is not always available.
+         */
+        public void verifyJid(BidJid bidjid) throws HttpResponseException, IOException, JSONException {
+                if (bidjid.jid().isEmpty()) {
+                        String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bidjid.bid());
+                        JSONObject json = getJsonContent(url, 200);
+                        json = getJsonObject(json, "fil:batchFileState");
+                        json = getJsonObject(json, "fil:jobFile");
+                        json = getJsonObject(json, "fil:batchFile");
+                        String jid = getJsonString(json, "fil:file", "");
+                        bidjid.setJid(jid);
+                }
+
+        }
+
+        /**
+         * Queue a file ingest while submissions are frozen.  Thaw submsissions and resume processing.
+         */
         @Test
         public void QueueFileIngestPauseSubmissions() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/admin/submissions/freeze", port, cp);
@@ -565,19 +833,9 @@ public class ServiceDriverIT {
                 assertEquals("Completed", getJsonString(json, "que:status", ""));
         }
 
-        public void verifyJid(BidJid bidjid) throws HttpResponseException, IOException, JSONException {
-                if (bidjid.jid().isEmpty()) {
-                        String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bidjid.bid());
-                        JSONObject json = getJsonContent(url, 200);
-                        json = getJsonObject(json, "fil:batchFileState");
-                        json = getJsonObject(json, "fil:jobFile");
-                        json = getJsonObject(json, "fil:batchFile");
-                        String jid = getJsonString(json, "fil:file", "");
-                        bidjid.setJid(jid);
-                }
-
-        }
-
+        /**
+         * Que a file ingest while a specific collection is frozen.  Thaw the collection and resume processing.
+         */
         @Test
         public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/admin/submission/freeze/%s", port, cp, profile);
@@ -605,35 +863,47 @@ public class ServiceDriverIT {
                 String qid = getJsonString(json, "que:iD", "");
                 assertNotEquals("", qid);
 
+                // expect 1 job to be in a held state
                 assertEquals(
                         1, 
                         countQueue(3, 1, "queue", "ingest", "held")
                 );
 
+                // release all held jobs for the profile
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         url = String.format("http://localhost:%d/%s/admin/release-all/ingest/%s", port, cp, profile);
                         json = getJsonContent(new HttpPost(url), 200);
                 }
 
+                // expect to see 1 completed job
                 assertEquals(
                         1, 
-                        countQueue(3, 1, "queue", "ingest")
+                        countQueue(30, 1, "queue", "ingest", "completed")
                 );
 
         }
 
+        /**
+         * Submit a single file with a local id.
+         */
         @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
         }
 
+        /**
+         * Submit a single file with a primary id specified.
+         */
         @Test
         public void SimpleFileIngestWithArk() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
         }
 
+        /**
+         * Submit a single file with a primary id specified.  Perform an update on that object.
+         */
         @Test
         public void SimpleFileIngestWithArkAndUpdate() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
@@ -642,24 +912,36 @@ public class ServiceDriverIT {
                 ingestFile(url, new File("src/test/resources/data/test.txt"), false);
         }
 
+        /**
+         * Submit a single file.  Locate the primary id and perform an update on that object.
+         */
         @Test
         public void SimpleFileIngestWithUpdate() throws IOException, JSONException, InterruptedException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
                 String prim = json.getJSONObject("job:jobState").getString("job:primaryID");
 
+                // expect to see 1 object present in the inventory queue
                 countQueue(20, 1, "queue-inv", "mrt.inventory.full");
 
                 url = String.format("http://localhost:%d/%s/update-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/test.txt"), "", prim, false);
         }
 
+        /**
+         * Submit a zip file to be ingested.
+         */
         @Test
         public void SimpleZipIngest() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
                 ingestFile(url, new File("src/test/resources/data/test.zip"), false);
         }
 
+        /**
+         * Obtain the queue names associted with a queue endpoint
+         * @param endpoint queue, queue-inv, queue-acc
+         * @return List of queue names
+         */
         public List<String> getQueueNames(String endpoint) throws HttpResponseException, IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/%s", port, cp, endpoint);
                 JSONObject json = getJsonContent(url, 200);
@@ -678,6 +960,11 @@ public class ServiceDriverIT {
                 return arr;
         }
 
+        /**
+         * Compare a list of queue names to a comma separated string
+         * @param endpoint endpoint to query for queue names
+         * @param list list of queue names to expect in the list
+         */
         public void testQueueValues(String endpoint, String list) throws HttpResponseException, IOException, JSONException {
                 List<String> queues = getQueueNames(endpoint);
                 String[] vals = list.split(",");
@@ -687,6 +974,9 @@ public class ServiceDriverIT {
                 }
         }
 
+        /**
+         * Test that each queue endpoint returns the expected set of queue names
+         */
         @Test
         public void TestQueueNames() throws IOException, JSONException {
                 testQueueValues("queues", "ingest");
@@ -695,6 +985,9 @@ public class ServiceDriverIT {
         }
 
 
+        /**
+         * Test the lock endpoints.  Assume no locks are present.
+         */
         @Test
         public void TestLocks() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/locks", port, cp);
@@ -711,6 +1004,9 @@ public class ServiceDriverIT {
                 assertEquals("", getJsonString(json, "loc:lockEntries", "N/A"));
         }
 
+        /**
+         * Test the admin/profiles endpoint returns the expected profile name
+         */
         @Test
         public void TestProfileNames() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/profiles", port, cp);
@@ -725,6 +1021,9 @@ public class ServiceDriverIT {
                 assertTrue(names.contains("merritt_test_content"));
         }
 
+        /**
+         * Test the admin/profiles endpoint returns the expected admin profile name
+         */
         @Test
         public void TestAdminProfileNames() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/profiles/admin", port, cp);
@@ -735,6 +1034,9 @@ public class ServiceDriverIT {
                 assertEquals("admin/docker/collection/merritt_test", getJsonString(json, "pros:file", ""));
         }
 
+        /**
+         * Test the admin/profiles-full endpoint returns the expected profile
+         */
         @Test
         public void TestProfileFull() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/profiles-full", port, cp);
@@ -749,6 +1051,9 @@ public class ServiceDriverIT {
                 assertTrue(names.contains("merritt_test_content"));
         }
 
+        /**
+         * Test the lookup of a specific profile by name
+         */
         @Test
         public void TestProfileByName() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/profile/merritt_test_content", port, cp);
@@ -757,6 +1062,9 @@ public class ServiceDriverIT {
                 assertEquals("merritt_test_content", getJsonString(json, "pro:profileID", ""));
         }
 
+        /**
+         * Test endpoint that inserts a set of form parameters into the TEMPLATE-PROFILE file
+         */
         @Test 
         public void TestProfileSubmit() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/admin/profile/profile", port, cp);
