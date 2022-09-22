@@ -818,7 +818,7 @@ public class ServiceDriverIT {
                 BidJid bidjid = new BidJid(json);
                 verifyJid(bidjid);
 
-                Thread.sleep(5000);
+                Thread.sleep(10000);
 
                 json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
 
@@ -827,7 +827,7 @@ public class ServiceDriverIT {
                 url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
                 json = freezeThaw(url, "ing:submissionState", "thawed");
 
-                Thread.sleep(5000);
+                Thread.sleep(10000);
 
                 json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
                 assertEquals("Completed", getJsonString(json, "que:status", ""));
