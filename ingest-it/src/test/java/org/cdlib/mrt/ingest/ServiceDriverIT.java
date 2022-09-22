@@ -687,7 +687,8 @@ public class ServiceDriverIT {
 
                 // look for the presence of a zookeeper lock
                 // the lock name should be derived from the submission's primary id (ark)
-                for(int ii=0; ii<10; ii++) {
+                boolean found = false;
+                for(int ii=0; ii<10 && !found; ii++) {
                         Thread.sleep(1000);
                         url = String.format("http://localhost:%d/%s/admin/lock/mrt.lock", port, cp);
                         json = getJsonContent(url, 200);
@@ -700,9 +701,11 @@ public class ServiceDriverIT {
                                 for(int i = 0; i < jarr.length(); i++) {
                                         ids.add(getJsonString(jarr.getJSONObject(i), "loc:iD", ""));
                                 }
-                                assertTrue(ids.contains("ark-9999-2222"));        
+                                assertTrue(ids.contains("ark-9999-2222"));  
+                                found = true;      
                         }
                 }
+                assertTrue(found);
 
                 // expect 1 queue job
                 countQueue(3, 1, "queue", "ingest");
@@ -812,25 +815,36 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/admin/submissions/freeze", port, cp);
                 JSONObject json = freezeThaw(url, "ing:submissionState", "frozen");
 
+                Thread.sleep(3000);
+
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
 
                 BidJid bidjid = new BidJid(json);
                 verifyJid(bidjid);
 
-                Thread.sleep(10000);
+                boolean found = false;
+                for(int ii=0; ii<20 && !found; ii++) {
+                        Thread.sleep(3000);
 
-                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+                        json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
 
-                assertEquals("Pending", getJsonString(json, "que:status", ""));
+                        found = getJsonString(json, "que:status", "").equals("Pending");
+                }
+                assertTrue(found);
 
                 url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
                 json = freezeThaw(url, "ing:submissionState", "thawed");
 
-                Thread.sleep(10000);
+                found = false;
+                for(int ii=0; ii<20 && !found; ii++) {
+                        Thread.sleep(3000);
 
-                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
-                assertEquals("Completed", getJsonString(json, "que:status", ""));
+                        json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
+
+                        found = getJsonString(json, "que:status", "").equals("Completed");
+                }
+                assertTrue(found);
         }
 
         /**
