@@ -815,7 +815,7 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/admin/submissions/freeze", port, cp);
                 JSONObject json = freezeThaw(url, "ing:submissionState", "frozen");
 
-                Thread.sleep(3000);
+                Thread.sleep(5000);
 
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
