@@ -793,9 +793,11 @@ public class ServiceDriverIT {
         /**
          * If a bid / jid cannot be extracted from a submission response, perform a lookup to locate the jid.
          * TODO: ask Mark why this is not always available.
+         * @throws InterruptedException
          */
-        public void verifyJid(BidJid bidjid) throws HttpResponseException, IOException, JSONException {
+        public void verifyJid(BidJid bidjid) throws HttpResponseException, IOException, JSONException, InterruptedException {
                 if (bidjid.jid().isEmpty()) {
+                        Thread.sleep(3000);
                         String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bidjid.bid());
                         JSONObject json = getJsonContent(url, 200);
                         json = getJsonObject(json, "fil:batchFileState");
