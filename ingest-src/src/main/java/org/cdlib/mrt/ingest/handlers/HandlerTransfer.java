@@ -68,6 +68,7 @@ import org.cdlib.mrt.queue.DistributedLock;
 import org.cdlib.mrt.queue.DistributedLock.Ignorer;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
+import org.cdlib.mrt.utility.HttpGet;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
@@ -436,9 +437,21 @@ public class HandlerTransfer extends Handler<JobState>
     	try {
            tempFile = File.createTempFile("hostname", "txt");
 
-           // retry 3 times
-           FileUtil.url2File(null, storeHostURL.toString() + "/hostname", tempFile, 3);
+           // Library should retry 3 times, but lets use belt and suspenders
+           for (int i=0; i < 2; i++) {
+               try {
+                   HttpGet.getFile(new URL(storeHostURL.toString() + "/hostname"), tempFile, 60000, null);
+                   break;
+               } catch (Exception ste) {
+                   System.err.println("[ERROR] Getting a storage node on attempt: " + i);
+                   ste.printStackTrace();
+               }
+               if (i==1) throw new Exception("[ERROR] Failure to retrieve Storage worker.  Exiting.");
+           }
+
+           HttpGet.getFile(new URL(storeHostURL.toString() + "/hostname"), tempFile, 60000, null);
 	   String stringResponse = FileUtil.file2String(tempFile);
+	   System.out.println("Storage worker: " + stringResponse);
 
            JSONObject jsonResponse = JSONUtil.string2json(stringResponse);
 	   String hostname = null;
