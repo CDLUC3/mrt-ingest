@@ -79,7 +79,7 @@ ingest-docker:
     NumThreads: "3"
     PollingIntervalHighPriority: "15"
     NumThreadsHighPriority: "2"
-    HighPriorityThreshold: "1"
+    HighPriorityThreshold: "5"
 
   logger-info:
     messageMaximumLevel: 5
