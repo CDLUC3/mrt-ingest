@@ -428,7 +428,7 @@ class ConsumerDaemonHighPriority implements Runnable
         try {
 	    // e.g. mrtQ-050000212177 where priority is 05 - first 2 numeric digits
             try {
-                priority = Integer.parseInt(id.substring(6,7));
+                priority = Integer.parseInt(id.substring(5,7));
             } catch (NumberFormatException ex){
                 ex.printStackTrace();
 		throw new Exception("[error]" + NAME + ": Could not extract priority: " + id);
