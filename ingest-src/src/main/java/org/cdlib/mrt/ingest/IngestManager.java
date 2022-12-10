@@ -89,7 +89,7 @@ public class IngestManager {
 	private String ingestFileS = null;     // prop "IngestService"
         private String sNumDownloadThreads = null; 
         private int numDownloadThreads = 4;    // default download thread pool
-
+        private Long jvmStartTime = null;
 
 	public String getIngestServiceProp() {
 		return this.ingestFileS;
@@ -105,6 +105,9 @@ public class IngestManager {
 
 	protected IngestManager(LoggerInf logger, JSONObject storeConf, JSONObject ingestConf, JSONObject queueConf) throws TException {
 		try {
+			// when service is started
+			if (jvmStartTime == null)
+				jvmStartTime = new Long(DateUtil.getEpochUTCDate());
 			this.logger = logger;
 			this.storeConf = storeConf;
 			this.ingestConf = ingestConf;
@@ -795,8 +798,8 @@ public class IngestManager {
                 ingestState.setCollectionSubmissionState(heldCollections);
 
                 // service start time
-                long startTime = DateUtil.getEpochUTCDate();
-                ingestState.setServiceStartTime(new DateState(startTime));
+            	ingestState.setServiceStartTime(new DateState(jvmStartTime.longValue()));
+
             } catch (TException me) {
                     throw me;
 
