@@ -55,6 +55,7 @@ public class IngestServiceState
     private DateState creationDateTime = null;
     private DateState modificationDateTime = null;
     private DateState lastIngestDateTime = null;
+    private DateState serviceStartTime  = null;
     private URL accessServiceURL;
     private URL supportServiceURL;
     private String commands = null;
@@ -200,6 +201,19 @@ public class IngestServiceState
      */
     public void setLastIngestDateTime(DateState lastIngestDateTime) {
         this.lastIngestDateTime = lastIngestDateTime;
+    }
+
+    @Override
+    public DateState getServiceStartTime() {
+        return serviceStartTime;
+    }
+
+    /**
+     * Service start time
+     * @param DateState service start time
+     */
+    public void setServiceStartTime(DateState serviceStartTime) {
+        this.serviceStartTime = serviceStartTime;
     }
 
     /**

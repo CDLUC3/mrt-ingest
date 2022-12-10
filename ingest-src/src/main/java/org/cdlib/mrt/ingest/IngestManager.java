@@ -793,6 +793,10 @@ public class IngestManager {
                 String regex = queueHoldFile.getName() + "_*";
                 String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
                 ingestState.setCollectionSubmissionState(heldCollections);
+
+                // service start time
+                long startTime = DateUtil.getEpochUTCDate();
+                ingestState.setServiceStartTime(new DateState(startTime));
             } catch (TException me) {
                     throw me;
 
