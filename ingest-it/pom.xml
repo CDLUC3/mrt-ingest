@@ -166,7 +166,7 @@
                    </run>
                 </image>
                 <image>
-                  <name>namshi/smtp</name>
+                  <name>ghusta/fakesmtp</name>
                   <alias>smtp</alias>
                   <run>
                     <network>
