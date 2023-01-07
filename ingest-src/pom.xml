@@ -74,10 +74,12 @@
   </build>
 
   <dependencies>
+      <!--mvn dependency:analyze suggests that this is not used, but is required for compilation-->
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
           <artifactId>mrt-core</artifactId>
           <version>${merritt-core.version}</version>
+          <scope>compile</scope>
       </dependency>
       <dependency>
            <groupId>com.sun.jersey.contribs</groupId>
@@ -90,29 +92,9 @@
           <version>1.18</version>
       </dependency>
       <dependency>
-          <groupId>jdom</groupId>
-          <artifactId>jdom</artifactId>
-          <version>1.1</version>
-      </dependency>
-      <dependency>
-          <groupId>jaxen</groupId>
-          <artifactId>jaxen</artifactId>
-          <version>1.1.1</version>
-      </dependency>
-      <dependency>
-          <groupId>javax.ws.rs</groupId>
-          <artifactId>jsr311-api</artifactId>
-          <version>1.1.1</version>
-      </dependency>
-      <dependency>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-email</artifactId>
           <version>1.2</version>
-      </dependency>
-      <dependency>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-          <version>1.9</version>
       </dependency>
       <dependency>
           <groupId>commons-fileupload</groupId>
@@ -133,11 +115,6 @@
 	<groupId>xml-apis</groupId>
 	<artifactId>xml-apis</artifactId>
 	<version>1.4.01</version>
-      </dependency>
-     <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
-        <version>1.2.17</version>
       </dependency>
       <dependency>
           <groupId>javax.servlet</groupId>
@@ -167,11 +144,6 @@
           <version>4.5.13</version>
       </dependency>
       <dependency>
-          <groupId>xalan</groupId>
-          <artifactId>xalan</artifactId>
-          <version>2.7.1</version>
-      </dependency>
-      <dependency>
     	  <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
           <version>3.5.5</version>
@@ -190,6 +162,7 @@
           <groupId>asm</groupId>
           <artifactId>asm</artifactId>
           <version>3.1</version>
+          <scope>runtime</scope>
       </dependency>
       <dependency>
           <groupId>org.apache.commons</groupId>
@@ -204,39 +177,49 @@
       <dependency>
          <groupId>net.sf.saxon</groupId>
          <artifactId>Saxon-HE</artifactId>
+         <scope>runtime</scope>
          <version>9.8.0-14</version>
      </dependency>
      <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-ssm</artifactId>
         <version>1.12.190</version>
-     </dependency>
-     <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>2.12.3</version>
-    </dependency>
-    <dependency>
-         <groupId>joda-time</groupId>
-         <artifactId>joda-time</artifactId>
-         <version>2.8.1</version>
+        <scope>runtime</scope>
      </dependency>
      <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-text</artifactId>
          <version>1.3</version>
      </dependency>
-    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
+
     <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>3.2.4</version>
-        <scope>test</scope>
+        <groupId>org.apache.ant</groupId>
+        <artifactId>ant</artifactId>
+        <version>1.10.10</version>
     </dependency>
     <dependency>
         <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>2.12.2</version>
+        <artifactId>xmlParserAPIs</artifactId>
+        <version>2.6.2</version>
+        <scope>runtime</scope>
+      </dependency>
+    
+      <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>2.3.1</version>
     </dependency>
+    <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-core</artifactId>
+        <version>1.18</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.cdlib.mrt</groupId>
+        <artifactId>mrt-json</artifactId>
+        <version>2.0-SNAPSHOT</version>
+      </dependency>
+
 </dependencies>
 </project>
