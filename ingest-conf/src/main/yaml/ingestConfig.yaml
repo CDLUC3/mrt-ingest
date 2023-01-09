@@ -30,6 +30,10 @@ ingest:
     QueueHoldFile: "{!SSM: ingest/config/QueueHoldFile}"
     PollingInterval: "{!SSM: ingest/config/PollingInterval !DEFAULT: 10}"
     NumThreads: "{!SSM: ingest/config/numThreads !DEFAULT: 5}"
+    PollingIntervalHighPriority: "{!SSM: ingest/config/PollingIntervalHighPriority !DEFAULT: 15}"
+    NumThreadsHighPriority: "{!SSM: ingest/config/numThreadsHighPriority !DEFAULT: 2}"
+    HighPriorityThreshold: "{!SSM: ingest/config/HighPriorityThreshold !DEFAULT: 4}"
+
 
   logger-info:
     messageMaximumLevel: "{!SSM: ingest/config/log/messageMaximumLevel !DEFAULT: 5}"
@@ -73,6 +77,9 @@ ingest-docker:
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
     PollingInterval: "10"
     NumThreads: "3"
+    PollingIntervalHighPriority: "15"
+    NumThreadsHighPriority: "2"
+    HighPriorityThreshold: "5"
 
   logger-info:
     messageMaximumLevel: 5

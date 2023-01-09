@@ -133,7 +133,7 @@ public class HandlerTransfer extends Handler<JobState>
 	    originalStoreNode = profileState.getTargetStorage();
             if (DEBUG) System.out.println("[info] " + MESSAGE + " Original Storage endpoint: " + originalStoreNode.getStorageLink().toString());
 	    storeURL = getStoreHost(originalStoreNode.getStorageLink());
-	    if (StringUtil.isEmpty(storeURL.toString())) {
+	    if (storeURL == null) {
 	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Unable to request a Storage worker");
 	       throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(MESSAGE + "Unable to request a Storage worker");
 	    }
@@ -438,7 +438,7 @@ public class HandlerTransfer extends Handler<JobState>
            tempFile = File.createTempFile("hostname", "txt");
 
            // Library should retry 3 times, but lets use belt and suspenders
-           for (int i=0; i < 2; i++) {
+           for (int i=0; i <= 2; i++) {
                try {
                    HttpGet.getFile(new URL(storeHostURL.toString() + "/hostname"), tempFile, 60000, null);
                    break;
@@ -446,12 +446,11 @@ public class HandlerTransfer extends Handler<JobState>
                    System.err.println("[ERROR] Getting a storage node on attempt: " + i);
                    ste.printStackTrace();
                }
-               if (i==1) throw new Exception("[ERROR] Failure to retrieve Storage worker.  Exiting.");
+               if (i==2) throw new Exception("[ERROR] Failure to retrieve Storage worker after number of attempts: " + i);
            }
 
-           HttpGet.getFile(new URL(storeHostURL.toString() + "/hostname"), tempFile, 60000, null);
 	   String stringResponse = FileUtil.file2String(tempFile);
-	   System.out.println("Storage worker: " + stringResponse);
+	   System.out.println("Response for storage worker request: " + stringResponse);
 
            JSONObject jsonResponse = JSONUtil.string2json(stringResponse);
 	   String hostname = null;
@@ -462,20 +461,21 @@ public class HandlerTransfer extends Handler<JobState>
 	      hostname = jsonResponse.getString(hostKey);
 	   }
 
-	if ( hostname.matches(hostIgnoreDomain)) {
-           if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage endpoint should not change: " + hostname);
-	   newHostURL = storeHostURL.toString();
-	} else if ( ! (hostname.contains(hostDomain) || hostname.equalsIgnoreCase(hostDockerDomain) || hostname.matches(hostIntegrationTestDomain))) {
-           if (DEBUG) System.out.println("[warning] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname);
-            // String msg = "[error] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname;
-            // throw new Exception(msg);
-	} else {
-	   newHostURL = storeHostURL.getProtocol() + "://" + hostname + ":" + storeHostURL.getPort() + storeHostURL.getPath();
-           if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage worker endpoint: " + newHostURL);
-	}
-	return new URL(newHostURL);
+	   if ( hostname.matches(hostIgnoreDomain)) {
+              if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage endpoint should not change: " + hostname);
+	      newHostURL = storeHostURL.toString();
+	   } else if ( ! (hostname.contains(hostDomain) || hostname.equalsIgnoreCase(hostDockerDomain) || hostname.matches(hostIntegrationTestDomain))) {
+              if (DEBUG) System.out.println("[warning] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname);
+              // String msg = "[error] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname;
+              // throw new Exception(msg);
+	   } else {
+	      newHostURL = storeHostURL.getProtocol() + "://" + hostname + ":" + storeHostURL.getPort() + storeHostURL.getPath();
+              if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage worker endpoint: " + newHostURL);
+	   }
+	   return new URL(newHostURL);
 	} catch (Exception e) {
 	    e.printStackTrace();
+            System.err.println(e.getMessage());
 	    return null;
 	} finally {
 	    tempFile.delete();

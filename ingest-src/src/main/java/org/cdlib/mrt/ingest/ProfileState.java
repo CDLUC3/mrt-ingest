@@ -256,7 +256,8 @@ public class ProfileState
      * @param String Zookeeper priority for collection
      */
     public void setPriority(String priority) {
-        this.priority = priority;
+	// Left pad with zeros if less than 2 digits
+        this.priority = String.format("%2s", priority).replace(" " , "0");
     }
 
     /**

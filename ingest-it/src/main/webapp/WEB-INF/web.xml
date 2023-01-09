@@ -99,6 +99,24 @@
         <load-on-startup>1</load-on-startup>
     </servlet>          
 
+    <servlet>
+        <servlet-name>Consumer Daemon High Priority</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.ConsumerHighPriority</servlet-class>
+        <init-param>
+            <param-name>loggerProperties</param-name>
+            <param-value>resources/TIngestLogger.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>serviceProperties</param-name>
+            <param-value>resources/TIngestService.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localProperties</param-name>
+            <param-value>resources/TIngestServiceLocal.properties</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>          
+
     <servlet-mapping>
         <servlet-name>Jersey Ingest Web Application</servlet-name>
         <url-pattern>/*</url-pattern>

@@ -91,6 +91,13 @@ public interface IngestServiceStateInf
     public DateState getModificationDateTime();
 
     /**
+     * Get service start time
+     * Corresponds to the date-time when JVM is started
+     * @return DateState service start time
+     */
+    public DateState getServiceStartTime();
+
+    /**
      * Last Ingest date-time to service
      * Not technically feasible
      * @return DateState Ingest date-time
