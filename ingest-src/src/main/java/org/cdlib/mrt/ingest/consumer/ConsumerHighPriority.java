@@ -465,10 +465,6 @@ class ConsumerDaemonHighPriority implements Runnable
 
 	    Item item = null;
 	    try {
-		// reconnect may be necessary
-                zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer(), sessionID, sessionAuth);
-                distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-
 	        item = distributedQueue.updateStatus(id, Item.CONSUMED, Item.PENDING);
 	    } catch (SessionExpiredException see) {
 	        System.err.println("[error]" + MESSAGE +  "Session expired.  Attempting to recreate session while requeueing.");
