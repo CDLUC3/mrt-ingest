@@ -36,11 +36,14 @@ import java.util.TreeMap;
 import java.io.File;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.io.StreamCorruptedException;
+import java.lang.ArrayIndexOutOfBoundsException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.SortedMap;
+import java.util.NoSuchElementException;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -65,6 +68,7 @@ import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.ZooCodeUtil;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
 /**
  * Basic manager for Queuing Service
@@ -223,6 +227,7 @@ public class QueueManager {
 				   	Item item = Item.fromBytes(data);
 					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
 					ObjectInputStream ois = new ObjectInputStream(bis);
+// }
 					Properties p = (Properties) ois.readObject();
 
 					QueueEntryState queueEntryState = new QueueEntryState();
@@ -256,6 +261,10 @@ public class QueueManager {
 				} catch (KeeperException.NoNodeException e) {
 					System.out.println("KeeperException.NoNodeException");
 					System.out.println(StringUtil.stackTrace(e));
+				} catch (StreamCorruptedException sce) {
+					String msg = "[Error] getQueueState: Request for ingest queue not valid: " + queue;
+					System.err.println(msg);
+					throw new TException.REQUEST_INVALID(MESSAGE + "[ERROR]: " + msg);
 				} catch (Exception ex) { 
 					System.out.println("Exception");
 					System.out.println(StringUtil.stackTrace(ex));
@@ -265,6 +274,8 @@ public class QueueManager {
 
 			return queueState;
 
+		} catch (TException me) {
+			throw me;
 		} catch (Exception ex) {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
@@ -388,7 +399,14 @@ public class QueueManager {
                                    try {
                                         byte[] data = zooKeeper.getData(path, false, null);
                                         Item item = Item.fromBytes(data);
-					JSONObject jo = new JSONObject(new String(item.getData()));
+					JSONObject jo;
+                                        try {
+						jo = new JSONObject(new String(item.getData()));
+                                        } catch (JSONException jex) {
+                                                String msg = "[Error] getAccessQueueState: Request for access queue not valid: " + queue;
+                                                System.err.println(msg);
+                                                throw new TException.REQUEST_INVALID(MESSAGE + msg);
+                                        }
 
                                         QueueEntryState queueEntryState = new QueueEntryState();
                                         queueEntryState.setDate(item.getTimestamp().toString());
@@ -410,6 +428,8 @@ public class QueueManager {
                                         queueEntryState.setQueueStatus(String.valueOf(jo.getLong("status")));
 
                                         accessQueueState.addEntry(queueEntryState);
+                                } catch (TException tex) {
+                                        throw tex;
                                 } catch (KeeperException.NoNodeException e) {
                                         System.out.println("KeeperException.NoNodeException");
                                         System.out.println(StringUtil.stackTrace(e));
@@ -422,6 +442,8 @@ public class QueueManager {
 
                         return accessQueueState;
 
+                } catch (TException me) {
+                        throw me;
                 } catch (Exception ex) {
                         System.out.println(StringUtil.stackTrace(ex));
                         logger.logError(MESSAGE + "Exception:" + ex, 0);
@@ -456,7 +478,14 @@ public class QueueManager {
                                    try {
                                         byte[] data = zooKeeper.getData(path, false, null);
                                         Item item = Item.fromBytes(data);
-					Properties entry = ZooCodeUtil.decodeItem(item.getData());
+					Properties entry;
+					try {
+						entry = ZooCodeUtil.decodeItem(item.getData());
+                                	} catch (TException tex) {
+                                        	String msg = "[Error] getInventoryQueueState: Request for inventory queue not valid: " + queue;
+						System.err.println(msg);
+                                        	throw new TException.REQUEST_INVALID(MESSAGE + msg);
+					}
                                         String manifestURL = entry.getProperty("manifestURL");
 
                                         QueueEntryState queueEntryState = new QueueEntryState();
@@ -476,6 +505,8 @@ public class QueueManager {
                                         queueEntryState.setID(headNode);
 
                                         inventoryQueueState.addEntry(queueEntryState);
+                                } catch (TException tex) {
+					throw tex;
                                 } catch (KeeperException.NoNodeException e) {
                                         System.out.println("KeeperException.NoNodeException");
                                         System.out.println(StringUtil.stackTrace(e));
@@ -488,6 +519,8 @@ public class QueueManager {
 
                         return inventoryQueueState;
 
+                } catch (TException me) {
+                        throw me;
                 } catch (Exception ex) {
                         System.out.println(StringUtil.stackTrace(ex));
                         logger.logError(MESSAGE + "Exception:" + ex, 0);
@@ -862,6 +895,43 @@ public class QueueManager {
                 }
 
         	return queueEntryState;
+    	}
+
+        public QueueState postCleanupq(String queue) throws TException {
+                ZooKeeper zooKeeper = null;
+                QueueState queueState = new QueueState();
+                try {
+	    		Item item = null;
+			if ( ! queue.startsWith("/")) queue = "/" + queue;
+
+                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
+
+                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
+                        try {
+                            distributedQueue.cleanup(Item.COMPLETED);
+                        } catch (NoSuchElementException nsee) {
+                            // No more data
+                        }
+                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
+                        try {
+                            distributedQueue.cleanup(Item.DELETED);
+                        } catch (NoSuchElementException nsee) {
+                                // No more data
+                        }
+
+        		return queueState;
+        	} catch (Exception ex) {
+            		System.out.println(StringUtil.stackTrace(ex));
+            		logger.logError(MESSAGE + "Exception:" + ex, 0);
+            		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+
     	}
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {

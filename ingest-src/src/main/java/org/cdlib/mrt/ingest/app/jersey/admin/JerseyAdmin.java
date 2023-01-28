@@ -345,6 +345,8 @@ public class JerseyAdmin extends JerseyBase
             StateInf responseState = ingestService.getQueueState("/" + queue);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
+        } catch (TException.REQUEST_INVALID ir) {
+            return getStateResponse(ir, formatType, logger, cs, sc);
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
             return getStateResponse(renf, formatType, logger, cs, sc);
         } catch (TException tex) {
@@ -383,6 +385,8 @@ public class JerseyAdmin extends JerseyBase
             StateInf responseState = ingestService.getAccessQueueState("/" + queue);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
+        } catch (TException.REQUEST_INVALID ir) {
+            return getStateResponse(ir, formatType, logger, cs, sc);
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
             return getStateResponse(renf, formatType, logger, cs, sc);
         } catch (TException tex) {
@@ -421,6 +425,8 @@ public class JerseyAdmin extends JerseyBase
             StateInf responseState = ingestService.getInventoryQueueState("/" + queue);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
+        } catch (TException.REQUEST_INVALID ir) {
+            return getStateResponse(ir, formatType, logger, cs, sc);
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
             return getStateResponse(renf, formatType, logger, cs, sc);
         } catch (TException tex) {
@@ -539,6 +545,44 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
             StateInf responseState = ingestService.postDeleteq(queue, id, fromState);
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
+            return getStateResponse(renf, formatType, logger, cs, sc);
+        } catch (TException tex) {
+            throw tex;
+        } catch (Exception ex) {
+            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+    // Clean up queue, removing "completed" and "deleted" states
+    @POST
+    @Path("/cleanupq/{queue}")
+    public Response postDeleteq(
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("queue") String queue,
+            @Context HttpServletRequest request,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("processing cleaning up of queue: " + queue);
+
+            // Accept is overridden by responseForm form parm
+            String responseForm = "";
+            try {
+                responseForm = processFormatType(request.getHeader("Accept"), "");
+            } catch (Exception e) {}
+            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
+
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.postCleanupq(queue);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {

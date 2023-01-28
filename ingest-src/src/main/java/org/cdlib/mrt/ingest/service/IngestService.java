@@ -175,6 +175,13 @@ public class IngestService
     }
 
     @Override
+    public QueueState postCleanupq(String queue)
+        throws TException
+    {
+        return queueManager.postCleanupq(queue);
+    }
+
+    @Override
     public QueueState postReleaseAll(String queue, String profile)
         throws TException
     {
