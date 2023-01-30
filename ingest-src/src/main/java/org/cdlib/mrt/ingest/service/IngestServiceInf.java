@@ -138,6 +138,14 @@ public interface IngestServiceInf
         throws TException;
 
     /**
+     * Clean up queue 
+     * @return QueueState queue state information
+     * @throws TException Exception condition 
+     */
+    public QueueState postCleanupq(String queue)
+        throws TException;
+
+    /**
      * Release queue entries at a collection level
      * @return QueueState queue state information
      * @throws TException Exception condition 
