@@ -907,13 +907,13 @@ public class QueueManager {
                         zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
 
-                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queue);
                         try {
                             distributedQueue.cleanup(Item.COMPLETED);
                         } catch (NoSuchElementException nsee) {
                             // No more data
                         }
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queue);
                         try {
                             distributedQueue.cleanup(Item.DELETED);
                         } catch (NoSuchElementException nsee) {
