@@ -103,6 +103,7 @@ public class ProfileUtil
     private static final String matchEzidCoowner = "EZID_co-owner";
     private static final String matchNotificationFormat = "NotificationFormat";
     private static final String matchNotificationType = "NotificationType";
+    private static final String matchNotificationSuppression = "NotificationSuppression";
     private static final String matchSuppressDublinCoreLocalID = "SuppressDublinCoreLocalID";
     
 
@@ -301,6 +302,9 @@ public class ProfileUtil
 		} else if (key.startsWith(matchNotificationType)) {
                     if (DEBUG) System.out.println("[debug] notification type: " + value);
 		    profileState.setNotificationType(value);
+		} else if (key.startsWith(matchNotificationSuppression)) {
+                    if (DEBUG) System.out.println("[debug] notification suppression: " + value);
+		    profileState.setNotificationSuppression(value);
 		} else if (key.startsWith(matchSuppressDublinCoreLocalID)) {
                     if (DEBUG) System.out.println("[debug] suppress dc.identifer/local ID processing: " + value);
 		    if (value.equalsIgnoreCase("true")) profileState.setSuppressDublinCoreLocalID(true);
