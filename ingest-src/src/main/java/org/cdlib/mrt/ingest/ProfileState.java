@@ -90,6 +90,7 @@ public class ProfileState
     private String ezidCoowner = null;
     private FormatType notificationFormat = null;	// response type
     private String notificationType = null;		// human readable notification 
+    private String notificationSuppression = null;	// partial|full suppress email notification
     private boolean suppressDublinCoreLocalID = false;	// opt-in policy
 
     final String[] OBJECTTYPE = { "MRT-curatorial", "MRT-system" };
@@ -577,6 +578,10 @@ public class ProfileState
         return notificationType;
     }
 
+    public String getNotificationSuppression() {
+        return notificationSuppression;
+    }
+
     public String getEzidCoowner() {
         return ezidCoowner;
     }
@@ -606,6 +611,10 @@ public class ProfileState
 
     public void setNotificationType(String notificationType) {
 	this.notificationType = notificationType;
+    }
+
+    public void setNotificationSuppression(String notificationSuppression) {
+	this.notificationSuppression = notificationSuppression;
     }
 
     public String dump(String header)

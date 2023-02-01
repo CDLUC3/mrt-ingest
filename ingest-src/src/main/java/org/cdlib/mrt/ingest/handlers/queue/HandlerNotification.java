@@ -79,6 +79,12 @@ public class HandlerNotification extends Handler<BatchState>
 
 	try {
 	    try {
+	        if (profileState.getNotificationSuppression().equalsIgnoreCase("partial") || profileState.getNotificationSuppression().equalsIgnoreCase("full")) {
+                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected suppression of queue notification: " + profileState.getNotificationSuppression());
+		    return new HandlerResult(true, "SUCCESS: " + NAME + " notification suppressed", 0);
+	        }
+	    } catch (Exception e) {}
+	    try {
 	        if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
                     if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
 		    verbose = true;
