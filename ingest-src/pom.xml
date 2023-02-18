@@ -87,6 +87,12 @@
     </build>
 
     <dependencies>
+	<!-- BOM uses version 9.4.  Can not downgrade due to error -->
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+            <version>9.8.0-14</version>
+        </dependency>
 <!-- Defined in BOM --> 
         <dependency>
             <groupId>javax.xml.bind</groupId>
@@ -129,7 +135,7 @@
         <dependency>
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>jena</artifactId>
-        </dependency>
+        </dependency> 
         <dependency>
             <groupId>xml-apis</groupId>
             <artifactId>xml-apis</artifactId>
@@ -197,12 +203,6 @@
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
         </dependency>
-	<!-- BOM uses version 9.4.  Can not downgrade due to error -->
-        <dependency>
-            <groupId>net.sf.saxon</groupId>
-            <artifactId>Saxon-HE</artifactId>
-            <version>9.8.0-14</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper-jute</artifactId>
@@ -214,10 +214,12 @@
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm</artifactId>
+	    <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xmlParserAPIs</artifactId>
+	    <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
