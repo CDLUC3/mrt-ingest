@@ -87,13 +87,10 @@
     </build>
 
     <dependencies>
-	<!-- BOM uses version 9.4.  Can not downgrade due to error -->
         <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
-            <version>9.8.0-14</version>
         </dependency>
-<!-- Defined in BOM --> 
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
