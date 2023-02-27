@@ -547,7 +547,10 @@ class ConsumeDataHighPriority implements Runnable
                 } catch (Exception e) {
                     System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
                     e.printStackTrace(System.err);
+                } finally {
+                    zooKeeper.close();
                 }
+
             } else {
 
 	    IngestRequest ingestRequest = new IngestRequest(p.getProperty("submitter"), p.getProperty("profile"),
