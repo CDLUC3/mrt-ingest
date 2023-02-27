@@ -90,6 +90,7 @@
         <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>javax.xml.bind</groupId>
@@ -143,7 +144,7 @@
     	    <groupId>javax.activation</groupId>
     	    <artifactId>javax.activation-api</artifactId>
     	    <version>1.2.0</version>
-            <scope>compile</scope>
+            <scope>runtime</scope>
 	</dependency>
 
         <!--mvn dependency:analyze suggests that this is not used, but is required for compilation-->
@@ -203,6 +204,8 @@
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper-jute</artifactId>
+            <!--ignore mvn dep warn-->
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.sf.opencsv</groupId>
@@ -216,7 +219,7 @@
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xmlParserAPIs</artifactId>
-	    <scope>runtime</scope>
+	        <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
