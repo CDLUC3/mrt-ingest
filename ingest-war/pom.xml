@@ -43,63 +43,6 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1</version>
-        <executions>
-          <execution>
-            <id>version</id>
-            <phase>package</phase>
-            <configuration>
-              <executable>git</executable>
-              <arguments>
-                <argument>log</argument>
-                <argument>--pretty=oneline</argument>
-                <argument>--max-count=1</argument>
-              </arguments>
-              <outputFile>target/VERSION</outputFile>
-            </configuration>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>branch</id>
-            <phase>package</phase>
-            <configuration>
-              <executable>git</executable>
-              <arguments>
-                <argument>branch</argument>
-              </arguments>
-              <outputFile>target/BRANCH</outputFile>
-            </configuration>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2.1</version>
-        <configuration>
-          <descriptors>
-            <descriptor>assembly.xml</descriptor>
-          </descriptors>
-        </configuration>
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
   </build>
 
