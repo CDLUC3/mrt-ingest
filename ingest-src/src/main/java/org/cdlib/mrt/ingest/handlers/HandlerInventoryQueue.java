@@ -63,7 +63,9 @@ public class HandlerInventoryQueue extends Handler<JobState> {
             } catch (InterruptedException ex) {
                 if (retryCount >= 3) throw ex;
                 retryCount++;
-            }
+            } finally {
+		bytes = null;
+	    }	    
         }
     }
 

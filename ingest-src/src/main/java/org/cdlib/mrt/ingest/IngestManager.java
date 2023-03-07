@@ -344,6 +344,7 @@ public class IngestManager {
 	}
 
 	public BatchState updateStatus(String batchID, String jobID, String status) throws TException {
+		Map<String, JobState> jobStates;
 		try {
 			File queueDir = new File(ingestFileS, "queue");
 			File file = new File(queueDir, batchID);
@@ -355,7 +356,7 @@ public class IngestManager {
 			}
 			BatchState batchState = BatchState.getBatchState(batchID);
 
-			Map<String, JobState> jobStates = (HashMap<String, JobState>) batchState.getJobStates();
+			jobStates = (HashMap<String, JobState>) batchState.getJobStates();
 			JobState jobStateTemp = (JobState) jobStates.get(jobID);
 			System.out.println("[info]" + MESSAGE + "updating job: " + jobStateTemp.getJobID());
 
@@ -373,6 +374,8 @@ public class IngestManager {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+			jobStates = null;
 		}
 	}
 
@@ -689,6 +692,7 @@ public class IngestManager {
 					}
 			} catch (Exception e) {
 				/* ignore */ }
+			profileState = null;
 		}
 	}
 

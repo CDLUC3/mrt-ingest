@@ -83,6 +83,11 @@ public class HandlerMinter extends Handler<JobState>
 	throws TException 
     {
 
+        Map<String, String> producerDC = null;
+        Map<String, String> producerDataCite = null;
+        Map<String, String> producerERC = null;
+        Map<String, String> previousSystemERC = null;
+
 	try {
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File metadataFile = new File(systemTargetDir, "mrt-ingest.txt");
@@ -100,7 +105,7 @@ public class HandlerMinter extends Handler<JobState>
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results?
 	    File producerDCFile = new File(ingestRequest.getQueuePath(), "producer/mrt-dc.xml");
 	    if (producerDCFile.exists()) {
-                Map<String, String> producerDC = MetadataUtil.readDublinCoreXML(producerDCFile);
+                producerDC = MetadataUtil.readDublinCoreXML(producerDCFile);
 		// overwrite Form or Manifest parameters
            	haveMetadata = updateMetadata(jobState, producerDC, true, false);
             }
@@ -109,7 +114,7 @@ public class HandlerMinter extends Handler<JobState>
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results?
 	    File producerDataCiteFile = new File(ingestRequest.getQueuePath(), "producer/mrt-datacite.xml");
 	    if (producerDataCiteFile.exists()) {
-                Map<String, String> producerDataCite = MetadataUtil.readDataCiteXML(producerDataCiteFile);
+                producerDataCite = MetadataUtil.readDataCiteXML(producerDataCiteFile);
 		// overwrite Form or Manifest parameters
            	haveMetadata = updateMetadata(jobState, producerDataCite, true, true);
 
@@ -121,7 +126,7 @@ public class HandlerMinter extends Handler<JobState>
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results? 
 	    File producerErcFile = new File(ingestRequest.getQueuePath(), "producer/mrt-erc.txt");
 	    if (producerErcFile.exists()) {
-                Map<String, String> producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
+                producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
 		// overwrite Form or Manifest parameters or DC data
            	haveMetadata = updateMetadata(jobState, producerERC, true);
             }
@@ -185,7 +190,7 @@ public class HandlerMinter extends Handler<JobState>
 		    System.out.println("[debug] " + MESSAGE + "Update specified, let's update primary/local IDs'");
 		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
 	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
-                	Map<String, String> previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
+                	previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
            		// erc file in ANVL format
            		updateMetadata(jobState, previousSystemERC, true, false);	// update IDs only
             	    } else {
@@ -279,7 +284,10 @@ public class HandlerMinter extends Handler<JobState>
             String msg = "[error] " + MESSAGE + "minting identifier: " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
-            // cleanup?
+            producerDC = null;
+            producerDataCite = null;
+            producerERC = null;
+            previousSystemERC = null;
         }
     }
    

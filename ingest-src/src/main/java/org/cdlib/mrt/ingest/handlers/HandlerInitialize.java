@@ -256,6 +256,7 @@ public class HandlerInitialize extends Handler<JobState>
 	        notificationString = notificationString + ";" + ((Notification) contactsEmail.next()).getContactEmail();
 	    }
 	}
+	contactsEmail = null;
 	ingestProperties.put("notification", notificationString);
 
 
@@ -456,8 +457,7 @@ public class HandlerInitialize extends Handler<JobState>
 	    e.printStackTrace();
 	    String msg = "[error] " + MESSAGE + "failed to create model: " + e.getMessage();
 	    throw new TException.GENERAL_EXCEPTION(msg);
-        }
-	
+	}
     }
 
 

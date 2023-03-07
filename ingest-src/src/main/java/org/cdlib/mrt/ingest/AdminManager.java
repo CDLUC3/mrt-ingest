@@ -280,6 +280,7 @@ public class AdminManager {
 	}
 
 	public JobFileState getJobFileState(String batchID, String jobID) throws TException {
+                String[] lines;
 		try {
 			JobFileState jobFileState = new JobFileState();
 
@@ -289,7 +290,7 @@ public class AdminManager {
                     	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobFile.getAbsolutePath());
 			}
 		
-                	String[] lines = FileUtil.getLinesFromFile(jobFile);
+                	lines = FileUtil.getLinesFromFile(jobFile);
 			boolean primaryID = true;
                 	for (String line: lines) {
 			   String parts[] = line.split(":", 2);
@@ -320,6 +321,7 @@ public class AdminManager {
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
+			lines = null;
 		}
 	}
 

@@ -148,6 +148,8 @@ public class IngestConfig
     protected static JSONObject getYamlJson()
        throws TException
     {
+        LinkedHashMap<String, Object> map;
+        LinkedHashMap<String, Object> lmap;
         try {
             String propName = "resources/ingestConfig.yaml";
             Test test=new Test();
@@ -161,8 +163,8 @@ public class IngestConfig
             YamlParser yamlParser = new YamlParser(ssmResolver);
             System.out.println("Ingest Table:" + ingInfoConfig);
             System.out.println("Ingest Yaml:\n" + ingestYaml);
-            LinkedHashMap<String, Object> map = yamlParser.parseString(ingestYaml);
-            LinkedHashMap<String, Object> lmap = (LinkedHashMap<String, Object>)map.get(ingInfoConfig);
+            map = yamlParser.parseString(ingestYaml);
+            lmap = (LinkedHashMap<String, Object>)map.get(ingInfoConfig);
             if (lmap == null) {
                 throw new TException.INVALID_CONFIGURATION(MESSAGE + "Unable to locate configuration");
             }
@@ -176,7 +178,10 @@ public class IngestConfig
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new TException.INVALID_CONFIGURATION(MESSAGE + "Unable to locate configuration");
-        }
+        } finally {
+	    map = null;
+	    lmap = null;
+	}
     }
 
     protected static String getYamlInfo()

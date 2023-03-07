@@ -203,6 +203,7 @@ public class QueueManager {
 
 	public QueueState getQueueState(String queue) throws TException {
 		ZooKeeper zooKeeper = null;
+		byte[] data = null;
 		try {
 			QueueState queueState = new QueueState();
 			if (queue == null) queue = queueNode;
@@ -223,7 +224,7 @@ public class QueueManager {
 			   for (String headNode : orderedChildren.values()) {
 				   String path = String.format("%s/%s", distributedQueue.dir, headNode);
 				   try {
-				 	byte[] data = zooKeeper.getData(path, false, null);
+				 	zooKeeper.getData(path, false, null);
 				   	Item item = Item.fromBytes(data);
 					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
 					ObjectInputStream ois = new ObjectInputStream(bis);
@@ -268,6 +269,8 @@ public class QueueManager {
 				} catch (Exception ex) { 
 					System.out.println("Exception");
 					System.out.println(StringUtil.stackTrace(ex));
+				} finally {
+					data = null;
 				}
 			    }
 			}
@@ -291,6 +294,7 @@ public class QueueManager {
 
 	public QueueState postReleaseAll(String queue, String profile) throws TException {
 		ZooKeeper zooKeeper = null;
+		TreeMap<Long, String> orderedChildren;
 		try {
 			QueueState queueState = new QueueState();
 
@@ -301,7 +305,6 @@ public class QueueManager {
 			zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
 			DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
-			TreeMap<Long, String> orderedChildren;
 			try {
 				orderedChildren = distributedQueue.orderedChildren(null);
 			} catch (KeeperException.NoNodeException e) {
@@ -372,6 +375,7 @@ public class QueueManager {
 		} finally {
 			try {
 				zooKeeper.close();
+				orderedChildren = null;
 			} catch (Exception e) {
 			}
 		}
@@ -379,6 +383,7 @@ public class QueueManager {
 
         public QueueState getAccessQueueState(String queue) throws TException {
                 ZooKeeper zooKeeper = null;
+                TreeMap<Long, String> orderedChildren;
                 try {
                         QueueState accessQueueState = new QueueState();
 
@@ -386,7 +391,6 @@ public class QueueManager {
                         zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
-                        TreeMap<Long, String> orderedChildren;
                         try {
                                 orderedChildren = distributedQueue.orderedChildren(null);
                         } catch (KeeperException.NoNodeException e) {
@@ -451,6 +455,7 @@ public class QueueManager {
                 } finally {
                         try {
                                 zooKeeper.close();
+				orderedChildren = null;
                         } catch (Exception e) {
                         }
                 }
@@ -458,6 +463,7 @@ public class QueueManager {
 
         public QueueState getInventoryQueueState(String queue) throws TException {
                 ZooKeeper zooKeeper = null;
+                TreeMap<Long, String> orderedChildren;
                 try {
                         QueueState inventoryQueueState = new QueueState();
 
@@ -465,7 +471,6 @@ public class QueueManager {
                         zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
-                        TreeMap<Long, String> orderedChildren;
                         try {
                                 orderedChildren = distributedQueue.orderedChildren(null);
                         } catch (KeeperException.NoNodeException e) {
@@ -528,6 +533,7 @@ public class QueueManager {
                 } finally {
                         try {
                                 zooKeeper.close();
+                                orderedChildren = null;
                         } catch (Exception e) {
                         }
                 }
@@ -536,6 +542,7 @@ public class QueueManager {
 
         public LockState getIngestLockState(String lockNode) throws TException {
                 ZooKeeper zooKeeper = null;
+                TreeMap<Long, String> orderedChildren;
                 try {
                         LockState ingestLockState = new LockState(); 
 			String pathID = null;  // Not needed for tree listing
@@ -544,7 +551,6 @@ public class QueueManager {
                         zooKeeper = new ZooKeeper(queueConnectionString, DistributedLock.sessionTimeout, new Ignorer());
                         DistributedLock distributedLock = new DistributedLock(zooKeeper, lockNode, pathID, null);
 
-                        TreeMap<Long, String> orderedChildren;
                         try {
                                 orderedChildren = distributedLock.orderedChildren(null);
                         } catch (KeeperException.NoNodeException e) {
@@ -583,6 +589,7 @@ public class QueueManager {
                 } finally {
                         try {
                                 zooKeeper.close();
+                                orderedChildren = null;
                         } catch (Exception e) {
                         }
                 }
@@ -590,10 +597,11 @@ public class QueueManager {
 
 
 	public IngestLockNameState getIngestLockState() throws TException {
+		String[] nodes;
 		try {
 			IngestLockNameState ingestLockNameState = new IngestLockNameState();
 			// comma delimiter if multiple ingest ZK locks
-			String[] nodes = ingestLName.split(",");
+			nodes = ingestLName.split(",");
 			for (String node: nodes) {
 			   ingestLockNameState.addEntry(node);
 			}
@@ -603,14 +611,17 @@ public class QueueManager {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+			nodes = null;
 		}
 	}
 
 	public IngestQueueNameState getIngestQueueState() throws TException {
+		String[] nodes;
 		try {
 			IngestQueueNameState ingestQueueNameState = new IngestQueueNameState();
 			// comma delimiter if multiple ingest ZK queues
-			String[] nodes = ingestQNames.split(",");
+			nodes = ingestQNames.split(",");
 			for (String node: nodes) {
 			   ingestQueueNameState.addEntry(node);
 			}
@@ -620,6 +631,8 @@ public class QueueManager {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+		} finally {
+			nodes = null;
 		}
 	}
 
@@ -1124,6 +1137,7 @@ public class QueueManager {
 				System.out.println(MESSAGE + "Exception detected while posting data to queue.");
 				e.printStackTrace(System.err);
 			} finally {
+				queueHandlers = null;
 			}
 		}
 

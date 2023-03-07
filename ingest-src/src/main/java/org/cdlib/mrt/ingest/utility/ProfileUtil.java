@@ -326,6 +326,9 @@ public class ProfileUtil
 
             System.out.println(err + " : " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(err);
+	} finally {
+	    ingestHandlers = null;
+	    queueHandlers = null;
 	}
     }
 
