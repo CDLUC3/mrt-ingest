@@ -224,7 +224,7 @@ public class QueueManager {
 			   for (String headNode : orderedChildren.values()) {
 				   String path = String.format("%s/%s", distributedQueue.dir, headNode);
 				   try {
-				 	zooKeeper.getData(path, false, null);
+				 	data = zooKeeper.getData(path, false, null);
 				   	Item item = Item.fromBytes(data);
 					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
 					ObjectInputStream ois = new ObjectInputStream(bis);
@@ -295,6 +295,7 @@ public class QueueManager {
 	public QueueState postReleaseAll(String queue, String profile) throws TException {
 		ZooKeeper zooKeeper = null;
 		TreeMap<Long, String> orderedChildren;
+                byte[] data = null;
 		try {
 			QueueState queueState = new QueueState();
 
@@ -317,7 +318,7 @@ public class QueueManager {
 				   System.out.println("[INFO]" + MESSAGE + "Checking queue entry: " + path);
 				   try {
 
-				 	byte[] data = zooKeeper.getData(path, false, null);
+				 	data = zooKeeper.getData(path, false, null);
 				   	Item item = Item.fromBytes(data);
 					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
 					ObjectInputStream ois = new ObjectInputStream(bis);
@@ -376,6 +377,7 @@ public class QueueManager {
 			try {
 				zooKeeper.close();
 				orderedChildren = null;
+				data = null;
 			} catch (Exception e) {
 			}
 		}
@@ -384,6 +386,7 @@ public class QueueManager {
         public QueueState getAccessQueueState(String queue) throws TException {
                 ZooKeeper zooKeeper = null;
                 TreeMap<Long, String> orderedChildren;
+                byte[] data = null;
                 try {
                         QueueState accessQueueState = new QueueState();
 
@@ -401,7 +404,7 @@ public class QueueManager {
                            for (String headNode : orderedChildren.values()) {
                                    String path = String.format("%s/%s", distributedQueue.dir, headNode);
                                    try {
-                                        byte[] data = zooKeeper.getData(path, false, null);
+                                        data = zooKeeper.getData(path, false, null);
                                         Item item = Item.fromBytes(data);
 					JSONObject jo;
                                         try {
@@ -440,7 +443,9 @@ public class QueueManager {
                                 } catch (Exception ex) {
                                         System.out.println("Exception");
                                         System.out.println(StringUtil.stackTrace(ex));
-                                }
+                                } finally {
+					data = null;
+				}
                             }
                         }
 
@@ -464,6 +469,7 @@ public class QueueManager {
         public QueueState getInventoryQueueState(String queue) throws TException {
                 ZooKeeper zooKeeper = null;
                 TreeMap<Long, String> orderedChildren;
+                byte[] data = null;
                 try {
                         QueueState inventoryQueueState = new QueueState();
 
@@ -481,7 +487,7 @@ public class QueueManager {
                            for (String headNode : orderedChildren.values()) {
                                    String path = String.format("%s/%s", distributedQueue.dir, headNode);
                                    try {
-                                        byte[] data = zooKeeper.getData(path, false, null);
+                                        data = zooKeeper.getData(path, false, null);
                                         Item item = Item.fromBytes(data);
 					Properties entry;
 					try {
@@ -518,7 +524,9 @@ public class QueueManager {
                                 } catch (Exception ex) {
                                         System.out.println("Exception");
                                         System.out.println(StringUtil.stackTrace(ex));
-                                }
+                                } finally {
+					data = null;
+				}
                             }
                         }
 
@@ -543,6 +551,7 @@ public class QueueManager {
         public LockState getIngestLockState(String lockNode) throws TException {
                 ZooKeeper zooKeeper = null;
                 TreeMap<Long, String> orderedChildren;
+                byte[] data = null;
                 try {
                         LockState ingestLockState = new LockState(); 
 			String pathID = null;  // Not needed for tree listing
@@ -561,7 +570,7 @@ public class QueueManager {
                            for (String headNode : orderedChildren.values()) {
                                    String path = String.format("%s/%s", distributedLock.node, headNode);
                                    try {
-                                        byte[] data = zooKeeper.getData(path, false, null);
+                                        data = zooKeeper.getData(path, false, null);
                                         LockItem lockItem = LockItem.fromBytes(data);
 
                                         LockEntryState lockEntryState = new LockEntryState();
@@ -576,7 +585,9 @@ public class QueueManager {
                                 } catch (Exception ex) {
                                         System.out.println("Exception");
                                         System.out.println(StringUtil.stackTrace(ex));
-                                }
+                                } finally {
+					data = null;
+				}
                             }
                         }
 
