@@ -38,6 +38,7 @@ import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
+import java.lang.String;
 import java.net.URL;
 import java.util.Iterator;
 
@@ -51,6 +52,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.mail.MultiPartEmail;
 
@@ -152,31 +154,52 @@ public class HandlerCallback extends Handler<JobState> {
             String jobStateString = formatterUtil.doStateFormatting(jobState, formatType);
 
             // make service request
-            try {
-                clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, jobStateString);
-            } catch (Exception e) {
-		e.printStackTrace();
-                error = true;
-                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
-            }
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());
-
-	    // all 200s responses
-            if (clientResponse.getStatus() / 100 != 2) {
-                error = true;
+	    int retryCount = 0;
+	    while (true) {
                 try {
-                    // most likely exception
-                    // can only call once, as stream is not reset
-                    TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
-                } catch (TException te) {
-                    throw te;
+                    clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, jobStateString);
+		    break;
                 } catch (Exception e) {
-		    e.printStackTrace();
-                    // let's report something
-                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
+                    if (retryCount > 2) {
+                        error = true;
+		        e.printStackTrace();
+                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
+		    }
+                    retryCount++;
+                    System.err.println("[error] " + MESSAGE + ": Could not make Callback request: " + e.getMessage());
                 }
-            }
+	    }
+
+	    int responseCode = clientResponse.getStatus();
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
+
+	    Response.Status.Family responseFamily = clientResponse.getStatusInfo().getFamily();
+            String responseMessage = clientResponse.getStatusInfo().getReasonPhrase();
+            String responseBody = "";
+	    if (clientResponse.hasEntity()) {
+                responseBody = clientResponse.getEntity(String.class);
+	    }
+	    if (responseFamily.equals(Response.Status.Family.SUCCESSFUL)) {
+    		// 200s
+            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Callback successful: " + responseMessage);
+	    } else if (responseFamily.equals(Response.Status.Family.CLIENT_ERROR)) {
+    		// 400s
+            	if (DEBUG) System.out.println("[ERROR] " + MESSAGE + " Callback client side error: " + responseMessage);
+	    } else if (responseFamily.equals(Response.Status.Family.SERVER_ERROR)) {
+    		// 500s
+            	if (DEBUG) System.out.println("[ERROR] " + MESSAGE + " Callback server side error: " + responseMessage);
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
+	    } else if (responseFamily.equals(Response.Status.Family.REDIRECTION)) {
+    		// 300s
+            	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback redirection encountered: " + responseMessage);
+	    } else if (responseFamily.equals(Response.Status.Family.INFORMATIONAL)) {
+    		// 100s
+            	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback informational response: " + responseMessage);
+	    } else if (responseFamily.equals(Response.Status.Family.OTHER)) {
+    		// Other
+            	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback other response: " + responseMessage);
+	    }
+            if (DEBUG) System.out.println("[info] " + MESSAGE + " Callback response body: " + responseBody);
 
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
@@ -187,7 +210,7 @@ public class HandlerCallback extends Handler<JobState> {
             return new HandlerResult(true, msg, 0);
         } finally {
             if (error) {
-                if (DEBUG) System.out.println("[error] Callback request failed: " + url);
+                if (DEBUG) System.out.println("[error] Callback request failed: " + url + " * notifying users * ");
                 if (notify && error) notify(jobState, profileState, ingestRequest);
                 clientResponse = null;
             }
