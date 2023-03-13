@@ -846,6 +846,8 @@ public class JobState
 	        } catch (Exception e) {}
     
 	        header = stringWriter.toString();
+		stringWriter.close();
+		stringWriter = null;
 	    } else {	// state formatter
 		try {
                     formatterUtil = new FormatterUtil();
@@ -858,6 +860,7 @@ public class JobState
 	finally 
         {
 	    formatterUtil = null;
+	    header = null;
         }
 	return null;
     }

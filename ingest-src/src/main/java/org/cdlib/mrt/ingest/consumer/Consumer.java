@@ -800,6 +800,7 @@ class CleanupDaemon implements Runnable
             System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");
             e.printStackTrace(System.err);
         } finally {
+	    sessionAuth = null;
         }
     }
 

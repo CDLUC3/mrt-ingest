@@ -86,6 +86,7 @@ public class HandlerDescribe extends Handler<JobState>
 	throws TException 
     {
 
+	Map<String, String> producerERC = null;
 	try {
             systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File producerTargetDir = new File(ingestRequest.getQueuePath(), "producer");
@@ -111,7 +112,6 @@ public class HandlerDescribe extends Handler<JobState>
                 }
             }
 
-	    Map<String, String> producerERC = null;
 	    if (producerErcFile.exists()) {
 	        producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
 	    }
@@ -160,6 +160,7 @@ public class HandlerDescribe extends Handler<JobState>
             String msg = "[error] " + MESSAGE + "processing metadata: " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
+	    producerERC = null;
             // cleanup?
         }
 
