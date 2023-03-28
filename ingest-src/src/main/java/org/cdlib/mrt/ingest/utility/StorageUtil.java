@@ -30,9 +30,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.utility;
 
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.entity.StringEntity;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -50,6 +53,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.FileUtil;
+import org.cdlib.mrt.utility.HTTPUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
@@ -76,9 +80,11 @@ public class StorageUtil
     {
 
         try {
-	    File manifestFile = getStorageFile(profileState, objectID, null);
-	    if (manifestFile == null) return null;
-	    else return FileUtil.file2String(manifestFile);
+	    String manifestString = getStorageString(profileState, objectID, null);
+	    if (manifestString == null) 
+		return null;
+	    else 
+		return manifestString;
 
 	} catch (TException tex) {
 	    throw tex;
@@ -94,7 +100,22 @@ public class StorageUtil
     public static File getStorageFile(ProfileState profileState, String objectID, String filename)
         throws TException
     {
-       ClientResponse clientResponse = null;
+        try {
+	    File tempFile = File.createTempFile(objectID + filename, "txt");
+	    FileUtil.string2File(tempFile, getStorageString(profileState, objectID, filename));
+	    return tempFile;
+	} catch (Exception ex) {
+            System.out.println(StringUtil.stackTrace(ex));
+            String err = MESSAGE + "error in accessing Storage file - Exception:" + ex;
+
+            throw new TException.GENERAL_EXCEPTION("Error in accessing Storage file");
+	}
+    }
+
+    public static String getStorageString(ProfileState profileState, String objectID, String filename)
+        throws TException
+    {
+       HttpResponse clientResponse = null;
        String storageURL = null;
 
         try {
@@ -112,31 +133,31 @@ public class StorageUtil
 
             // build REST url 
             storageURL = storeNode.getStorageLink().toString() + type + storeNode.getNodeID() + "/" + URLEncoder.encode(objectID, "UTF-8") + filename;
-            Client client = Client.create();    // reuse?  creation is expensive
-            WebResource webResource = client.resource(storageURL);
 
+            HttpClient httpClient = HTTPUtil.getHttpClient(storageURL, StorageUtil.STORAGE_READ_TIMEOUT_SHORT);
+            HttpGet httpget = new HttpGet(storageURL);
+            httpget.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
             if (DEBUG) System.out.println("[debug] " + MESSAGE + " storage URL: " + storageURL);
 
             // make service request
             try {
-                clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).get(ClientResponse.class);
-            } catch (com.sun.jersey.api.client.ClientHandlerException che) {
-                che.printStackTrace();
-                String msg = "[error] " + MESSAGE + "Could not connect to Storage service: " 
-	 	    + profileState.getTargetStorage().getStorageLink().toString() + " --- " + che.getMessage();
-                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
+            	clientResponse = httpClient.execute(httpget);
             } catch (Exception e) {
 		e.printStackTrace();
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + storageURL);
             }
 
-            if (clientResponse.getStatus() == 404) return null;
-            if (clientResponse.getStatus() != 200) {
+            int responseCode = clientResponse.getStatusLine().getStatusCode();
+            String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
+            String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
+
+            if (responseCode == 404) return null;
+            if (responseCode != 200) {
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
-                    TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(responseMessage);
                 } catch (TException te) {
                     throw te;
                 } catch (Exception e) {
@@ -145,9 +166,8 @@ public class StorageUtil
                 }
             }
 
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " storage URL response: " + clientResponse.toString());
-	    // return clientResponse.getEntity(String.class);
-	    return clientResponse.getEntity(File.class);
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + " storage URL response: " + responseMessage);
+	    return responseBody;
 
 	} catch (TException tex) {
 	    throw tex;

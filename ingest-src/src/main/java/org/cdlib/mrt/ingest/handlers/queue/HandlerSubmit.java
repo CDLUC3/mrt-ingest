@@ -239,10 +239,6 @@ public class HandlerSubmit extends Handler<BatchState>
                 bos.close();
 
 		jobState.setJobStatus(JobStatusEnum.PENDING);
-
-	        // create status if necessary
-	        if (profileState.getStatusURL() != null)
-		    JSONUtil.updateJobState(profileState, jobState);
 	    }
 
 	    // global

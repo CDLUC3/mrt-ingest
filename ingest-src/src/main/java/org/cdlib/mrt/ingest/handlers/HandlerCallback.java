@@ -30,13 +30,13 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.handlers;
 
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.config.ClientConfig; 
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.client.urlconnection.HTTPSProperties;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 
 import java.lang.String;
 import java.net.URL;
@@ -53,6 +53,9 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.Status.Family;
+
 
 import org.apache.commons.mail.MultiPartEmail;
 
@@ -62,82 +65,56 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
+import org.cdlib.mrt.utility.HTTPUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 public class HandlerCallback extends Handler<JobState> {
     
     FormatterUtil formatterUtil = new FormatterUtil();
-    URL url = null;
+    URL requestURL = null;
     private boolean notify = true;
     private boolean error = false;
     private static final String NAME = "HandlerCallback";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
+    public static final int CALLBACK_TIMEOUT = (5 * 60 * 1000);
 
 
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
 
-        ClientResponse clientResponse = null;
 	FormatType formatType = null;
  
         try {
 	    try {
 	       // Add merritt callback and Job ID to pathname (e.g. mc/<jid>)
-               url = new URL(profileState.getCallbackURL().toString() + "/mc/" + jobState.getJobID().getValue());
+               requestURL = new URL(profileState.getCallbackURL().toString() + "/mc/" + jobState.getJobID().getValue());
 	    } catch (Exception e) {
                 System.err.println("[error] " + MESSAGE + " Callback URL not defined or not valid: " + profileState.getCallbackURL());
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + profileState.getCallbackURL());
 	    }
-	    String credentials = url.getUserInfo();
-	    String protocol = url.getProtocol();
-            Client client = null;
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " Callback URL and pathname: " + url.toString());
+	    String credentials = requestURL.getUserInfo();
+	    String protocol = requestURL.getProtocol();
+            if (DEBUG) System.out.println("[debug] " + MESSAGE + " Callback URL and pathname: " + requestURL.toString());
 
-	    // https - trust all certs
-	    if (protocol.equals("https")) {
-                X509TrustManager tm = new X509TrustManager() {
-                    public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
-                    public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return null;
-                    }
-                };
-            	if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting SSL protocol");
-		ClientConfig config = new DefaultClientConfig();
-		SSLContext ctx = SSLContext.getInstance("TLS");
-                ctx.init(null, new TrustManager[]{tm}, new SecureRandom());
-   		HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-
-		config.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(
-		    new HostnameVerifier() {
-			@Override
-			public boolean verify(String hostname, SSLSession session) {
-		 	    return true;
-			}
-		}, ctx));
-
-                client = Client.create(config);
-	    } else {
-                client = Client.create();    // reuse?  creation is expensive
-	    }
+    	    HttpClient httpClient = HTTPUtil.getHttpClient(requestURL.toString(), CALLBACK_TIMEOUT);
+	    String authHeader = null;
 
 	    // HTTP Basic authentication (optional)
 	    if (credentials != null) {
 		try {
             	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting Basic Authenication parameters");
 		    String[] cred = credentials.split(":");
-		    client.addFilter(new HTTPBasicAuthFilter(cred[0], cred[1]));
+		    authHeader = HTTPUtil.getBasicAuthenticationHeader(cred[0], cred[1]);
 		} catch (Exception e) {
             	    if (DEBUG) System.out.println("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
 		}
 		// remove credential from URL 
-		String urlString = url.toString();
-		url = new URL(urlString.replaceFirst(credentials + "@", ""));
+		String urlString = requestURL.toString();
+		requestURL = new URL(urlString.replaceFirst(credentials + "@", ""));
 	    }
 
-            WebResource webResource = client.resource(url.toString());
 
             if (ingestRequest.getNotificationFormat() != null) {
 		// POST parm overrides profile parm
@@ -152,33 +129,37 @@ public class HandlerCallback extends Handler<JobState> {
 	    }
 
             String jobStateString = formatterUtil.doStateFormatting(jobState, formatType);
+            HttpPost httppost = new HttpPost(requestURL.toString());
+            HttpResponse clientResponse = null;
 
             // make service request
 	    int retryCount = 0;
 	    while (true) {
                 try {
-                    clientResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, jobStateString);
+            	    httppost.setHeader("Content-Type", MediaType.APPLICATION_JSON);
+            	    if (authHeader != null) httppost.setHeader("Authorization", authHeader);
+            	    httppost.setEntity(new StringEntity(jobStateString));
+            	    clientResponse = httpClient.execute(httppost);
 		    break;
                 } catch (Exception e) {
                     if (retryCount > 2) {
                         error = true;
 		        e.printStackTrace();
-                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
+                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + requestURL);
 		    }
                     retryCount++;
                     System.err.println("[error] " + MESSAGE + ": Could not make Callback request: " + e.getMessage());
                 }
 	    }
 
-	    int responseCode = clientResponse.getStatus();
+	    int responseCode = clientResponse.getStatusLine().getStatusCode();
             if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
 
-	    Response.Status.Family responseFamily = clientResponse.getStatusInfo().getFamily();
-            String responseMessage = clientResponse.getStatusInfo().getReasonPhrase();
-            String responseBody = "";
-	    if (clientResponse.hasEntity()) {
-                responseBody = clientResponse.getEntity(String.class);
-	    }
+	    Family responseFamily = Family.familyOf(responseCode);
+
+            String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
+            String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
+
 	    if (responseFamily.equals(Response.Status.Family.SUCCESSFUL)) {
     		// 200s
             	if (DEBUG) System.out.println("[info] " + MESSAGE + " Callback successful: " + responseMessage);
@@ -188,7 +169,7 @@ public class HandlerCallback extends Handler<JobState> {
 	    } else if (responseFamily.equals(Response.Status.Family.SERVER_ERROR)) {
     		// 500s
             	if (DEBUG) System.out.println("[ERROR] " + MESSAGE + " Callback server side error: " + responseMessage);
-                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + url);
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + requestURL);
 	    } else if (responseFamily.equals(Response.Status.Family.REDIRECTION)) {
     		// 300s
             	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback redirection encountered: " + responseMessage);
@@ -199,20 +180,19 @@ public class HandlerCallback extends Handler<JobState> {
     		// Other
             	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback other response: " + responseMessage);
 	    }
-            if (DEBUG) System.out.println("[info] " + MESSAGE + " Callback response body: " + responseBody);
+            if (DEBUG && responseBody != null) System.out.println("[info] " + MESSAGE + " Callback response body: " + responseBody);
 
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
             return new HandlerResult(true, msg, 0);
         } catch (Exception ex) {
-            String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), url);
+            String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), requestURL);
 	    ex.printStackTrace();
             return new HandlerResult(true, msg, 0);
         } finally {
             if (error) {
-                if (DEBUG) System.out.println("[error] Callback request failed: " + url + " * notifying users * ");
+                if (DEBUG) System.out.println("[error] Callback request failed: " + requestURL + " * notifying users * ");
                 if (notify && error) notify(jobState, profileState, ingestRequest);
-                clientResponse = null;
             }
 
 	    formatterUtil = null;

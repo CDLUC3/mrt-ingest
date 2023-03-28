@@ -32,9 +32,10 @@ package org.cdlib.mrt.ingest.app.jersey.admin;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.glassfish.jersey.server.CloseableService;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
 import javax.servlet.ServletConfig;
-import com.sun.jersey.multipart.FormDataParam;
-import com.sun.jersey.spi.CloseableService;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.core.Context;
