@@ -46,6 +46,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.QueryParam;
 
 import org.cdlib.mrt.formatter.FormatterInf;
@@ -72,7 +73,6 @@ public class JerseyAdmin extends JerseyBase
     protected static final String NL = System.getProperty("line.separator");
 
     // Show service status
-    @Deprecated
     @GET
     @Path("/state")
     public Response getServiceState(
@@ -105,7 +105,6 @@ public class JerseyAdmin extends JerseyBase
 
 
     // Show service help
-    @Deprecated
     @GET
     @Path("/help")
     public Response getHelp(
