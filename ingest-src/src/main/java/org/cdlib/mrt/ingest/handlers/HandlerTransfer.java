@@ -47,6 +47,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -201,7 +202,7 @@ public class HandlerTransfer extends Handler<JobState>
                 httppost.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
 		httppost.setHeader("JID", jobState.getJobID().getValue());
 		httppost.setHeader("hostname", InetAddress.getLocalHost().getHostName());
-		httppost.setEntity(new UrlEncodedFormEntity(params));
+		httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8.name()));
 
                 clientResponse = httpClient.execute(httppost);
 	    } catch (Exception e) {
