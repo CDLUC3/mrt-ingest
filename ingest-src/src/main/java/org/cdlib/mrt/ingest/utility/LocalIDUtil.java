@@ -29,10 +29,13 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.utility;
 
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 
 import java.io.ByteArrayInputStream;
 
@@ -56,11 +59,11 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
+import org.cdlib.mrt.utility.HTTPUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
@@ -79,12 +82,13 @@ public class LocalIDUtil
     private static final String MESSAGE = NAME + ": ";
     private LoggerInf logger = null;
     private static final boolean DEBUG = true;
+    public static final int LOCALID_TIMEOUT = (5 * 60 * 1000);
 
     public static String fetchPrimaryID(ProfileState profileState, String localID)
         throws TException
     {
 
-        ClientResponse clientResponse = null;
+        HttpResponse clientResponse = null;
         try {
 	    // First lets fetch from our localID DB on Local ID service
 	    String primaryID = null;
@@ -95,30 +99,32 @@ public class LocalIDUtil
 			URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" +
 			URLEncoder.encode(localID,  "utf-8") + "?t=xml";
             if (DEBUG) System.out.println("[debug] PrimaryID fetch URL: " + url);
-            Client client = Client.create();    // reuse?  creation is expensive
-
-            WebResource webResource = client.resource(url);
+            HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
+            HttpGet httpget = new HttpGet(url);
 
             // make service request
-            clientResponse = webResource.get(ClientResponse.class);
-	    int status = clientResponse.getStatus();
-   	    String response = null;
- 
-	    if (status != 200) {
+            try {
+                clientResponse = httpClient.execute(httpget);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": localid service: " + url);
+            }
+            int responseCode = clientResponse.getStatusLine().getStatusCode();
+            String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
+            String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
+
+	    if (responseCode != 200) {
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
-                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
-                    throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+                    throw new TException.REQUEST_INVALID(responseMessage);
                 } catch (TException te) {
                     throw te;
                 } catch (Exception e) {
                     // let's report something
                     throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": local ID service: " + url);
                 }
-	    } else {
-   	        response = clientResponse.getEntity(String.class);
-	    }
+	    } 
 
             DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
             domFactory.setNamespaceAware(true);
@@ -126,7 +132,7 @@ public class LocalIDUtil
 
             DocumentBuilder builder = domFactory.newDocumentBuilder();
             builder.setErrorHandler(null);
-            Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
+            Document document = builder.parse(new ByteArrayInputStream(responseBody.getBytes("UTF-8")));
             XPath xpath = XPathFactory.newInstance().newXPath();
             XPathExpression expr = xpath.compile("//*[local-name()='primaryIdentifier']");
 
@@ -143,11 +149,6 @@ public class LocalIDUtil
 
         } catch (TException te) {
 	    throw te;
-        } catch (com.sun.jersey.api.client.ClientHandlerException che) {
-            che.printStackTrace();
-            String msg = "[error] " + MESSAGE + "Could not connect to LocalID service: " 
-	        + profileState.getLocalIDURL().toString() + " --- " + che.getMessage();
-            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to map localID. " + e.getMessage();
@@ -162,7 +163,7 @@ public class LocalIDUtil
         throws TException
     {
 
-        ClientResponse clientResponse = null;
+        HttpResponse clientResponse = null;
         try {
 
 	    //Vector localIDs = null;
@@ -173,30 +174,34 @@ public class LocalIDUtil
             String url = localIDURL.toString() + "/local/" + 
 			URLEncoder.encode(primaryID,  "utf-8") + "?t=xml";
             if (DEBUG) System.out.println("[debug] LocalID fetch URL from localID db: " + url);
-            Client client = Client.create();    // reuse?  creation is expensive
 
-            WebResource webResource = client.resource(url);
+            HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
+            HttpGet httpget = new HttpGet(url);
 
             // make service request
-            clientResponse = webResource.get(ClientResponse.class);
-	    int status = clientResponse.getStatus();
-   	    String response = null;
- 
-	    if (status != 200) {
+            try {
+                clientResponse = httpClient.execute(httpget);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": localid service: " + url);
+            }
+
+            int responseCode = clientResponse.getStatusLine().getStatusCode();
+            String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
+            String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
+
+	    if (responseCode != 200) {
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
-                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
-                    throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+                    throw new TException.REQUEST_INVALID(responseMessage);
                 } catch (TException te) {
                     throw te;
                 } catch (Exception e) {
                     // let's report something
                     throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": localID service: " + url);
                 }
-	    } else {
-   	        response = clientResponse.getEntity(String.class);
-	    }
+	    } 
 
             DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
             domFactory.setNamespaceAware(true);
@@ -204,7 +209,7 @@ public class LocalIDUtil
 
             DocumentBuilder builder = domFactory.newDocumentBuilder();
             builder.setErrorHandler(null);
-            Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
+            Document document = builder.parse(new ByteArrayInputStream(responseBody.getBytes("UTF-8")));
             XPath xpath = XPathFactory.newInstance().newXPath();
             XPathExpression expr = xpath.compile("//*[local-name()='localID']");
 
@@ -225,11 +230,6 @@ public class LocalIDUtil
 
         } catch (TException te) {
 	    throw te;
-        } catch (com.sun.jersey.api.client.ClientHandlerException che) {
-            che.printStackTrace();
-            String msg = "[error] " + MESSAGE + "Could not connect to LocalID service: " 
-	        + profileState.getLocalIDURL().toString() + " --- " + che.getMessage();
-            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to map primaryID to localID. " + e.getMessage();
@@ -245,7 +245,7 @@ public class LocalIDUtil
         throws TException
     {
 
-        ClientResponse clientResponse = null;
+        HttpResponse clientResponse = null;
         try {
 
             URL localIDURL = profileState.getLocalIDURL();
@@ -255,17 +255,22 @@ public class LocalIDUtil
 		URLEncoder.encode(primaryID, "utf-8") + "/" + 
 		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + URLEncoder.encode(localID, "utf-8") + "?t=xml";
             if (DEBUG) System.out.println("[debug] LocalID add URL for localID db: " + url);
-            Client client = Client.create();    // reuse?  creation is expensive
 
-            WebResource webResource = client.resource(url);
+            HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
+            HttpPost httppost = new HttpPost(url);
+            httppost.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
 
 	    int retryCount = 0;
-	    int status;
+	    int responseCode;
+	    String responseMessage = null;
+	    String responseBody = null;
 	    while (true) {
 		try {
             	     // make service request
-            	     clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class);
-	    	     status = clientResponse.getStatus();
+                     clientResponse = httpClient.execute(httppost);
+            	     responseCode = clientResponse.getStatusLine().getStatusCode();
+            	     responseMessage = clientResponse.getStatusLine().getReasonPhrase();
+                     responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
    	    	     String response = null;
 		     break;
                 } catch (Exception ce) {
@@ -275,12 +280,11 @@ public class LocalIDUtil
                 }
             }
  
-	    if (status != 200) {
+	    if (responseCode != 200) {
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
-                    TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
-                    throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+                    throw new TException.REQUEST_INVALID(responseMessage);
                 } catch (TException te) {
                     throw te;
                 } catch (Exception e) {
@@ -289,44 +293,12 @@ public class LocalIDUtil
                 }
 	    } else {
                 if (DEBUG) System.out.println("[debug] LocalID updated: " + localID);
-   	        if (DEBUG) System.out.println(clientResponse.getEntity(String.class));
+   	        if (DEBUG) System.out.println(responseBody);
 		// all done, fall through to end 
 	    }
 
-/* Not necessary to examine reponse
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            domFactory.setNamespaceAware(true);
-            domFactory.setExpandEntityReferences(true);
-
-            DocumentBuilder builder = domFactory.newDocumentBuilder();
-            builder.setErrorHandler(null);
-            Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("//*[local-name()='localID']");
-
- 	    NodeList nl = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-    	    int i = 0;
-    	    for (i = 0; i < nl.getLength(); i++) {
-		Node n = nl.item(i);
-		String localid = n.getTextContent();
-		if (StringUtil.isNotEmpty(localid)) {
-                    if (DEBUG) System.out.println("[debug] LocalID found (localID db): " + localid);
-		    if (localIDs == null) localIDs = localid;
-		    else localIDs += "; " + localid;
-		}
-    	    }
-
-	    if (StringUtil.isEmpty(localIDs)) if (DEBUG) System.out.println("[debug] Can not determine local ID");
-            return localIDs;
-*/
-
         } catch (TException te) {
 	    throw te;
-        } catch (com.sun.jersey.api.client.ClientHandlerException che) {
-            che.printStackTrace();
-            String msg = "[error] " + MESSAGE + "Could not connect to LocalID service: " 
-	        + profileState.getLocalIDURL().toString() + " --- " + che.getMessage();
-            throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(msg);
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "failed to add localID. " + e.getMessage();
@@ -334,31 +306,4 @@ public class LocalIDUtil
         }
     }
 
-    // http://theskeleton.wordpress.com/2010/07/24/
-        // avoiding-the-javax-net-ssl-sslpeerunverifiedexception-peer-not-authenticated-with-httpclient/
-    public static DefaultHttpClient wrapClient(DefaultHttpClient base) {
-        try {
-            SSLContext ctx = SSLContext.getInstance("TLS");
-            X509TrustManager tm = new X509TrustManager() {
-
-                public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
-
-                public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
-
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-            };
-            ctx.init(null, new TrustManager[]{tm}, null);
-            SSLSocketFactory ssf = new SSLSocketFactory(ctx);
-            ssf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            ClientConnectionManager ccm = base.getConnectionManager();
-            SchemeRegistry sr = ccm.getSchemeRegistry();
-            sr.register(new Scheme("https", ssf, 443));
-            return new DefaultHttpClient(ccm, base.getParams());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
 }

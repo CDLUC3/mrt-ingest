@@ -658,18 +658,6 @@ public class IngestManager {
 				}
 			}
 
-			// update status if necessary
-			if (profileState.getStatusURL() != null) {
-				// Batch mode ?
-				if (!jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-					if (!JSONUtil.updateJobState(profileState, jobState))
-						JSONUtil.notify(jobState, profileState, ingestRequest);
-				} else {
-					if (DEBUG)
-						System.out.println("[debug] " + MESSAGE + ": No BATCH detected, Istatus not being called");
-				}
-			}
-
 			return jobState;
 
 		} catch (TException me) {
@@ -679,19 +667,6 @@ public class IngestManager {
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
-			// if (profileState != null) profileState.getIngestHandlers().clear();
-			// this is causing a java.util.ConcurrentModificationException in notification
-			// handler
-
-			// update status if necessary
-			try {
-				if (profileState.getStatusURL() != null)
-					// Batch mode ?
-					if (!jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-						JSONUtil.updateJobState(profileState, jobState);
-					}
-			} catch (Exception e) {
-				/* ignore */ }
 			profileState = null;
 		}
 	}

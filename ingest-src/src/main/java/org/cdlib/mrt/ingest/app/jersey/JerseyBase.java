@@ -42,7 +42,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import com.sun.jersey.spi.CloseableService;
+import org.glassfish.jersey.server.CloseableService;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Response;

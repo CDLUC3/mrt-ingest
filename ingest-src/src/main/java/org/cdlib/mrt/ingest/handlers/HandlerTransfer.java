@@ -30,10 +30,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.handlers;
 
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -43,6 +47,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.NoSuchElementException;
 
@@ -68,8 +75,9 @@ import org.cdlib.mrt.queue.DistributedLock;
 import org.cdlib.mrt.queue.DistributedLock.Ignorer;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
-import org.cdlib.mrt.utility.HttpGet;
 import org.cdlib.mrt.utility.LoggerInf;
+import org.cdlib.mrt.utility.HTTPUtil;
+import org.cdlib.mrt.utility.HttpGet;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
@@ -122,7 +130,7 @@ public class HandlerTransfer extends Handler<JobState>
 	throws TException 
     {
 
-  	ClientResponse clientResponse = null;
+        HttpResponse clientResponse = null;
 	String action = "/add/";
 
 	zooConnectString = jobState.grabMisc();
@@ -144,34 +152,29 @@ public class HandlerTransfer extends Handler<JobState>
 	    String url = storeNode.getStorageLink().toString() + action + storeNode.getNodeID() + 
 			"/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
 
-	    Client client = Client.create();	// reuse?  creation is expensive
-
-            /* fix client timeout problem */
-            client.setConnectTimeout(new Integer(StorageUtil.STORAGE_CONNECT_TIMEOUT));
-            client.setReadTimeout(new Integer(StorageUtil.STORAGE_READ_TIMEOUT));
-
-	    WebResource webResource = client.resource(url);
-	    Form formData = new Form();
-  	    formData.add("t", "xml");
+            HttpClient httpClient = HTTPUtil.getHttpClient(url, StorageUtil.STORAGE_CONNECT_TIMEOUT);
+            HttpPost httppost = new HttpPost(url);
+	    List<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();
+	    params.add(new BasicNameValuePair("t", "xml"));
 
             File manifestFile = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
 	    if (manifestFile.length() < (1024L * 1024L)) {		// < 1 MB
 	       // Push manifest to Storage as a form parm
                String manifest = getManifest(manifestFile);
 	       if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifest: " + manifest);
-  	       formData.add("manifest", manifest);
+  	       params.add(new BasicNameValuePair("manifest", manifest));
 	    } else {
 	       // Storage will Pull manifest via an exposed URL
                String manifestURL = getManifestURL(ingestRequest, manifestFile);
 	       if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifestURL: " + manifestURL);
-  	       formData.add("url", manifestURL);
+  	       params.add(new BasicNameValuePair("url", manifestURL));
 	    }
 
             if (jobState.grabUpdateFlag()) {
             	File deleteFile = new File(ingestRequest.getQueuePath(), "system/mrt-delete.txt");
 		if (deleteFile.exists()) {
 	            if (DEBUG) System.out.println("[debug] " + MESSAGE + " delete file found: " + deleteFile.getName());
-  	    	    formData.add("delete", processDeleteFile(deleteFile));
+  	       	    params.add(new BasicNameValuePair("delete", processDeleteFile(deleteFile)));
 		}
 	    }
 
@@ -196,28 +199,28 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    // make service request
 	    try {
-  	        clientResponse = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).
-			header("JID", jobState.getJobID().getValue()).
-			header("hostname", InetAddress.getLocalHost().getHostName() ).
-			post(ClientResponse.class, formData);
+                httppost.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
+		httppost.setHeader("JID", jobState.getJobID().getValue());
+		httppost.setHeader("hostname", InetAddress.getLocalHost().getHostName());
+		httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8.name()));
+
+                clientResponse = httpClient.execute(httppost);
 	    } catch (Exception e) {
 		e.printStackTrace();
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
 	    }
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + clientResponse.getStatus());
+            int responseCode = clientResponse.getStatusLine().getStatusCode();
+            String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
+            String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
 
-	    if (clientResponse.getStatus() != 200) {
+	    if (responseCode != 200) {
                 try {
-                    // most likely exception
-                    // can only call once, as stream is not reset
-		    if (clientResponse.getStatus() != 400) {
-                        TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE tExceptionResponse = 
-			    clientResponse.getEntity(TExceptionResponse.EXTERNAL_SERVICE_UNAVAILABLE.class);
-                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(tExceptionResponse.getError());
+		    if (responseCode != 400) {
+                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(responseMessage);
 		    } else {
 			// mrt-delete.txt processing error
-                        TExceptionResponse.REQUEST_INVALID tExceptionResponse = clientResponse.getEntity(TExceptionResponse.REQUEST_INVALID.class);
-                        throw new TException.REQUEST_INVALID(tExceptionResponse.getError());
+                        throw new TException.REQUEST_INVALID(responseMessage);
 		    }
                 } catch (TException te) {
                     throw te;
@@ -229,9 +232,9 @@ public class HandlerTransfer extends Handler<JobState>
 	    }
 
 	    jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
-	    jobState.setVersionID(getVersionID(clientResponse.getEntity(String.class)));
+	    jobState.setVersionID(getVersionID(responseBody));
 
-	    return new HandlerResult(true, "SUCCESS: transfer", clientResponse.getStatus());
+	    return new HandlerResult(true, "SUCCESS: transfer", responseCode);
 	} catch (TException te) {
 	    te.printStackTrace();
             return new HandlerResult(false, te.getDetail());

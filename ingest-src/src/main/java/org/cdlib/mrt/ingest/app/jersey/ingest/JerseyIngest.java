@@ -29,7 +29,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 package org.cdlib.mrt.ingest.app.jersey.ingest;
 
-import com.sun.jersey.spi.CloseableService;
+import org.glassfish.jersey.server.CloseableService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
