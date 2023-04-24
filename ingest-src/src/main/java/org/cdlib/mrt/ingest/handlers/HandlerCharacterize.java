@@ -38,10 +38,6 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
-import com.hp.hpl.jena.util.FileManager;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -55,7 +51,6 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
-import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
@@ -134,11 +129,6 @@ public class HandlerCharacterize extends Handler<JobState>
                     + MESSAGE + ": unable to create metadata file: " + metadataFile.getAbsolutePath());
             }
 
-	    // update resource map
-	    if (! updateResourceMap(jobState, profileState, ingestRequest, mapFile, metadataFile)) {
-	        System.out.println("[warn] " + MESSAGE + "Failure to update resource map.");
-	    }
-
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " object components characterized");
 	} catch (TException te) {
             return new HandlerResult(true, "[error]: " + MESSAGE + te.getDetail());
@@ -176,93 +166,6 @@ public class HandlerCharacterize extends Handler<JobState>
         return true;
     }
 
-
-    /**
-     * write metadata references to resource map
-     *
-     * @param profileState profile state
-     * @param ingestRequest characteize request
-     * @param resourceMapFile target file (usually "mrt-object-map.ttl")
-     * @param metadataFile metadata
-     * @return successful in updating resource map
-     */
-    private boolean updateResourceMap(JobState jobState, ProfileState profileState, IngestRequest ingestRequest,
-		 File mapFile, File metadataFile)
-        throws TException {
-        try {
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
-
-            Model model = updateModel(jobState, profileState, ingestRequest, mapFile, metadataFile);
-            if (DEBUG) ResourceMapUtil.dumpModel(model);
-            ResourceMapUtil.writeModel(model, mapFile);
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to create resource map: " + e.getMessage();
-            System.err.println(msg);
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-        }
-    }
-
-
-    public Model updateModel(JobState jobState, ProfileState profileState, IngestRequest ingestRequest,
-	 	File mapFile, File metadataFile)
-        throws Exception
-    {
-        try {
-
- 	    // read in existing model
- 	    String string = FileManager.get().readWholeFileAsUTF8(mapFile.getAbsolutePath());
-
-	    InputStream inputStream = new ByteArrayInputStream(string.getBytes("UTF-8"));
-	    if (inputStream == null) {
-                String msg = "[error] " + MESSAGE + "failed to update resource map: " + mapFile.getAbsolutePath();
-                throw new TException.GENERAL_EXCEPTION(msg);
-	    }
-            Model model = ModelFactory.createDefaultModel();
-	    model.read(inputStream, null, "TURTLE");
-
-            String mrt = "http://uc3.cdlib.org/ontology/mom#";
-            String msc = "http://uc3.cdlib.org/ontology/schema#";
-            String mts = "http://purl.org/NET/mediatypes/";
-            String n2t = profileState.getPURL();
-
-            String versionIDS = "0";    // current
-            Integer versionID = jobState.getVersionID();
-            if (versionID != null) versionID.toString();
-            String objectIDS = null;
-            try {
-                objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
-            } catch (Exception e) {
-                objectIDS = "ark:/OID/UNKNOWN";
-
-            }
-            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
-                        URLEncoder.encode(objectIDS, "utf-8");
-            String object = objectIDS;
-
-            String systemJhove2URI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + metadataFile.getName(), "utf-8");
-
-            model.add(ResourceFactory.createResource(n2t + object),
-                ResourceFactory.createProperty(mrt + "hasMetadata"),
-                ResourceFactory.createResource(systemJhove2URI));
-            model.add(ResourceFactory.createResource(systemJhove2URI),
-                ResourceFactory.createProperty(mrt + "metadataSchema"),
-                ResourceFactory.createResource(msc + "JHOVE2"));
-            model.add(ResourceFactory.createResource(systemJhove2URI),
-                ResourceFactory.createProperty(mrt + "mimeType"),
-                ResourceFactory.createResource(mts + "text/xml"));
-
-            return model;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to update model: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        }
-
-    }
 
     private String characterize(URL url, String fileName)
         throws TException

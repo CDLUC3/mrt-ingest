@@ -150,7 +150,7 @@ public class IngestHandlerTest extends IngestTestCore {
                 }
 
                 public int getListSizeCount() {
-                        return 14 + files.size() + (isManifest() ? 1 : 0);
+                        return 13 + files.size() + (isManifest() ? 1 : 0);
                 }
         }
 
@@ -228,7 +228,6 @@ public class IngestHandlerTest extends IngestTestCore {
                 mrt_ingest("mrt-ingest.txt"),
                 mrt_membership("mrt-membership.txt"),
                 mrt_mom("mrt-mom.txt"),
-                mrt_object_map("mrt-object-map.ttl"),
                 mrt_owner("mrt-owner.txt"),
                 mrt_dc("mrt-dc.xml"),
                 mrt_erc("mrt-erc.txt"),
@@ -378,9 +377,6 @@ public class IngestHandlerTest extends IngestTestCore {
                 assertEquals(ps.getObjectType(), sfi.getProperty("type"));
                 assertEquals(ps.getObjectRole(), sfi.getProperty("role"));
                 assertEquals(ps.getAggregateType(), sfi.getProperty("aggregate"));
-
-                sfi = new SystemFileInstance(SystemFile.mrt_object_map);
-                assertTrue(sfi.exists());
 
                 sfi = new SystemFileInstance(SystemFile.mrt_owner);
                 assertTrue(sfi.exists());

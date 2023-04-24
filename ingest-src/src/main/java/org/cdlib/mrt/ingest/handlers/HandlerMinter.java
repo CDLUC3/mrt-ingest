@@ -29,10 +29,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.util.FileManager;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 
@@ -50,7 +46,6 @@ import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
-import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -243,10 +238,6 @@ public class HandlerMinter extends Handler<JobState>
 	        System.out.println("[info] " + MESSAGE + "Non ark returned by EZID: " + returnValue);
 	    }
 
-	    // update resource map
-	    if ( ! updateResourceMap(profileState, ingestRequest, mapFile, resetObject)) {
-	        System.err.println("[warn] " + MESSAGE + "Failure to update resource map.");
-	    }
 
             // metadata file in ANVL format
             if ( ! createMetadata(metadataFile, profileState.getIdentifierScheme().toString(), 
@@ -265,11 +256,6 @@ public class HandlerMinter extends Handler<JobState>
                 throw new TException.GENERAL_EXCEPTION("[error] "
                     + MESSAGE + ": unable to update mom file: " + momFile.getAbsolutePath());
             }
-
-	    // update resource map
-	    if (! updateResourceMap(profileState, ingestRequest, mapFile, resetObject)) {
-	        System.out.println("[warn] " + MESSAGE + "Failure to update resource map.");
-	    }
 
 	    if (mint) {
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " object ID minted");
@@ -565,78 +551,6 @@ public class HandlerMinter extends Handler<JobState>
     }
 
 
-    /**
-     * write metadata references to resource map
-     *
-     * @param profileState profile state
-     * @param ingestRequest ingest request
-     * @param resourceMapFile target file (usually "mrt-object-map.ttl")
-     * @param resetObject object-url may not have been known, assign now
-     * @return successful in updating resource map
-     */
-    private boolean updateResourceMap(ProfileState profileState, IngestRequest ingestRequest, File mapFile, 
-		boolean resetObject)
-        throws TException {
-        try {
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
-
-            Model model = updateModel(profileState, ingestRequest, mapFile, resetObject);
-            if (DEBUG) ResourceMapUtil.dumpModel(model);
-            ResourceMapUtil.writeModel(model, mapFile);
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to create resource map: " + e.getMessage();
-            System.err.println(msg);
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-        }
-    }
-
-
-    public Model updateModel(ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		boolean resetObject)
-        throws Exception
-    {
-        try {
-
- 	    // read in existing model
- 	    String string = FileManager.get().readWholeFileAsUTF8(mapFile.getAbsolutePath());
-	    if (resetObject) {
-            	if (DEBUG) System.out.println("[debug] " + MESSAGE + "assigning objectID");
-		string = string.replaceAll("ark:/OID/UNKNOWN", ingestRequest.getJob().getPrimaryID().getValue());
-		string = string.replaceAll(URLEncoder.encode("ark:/OID/UNKNOWN", "UTF-8"), URLEncoder.encode(ingestRequest.getJob().getPrimaryID().getValue(), "UTF-8"));
-	    }
-
-	    InputStream inputStream = new ByteArrayInputStream(string.getBytes("UTF-8"));
-	    if (inputStream == null) {
-                String msg = "[error] " + MESSAGE + "failed to update resource map: " + mapFile.getAbsolutePath();
-                throw new TException.GENERAL_EXCEPTION(msg);
-	    }
-            Model model = ModelFactory.createDefaultModel();
-	    model.read(inputStream, null, "TURTLE");
-
-            String mrt = "http://uc3.cdlib.org/ontology/mom#";
-
-            String versionID = "0";             // current
-            String objectIDS = null;
-            try {
-                objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
-            } catch (Exception e) {
-                objectIDS = "(:unas)";		// will this ever happen?
-            }
-            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
-                        URLEncoder.encode(objectIDS, "utf-8");
-
-            return model;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to update model: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        }
-
-    }
 
     public String trimLeft(String s) {
         return s.replaceAll("^\\s+", "");

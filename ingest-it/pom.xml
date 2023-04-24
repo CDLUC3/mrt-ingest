@@ -59,16 +59,6 @@
   </profiles>
   <build>
     <plugins>
-<!--
-      <plugin>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.3.0</version>
-        <configuration>
-          <packagingExcludes>
-            WEB-INF/lib/slf4j-log4j12-1.5.6.jar,WEB-INF/lib/mrt-jena-2.0-SNAPSHOT.jar</packagingExcludes>
-        </configuration>
-      </plugin>
--->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>

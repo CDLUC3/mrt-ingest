@@ -29,12 +29,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
-import com.hp.hpl.jena.util.FileManager;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -51,7 +45,6 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
-import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
@@ -143,12 +136,6 @@ public class HandlerDescribe extends Handler<JobState>
                     + MESSAGE + ": unable to create Dublin Core file: " + systemDCFile.getAbsolutePath());
             }
 
-            // update resource map
-            if (! updateResourceMap(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, 
-			producerDCFile, producerDataCiteFile, producerEMLFile)) {
-                throw new TException.GENERAL_EXCEPTION("[error] "
-                    + MESSAGE + ": unable to update map file w/ ERC reference: " + systemErcFile.getAbsolutePath());
-            }
 
 	    return new HandlerResult(true, "SUCCESS: " + MESSAGE + "Success in creating ERC data file.", 0);
 
@@ -703,213 +690,6 @@ Now done in HandlerMinter
     }
 
 
-    /**
-     * write metadata references to resource map
-     *
-     * @param profileState profile state
-     * @param ingestRequest ingest request
-     * @param resourceMapFile target file (usually "mrt-object-map.ttl")
-     * @return successful in updating resource map
-     */
-    private boolean updateResourceMap(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		File systemErcFile, File producerErcFile, File producerDCFile, File producerDataCiteFile, File producerEMLFile)
-        throws TException {
-        try {
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath());
-
-            Model model = updateModel(jobState, profileState, ingestRequest, mapFile, systemErcFile, producerErcFile, 
-		producerDCFile, producerDataCiteFile, producerEMLFile);
-            if (DEBUG) ResourceMapUtil.dumpModel(model);
-            ResourceMapUtil.writeModel(model, mapFile);
-
-            return true;
-        } catch (TException te) {
-	    throw te;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to update resource map: " + e.getMessage();
-            System.err.println(msg);
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-        }
-    }
-
-    public Model updateModel(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File mapFile,
-		File systemErcFile, File producerErcFile, File producerDCFile, File producerDataCiteFile, File producerEMLFile)
-        throws Exception
-    {
-        try {
-
-            // read in existing model
-            InputStream inputStream = FileManager.get().open(mapFile.getAbsolutePath());
-            if (inputStream == null) {
-                String msg = "[error] " + MESSAGE + "failed to update resource map: " + mapFile.getAbsolutePath();
-                throw new TException.GENERAL_EXCEPTION(msg);
-            }
-            Model model = ModelFactory.createDefaultModel();
-            model.read(inputStream, null, "TURTLE");
-
-            String mrt = "http://uc3.cdlib.org/ontology/mom#";
-            String ore = "http://www.openarchives.org/ore/terms#";
-            String msc = "http://uc3.cdlib.org/ontology/schema#";
-            String mts = "http://purl.org/NET/mediatypes/";
-            String n2t = profileState.getPURL();
-
-
-            String versionIDS = "0";	// current
-            Integer versionID = jobState.getVersionID();
-            if (versionID != null) versionID.toString();
-            String objectIDS = null;
-            try {
-                objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
-            } catch (Exception e) {
-                objectIDS = "(:unas)";          // will this ever happen?
-            }
-            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
-                        URLEncoder.encode(objectIDS, "utf-8");
-            String object = objectIDS;
-
-            String systemErcURI = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("system/" + systemErcFile.getName(), "utf-8");
-
-            model.add(ResourceFactory.createResource(n2t + object),
-                ResourceFactory.createProperty(mrt + "hasMetadata"),
-                ResourceFactory.createResource(systemErcURI));
-
-	    // system ERC
-            model.add(ResourceFactory.createResource(n2t + object),
-                ResourceFactory.createProperty(ore + "aggregates"),
-                ResourceFactory.createResource(systemErcURI));
-            model.add(ResourceFactory.createResource(systemErcURI),
-                ResourceFactory.createProperty(mrt + "metadataSchema"),
-                ResourceFactory.createResource(msc + "ERC"));
-            model.add(ResourceFactory.createResource(systemErcURI),
-                ResourceFactory.createProperty(mrt + "mimeType"),
-                ResourceFactory.createResource(mts + "text/x-anvl"));
-
-	    // producer ERC
-	    if (producerErcFile.exists()) {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found ERC data: " + producerErcFile.getAbsolutePath());
-                String producerErcURI = objectURI + "/" + versionIDS + "/" + 
-			URLEncoder.encode("producer/" + producerErcFile.getName(), "utf-8");
-
-                model.add(ResourceFactory.createResource(n2t + object),
-                    ResourceFactory.createProperty(mrt + "hasMetadata"),
-                    ResourceFactory.createResource(producerErcURI));
-                model.add(ResourceFactory.createResource(producerErcURI),
-                    ResourceFactory.createProperty(mrt + "metadataSchema"),
-                    ResourceFactory.createResource(msc + "ERC"));
-                model.add(ResourceFactory.createResource(producerErcURI),
-                    ResourceFactory.createProperty(mrt + "mimeType"),
-                    ResourceFactory.createResource(mts + "text/x-anvl"));
-	    }
-
-	    // producer DC
-	    if (producerDCFile.exists()) {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC data: " + producerDCFile.getAbsolutePath());
-                String producerDCURI = objectURI + "/" + versionIDS + "/" + 
-			URLEncoder.encode("producer/" + producerDCFile.getName(), "utf-8");
-
-                model.add(ResourceFactory.createResource(n2t + object),
-                    ResourceFactory.createProperty(mrt + "hasMetadata"),
-                    ResourceFactory.createResource(producerDCURI));
-                model.add(ResourceFactory.createResource(producerDCURI),
-                    ResourceFactory.createProperty(mrt + "metadataSchema"),
-                    ResourceFactory.createResource(msc + "DC"));
-                model.add(ResourceFactory.createResource(producerDCURI),
-                    ResourceFactory.createProperty(mrt + "mimeType"),
-                    ResourceFactory.createResource(mts + "text/xml"));
-	    }
-
-	    // producer DataCite
-	    if (producerDataCiteFile.exists()) {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DataCite data: " + producerDataCiteFile.getAbsolutePath());
-                String producerDataCiteURI = objectURI + "/" + versionIDS + "/" + 
-			URLEncoder.encode("producer/" + producerDataCiteFile.getName(), "utf-8");
-
-                model.add(ResourceFactory.createResource(n2t + object),
-                    ResourceFactory.createProperty(mrt + "hasMetadata"),
-                    ResourceFactory.createResource(producerDataCiteURI));
-                model.add(ResourceFactory.createResource(producerDataCiteURI),
-                    ResourceFactory.createProperty(mrt + "metadataSchema"),
-                    ResourceFactory.createResource("DataCite"));
-                model.add(ResourceFactory.createResource(producerDataCiteURI),
-                    ResourceFactory.createProperty(mrt + "mimeType"),
-                    ResourceFactory.createResource(mts + "text/xml"));
-	    }
-
-	    // producer EML
-	    if (producerEMLFile.exists()) {
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "found EML data: " + producerEMLFile.getAbsolutePath());
-                String producerEMLURI = objectURI + "/" + versionIDS + "/" + 
-			URLEncoder.encode("producer/" + producerEMLFile.getName(), "utf-8");
-
-                model.add(ResourceFactory.createResource(n2t + object),
-                    ResourceFactory.createProperty(mrt + "hasMetadata"),
-                    ResourceFactory.createResource(producerEMLURI));
-                model.add(ResourceFactory.createResource(producerEMLURI),
-                    ResourceFactory.createProperty(mrt + "metadataSchema"),
-                    ResourceFactory.createResource("EML"));
-                model.add(ResourceFactory.createResource(producerEMLURI),
-                    ResourceFactory.createProperty(mrt + "mimeType"),
-                    ResourceFactory.createResource(mts + "text/xml"));
-	    }
-
-	    // ---------------------------IMPORTANT---------------------------------------
-	    // At this point we know the primaryID.  
-	    // If the is an update, let's perform the task HandlerDisaggregate should have done.
-	    // This is done here since we may not know primary ID at that early time.
-	    // ---------------------------IMPORTANT---------------------------------------
-	    if (jobState.grabUpdateFlag()) {
-
-        	if (DEBUG) System.out.println("[debug] " + MESSAGE + "Object *update* requested.");
-	        String storageManifest = StorageUtil.getStorageManifest(profileState, jobState.getPrimaryID().getValue());
-		if (storageManifest == null) {
-        	    if (DEBUG) System.out.println("[warn] " + MESSAGE + "No previous version exists for update reqeust.");
-		} else {
-		    VersionMap versionMap = StorageUtil.getVersionMap(jobState.getPrimaryID().getValue(), storageManifest);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating with latest version: " + versionMap.getVersionCount());
-
-		    // Latest version.  Alternative to "0", which is not currently supported
-    		    List<FileComponent> fileComponents = versionMap.getVersionComponents(versionMap.getVersionCount());
-		    if (fileComponents == null) throw new Exception("Could not retrieve most recent component list");
-		    for (FileComponent fileComponent: fileComponents) {
-			String fileName = fileComponent.getIdentifier();
-			if (fileName.startsWith("producer/")) {
-			    String component = objectURI + "/" + versionIDS + "/" + URLEncoder.encode(fileName, "utf-8");
-                            model.add(ResourceFactory.createResource(n2t + object),
-                    	        ResourceFactory.createProperty(ore + "aggregates"),
-                    	        ResourceFactory.createResource(component));
-
-		            System.out.println(MESSAGE + "Adding previous version component: " + component);
-			}
-		    }
-		}
-	
-	        // process deletions
-                String[] deleteLines = FileUtil.getLinesFromFile(new File(systemTargetDir, "mrt-delete.txt"));
-                if (deleteLines != null) {
-                    for (String deleteLine : deleteLines) {
-	                String component = objectURI + "/" + versionIDS + "/" + URLEncoder.encode("producer/" + deleteLine, "utf-8");
-	                Statement statement = model.createStatement(ResourceFactory.createResource(n2t + object), 
-		            ResourceFactory.createProperty(ore + "aggregates"),
-                            ResourceFactory.createResource(component));
-    
-		        model.remove(statement);
-		        System.out.println(MESSAGE + "Removing previous version : " + statement.toString());
-		    }
-	        }
-	    }
-
-            return model;
-        } catch (TException te) {
-	    throw te;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to update model: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        }
-
-    }
 
     public String getName() {
 	return NAME;

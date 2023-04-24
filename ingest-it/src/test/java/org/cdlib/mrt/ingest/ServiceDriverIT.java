@@ -613,8 +613,8 @@ public class ServiceDriverIT {
 
                 url = String.format("http://localhost:%d/%s/admin/jid-file/%s/%s", port, cp, bid, jid);
                 json = getJsonContent(url, 200);
-                // 8 system files will remain after submission is complete
-                assertEquals(8, getFiles(json).size());
+                // 7 system files will remain after submission is complete
+                assertEquals(7, getFiles(json).size());
 
                 url = String.format("http://localhost:%d/%s/admin/jid-manifest/%s/%s", port, cp, bid, jid);
                 json = getJsonContent(url, 200);
