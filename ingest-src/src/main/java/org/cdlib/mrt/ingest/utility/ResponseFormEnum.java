@@ -50,7 +50,6 @@ public enum ResponseFormEnum {
         txt("file", "txt", "plain/text"),
         xml("state", "xml", "text/xml"),
         rdf("state", "xml", "application/rdf+xml"),
-        turtle("state", "ttl", "text/turtle"),
  	xhtml("state", "xhtml", "application/xhtml+xml"),
         zip("archive", "zip", "application/zip");
 

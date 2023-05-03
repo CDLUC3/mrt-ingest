@@ -29,11 +29,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.util.FileManager;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -63,7 +58,6 @@ import org.cdlib.mrt.ingest.utility.DigestUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
-import org.cdlib.mrt.ingest.utility.ResourceMapUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -265,12 +259,6 @@ public class HandlerRetrieve extends Handler<JobState>
                     + MESSAGE + ": unable to append metadata file: " + ingestFile.getAbsolutePath());
             }
 
-            // update resource map
-            File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
-            if ( ! updateResourceMap(profileState, ingestRequest, mapFile, targetDir, manifestFile)) {
-                System.err.println("[warn] " + MESSAGE + "Failure to update resource map.");
-            }
-
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (TRuntimeException trex) {
 	    trex.printStackTrace(System.err);
@@ -307,91 +295,6 @@ public class HandlerRetrieve extends Handler<JobState>
         ingestProperties.put("manifestValidity", status);
 
         return MetadataUtil.writeMetadataANVL(ingestFile, ingestProperties, true);
-    }
-
-    /**
-     * write aggregates references to resource map
-     *
-     * @param profileState profile state
-     * @param ingestRequest ingest request
-     * @param resourceMapFile target file (usually "mrt-object-map.ttl")
-     * @param sourceDir source directory 
-     * @param manifestFile ignore this
-     * @return successful in updating resource map
-     */
-    private boolean updateResourceMap(ProfileState profileState, IngestRequest ingestRequest, File mapFile, File sourceDir, File manifestFile)
-        throws TException {
-        try {
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating resource map: " + mapFile.getAbsolutePath() + " - " + sourceDir.getAbsolutePath());
-
-            Model model = updateModel(profileState, ingestRequest, mapFile, sourceDir, manifestFile);
-            if (DEBUG) ResourceMapUtil.dumpModel(model);
-            ResourceMapUtil.writeModel(model, mapFile);
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to create resource map: " + e.getMessage();
-            System.err.println(msg);
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-        }
-    }
-
-
-    public Model updateModel(ProfileState profileState, IngestRequest ingestRequest, File mapFile, File sourceDir, File manifestFile)
-        throws Exception
-    {
-        try {
-
-            // read in existing model
-            InputStream inputStream = FileManager.get().open(mapFile.getAbsolutePath());
-            if (inputStream == null) {
-                String msg = "[error] " + MESSAGE + "failed to update resource map: " + mapFile.getAbsolutePath();
-                throw new TException.GENERAL_EXCEPTION(msg);
-            }
-            Model model = ModelFactory.createDefaultModel();
-            model.read(inputStream, null, "TURTLE");
-
-            String versionID = "0";             // current
-            String objectIDS = null;
-            String ore = "http://www.openarchives.org/ore/terms#";
-            String n2t = profileState.getPURL();
-
-            try {
-                objectIDS = ingestRequest.getJob().getPrimaryID().getValue();
-            } catch (Exception e) {
-                objectIDS = "ark:/OID/UNKNOWN";          // replace when known
-            }
-            String objectURI = ingestRequest.getServiceState().getTargetID() + "/d/" +
-                        URLEncoder.encode(objectIDS, "utf-8");
-            String object = objectIDS;
-
-            String resourceMapURI = objectURI + "/" + versionID + "/" + URLEncoder.encode("system/mrt-object-map.ttl", "utf-8");
-
-            // add each component file
-            Vector<File> files = new Vector();
-
-            FileUtilAlt.getDirectoryFiles(sourceDir, files);
-            for (File file : files) {
-                if (FileUtilAlt.isDirectory(file)) continue;
-
-                if (file.getName().equals(manifestFile.getName())) continue;	// ignore manifest file
-                // Turtle will not handle whitespace in URL, must encode
-                String component = objectURI + "/" + versionID + "/" + 
-			URLEncoder.encode(file.getPath().substring(file.getPath().indexOf("/producer") + 1), "utf-8");
-                model.add(ResourceFactory.createResource(n2t + object),
-                    ResourceFactory.createProperty(ore + "aggregates"),
-                    ResourceFactory.createResource(component));
-            }
-
-            return model;
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to update model: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        }
-
     }
 
 
