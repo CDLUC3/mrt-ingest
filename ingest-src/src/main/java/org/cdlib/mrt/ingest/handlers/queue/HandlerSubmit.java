@@ -32,6 +32,7 @@ package org.cdlib.mrt.ingest.handlers.queue;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
+import java.lang.Boolean;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -80,6 +81,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	throws TException 
     {
 
+	boolean isHighPriority = false;
+	String priorityBoolean = "0";
 	File file = null;
         FormatType formatType = null;
 	String status = null;
@@ -98,7 +101,10 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	System.out.println("[info] Overwriting calculated queue priority: " + priority);
 	    }
 	    System.out.println("[info] queue priority: " + priority);
-            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority, null);	// default priority
+	    isHighPriority = (Integer.parseInt(priority) <= Integer.parseInt(profileState.grabPriorityThreshold()));
+	    if (isHighPriority) priorityBoolean = "1";
+	    System.out.println("[info] Priority Job status: " + isHighPriority);
+            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean, null);	// default priority
 
 	    // common across all jobs in batch
 	    properties.put("batchID", batchState.getBatchID().getValue());

@@ -30,6 +30,8 @@ ingest-info:
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
     PollingInterval: "2"
     NumThreads: "3"
+    NumThreadsHighPriority: "2"
+    HighPriorityThreshold: "5"
 
   logger-info:
     messageMaximumLevel: 5

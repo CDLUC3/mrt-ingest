@@ -90,6 +90,7 @@ public class QueueManager {
 	private String inventoryNode = "/inv"; // default
 	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
 	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
+	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
 
 	private boolean debugDump = false;
@@ -149,6 +150,7 @@ public class QueueManager {
 			String matchIngestQNames = "IngestQNames";
 			String matchIngestLName = "ingestLock";
 			String matchInventoryNode = "InventoryName";
+			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
@@ -163,6 +165,8 @@ public class QueueManager {
 			this.inventoryNode = queueConf.getString(matchInventoryNode);
 			// All Ingest Queue Names - "ingest01,ingest02"
 			this.ingestQNames = queueConf.getString(matchIngestQNames);
+			// Priority Threshold
+			this.highPriorityThreshold = queueConf.getString(matchHighPriorityThreshold);
 			// All Ingest Lock Names - "zkLock,..."
 			this.ingestLName = ingestConf.getString(matchIngestLName);
 
@@ -702,6 +706,8 @@ public class QueueManager {
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
+			if (highPriorityThreshold != null)
+				profileState.setPriorityThreshold(highPriorityThreshold);
 
 			if (DEBUG)
 				System.out.println("[debug] " + profileState.dump("profileState"));

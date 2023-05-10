@@ -136,7 +136,7 @@ public class ConsumerHighPriority extends HttpServlet
 	try {
 	    numThreads = ingestService.getQueueServiceConf().getString("NumThreadsHighPriority");
 	    if (StringUtil.isNotEmpty(numThreads)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting high priority  thread pool size: " + numThreads);
+	    	System.out.println("[info] " + MESSAGE + "Setting high priority thread pool size: " + numThreads);
 		this.numThreads = new Integer(numThreads).intValue();
 	    }
 	} catch (Exception e) {
@@ -153,6 +153,7 @@ public class ConsumerHighPriority extends HttpServlet
 	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval for high priority consumer daemon: " + pollingInterval + "  - using default: " + this.pollingInterval);
 	}
 
+/*
 	try {
 	    highPriorityThreshold = ingestService.getQueueServiceConf().getString("HighPriorityThreshold");
 	    if (StringUtil.isNotEmpty(highPriorityThreshold)) {
@@ -162,6 +163,7 @@ public class ConsumerHighPriority extends HttpServlet
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set high priority threshold: " + highPriorityThreshold + "  - using default: " + this.highPriorityThreshold);
 	}
+*/
 
         try {
             // Start the Consumer high priority thread
@@ -331,8 +333,11 @@ class ConsumerDaemonHighPriority implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    System.out.println(MESSAGE + "Checking for additional tasks.  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
-			    item = distributedQueue.consume();
+			    System.out.println(MESSAGE + "Checking for additional High Priority tasks.  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    item = distributedQueue.consumeHighPriority();
+			    System.out.println("Found a high Priority Zookeeper entry: " + item.getId());
+                     	    executorService.execute(new ConsumeDataHighPriority(ingestService, item, distributedQueue, queueConnectionString, queueNode));
+/*
 			    if (isHighPriority(item.getId())) {
 				System.out.println("Found a high Priority Zookeeper entry: " + item.getId());
                      		executorService.execute(new ConsumeDataHighPriority(ingestService, item, distributedQueue, queueConnectionString, queueNode));
@@ -341,6 +346,7 @@ class ConsumerDaemonHighPriority implements Runnable
 		                requeue(item.getId());
 				break;
 			    }
+*/
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
@@ -420,6 +426,7 @@ class ConsumerDaemonHighPriority implements Runnable
 	}
     }
 
+/*
     private boolean isHighPriority(String id)
     {
         int priority;
@@ -443,6 +450,7 @@ class ConsumerDaemonHighPriority implements Runnable
             return false;
         }
     }
+*/
 
     // to do: make this a service call
     private boolean onHold()
