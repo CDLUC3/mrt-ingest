@@ -102,6 +102,9 @@ public class StorageUtil
     {
         try {
 	    File tempFile = File.createTempFile(objectID + filename, "txt");
+	    String s = getStorageString(profileState, objectID, filename);
+	    if (s == null) return tempFile;	// No existing data 
+
 	    FileUtil.string2File(tempFile, getStorageString(profileState, objectID, filename));
 	    return tempFile;
 	} catch (Exception ex) {
