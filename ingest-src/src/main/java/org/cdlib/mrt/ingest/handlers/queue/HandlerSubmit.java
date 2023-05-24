@@ -55,6 +55,8 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.LogManager;
 /**
  * Submit batch submission data
  * zookeeper is the defined queueing service
@@ -227,6 +229,10 @@ public class HandlerSubmit extends Handler<BatchState>
 		}
 
 		System.out.println("[info] queue submission: " + properties.toString());
+		for(Object s: properties.keySet()){
+			ThreadContext.put(s.toString(), properties.get(s).toString());
+		}
+		LogManager.getLogger().info("[info] queue submission: " + properties.toString());
                 oos.writeObject(properties);
 		int retryCount = 0;
 		while (true) {
