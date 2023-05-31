@@ -9,9 +9,9 @@
         fileName="logs/log4j-ecs-json.log"
         filePattern="logs/log4j-ecs-json-%d{yyyy-MM-dd}-%i.log">
       <EcsLayout
-          serviceName="store"
+          serviceName="ingest"
           serviceNodeName="${env:HOSTNAME}"
-          eventDataset="tomcat.store"
+          eventDataset="tomcat.ingest"
           includeMarkers="true"
           stackTraceAsArray="true"
           includeOrigin="true"/>
