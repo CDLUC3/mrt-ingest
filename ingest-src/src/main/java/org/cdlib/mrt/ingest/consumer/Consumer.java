@@ -354,8 +354,9 @@ class ConsumerDaemon implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    System.out.println(MESSAGE + "Checking for additional tasks.  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
-			    item = distributedQueue.consume();
+			    String worker = getWorkerID();
+			    System.out.println(MESSAGE + "Checking for additional tasks for Worker " + worker + "  -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    item = distributedQueue.consume(worker, false);
                             executorService.execute(new ConsumeData(ingestService, item, distributedQueue, queueConnectionString, queueNode));
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
@@ -477,6 +478,21 @@ class ConsumerDaemon implements Runnable
             return false;
         }
         return true;
+    }
+
+    private String getWorkerID() {
+
+        String workerID = "0";
+
+        try {
+            // Set in setenv.sh (e.g. ingest01-stg)
+            String workerEnv = System.getenv("WORKERNAME");
+            workerID = workerEnv.substring("ingest0".length(), "ingest0".length() + 1);
+        } catch (Exception e ) {
+            // System.out.println("[info] Can not calculate Ingest worker.  Setting to '0'.");
+        }
+
+        return workerID;
     }
 
    public class Ignorer implements Watcher {

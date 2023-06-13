@@ -24,7 +24,7 @@ ingest:
 
   queue-info:
     QueueService: "{!SSM: inventory/zoo/queueService}"
-    QueueName: "/ingest.{!ENV: WORKERNAME}.1"
+    QueueName: "/ingest"
     IngestQNames: "{!SSM: ingest/zoo/IngestQNames}"
     InventoryName: "{!SSM: inventory/zoo/queueName}"
     QueueHoldFile: "{!SSM: ingest/config/QueueHoldFile}"

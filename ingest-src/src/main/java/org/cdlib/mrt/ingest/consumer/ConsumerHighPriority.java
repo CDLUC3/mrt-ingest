@@ -333,20 +333,11 @@ class ConsumerDaemonHighPriority implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    System.out.println(MESSAGE + "Checking for additional High Priority tasks.  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
-			    item = distributedQueue.consumeHighPriority();
+			    String worker = getWorkerID();
+			    System.out.println(MESSAGE + "Checking for additional High Priority tasks for Worker " + worker + "  -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    item = distributedQueue.consume(getWorkerID(), true);
 			    System.out.println("Found a high Priority Zookeeper entry: " + item.getId());
                      	    executorService.execute(new ConsumeDataHighPriority(ingestService, item, distributedQueue, queueConnectionString, queueNode));
-/*
-			    if (isHighPriority(item.getId())) {
-				System.out.println("Found a high Priority Zookeeper entry: " + item.getId());
-                     		executorService.execute(new ConsumeDataHighPriority(ingestService, item, distributedQueue, queueConnectionString, queueNode));
-			    } else {
-				System.out.println("Not a high priority zookeeper entry.  Requeueing: " + item.getId());
-		                requeue(item.getId());
-				break;
-			    }
-*/
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
@@ -426,32 +417,6 @@ class ConsumerDaemonHighPriority implements Runnable
 	}
     }
 
-/*
-    private boolean isHighPriority(String id)
-    {
-        int priority;
-	boolean isHighPriority = false;
-
-        try {
-	    // e.g. mrtQ-050000212177 where priority is 05 - first 2 numeric digits
-            try {
-                priority = Integer.parseInt(id.substring(5,7));
-            } catch (NumberFormatException ex){
-                ex.printStackTrace();
-		throw new Exception("[error]" + NAME + ": Could not extract priority: " + id);
-            }
-	    
-	    isHighPriority = (priority <= this.highPriorityThreshold);
-            if (isHighPriority) {
-                System.out.println("[info]" + NAME + ": Job is a high priority: " + id + " : " + priority);
-            }
-            return isHighPriority;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-*/
-
     // to do: make this a service call
     private boolean onHold()
     {
@@ -493,6 +458,21 @@ class ConsumerDaemonHighPriority implements Runnable
             return false;
         }
         return true;
+    }
+
+    private String getWorkerID() {
+
+        String workerID = "0";
+
+        try {
+            // Set in setenv.sh (e.g. ingest01-stg)
+            String workerEnv = System.getenv("WORKERNAME");
+            workerID = workerEnv.substring("ingest0".length(), "ingest0".length() + 1);
+        } catch (Exception e ) {
+            // System.out.println("[info] Can not calculate Ingest worker.  Setting to '0'.");
+        }
+
+        return workerID;
     }
 
    public class Ignorer implements Watcher {
