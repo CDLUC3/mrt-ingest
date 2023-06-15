@@ -25,7 +25,6 @@ ingest:
   queue-info:
     QueueService: "{!SSM: inventory/zoo/queueService}"
     QueueName: "/ingest"
-    IngestQNames: "{!SSM: ingest/zoo/IngestQNames}"
     InventoryName: "{!SSM: inventory/zoo/queueName}"
     QueueHoldFile: "{!SSM: ingest/config/QueueHoldFile}"
     PollingInterval: "{!SSM: ingest/config/PollingInterval !DEFAULT: 10}"
@@ -72,7 +71,6 @@ ingest-docker:
   queue-info:
     QueueService: "zoo:2181"
     QueueName: "/ingest"
-    IngestQNames: "ingest"
     InventoryName: "/mrt.inventory.full"
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
     PollingInterval: "10"

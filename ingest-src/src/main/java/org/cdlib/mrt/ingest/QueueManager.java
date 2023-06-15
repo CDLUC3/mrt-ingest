@@ -163,8 +163,6 @@ public class QueueManager {
 			this.queueNode = queueConf.getString(matchQueueNode);
 			// InventoryName - /mrt.inventory.full
 			this.inventoryNode = queueConf.getString(matchInventoryNode);
-			// All Ingest Queue Names - "ingest01,ingest02"
-			this.ingestQNames = queueConf.getString(matchIngestQNames);
 			// Priority Threshold
 			this.highPriorityThreshold = queueConf.getString(matchHighPriorityThreshold);
 			// All Ingest Lock Names - "zkLock,..."
@@ -636,7 +634,7 @@ public class QueueManager {
 		try {
 			IngestQueueNameState ingestQueueNameState = new IngestQueueNameState();
 			// comma delimiter if multiple ingest ZK queues
-			nodes = ingestQNames.split(",");
+			nodes = queueNode.split(",");
 			for (String node: nodes) {
 			   ingestQueueNameState.addEntry(node);
 			}
