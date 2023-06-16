@@ -147,7 +147,6 @@ public class QueueManager {
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
 			String matchQueueNode = "QueueName";
-			String matchIngestQNames = "IngestQNames";
 			String matchIngestLName = "ingestLock";
 			String matchInventoryNode = "InventoryName";
 			String matchHighPriorityThreshold = "HighPriorityThreshold";

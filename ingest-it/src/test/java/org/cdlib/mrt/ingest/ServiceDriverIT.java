@@ -995,7 +995,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void TestQueueNames() throws IOException, JSONException {
-                testQueueValues("queues", "ingest");
+                testQueueValues("queues", "/ingest");
                 testQueueValues("queues-inv", "/mrt.inventory.full");
                 testQueueValues("queues-acc", "/accessSmall.1,/accessLarge.1");
         }
