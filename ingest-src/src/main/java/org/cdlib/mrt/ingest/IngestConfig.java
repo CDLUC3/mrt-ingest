@@ -81,7 +81,6 @@ public class IngestConfig
     // queue-info
     protected String QueueService = null;
     protected String QueueName = null;
-    protected String IngestQNames = null;
     protected String QueueInventoryName = null;
     protected String QueueHoldFile = null;
     protected Integer QueuePollingInterval = null;

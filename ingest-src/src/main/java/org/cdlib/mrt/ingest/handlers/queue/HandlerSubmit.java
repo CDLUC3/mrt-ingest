@@ -104,7 +104,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    isHighPriority = (Integer.parseInt(priority) <= Integer.parseInt(profileState.grabPriorityThreshold()));
 	    if (isHighPriority) priorityBoolean = "1";
 	    System.out.println("[info] Priority Job status: " + isHighPriority);
-            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean, null);	// default priority
+            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean + getWorkerID(), null);	// default priority
 
 	    // common across all jobs in batch
 	    properties.put("batchID", batchState.getBatchID().getValue());
@@ -283,6 +283,23 @@ public class HandlerSubmit extends Handler<BatchState>
 	String priority = String.format("%02d", a.intValue());
 	System.out.println("[info] Calculated queue priority: " + priority);
 	return priority;
+    }
+
+    private String getWorkerID() {
+
+	String workerID = "0";
+	
+	try {
+	    // Set in setenv.sh (e.g. ingest01-stg)
+	    String workerEnv = System.getenv("WORKERNAME");
+	    workerID = workerEnv.substring("ingest0".length(), "ingest0".length() + 1);
+	    System.out.println("[info] Setting Ingest worker: " + workerID);
+
+	} catch (Exception e ) {
+	    System.out.println("[info] Can not calculate Ingest worker.  Setting to '0'.");
+	}
+
+	return workerID;
     }
 
    public static class Ignorer implements Watcher {
