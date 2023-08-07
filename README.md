@@ -15,7 +15,53 @@ Once an ingest package has been prepared, it is sent to the [Merritt Storage Ser
 - [Merritt Ingest Service](https://github.com/CDLUC3/mrt-doc/blob/main/doc/Merritt-ingest-service-latest.pdf)
 
 ## Component Diagram
-[![Flowchart](https://github.com/CDLUC3/mrt-doc/raw/main/diagrams/ingest.mmd.svg)](https://cdluc3.github.io/mrt-doc/diagrams/ingest)
+
+```mermaid
+%%{init: {'theme': 'neutral', 'securityLevel': 'loose', 'themeVariables': {'fontFamily': 'arial'}}}%%
+graph TD
+  UI("Merritt UI")
+  click UI href "https://github.com/CDLUC3/mrt-dashboard" "source code"
+  ING(Ingest)
+  click ING href "https://github.com/CDLUC3/mrt-ingest" "source code"
+  INGCON(Ingest Consumer Daemon)
+  click INGCON href "https://github.com/CDLUC3/mrt-ingest" "source code"
+  ST(Storage)
+  click ST href "https://github.com/CDLUC3/mrt-store" "source code"
+  ZOOING>Zookeeper Ingest]
+  click ZOOING href "https://github.com/CDLUC3/mrt-zoo" "source code"
+  ZOOINV>Zookeeper Inventory]
+  click ZOOINV href "https://github.com/CDLUC3/mrt-zoo" "source code"
+  EZID(EZID Service)
+  INV(Inventory)
+  click INV href "https://github.com/CDLUC3/mrt-inventory" "source code"
+  DRYAD(Dryad UI)
+  click DRYAD href "https://datadryad.org/" "service link"
+  EFS[/Ingest Preparation - EFS/]
+  COLLAD([Merritt Collection Admin])
+
+  subgraph Merritt
+    UI --> |"file or manifest"| ING
+    ING --> |deposit| ST
+    ING --> |queue task| ZOOING
+    ING --> ZOOINV
+    ING --> EFS
+    ING --> |Local Id Request| INV
+    ZOOING --> |task acquired| INGCON
+    INGCON -.-> ING
+    ING --> EZID
+    COLLAD --> ING
+  end
+  subgraph dryad_ingest
+    DRYAD --> |manifest| UI
+  end
+
+  style ZOOING fill:cyan
+  style ZOOINV fill:cyan
+  style EZID fill:cyan
+  style ING stroke:red,stroke-width:4px
+  style INGCON stroke:red,stroke-width:4px
+```
+
 
 ## Dependencies
 
