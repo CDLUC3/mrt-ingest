@@ -87,28 +87,6 @@ https://github.com/CDLUC3/mrt-doc-private/blob/main/uc3-mrt-ingest.md
 
 ## Legacy README
 
-### Requirements
-```
-JDK 1.6(+)
-Java servlet container that accepts .war (e.g. tomcat, resin, jetta, ...)
-Maven 2
-Zookeeper 3.3.1 running and referenced in "queue.txt" (see Running under Tomcat)
-zookeeper-recipes-3.3.1.jar Queueing library located at repository 'cdl-zk-queue'
-```
-
-### Packaging
-```
-Start by modifying property files at:
-    ingest-conf/properties/{stage,development,local}
-
-    Defining the location of "ingest home" is critical, for example
-         ingestServicePath=/dpr/ingest_home
-         fileLogger.path=/dpr/ingest_home/logs
-
-Create the distribution package: 
-    mvn -Denvironment={stage,development,local} package
-```
-
 ### Architecture overview
 Distribution package contains a war file which defines two servlets, poster and ingest.  
 
@@ -124,29 +102,15 @@ Modify template directory to customize user environment.
 
 ```
 Ingest home structure:
-    ingest-info.txt	(ingest configuration)
-    logs/		(logging)
     profiles/		(user profiles)
     queue/		(ingest service working directory)
-    queue.txt		(defines Zookeeper queue configuration)
-    stores.txt		(defines Storage service)
 
-Deploy war file in Tomcat noting that the hostname and port of servlet container must be defined at:
-    ingest_home/ingest-info.txt (access-uri)
 
 To allow ingest service to access data located in ingest home define a Context element in server.xml, for example
     <Context path="/ingestqueue" allowLinking="true" docBase="webapps/ingestqueue"/>
 
     Then create a symbolic link in the webapps directory, linking to ingest home queue directory.
 	ln -s /dpr/ingest_home/queue ingestqueue
-```
-
-
-### Running under Winstone
-While this is a simpler deployment approach, minimal testing has been done with the Winstone servlet container (http://winstone.sourceforge.net)
-
-```
-java -jar winstone-0.9.10.jar --warfile=mrt-ingestwar-1.0-SNAPSHOT.war --httpPort=8090
 ```
 
 ### Test
