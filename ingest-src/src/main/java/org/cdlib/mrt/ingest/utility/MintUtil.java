@@ -255,8 +255,9 @@ public class MintUtil
 	    String id = new String(responseBody);
 	    if ( ! id.startsWith(expectedResponse)) {
 	        if (! mint) {
-	            System.out.println("[info] " + MESSAGE + "could not update, attempting to create: " + url);
-	            httpCommand = new HttpPut(url);
+	            System.out.println("[info] " + MESSAGE + "could not update, attempting to create/update: " + url + "?update_if_exists=yes");
+                    Thread.sleep(15000);
+	            httpCommand = new HttpPut(url + "?update_if_exists=yes");
 	    	    httpCommand.addHeader("Content-Type", "text/plain");
 		    
 		    System.out.println("[info] PUT stringEntity: " + stringEntity);
@@ -271,24 +272,24 @@ public class MintUtil
 			System.err.println("[error] " + MESSAGE + "request failed with status code: " + hre.getStatusCode());
 			System.err.println("[error] " + MESSAGE + "request failed with message: " + hre.getMessage());
 			responseBody = "failed";
-		        throw new TException.GENERAL_EXCEPTION("error in creating identifier: " + responseBody);
+		        throw new TException.GENERAL_EXCEPTION("error in creating/updating identifier: " + responseBody);
 		    }
 	    	    System.out.println("[info] PUT " + responseBody);
 	       	    id = new String(responseBody);
 	            if ( ! id.startsWith(expectedResponse)) {
-		        throw new TException.GENERAL_EXCEPTION("error in creating identifier: " + url);
+		        throw new TException.GENERAL_EXCEPTION("error in creating/updating identifier: " + url);
 		    }
-		    System.out.println("[info] " + MESSAGE + "created new ID: " + url);
+		    System.out.println("[info] " + MESSAGE + "created/updated ID: " + url);
 	        } else {
 		    System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
 		    retryCount = 1;
 		    System.err.println("[error] " + MESSAGE + "Awaiting retry");
 
                     while (true) {
-                        if (retryCount >= 5) {
+                        if (retryCount >= 3) {
 		            throw new TException.GENERAL_EXCEPTION("error in minting identifier: " + responseBody + " --- " + url);
                         } else {
-                            Thread.sleep(30000);
+                            Thread.sleep(15000);
 		        }
 		        System.err.println("[info] " + MESSAGE + "Attempting retry: " + retryCount);
                         httpResponse = httpClient.execute(httpCommand);
@@ -300,7 +301,7 @@ public class MintUtil
 
                         if (statusCode < 500) break;
 		        System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
-                        System.err.println(MESSAGE + "Wait 30 seconds and retry attempt: " + retryCount);
+                        System.err.println(MESSAGE + "Wait 15 seconds and retry attempt: " + retryCount);
 		    }
 		}
 	    }
