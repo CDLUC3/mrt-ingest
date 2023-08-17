@@ -885,6 +885,9 @@ public class QueueManager {
 			} else if (fromState.contains("pending")) {
 	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Pending state: " + queue + ":" + id);
 				item = distributedQueue.deletep(id);
+			} else if (fromState.contains("held")) {
+	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Held state: " + queue + ":" + id);
+				item = distributedQueue.deleteh(id);
 			} else {
 	        		System.err.println("[ERROR]" + MESSAGE +  "Delete input not valid: " + queue + ":" + id);
 				return queueEntryState;
