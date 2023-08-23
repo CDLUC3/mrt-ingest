@@ -50,7 +50,8 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
 import org.cdlib.mrt.core.ManifestRowBatch;
@@ -206,8 +207,9 @@ public class JerseyBase
 	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
             jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
             StateInf responseState = submit(ingestRequest, ingestService, logger);
-	    if (DEBUG) System.out.println("[info] POST complete, Job ID: " +  ingestRequest.getJob().getJobID().getValue());
-
+	        if (DEBUG) System.out.println("[info] POST complete, Job ID: " +  ingestRequest.getJob().getJobID().getValue());
+            ThreadContext.put("jobId", ingestRequest.getJob().getJobID().getValue());
+            LogManager.getLogger().info("Job submitted");
             return getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
 
         } catch (TException tex) {
@@ -433,6 +435,7 @@ public class JerseyBase
 		 if (field.get(o) == null) break;
 		 id = "BID";
 		 value = field.get(o).toString();
+                ThreadContext.put("batchID", field.get(o).toString());
                  System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
 		 break;
 	      }
@@ -440,7 +443,8 @@ public class JerseyBase
 		 if (field.get(o) == null) break;
 		 id = "JID";
 		 value = field.get(o).toString();
-                 System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
+         ThreadContext.put("jobID", field.get(o).toString());
+         System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
 		 break;
               }
            }
@@ -456,6 +460,8 @@ public class JerseyBase
 	   hostname = "unknown";
         }
 
+        ThreadContext.put("hostname", hostname);
+        LogManager.getLogger().info("getStateResponse");
         return Response.ok(typeFile.file, typeFile.formatType.getMimeType()).
 		header(id, value).
 		header("hostname", hostname).
