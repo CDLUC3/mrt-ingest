@@ -126,8 +126,8 @@ public class HandlerRetrieve extends Handler<JobState>
 		if (alg == null || val == null) {
 		    System.out.println("[info] " + MESSAGE + "no manifest digest data provided. bypassing check");
 		} else {
-		    System.out.println("[info] " + MESSAGE + "validating manifest: " + jobState.getPackageName());
-		    if (validateManifest(new File(targetDir, jobState.getPackageName()), jobState.getHashAlgorithm(), jobState.getHashValue())) {
+		    System.out.println("[info] " + MESSAGE + "validating manifest checksum: " + jobState.getPackageName());
+		    if (validateManifestChecksum(new File(targetDir, jobState.getPackageName()), jobState.getHashAlgorithm(), jobState.getHashValue())) {
 		        status = "valid";
         	        if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest fixity check successful: " + jobState.getPackageName());
 		    } else {
@@ -161,6 +161,16 @@ public class HandlerRetrieve extends Handler<JobState>
                     Enumeration<ManifestRowInf> enumRow = manifest.getRows(new FileInputStream(manifestFile));
                     ManifestRowIngest rowIn = null;
                     FileComponent fileComponent = null;
+
+		    // Dryrun process of manifest 
+                    System.out.println("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
+                    if (validateManifestIntegrity(manifestFile, logger)) {
+                        status = "valid";
+                        if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
+                    } else {
+                        status = "not-valid";
+                        throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "manifest integrity check fails: " + packageType);
+                    }
 
 		    if (ingestRequest.getNumDownloadThreads() != 0) {
 			thread_pool_size = ingestRequest.getNumDownloadThreads();
@@ -299,19 +309,53 @@ public class HandlerRetrieve extends Handler<JobState>
 
 
     /**
-     * validate manifest file
+     * validate manifest file checksum
      *
      * @param manifestFile manifest file
      * @param digest manifest digest type
      * @param value manifest digest value
      * @return success in validating manifest
      */
-    private boolean validateManifest(File manifestFile, String digest, String value)
+    private boolean validateManifestChecksum(File manifestFile, String digest, String value)
         throws TException
     {
 	MessageDigestValue messageDigestValue = new MessageDigestValue(manifestFile, digest, new TFileLogger("HandlerRetrieve", 10, 10));
 	return value.equals(messageDigestValue.getChecksum());
     }
+
+
+    /**
+     * validate manifest integrity
+     *
+     * @param manifestFile manifest file
+     * @return success in validating manifest
+     */
+    private boolean validateManifestIntegrity(File manifestFile, LoggerInf logger)
+    {
+
+	try {
+            Manifest manifest = Manifest.getManifest(logger, ManifestRowAbs.ManifestType.ingest);
+            Enumeration<ManifestRowInf> eRow = manifest.getRows(new FileInputStream(manifestFile));
+            ManifestRowIngest rIn = null;
+            FileComponent fComponent = null;
+
+            // process all rows in each manifest file
+            while (eRow.hasMoreElements()) {
+                rIn = (ManifestRowIngest) eRow.nextElement();
+                fComponent = rIn.getFileComponent();
+                if (DEBUG) {
+                    System.out.println("Pre-processing manifest entry: " + rIn.getLine());
+                }
+    
+            }
+	    return true;
+	} catch (Exception e) {
+	    System.err.println("[ERROR] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
+	    return false;
+	} 
+
+    }
+
 
     public String getName() {
 	return NAME;
