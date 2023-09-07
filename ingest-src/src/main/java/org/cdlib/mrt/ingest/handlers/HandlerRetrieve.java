@@ -332,12 +332,14 @@ public class HandlerRetrieve extends Handler<JobState>
      */
     private boolean validateManifestIntegrity(File manifestFile, LoggerInf logger)
     {
+        Manifest manifest = null;
+        Enumeration<ManifestRowInf> eRow = null;
+        ManifestRowIngest rIn = null;
+        FileComponent fComponent = null;
 
 	try {
-            Manifest manifest = Manifest.getManifest(logger, ManifestRowAbs.ManifestType.ingest);
-            Enumeration<ManifestRowInf> eRow = manifest.getRows(new FileInputStream(manifestFile));
-            ManifestRowIngest rIn = null;
-            FileComponent fComponent = null;
+            manifest = Manifest.getManifest(logger, ManifestRowAbs.ManifestType.ingest);
+            eRow = manifest.getRows(new FileInputStream(manifestFile));
 
             // process all rows in each manifest file
             while (eRow.hasMoreElements()) {
@@ -352,8 +354,12 @@ public class HandlerRetrieve extends Handler<JobState>
 	} catch (Exception e) {
 	    System.err.println("[ERROR] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
 	    return false;
+	} finally {
+            manifest = null;
+            eRow = null;
+            rIn = null;
+            fComponent = null;
 	} 
-
     }
 
 
