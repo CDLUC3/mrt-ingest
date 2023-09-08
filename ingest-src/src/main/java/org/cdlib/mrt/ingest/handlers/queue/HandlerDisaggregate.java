@@ -174,6 +174,14 @@ public class HandlerDisaggregate extends Handler<BatchState>
                 throw new TException.REQUEST_INVALID(MESSAGE + "Manifest exceeds size limit. (Max: 5MB)");
             }
 
+            // Dryrun process of manifest
+            System.out.println("[info] " + MESSAGE + "validating Manifest of Manifest integrity: " + manifestFile.getName());
+            if (validateManifestIntegrity(manifestFile, new TFileLogger("Jersey", 10, 10))) {
+                if (DEBUG) System.out.println("[info] " + MESSAGE + "Manifest of Manifest integrity check successful: " + manifestFile.getName());
+            } else {
+                throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "Manifest of Manifest integrity check fails: " + manifestFile.getName());
+            }
+
             Enumeration en = manifest.getRows(manifestFile);
             while (en.hasMoreElements()) {
                 manifestRow = (ManifestRowBatch) en.nextElement();
@@ -321,6 +329,49 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	} finally {
 	}
     }
+
+
+    /**
+     * validate manifest integrity
+     *
+     * @param manifestFile manifest file
+     * @return success in validating manifest
+     */
+    private boolean validateManifestIntegrity(File manifestFile, LoggerInf logger)
+    {
+        Manifest manifest = null;
+        ManifestRowBatch mRow = null;
+        FileComponent fileComponent = null;
+        Enumeration en = null;
+
+        try {
+            manifest = Manifest.getManifest(logger, ManifestRowAbs.ManifestType.batch);
+            en = manifest.getRows(manifestFile);
+
+            // process all rows in each manifest file
+            while (en.hasMoreElements()) {
+                mRow = (ManifestRowBatch) en.nextElement();
+                fileComponent = mRow.getFileComponent();
+
+                if (DEBUG) {
+                    System.out.println("Pre-processing Manifest of Manifest entry: " + mRow.getLine());
+                }
+
+            }
+            return true;
+        } catch (Exception e) {
+	    e.printStackTrace();
+            System.err.println("[ERROR] Pre-processing Manifest of Manifest  not valid: " + manifestFile.getAbsolutePath());
+            return false;
+	} finally {
+	    manifest = null;
+            mRow = null;
+            en = null;
+            fileComponent = null;
+	}
+
+    }
+
 
     public String getName() {
 	return NAME;
