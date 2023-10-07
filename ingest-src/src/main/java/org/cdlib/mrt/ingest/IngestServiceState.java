@@ -32,6 +32,7 @@ package org.cdlib.mrt.ingest;
 import java.net.URL;
 import java.util.Vector;
 import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.log.utility.Log4j2Util;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.TException;
 
@@ -299,6 +300,16 @@ public class IngestServiceState
     public void setCollectionSubmissionState(String collectionSubmissionState) {
         this.collectionSubmissionState = collectionSubmissionState;
     }
+
+    public static String getLogRootLevel()
+    {
+        try {
+            return Log4j2Util.getRootLevel();
+        } catch (Exception  ex) {
+            return "Not found";
+        }
+    }
+
 
     /**
      * Compare two DateStates and return most recent
