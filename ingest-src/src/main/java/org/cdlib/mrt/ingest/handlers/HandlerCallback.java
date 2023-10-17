@@ -143,7 +143,7 @@ public class HandlerCallback extends Handler<JobState> {
                 try {
             	    httppost.setHeader("Content-Type", MediaType.APPLICATION_JSON);
             	    if (authHeader != null) httppost.setHeader("Authorization", authHeader);
-            	    httppost.setEntity(new StringEntity(jobStateString));
+            	    httppost.setEntity(new StringEntity(jobStateString, "UTF-8"));
             	    clientResponse = httpClient.execute(httppost);
 		    break;
                 } catch (Exception e) {
