@@ -207,6 +207,7 @@ public class HandlerCallback extends Handler<JobState> {
 	    ex.printStackTrace();
             return new HandlerResult(true, msg, 0);
         } finally {
+            ThreadContext.clearMap();
             if (error) {
                 if (DEBUG) System.out.println("[error] Callback request failed: " + requestURL + " * notifying users * ");
                 if (notify && error) notify(jobState, profileState, ingestRequest);

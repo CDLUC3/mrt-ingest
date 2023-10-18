@@ -29,7 +29,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
@@ -38,6 +37,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -197,6 +200,8 @@ public class HandlerTransfer extends Handler<JobState>
 		throw e;
 	    }
 
+            long startTime = DateUtil.getEpochUTCDate();
+
 	    // make service request
 	    try {
                 httppost.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
@@ -213,6 +218,17 @@ public class HandlerTransfer extends Handler<JobState>
             String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
             String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
+
+            // Log POST
+            long endTime = DateUtil.getEpochUTCDate();
+            ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+            ThreadContext.put("JobID", jobState.getJobID().getValue());
+            ThreadContext.put("URL", url.toString());
+            ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
+            ThreadContext.put("ResponseCode", String.valueOf(responseCode));
+            ThreadContext.put("ResponsePhrase", responseMessage);
+            ThreadContext.put("ResponseBody", responseBody);
+            LogManager.getLogger().info("StoragePost");
 
 	    if (responseCode != 200) {
                 try {
@@ -244,6 +260,7 @@ public class HandlerTransfer extends Handler<JobState>
 
             return new HandlerResult(false, msg);
 	} finally {
+            ThreadContext.clearMap();
 	    clientResponse = null;
 	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
 	    releaseLock();

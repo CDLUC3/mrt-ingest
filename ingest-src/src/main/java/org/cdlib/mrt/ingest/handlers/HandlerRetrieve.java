@@ -449,6 +449,9 @@ class RetrieveData implements Callable<String>
 	    e.printStackTrace();
 	    System.out.println("[error] In retrieval of URL: " + url.toString());
 	    return new String(url.toString());
-	}
+        } finally {
+            ThreadContext.clearMap();
+        }
+
     }
 }
