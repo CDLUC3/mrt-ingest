@@ -59,6 +59,7 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.HttpResponse;
 
+import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
@@ -67,6 +68,11 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
+
 
 /**
  * Simple minter dedicated for ingest
@@ -82,6 +88,7 @@ public class MintUtil
     private Properties conf = null;
     private Properties ingestProperties = null;
     private static final boolean DEBUG = true;
+    protected static final Logger log4j2 = LogManager.getLogger();
 
     public static Identifier getJobID()
         throws TException
@@ -217,6 +224,7 @@ public class MintUtil
 	    HttpResponse httpResponse = null;
 	    String statusPhrase = null;
 	    int statusCode;
+            long startTime = DateUtil.getEpochUTCDate();
 
             int retryCount = 0;
             while (true) {
@@ -245,6 +253,18 @@ public class MintUtil
 		     responseBody = "failed";
 	    	}
 	    }
+
+	    // Log POST
+            long endTime = DateUtil.getEpochUTCDate();
+	    ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+	    ThreadContext.put("JobID", jobState.getJobID().getValue());
+	    ThreadContext.put("URL", url);
+	    ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
+	    ThreadContext.put("ResponseCode", String.valueOf(statusCode));
+	    ThreadContext.put("ResponsePhrase", statusPhrase);
+	    ThreadContext.put("ResponseBody", responseBody);
+	    LogManager.getLogger().info("EZIDPost");
+
             System.out.println("[info] " + MESSAGE + "response code: " + statusCode);
             System.out.println("[info] " + MESSAGE + "response phrase: " + statusPhrase);
 	    if (responseBody.startsWith("success")) {
@@ -254,6 +274,7 @@ public class MintUtil
 
 	    String id = new String(responseBody);
 	    if ( ! id.startsWith(expectedResponse)) {
+        	startTime = DateUtil.getEpochUTCDate();
 	        if (! mint) {
 	            System.out.println("[info] " + MESSAGE + "could not update, attempting to create/update: " + url + "?update_if_exists=yes");
                     Thread.sleep(15000);
@@ -304,6 +325,16 @@ public class MintUtil
                         System.err.println(MESSAGE + "Wait 15 seconds and retry attempt: " + retryCount);
 		    }
 		}
+		// Log PUT
+        	endTime = DateUtil.getEpochUTCDate();
+		ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+		ThreadContext.put("JobID", jobState.getJobID().getValue());
+		ThreadContext.put("URL", url);
+	        ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
+		ThreadContext.put("ResponseCode", String.valueOf(statusCode));
+		ThreadContext.put("ResponsePhrase", statusPhrase);
+		ThreadContext.put("ResponseBody", responseBody);
+		LogManager.getLogger().info("EZIDPut");
 	    }
 
 	    try {
@@ -319,7 +350,10 @@ public class MintUtil
             String err = MESSAGE + "error in processing ID - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("error in processing ID");
-	}
+        } finally {
+            ThreadContext.clearMap();
+        }
+
     }
 
     private static String getMetadata(JobState jobState)

@@ -53,6 +53,7 @@ import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.app.jersey.JerseyBase;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
+import org.cdlib.mrt.log.utility.Log4j2Util;
 import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -127,6 +128,41 @@ public class JerseyAdmin extends JerseyBase
             throw tex;
         } catch (Exception ex) {
             System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+        }
+    }
+
+    @POST
+    @Path("reset")
+    public Response callResetState(
+            @DefaultValue("-none-") @QueryParam("log4jlevel") String log4jlevel,
+            @DefaultValue("json") @QueryParam("t") String formatType,
+            @Context CloseableService cs,
+            @Context ServletConfig sc)
+        throws TException
+    {
+        LoggerInf logger = null;
+        try {
+            log("getResetState entered:"
+                    + " - formatType=" + formatType
+                    + " - log4jlevel=" + log4jlevel
+                    );
+            if (!log4jlevel.equals("-none-")) {
+                Log4j2Util.setRootLevel(log4jlevel);
+            }
+            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
+            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
+            logger = ingestService.getLogger();
+            StateInf responseState = ingestService.getServiceState();
+            return getStateResponse(responseState, formatType, logger, cs, sc);
+
+        } catch (TException tex) {
+            log(tex.toString());
+            throw tex;
+
+        } catch (Exception ex) {
+            System.out.println("TRACE:" + StringUtil.stackTrace(ex));
+            log(ex.toString());
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }

@@ -56,8 +56,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.Response.Status.Family;
 
-
 import org.apache.commons.mail.MultiPartEmail;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -65,9 +67,11 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
+import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.HTTPUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+
 
 public class HandlerCallback extends Handler<JobState> {
     
@@ -79,13 +83,13 @@ public class HandlerCallback extends Handler<JobState> {
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
     public static final int CALLBACK_TIMEOUT = (5 * 60 * 1000);
+    protected static final Logger log4j2 = LogManager.getLogger(); 
 
 
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
 
 	FormatType formatType = null;
- 
         try {
 	    try {
 	       // Add merritt callback and Job ID to pathname (e.g. mc/<jid>)
@@ -131,6 +135,7 @@ public class HandlerCallback extends Handler<JobState> {
             String jobStateString = formatterUtil.doStateFormatting(jobState, formatType);
             HttpPost httppost = new HttpPost(requestURL.toString());
             HttpResponse clientResponse = null;
+            long startTime = DateUtil.getEpochUTCDate();
 
             // make service request
 	    int retryCount = 0;
@@ -138,7 +143,7 @@ public class HandlerCallback extends Handler<JobState> {
                 try {
             	    httppost.setHeader("Content-Type", MediaType.APPLICATION_JSON);
             	    if (authHeader != null) httppost.setHeader("Authorization", authHeader);
-            	    httppost.setEntity(new StringEntity(jobStateString));
+            	    httppost.setEntity(new StringEntity(jobStateString, "UTF-8"));
             	    clientResponse = httpClient.execute(httppost);
 		    break;
                 } catch (Exception e) {
@@ -152,6 +157,7 @@ public class HandlerCallback extends Handler<JobState> {
                 }
 	    }
 
+            long endTime = DateUtil.getEpochUTCDate();
 	    int responseCode = clientResponse.getStatusLine().getStatusCode();
             if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
 
@@ -184,12 +190,24 @@ public class HandlerCallback extends Handler<JobState> {
 
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
+            // Log POST
+            ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+            ThreadContext.put("JobID", jobState.getJobID().getValue());
+            ThreadContext.put("URL", requestURL.toString());
+            ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
+            ThreadContext.put("Retries", String.valueOf(retryCount));
+            ThreadContext.put("ResponseCode", String.valueOf(responseCode));
+            ThreadContext.put("ResponsePhrase", responseMessage);
+            ThreadContext.put("ResponseBody", responseBody);
+            LogManager.getLogger().info("CallbackPost");
+
             return new HandlerResult(true, msg, 0);
         } catch (Exception ex) {
             String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), requestURL);
 	    ex.printStackTrace();
             return new HandlerResult(true, msg, 0);
         } finally {
+            ThreadContext.clearMap();
             if (error) {
                 if (DEBUG) System.out.println("[error] Callback request failed: " + requestURL + " * notifying users * ");
                 if (notify && error) notify(jobState, profileState, ingestRequest);

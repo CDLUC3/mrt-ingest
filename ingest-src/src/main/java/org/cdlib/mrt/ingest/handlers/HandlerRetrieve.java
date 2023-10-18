@@ -46,6 +46,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
+
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
@@ -58,6 +62,7 @@ import org.cdlib.mrt.ingest.utility.DigestUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
+import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -68,7 +73,6 @@ import org.cdlib.mrt.utility.TRuntimeException;
 import org.cdlib.mrt.utility.URLEncoder;
 
 
-
 /**
  * retrieve data if type is a manifest
  * @author mreyes
@@ -76,6 +80,7 @@ import org.cdlib.mrt.utility.URLEncoder;
 public class HandlerRetrieve extends Handler<JobState>
 {
 
+    protected static final Logger log4j2 = LogManager.getLogger();
     private static final String NAME = "HandlerRetrieve";
     private static final String MESSAGE = NAME + ": ";
     private int thread_pool_size = 4;	// Default
@@ -190,7 +195,7 @@ public class HandlerRetrieve extends Handler<JobState>
                         }
 
 			// launch download
-                        Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier()));
+                        Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState));
 			tasks.add(future);
                     }
 
@@ -375,22 +380,28 @@ class RetrieveData implements Callable<String>
     private URL url = null;
     private File targetDir = null;
     private String fileName = null;
+    private JobState jobState = null;
 
     // constructor
-    public RetrieveData(URL url, File targetDir, String fileName) {
+    public RetrieveData(URL url, File targetDir, String fileName, JobState jobState) {
 	this.url = url;
 	this.targetDir = targetDir;
 	this.fileName = fileName;
+	this.jobState = jobState;
     }
 
     public String call()
 	throws Exception
     {
 	try {
+	    String status = "complete";;
+	    long bytes = 0;
+	    int retries = 0;
 	    if (fileName == null) {
 		fileName = url.getFile();
 		if (fileName.startsWith("/")) fileName = fileName.substring(1);
 	    }
+            long startTime = DateUtil.getEpochUTCDate();
             System.out.println("Retrieving remote data: " + url.toString() + " ---- " + fileName);
             File f = new File(targetDir, fileName);
 	    new File(f.getParent()).mkdirs();
@@ -405,13 +416,28 @@ class RetrieveData implements Callable<String>
             for (int i=0; i < 2; i++) {
 	        try {
                     FileUtil.url2File(null, url, f, 2);
+		    bytes = f.length();
 		    break;
 		} catch (Exception ste) {
 		    System.out.println("[error] error on attempt: " + i);
 		    f.delete();
+		    status = "fail";
 		}
+		retries = i;
 		if (i==1) throw new Exception();
 	    }
+            long endTime = DateUtil.getEpochUTCDate();
+            ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+            ThreadContext.put("JobID", jobState.getJobID().getValue());
+            ThreadContext.put("URL", url.toString());
+            ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
+            ThreadContext.put("Retries", String.valueOf(retries));
+            ThreadContext.put("Status", status);
+            ThreadContext.put("Bytes", String.valueOf(bytes));
+            // ThreadContext.put("ResponseCode", String.valueOf(statusCode));
+            // ThreadContext.put("ResponsePhrase", statusPhrase);
+            // ThreadContext.put("ResponseBody", responseBody);
+            LogManager.getLogger().info("RETRIEVEGet");
 
 	    return null;
 
@@ -423,6 +449,9 @@ class RetrieveData implements Callable<String>
 	    e.printStackTrace();
 	    System.out.println("[error] In retrieval of URL: " + url.toString());
 	    return new String(url.toString());
-	}
+        } finally {
+            ThreadContext.clearMap();
+        }
+
     }
 }
