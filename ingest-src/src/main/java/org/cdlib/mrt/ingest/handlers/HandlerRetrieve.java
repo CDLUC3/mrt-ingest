@@ -424,7 +424,7 @@ class RetrieveData implements Callable<String>
 		    status = "fail";
 		}
 		retries = i;
-		if (i==1) throw new Exception();
+		if (i==1) break;	// log error
 	    }
             long endTime = DateUtil.getEpochUTCDate();
             ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
@@ -438,6 +438,8 @@ class RetrieveData implements Callable<String>
             // ThreadContext.put("ResponsePhrase", statusPhrase);
             // ThreadContext.put("ResponseBody", responseBody);
             LogManager.getLogger().info("RETRIEVEGet");
+
+	    if (status.equals("fail")) throw new Exception();
 
 	    return null;
 
