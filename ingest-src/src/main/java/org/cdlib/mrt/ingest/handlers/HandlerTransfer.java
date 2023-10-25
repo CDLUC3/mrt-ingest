@@ -52,6 +52,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.NoSuchElementException;
@@ -139,6 +140,7 @@ public class HandlerTransfer extends Handler<JobState>
 	zooConnectString = jobState.grabMisc();
 	zooLockNode = jobState.grabExtra();
 	boolean lock = getLock(jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
+        HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
 
 	try {
 	    originalStoreNode = profileState.getTargetStorage();
@@ -221,14 +223,15 @@ public class HandlerTransfer extends Handler<JobState>
 
             // Log POST
             long endTime = DateUtil.getEpochUTCDate();
+            ThreadContext.put("Method", "StoragePost");
             ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
             ThreadContext.put("JobID", jobState.getJobID().getValue());
             ThreadContext.put("URL", url.toString());
-            ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-            ThreadContext.put("ResponseCode", String.valueOf(responseCode));
             ThreadContext.put("ResponsePhrase", responseMessage);
             ThreadContext.put("ResponseBody", responseBody);
-            LogManager.getLogger().info("StoragePost");
+            msgMap.put("DurationMs", endTime - startTime);
+            msgMap.put("ResponseCode", responseCode);
+            LogManager.getLogger().info(msgMap);
 
 	    if (responseCode != 200) {
                 try {
@@ -261,6 +264,8 @@ public class HandlerTransfer extends Handler<JobState>
             return new HandlerResult(false, msg);
 	} finally {
             ThreadContext.clearMap();
+            msgMap.clear();
+            msgMap = null;
 	    clientResponse = null;
 	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
 	    releaseLock();

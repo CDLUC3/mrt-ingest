@@ -30,9 +30,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.utility;
 
 
-import java.util.Date;
-import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -119,6 +120,8 @@ public class MintUtil
     public static String processObjectID(ProfileState profileState, JobState jobState, IngestRequest ingestRequest, boolean mint)
         throws TException
     {
+        HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
+
 	// EZID implemntation.
 	try {
 	    DefaultHttpClient httpClient = new DefaultHttpClient();
@@ -256,14 +259,16 @@ public class MintUtil
 
 	    // Log POST
             long endTime = DateUtil.getEpochUTCDate();
+	    ThreadContext.put("Method", "EzidPost");
 	    ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
 	    ThreadContext.put("JobID", jobState.getJobID().getValue());
 	    ThreadContext.put("URL", url);
 	    ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-	    ThreadContext.put("ResponseCode", String.valueOf(statusCode));
 	    ThreadContext.put("ResponsePhrase", statusPhrase);
 	    ThreadContext.put("ResponseBody", responseBody);
-	    LogManager.getLogger().info("EZIDPost");
+            msgMap.put("DurationMs", endTime - startTime);
+            msgMap.put("ResponseCode", statusCode);
+	    LogManager.getLogger().info(msgMap);
 
             System.out.println("[info] " + MESSAGE + "response code: " + statusCode);
             System.out.println("[info] " + MESSAGE + "response phrase: " + statusPhrase);
@@ -352,6 +357,8 @@ public class MintUtil
             throw new TException.GENERAL_EXCEPTION("error in processing ID");
         } finally {
             ThreadContext.clearMap();
+            msgMap.clear();
+            msgMap = null;
         }
 
     }
