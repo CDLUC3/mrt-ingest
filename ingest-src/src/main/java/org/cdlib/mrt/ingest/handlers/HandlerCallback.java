@@ -208,6 +208,7 @@ public class HandlerCallback extends Handler<JobState> {
         } catch (Exception ex) {
             String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), requestURL);
 	    ex.printStackTrace();
+            LogManager.getLogger().error(ex);
             return new HandlerResult(true, msg, 0);
         } finally {
             ThreadContext.clearMap();

@@ -256,9 +256,11 @@ public class HandlerTransfer extends Handler<JobState>
 	    return new HandlerResult(true, "SUCCESS: transfer", responseCode);
 	} catch (TException te) {
 	    te.printStackTrace();
+	    LogManager.getLogger().error(te);
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
+            LogManager.getLogger().error(e);
             String msg = "[error] " + MESSAGE + "processing transfer: " + e.getMessage();
 
             return new HandlerResult(false, msg);

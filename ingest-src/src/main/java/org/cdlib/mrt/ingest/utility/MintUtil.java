@@ -263,7 +263,6 @@ public class MintUtil
 	    ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
 	    ThreadContext.put("JobID", jobState.getJobID().getValue());
 	    ThreadContext.put("URL", url);
-	    ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
 	    ThreadContext.put("ResponsePhrase", statusPhrase);
 	    ThreadContext.put("ResponseBody", responseBody);
             msgMap.put("DurationMs", endTime - startTime);
@@ -332,14 +331,15 @@ public class MintUtil
 		}
 		// Log PUT
         	endTime = DateUtil.getEpochUTCDate();
-		ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
-		ThreadContext.put("JobID", jobState.getJobID().getValue());
-		ThreadContext.put("URL", url);
-	        ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-		ThreadContext.put("ResponseCode", String.valueOf(statusCode));
-		ThreadContext.put("ResponsePhrase", statusPhrase);
-		ThreadContext.put("ResponseBody", responseBody);
-		LogManager.getLogger().info("EZIDPut");
+            	ThreadContext.put("Method", "EzidPut");
+            	ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+            	ThreadContext.put("JobID", jobState.getJobID().getValue());
+            	ThreadContext.put("URL", url);
+            	ThreadContext.put("ResponsePhrase", statusPhrase);
+            	ThreadContext.put("ResponseBody", responseBody);
+            	msgMap.put("DurationMs", endTime - startTime);
+            	msgMap.put("ResponseCode", statusCode);
+            	LogManager.getLogger().info(msgMap);
 	    }
 
 	    try {
@@ -349,9 +349,11 @@ public class MintUtil
 	    }
 	    
 	} catch (TException tex) {
+            LogManager.getLogger().error(tex);
 	    throw tex;
 	} catch (Exception ex) {
             System.out.println(StringUtil.stackTrace(ex));
+            LogManager.getLogger().error(ex);
             String err = MESSAGE + "error in processing ID - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("error in processing ID");

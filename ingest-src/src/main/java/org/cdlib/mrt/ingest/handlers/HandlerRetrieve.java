@@ -445,10 +445,12 @@ class RetrieveData implements Callable<String>
 
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
+            LogManager.getLogger().error(ioe);
 	    System.out.println("[error] file already exists " + url.getFile());
 	    return new String(url.getFile());
 	} catch (Exception e) {
 	    e.printStackTrace();
+            LogManager.getLogger().error(e);
 	    System.out.println("[error] In retrieval of URL: " + url.toString());
 	    return new String(url.toString());
         } finally {
