@@ -30,9 +30,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.utility;
 
 
-import java.util.Date;
-import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -119,6 +120,8 @@ public class MintUtil
     public static String processObjectID(ProfileState profileState, JobState jobState, IngestRequest ingestRequest, boolean mint)
         throws TException
     {
+        HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
+
 	// EZID implemntation.
 	try {
 	    DefaultHttpClient httpClient = new DefaultHttpClient();
@@ -256,14 +259,15 @@ public class MintUtil
 
 	    // Log POST
             long endTime = DateUtil.getEpochUTCDate();
+	    ThreadContext.put("Method", "EzidPost");
 	    ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
 	    ThreadContext.put("JobID", jobState.getJobID().getValue());
 	    ThreadContext.put("URL", url);
-	    ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-	    ThreadContext.put("ResponseCode", String.valueOf(statusCode));
 	    ThreadContext.put("ResponsePhrase", statusPhrase);
 	    ThreadContext.put("ResponseBody", responseBody);
-	    LogManager.getLogger().info("EZIDPost");
+            msgMap.put("DurationMs", endTime - startTime);
+            msgMap.put("ResponseCode", statusCode);
+	    LogManager.getLogger().info(msgMap);
 
             System.out.println("[info] " + MESSAGE + "response code: " + statusCode);
             System.out.println("[info] " + MESSAGE + "response phrase: " + statusPhrase);
@@ -327,14 +331,15 @@ public class MintUtil
 		}
 		// Log PUT
         	endTime = DateUtil.getEpochUTCDate();
-		ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
-		ThreadContext.put("JobID", jobState.getJobID().getValue());
-		ThreadContext.put("URL", url);
-	        ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-		ThreadContext.put("ResponseCode", String.valueOf(statusCode));
-		ThreadContext.put("ResponsePhrase", statusPhrase);
-		ThreadContext.put("ResponseBody", responseBody);
-		LogManager.getLogger().info("EZIDPut");
+            	ThreadContext.put("Method", "EzidPut");
+            	ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
+            	ThreadContext.put("JobID", jobState.getJobID().getValue());
+            	ThreadContext.put("URL", url);
+            	ThreadContext.put("ResponsePhrase", statusPhrase);
+            	ThreadContext.put("ResponseBody", responseBody);
+            	msgMap.put("DurationMs", endTime - startTime);
+            	msgMap.put("ResponseCode", statusCode);
+            	LogManager.getLogger().info(msgMap);
 	    }
 
 	    try {
@@ -344,14 +349,18 @@ public class MintUtil
 	    }
 	    
 	} catch (TException tex) {
+            LogManager.getLogger().error(tex);
 	    throw tex;
 	} catch (Exception ex) {
             System.out.println(StringUtil.stackTrace(ex));
+            LogManager.getLogger().error(ex);
             String err = MESSAGE + "error in processing ID - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("error in processing ID");
         } finally {
             ThreadContext.clearMap();
+            msgMap.clear();
+            msgMap = null;
         }
 
     }

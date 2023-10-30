@@ -40,6 +40,7 @@ import org.apache.http.entity.StringEntity;
 
 import java.lang.String;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import java.security.SecureRandom;
@@ -90,6 +91,7 @@ public class HandlerCallback extends Handler<JobState> {
                                 JobState jobState) throws TException {
 
 	FormatType formatType = null;
+        HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
         try {
 	    try {
 	       // Add merritt callback and Job ID to pathname (e.g. mc/<jid>)
@@ -191,23 +193,27 @@ public class HandlerCallback extends Handler<JobState> {
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
             // Log POST
+            ThreadContext.put("Method", "CallbackPost");
             ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
             ThreadContext.put("JobID", jobState.getJobID().getValue());
             ThreadContext.put("URL", requestURL.toString());
-            ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-            ThreadContext.put("Retries", String.valueOf(retryCount));
-            ThreadContext.put("ResponseCode", String.valueOf(responseCode));
             ThreadContext.put("ResponsePhrase", responseMessage);
             ThreadContext.put("ResponseBody", responseBody);
-            LogManager.getLogger().info("CallbackPost");
+            msgMap.put("ResponseCode", responseCode);
+            msgMap.put("DurationMs", endTime - startTime);
+            msgMap.put("Retries", retryCount);
+            LogManager.getLogger().info(msgMap);
 
             return new HandlerResult(true, msg, 0);
         } catch (Exception ex) {
             String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), requestURL);
 	    ex.printStackTrace();
+            LogManager.getLogger().error(ex);
             return new HandlerResult(true, msg, 0);
         } finally {
             ThreadContext.clearMap();
+            msgMap.clear();
+            msgMap = null;
             if (error) {
                 if (DEBUG) System.out.println("[error] Callback request failed: " + requestURL + " * notifying users * ");
                 if (notify && error) notify(jobState, profileState, ingestRequest);

@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
@@ -393,6 +394,7 @@ class RetrieveData implements Callable<String>
     public String call()
 	throws Exception
     {
+	HashMap<String,Object> msgMap = new HashMap<>();	// Non string logging
 	try {
 	    String status = "complete";;
 	    long bytes = 0;
@@ -424,33 +426,37 @@ class RetrieveData implements Callable<String>
 		    status = "fail";
 		}
 		retries = i;
-		if (i==1) throw new Exception();
+		if (i==1) break;	// log error
 	    }
             long endTime = DateUtil.getEpochUTCDate();
+            ThreadContext.put("Method", "RetrieveGet");
             ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
             ThreadContext.put("JobID", jobState.getJobID().getValue());
             ThreadContext.put("URL", url.toString());
-            ThreadContext.put("DurationMs", String.valueOf(endTime - startTime));
-            ThreadContext.put("Retries", String.valueOf(retries));
             ThreadContext.put("Status", status);
-            ThreadContext.put("Bytes", String.valueOf(bytes));
-            // ThreadContext.put("ResponseCode", String.valueOf(statusCode));
-            // ThreadContext.put("ResponsePhrase", statusPhrase);
-            // ThreadContext.put("ResponseBody", responseBody);
-            LogManager.getLogger().info("RETRIEVEGet");
+	    msgMap.put("DurationMs", endTime - startTime);
+	    msgMap.put("Retries", retries);
+	    msgMap.put("Bytes", bytes);
+	    LogManager.getLogger().info(msgMap);
+
+	    if (status.equals("fail")) throw new Exception();
 
 	    return null;
 
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
+            LogManager.getLogger().error(ioe);
 	    System.out.println("[error] file already exists " + url.getFile());
 	    return new String(url.getFile());
 	} catch (Exception e) {
 	    e.printStackTrace();
+            LogManager.getLogger().error(e);
 	    System.out.println("[error] In retrieval of URL: " + url.toString());
 	    return new String(url.toString());
         } finally {
             ThreadContext.clearMap();
+	    msgMap.clear();
+	    msgMap = null;
         }
 
     }
