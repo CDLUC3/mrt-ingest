@@ -419,6 +419,7 @@ class RetrieveData implements Callable<String>
 	        try {
                     FileUtil.url2File(null, url, f, 2);
 		    bytes = f.length();
+	    	    status = "complete";;
 		    break;
 		} catch (Exception ste) {
 		    System.out.println("[error] error on attempt: " + i);
