@@ -45,7 +45,6 @@ import java.util.List;
 import javax.ws.rs.core.MediaType;
 
 import org.cdlib.mrt.cloud.VersionMap;
-import org.cdlib.mrt.cloud.ManifestXML;
 
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Identifier;
@@ -180,30 +179,6 @@ public class StorageUtil
 
             throw new TException.GENERAL_EXCEPTION("Error in accessing Storage file");
 	}
-    }
-
-
-    public static VersionMap getVersionMap(String objectID, String storageManifest)
-        throws TException
-    {
-       InputStream inputstream = null;
-       Identifier identifier = null;
-
-        try {
-            inputstream = new ByteArrayInputStream(storageManifest.getBytes());
-            identifier = new Identifier(objectID);
-
-            return ManifestXML.getVersionMap(identifier, null, inputstream);
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = "[error] " + MESSAGE + "failed to create version map: " + e.getMessage();
-            throw new TException.GENERAL_EXCEPTION(msg);
-        } finally {
-            try {
-                identifier = null;
-                inputstream = null;
-            } catch (Exception e) {}
-        }
     }
 
 
