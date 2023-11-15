@@ -342,9 +342,9 @@ public class HandlerTransfer extends Handler<JobState>
 
     /**
      * extract version ID from storage service response
-     * xml response form: <ver:versionID>versionID</ver:versionID>
+     * JSON response - ver:identifier
      *
-     * @param response storage service response in XML format
+     * @param response storage service response in JSON format
      * @return Integer version ID
      */
     
@@ -358,7 +358,9 @@ public class HandlerTransfer extends Handler<JobState>
             JSONObject jsonResponse = JSONUtil.string2json(response);
 	    if (jsonResponse != null) {
 		versionID = jsonResponse.getJSONObject("ver:versionState").getInt("ver:identifier");
-		if (DEBUG) System.out.println("[debug] version ID: " + versionID.toString());
+		String objectID = jsonResponse.getJSONObject("ver:versionState").getString("ver:objectID");
+		if (DEBUG) System.out.println("[debug] Object ID: " + objectID);
+		if (DEBUG) System.out.println("[debug] Version ID: " + versionID.toString());
 	    } else {
 		if (DEBUG) System.out.println("[warn] Can not determine object version ID. Default: 0");
 	    }
