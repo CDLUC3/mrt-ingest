@@ -42,12 +42,6 @@ import java.io.ByteArrayInputStream;
 import java.net.URL;
 
 import javax.ws.rs.core.MediaType;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathExpression;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -67,9 +61,8 @@ import org.cdlib.mrt.utility.HTTPUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * LocalID service wrapper methods
@@ -97,7 +90,7 @@ public class LocalIDUtil
             // build REST url
             String url = localIDURL.toString() + "/primary/" +
 			URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" +
-			URLEncoder.encode(localID,  "utf-8") + "?t=xml";
+			URLEncoder.encode(localID,  "utf-8") + "?t=json";
             if (DEBUG) System.out.println("[debug] PrimaryID fetch URL: " + url);
             HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
             HttpGet httpget = new HttpGet(url);
@@ -126,24 +119,22 @@ public class LocalIDUtil
                 }
 	    } 
 
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            domFactory.setNamespaceAware(true);
-            domFactory.setExpandEntityReferences(true);
-
-            DocumentBuilder builder = domFactory.newDocumentBuilder();
-            builder.setErrorHandler(null);
-            Document document = builder.parse(new ByteArrayInputStream(responseBody.getBytes("UTF-8")));
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("//*[local-name()='primaryIdentifier']");
-
-            String xpathS = (String) expr.evaluate(document);
-            if (StringUtil.isNotEmpty(xpathS)) {
-                if (DEBUG) System.out.println("[debug] primary ID: " + xpathS);
-                primaryID = xpathS;
-            } else {
-                if (DEBUG) System.out.println("[debug] Can not determine primary ID from localID DB");
-		primaryID = null;
-            }
+            JSONObject jsonResponse = JSONUtil.string2json(responseBody);
+            if (jsonResponse != null) {
+                boolean primaryExists = jsonResponse.getJSONObject("invloc:localContainerState").getBoolean("invloc:exists");
+		if ( primaryExists) {
+                   primaryID = jsonResponse.getJSONObject("invloc:localContainerState").getString("invloc:primaryIdentifier");
+                   if (StringUtil.isNotEmpty(primaryID)) {
+                      if (DEBUG) System.out.println("[debug] primary ID: " + primaryID);
+                   } else {
+                       if (DEBUG) System.out.println("[debug] Can not determine primary ID from localID DB");
+                       primaryID = null;
+                   }
+               } else {
+                   if (DEBUG) System.out.println("[debug] No primaryID exists from localID: " + localID);
+		   primaryID = null;
+               }
+	    }
 
             return primaryID;
 
@@ -166,13 +157,12 @@ public class LocalIDUtil
         HttpResponse clientResponse = null;
         try {
 
-	    //Vector localIDs = null;
 	    String localIDs = null;
             URL localIDURL = profileState.getLocalIDURL();
 
             // build REST url
             String url = localIDURL.toString() + "/local/" + 
-			URLEncoder.encode(primaryID,  "utf-8") + "?t=xml";
+			URLEncoder.encode(primaryID,  "utf-8") + "?t=json";
             if (DEBUG) System.out.println("[debug] LocalID fetch URL from localID db: " + url);
 
             HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
@@ -203,28 +193,33 @@ public class LocalIDUtil
                 }
 	    } 
 
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            domFactory.setNamespaceAware(true);
-            domFactory.setExpandEntityReferences(true);
-
-            DocumentBuilder builder = domFactory.newDocumentBuilder();
-            builder.setErrorHandler(null);
-            Document document = builder.parse(new ByteArrayInputStream(responseBody.getBytes("UTF-8")));
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("//*[local-name()='localID']");
-
- 	    NodeList nl = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-    	    int i = 0;
-    	    for (i = 0; i < nl.getLength(); i++) {
-		Node n = nl.item(i);
-		String localid = n.getTextContent();
-		if (StringUtil.isNotEmpty(localid)) {
-                    if (DEBUG) System.out.println("[debug] LocalID found (localID db): " + localid);
-		    if (localIDs == null) localIDs = localid;
-		    else localIDs += "; " + localid;
+            JSONObject jsonResponse = JSONUtil.string2json(responseBody);
+            if (jsonResponse != null) {
+                boolean primaryExists = jsonResponse.getJSONObject("invloc:localContainerState").getBoolean("invloc:exists");
+		if ( ! primaryExists) {
+		   if (DEBUG) System.out.println("[debug] In search for localIDs, primaryID does not exist: " + primaryID);
+		   return localIDs;
 		}
-    	    }
-
+		try {
+		   // Single localID (JSONObject)
+                   localIDs = jsonResponse.getJSONObject("invloc:localContainerState").getJSONObject("invloc:local").getJSONObject("invloc:primaryLocalState").getString("invloc:localID");
+                   if (DEBUG) System.out.println("[debug] Single LocalID found: " + localIDs);
+		} catch (org.json.JSONException jsonEx) {
+                   if (DEBUG) System.out.println("[debug] Single LocalID not found for primaryID: " + primaryID);
+		}
+		// multiple localIDs (JSONArray)
+		if (localIDs == null) {
+                   if (DEBUG) System.out.println("[debug] Searching for multiple localID for primaryID: " + primaryID);
+                   JSONArray jlocalIDs = jsonResponse.getJSONObject("invloc:localContainerState").getJSONObject("invloc:local").getJSONArray("invloc:primaryLocalState");
+       		   for (int i = 0, size = jlocalIDs.length(); i < size; i++) {
+	              JSONObject jlocalID = jlocalIDs.getJSONObject(i);
+		      String localID = jlocalID.getString("invloc:localID");
+                      if (DEBUG) System.out.println("[debug] Multiple LocalID found: " + localID);
+                      if (localIDs == null) localIDs = localID;
+                      else localIDs += "; " + localID;
+		   }
+               } 
+	    }
 	    if (StringUtil.isEmpty(localIDs)) if (DEBUG) System.out.println("[debug] Can not determine local ID");
             return localIDs;
 
