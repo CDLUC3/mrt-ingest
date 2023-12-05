@@ -192,19 +192,6 @@ public class HandlerCharacterize extends Handler<JobState>
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": characterization service: " + url);
 	    }
 
-
-            //DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            //domFactory.setNamespaceAware(true);
-            //domFactory.setExpandEntityReferences(true);
-
-            //DocumentBuilder builder = domFactory.newDocumentBuilder();
-            //builder.setErrorHandler(new SimpleErrorHandler());
-            //Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
-            //XPath xpath = XPathFactory.newInstance().newXPath();
-            //XPathExpression expr = xpath.compile("//*[local-name()='primaryIdentifier']");
-
-            //String xpathS = (String) expr.evaluate(document);
-
 	    return response;
 
         } catch (Exception e) {

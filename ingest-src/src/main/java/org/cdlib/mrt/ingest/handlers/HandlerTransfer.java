@@ -37,10 +37,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.zookeeper.ZooKeeper;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -58,13 +58,7 @@ import java.util.Properties;
 import java.util.NoSuchElementException;
 
 import javax.ws.rs.core.MediaType;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathExpression;
 
-import org.apache.zookeeper.ZooKeeper;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -86,13 +80,8 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
+import org.json.JSONException;
 import org.json.JSONObject;
-
-import org.w3c.dom.Document;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 
 /**
  * Call storage service with add version request
@@ -160,7 +149,7 @@ public class HandlerTransfer extends Handler<JobState>
             HttpClient httpClient = HTTPUtil.getHttpClient(url, StorageUtil.STORAGE_CONNECT_TIMEOUT);
             HttpPost httppost = new HttpPost(url);
 	    List<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();
-	    params.add(new BasicNameValuePair("t", "xml"));
+	    params.add(new BasicNameValuePair("t", "json"));
 
             File manifestFile = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
 	    if (manifestFile.length() < (1024L * 1024L)) {		// < 1 MB
@@ -353,9 +342,9 @@ public class HandlerTransfer extends Handler<JobState>
 
     /**
      * extract version ID from storage service response
-     * xml response form: <ver:versionID>versionID</ver:versionID>
+     * JSON response - ver:identifier
      *
-     * @param response storage service response in XML format
+     * @param response storage service response in JSON format
      * @return Integer version ID
      */
     
@@ -366,21 +355,12 @@ public class HandlerTransfer extends Handler<JobState>
 	Integer versionID = Integer.valueOf("0");	// default is current version
 
 	try {
-	    DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            domFactory.setNamespaceAware(true); 
-	    domFactory.setExpandEntityReferences(true);
-
-	    DocumentBuilder builder = domFactory.newDocumentBuilder();
-	    builder.setErrorHandler(new SimpleErrorHandler());
-	    Document document = builder.parse(new ByteArrayInputStream(response.getBytes("UTF-8")));
-	    XPath xpath = XPathFactory.newInstance().newXPath();
-	    //XPathExpression expr = xpath.compile("//*[local-name()='versionID']");
-	    XPathExpression expr = xpath.compile("//*[local-name()='identifier']");
-
-	    String xpathS = (String) expr.evaluate(document);
-	    if (StringUtil.isNotEmpty(xpathS)) {
-		if (DEBUG) System.out.println("[debug] version ID: " + xpathS);
-		versionID = Integer.valueOf(xpathS);
+            JSONObject jsonResponse = JSONUtil.string2json(response);
+	    if (jsonResponse != null) {
+		versionID = jsonResponse.getJSONObject("ver:versionState").getInt("ver:identifier");
+		String objectID = jsonResponse.getJSONObject("ver:versionState").getString("ver:objectID");
+		if (DEBUG) System.out.println("[debug] Object ID: " + objectID);
+		if (DEBUG) System.out.println("[debug] Version ID: " + versionID.toString());
 	    } else {
 		if (DEBUG) System.out.println("[warn] Can not determine object version ID. Default: 0");
 	    }
@@ -510,6 +490,7 @@ public class HandlerTransfer extends Handler<JobState>
 	}
     }
 
+/*
     // XML parser error handler
     public class SimpleErrorHandler implements ErrorHandler {
         public void warning(SAXParseException e) throws SAXException {
@@ -524,6 +505,7 @@ public class HandlerTransfer extends Handler<JobState>
             System.out.println(e.getMessage());
         }
     }
+*/
 
 }
 
