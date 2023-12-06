@@ -92,6 +92,7 @@ public class QueueManager {
 	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
 	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
+        private String emailContact = null;
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
@@ -151,6 +152,7 @@ public class QueueManager {
 			String matchInventoryNode = "InventoryName";
 			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
+                        String matchEmailContact = "mail-contact";
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
 
@@ -172,6 +174,9 @@ public class QueueManager {
 			for (String recipient : value.split(";")) {
 				m_admin.add((String) recipient);
 			}
+			// email contact
+			emailContact = ingestConf.getString(matchEmailContact);
+                        System.out.println("[info] " + MESSAGE + "Contact email: " + emailContact);
 
 		} catch (TException tex) {
 			throw tex;
@@ -705,6 +710,8 @@ public class QueueManager {
 				profileState.setAdmin(m_admin);
 			if (highPriorityThreshold != null)
 				profileState.setPriorityThreshold(highPriorityThreshold);
+			if (emailContact != null)
+				profileState.setEmailContact(emailContact);
 
 			if (DEBUG)
 				System.out.println("[debug] " + profileState.dump("profileState"));

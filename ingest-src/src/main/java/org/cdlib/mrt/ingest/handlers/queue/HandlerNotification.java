@@ -112,7 +112,7 @@ public class HandlerNotification extends Handler<BatchState>
                 }
             }
 
-	    String contact = profileState.getEmailContact();
+            String contact = profileState.getEmailContact();
   	    email.setFrom(contact, "UC3 Merritt Support");
 
             String server = null;
