@@ -88,6 +88,7 @@ public class ProfileState
     private String context = null;
     private String misc = null;
     private String purl = null;
+    private String emailContact = null;
     private String ezidCoowner = null;
     private FormatType notificationFormat = null;	// response type
     private String notificationType = null;		// human readable notification 
@@ -595,6 +596,14 @@ public class ProfileState
 
     public void setEzidCoowner(String ezidCoowner) {
         this.ezidCoowner = ezidCoowner;
+    }
+
+    public String getEmailContact() {
+        return emailContact;
+    }
+
+    public void setEmailContact(String emailContact) {
+        this.emailContact = emailContact;
     }
 
     public boolean grabSuppressDublinCoreLocalID() {
