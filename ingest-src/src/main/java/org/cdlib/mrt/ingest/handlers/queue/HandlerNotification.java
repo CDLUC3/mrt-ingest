@@ -112,7 +112,8 @@ public class HandlerNotification extends Handler<BatchState>
                 }
             }
 
-  	    email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+	    String contact = profileState.getEmailContact();
+  	    email.setFrom(contact, "UC3 Merritt Support");
 
             String server = null;
             String status = "OK";
@@ -184,6 +185,7 @@ public class HandlerNotification extends Handler<BatchState>
 
     public void notify(String message, ProfileState profileState, IngestRequest ingestRequest) {
         String server = "";
+	String contact = "";
         MultiPartEmail email = new MultiPartEmail();
 
         try {
@@ -200,7 +202,8 @@ public class HandlerNotification extends Handler<BatchState>
             if (StringUtil.isNotEmpty(ingestServiceName))
                 if (ingestServiceName.contains("Development")) server = " [Development]";
                 else if (ingestServiceName.contains("Stage")) server = " [Stage]";
-            email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+	    contact = profileState.getEmailContact();
+            email.setFrom(contact, "UC3 Merritt Support");
             email.setSubject("[Warning] Error in user notification" + server);
             email.setMsg(message);
             email.send();

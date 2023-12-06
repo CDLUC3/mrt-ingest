@@ -136,7 +136,8 @@ public class HandlerNotification extends Handler<BatchState>
 		    if (StringUtil.isNotEmpty(recipient)) email.addBcc(recipient);
 		}
 	    }
-  	    email.setFrom("uc3@ucop.edu", "UC3 Merritt Support");
+	    String contact = profileState.getEmailContact();
+  	    email.setFrom(contact, "UC3 Merritt Support");
 	    String status = "OK";
 
 	    // instance?

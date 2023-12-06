@@ -84,6 +84,7 @@ public class IngestManager {
 	private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
 	private String m_localID = null;
+	private String m_emailContact = null;
 	private String m_ezid = null;
 	private String m_purl = null;          // persistent URL
 	private String ingestFileS = null;     // prop "IngestService"
@@ -154,6 +155,7 @@ public class IngestManager {
 			String matchStorage = "store.";
 			String matchAccess = "access.";
 			String matchLocalID = "localID";
+			String matchEmailContact = "mail-contact";
 			String matchAdmin = "admin";
 			String matchEZID = "ezid";
 			String matchPURL = "purl";
@@ -215,6 +217,10 @@ public class IngestManager {
 			for (String recipient : value.split(";")) {
 				m_admin.add((String) recipient);
 			}
+
+			// email contact
+			m_emailContact = ingestConf.getString(matchEmailContact);
+                	System.out.println("[info] " + MESSAGE + "Contact email: " + m_emailContact);
 
 			// ingestServicePath
 			this.ingestFileS = ingestConf.getString("ingestServicePath");
@@ -454,6 +460,8 @@ public class IngestManager {
 			}
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
+			if (m_emailContact != null)
+				profileState.setEmailContact(m_emailContact);
 			if (m_ezid != null)
 				profileState.setMisc(m_ezid);
 			if (m_purl != null)

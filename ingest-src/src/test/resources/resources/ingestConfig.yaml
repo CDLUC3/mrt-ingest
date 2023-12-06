@@ -14,6 +14,7 @@ ingest-info:
     admin: "test@email"
     purl: "http://n2t.net/"
     mail-host: "smtp"
+    mail-contact: "{!SSM: ingest/config/mail-contact !DEFAULT: uc3@ucop.edu}"
     ingestServicePath: "/tmp/ingest"
     ingestQueuePath: "/tmp/ingest/queue"
     ingestLock: "/mrt.lock"
