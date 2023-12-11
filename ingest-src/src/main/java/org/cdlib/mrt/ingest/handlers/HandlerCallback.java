@@ -52,6 +52,8 @@ import javax.net.ssl.TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
+import javax.mail.internet.InternetAddress;
+import java.util.ArrayList;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -227,6 +229,7 @@ public class HandlerCallback extends Handler<JobState> {
         String server = "";
         String owner = "";
         String contact = profileState.getEmailContact();
+        String replyTo = profileState.getEmailReplyTo();
         MultiPartEmail email = new MultiPartEmail();
 
         try {
@@ -243,7 +246,15 @@ public class HandlerCallback extends Handler<JobState> {
                 if (ingestServiceName.contains("Development")) server = " [Development]";
                 else if (ingestServiceName.contains("Stage")) server = " [Stage]";
             if (StringUtil.isNotEmpty(profileState.getContext())) owner = " [owner: " + profileState.getContext() + "]";
+
+	    // email contact
             email.setFrom(contact, "UC3 Merritt Support");
+
+	    // email reply to
+	    ArrayList emailReply = new ArrayList();
+	    emailReply.add(new InternetAddress(replyTo));
+	    email.setReplyTo(emailReply);
+
             email.setSubject("[Warning] Callback request failed " + server + owner);
             email.setMsg(jobState.dump("Job notification", "\t", "\n", null));
             email.send();

@@ -29,7 +29,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+
+import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
@@ -136,8 +139,18 @@ public class HandlerNotification extends Handler<BatchState>
 		    if (StringUtil.isNotEmpty(recipient)) email.addBcc(recipient);
 		}
 	    }
+	
+            // email contact
 	    String contact = profileState.getEmailContact();
   	    email.setFrom(contact, "UC3 Merritt Support");
+
+            // email reply to
+	    String replyTo = profileState.getEmailReplyTo();
+            ArrayList emailReply = new ArrayList();
+            emailReply.add(new InternetAddress(replyTo));
+            email.setReplyTo(emailReply);
+
+
 	    String status = "OK";
 
 	    // instance?
