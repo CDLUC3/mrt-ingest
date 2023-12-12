@@ -93,6 +93,7 @@ public class QueueManager {
 	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
+        private String emailReplyTo = null;
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
@@ -153,6 +154,7 @@ public class QueueManager {
 			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
+                        String matchEmailReplyTo = "mail-replyto";
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
 
@@ -177,6 +179,10 @@ public class QueueManager {
 			// email contact
 			emailContact = ingestConf.getString(matchEmailContact);
                         System.out.println("[info] " + MESSAGE + "Contact email: " + emailContact);
+
+                        // email reply-to
+                        emailReplyTo = ingestConf.getString(matchEmailReplyTo);
+                        System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
 		} catch (TException tex) {
 			throw tex;
@@ -712,6 +718,8 @@ public class QueueManager {
 				profileState.setPriorityThreshold(highPriorityThreshold);
 			if (emailContact != null)
 				profileState.setEmailContact(emailContact);
+                        if (emailReplyTo != null)
+                                profileState.setEmailReplyTo(emailReplyTo);
 
 			if (DEBUG)
 				System.out.println("[debug] " + profileState.dump("profileState"));

@@ -29,8 +29,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.handlers.queue;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.mail.internet.InternetAddress;
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.ByteArrayDataSource;
@@ -45,6 +47,7 @@ import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+
 
 
 /**
@@ -112,8 +115,20 @@ public class HandlerNotification extends Handler<BatchState>
                 }
             }
 
+            // email contact
             String contact = profileState.getEmailContact();
   	    email.setFrom(contact, "UC3 Merritt Support");
+
+            // email reply to
+            String replyTo = profileState.getEmailReplyTo();
+            if ( replyTo != null ) {
+               ArrayList emailReply = new ArrayList();
+               emailReply.add(new InternetAddress(replyTo));
+               email.setReplyTo(emailReply);
+            } else {
+               if (DEBUG) System.err.println("[warning] " + MESSAGE + "Email replyTo not found.");
+            }
+
 
             String server = null;
             String status = "OK";

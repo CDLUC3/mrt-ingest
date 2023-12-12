@@ -89,6 +89,7 @@ public class ProfileState
     private String misc = null;
     private String purl = null;
     private String emailContact = null;
+    private String emailReplyTo = null;
     private String ezidCoowner = null;
     private FormatType notificationFormat = null;	// response type
     private String notificationType = null;		// human readable notification 
@@ -602,8 +603,16 @@ public class ProfileState
         return emailContact;
     }
 
+    public String getEmailReplyTo() {
+        return emailReplyTo;
+    }
+
     public void setEmailContact(String emailContact) {
         this.emailContact = emailContact;
+    }
+
+    public void setEmailReplyTo(String emailReplyTo) {
+        this.emailReplyTo = emailReplyTo;
     }
 
     public boolean grabSuppressDublinCoreLocalID() {
