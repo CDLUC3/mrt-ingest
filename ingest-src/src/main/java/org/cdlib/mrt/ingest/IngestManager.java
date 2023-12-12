@@ -469,7 +469,7 @@ public class IngestManager {
 			if (m_emailContact != null)
 				profileState.setEmailContact(m_emailContact);
 			if (m_emailReplyTo != null)
-				profileState.setEmailContact(m_emailReplyTo);
+				profileState.setEmailReplyTo(m_emailReplyTo);
 			if (m_ezid != null)
 				profileState.setMisc(m_ezid);
 			if (m_purl != null)

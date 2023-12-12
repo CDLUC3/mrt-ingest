@@ -250,10 +250,15 @@ public class HandlerCallback extends Handler<JobState> {
 	    // email contact
             email.setFrom(contact, "UC3 Merritt Support");
 
-	    // email reply to
-	    ArrayList emailReply = new ArrayList();
-	    emailReply.add(new InternetAddress(replyTo));
-	    email.setReplyTo(emailReply);
+            // email reply to
+            if ( replyTo != null ) {
+               ArrayList emailReply = new ArrayList();
+               emailReply.add(new InternetAddress(replyTo));
+               email.setReplyTo(emailReply);
+            } else {
+               if (DEBUG) System.err.println("[warning] " + MESSAGE + "Email replyTo not found.");
+            }
+
 
             email.setSubject("[Warning] Callback request failed " + server + owner);
             email.setMsg(jobState.dump("Job notification", "\t", "\n", null));

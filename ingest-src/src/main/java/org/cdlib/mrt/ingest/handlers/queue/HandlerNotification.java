@@ -121,9 +121,14 @@ public class HandlerNotification extends Handler<BatchState>
 
             // email reply to
             String replyTo = profileState.getEmailReplyTo();
-            ArrayList emailReply = new ArrayList();
-            emailReply.add(new InternetAddress(replyTo));
-            email.setReplyTo(emailReply);
+            if ( replyTo != null ) {
+               ArrayList emailReply = new ArrayList();
+               emailReply.add(new InternetAddress(replyTo));
+               email.setReplyTo(emailReply);
+            } else {
+               if (DEBUG) System.err.println("[warning] " + MESSAGE + "Email replyTo not found.");
+            }
+
 
             String server = null;
             String status = "OK";
