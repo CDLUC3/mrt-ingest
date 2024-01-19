@@ -89,6 +89,14 @@
 
     <dependencies>
         <dependency>
+           <groupId>org.slf4j</groupId>
+           <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+           <groupId>org.slf4j</groupId>
+           <artifactId>slf4j-simple</artifactId>
+       </dependency>
+        <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
             <scope>runtime</scope>
@@ -256,6 +264,5 @@
           <artifactId>log4j-core</artifactId>
           <scope>runtime</scope>
         </dependency>
-
     </dependencies>
 </project>

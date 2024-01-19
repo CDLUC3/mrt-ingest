@@ -47,7 +47,7 @@
         <AppenderRef ref="Text-File" level="TRACE"/>
         <AppenderRef ref="ECS-File" level="INFO"/>
     </Root>
-    
+
     <Logger name="FileLog" level="DEBUG" additivity="false">
         <AppenderRef ref="Text-File" />
     </Logger>
