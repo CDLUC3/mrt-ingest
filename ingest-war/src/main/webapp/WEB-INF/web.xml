@@ -85,7 +85,7 @@
             <param-name>localProperties</param-name>
             <param-value>resources/TIngestServiceLocal.properties</param-value>
         </init-param>
-        <load-on-startup>1</load-on-startup>
+        <load-on-startup>${ConsumerDaemon}</load-on-startup>
     </servlet>          
 
     <servlet>
@@ -103,7 +103,7 @@
             <param-name>localProperties</param-name>
             <param-value>resources/TIngestServiceLocal.properties</param-value>
         </init-param>
-        <load-on-startup>1</load-on-startup>
+        <load-on-startup>${ConsumerDaemon}</load-on-startup>
     </servlet>          
 
     <servlet-mapping>
