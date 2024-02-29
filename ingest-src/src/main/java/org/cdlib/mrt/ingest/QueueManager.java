@@ -238,10 +238,7 @@ public class QueueManager {
 				   try {
 				 	data = zooKeeper.getData(path, false, null);
 				   	Item item = Item.fromBytes(data);
-					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
-					ObjectInputStream ois = new ObjectInputStream(bis);
-// }
-					Properties p = (Properties) ois.readObject();
+					JSONObject jp = new JSONObject(new String(item.getData(), "UTF-8"));
 
 					QueueEntryState queueEntryState = new QueueEntryState();
 					queueEntryState.setDate(item.getTimestamp().toString());
@@ -258,26 +255,32 @@ public class QueueManager {
 					else if (item.getStatus() == Item.HELD) 
 						queueEntryState.setStatus("Held");
 					queueEntryState.setID(headNode);
-					queueEntryState.setJobID(p.getProperty("jobID"));
-					queueEntryState.setBatchID(p.getProperty("batchID"));
-					queueEntryState.setFileType(p.getProperty("type"));
-					queueEntryState.setUser(p.getProperty("submitter"));
-					queueEntryState.setProfile(p.getProperty("profile"));
-					queueEntryState.setName(p.getProperty("filename"));
-					queueEntryState.setObjectCreator(p.getProperty("creator"));
-					queueEntryState.setObjectTitle(p.getProperty("title"));
-					queueEntryState.setObjectDate(p.getProperty("date"));
-					queueEntryState.setLocalID(p.getProperty("localID"));
+            				if (! jp.isNull("jobID"))
+						queueEntryState.setJobID(jp.getString("jobID"));
+            				if (! jp.isNull("batchID"))
+						queueEntryState.setBatchID(jp.getString("batchID"));
+            				if (! jp.isNull("type"))
+						queueEntryState.setFileType(jp.getString("type"));
+            				if (! jp.isNull("submitter"))
+						queueEntryState.setUser(jp.getString("submitter"));
+            				if (! jp.isNull("profile"))
+						queueEntryState.setProfile(jp.getString("profile"));
+            				if (! jp.isNull("filename"))
+						queueEntryState.setName(jp.getString("filename"));
+            				if (! jp.isNull("creator"))
+						queueEntryState.setObjectCreator(jp.getString("creator"));
+            				if (! jp.isNull("title"))
+						queueEntryState.setObjectTitle(jp.getString("title"));
+            				if (! jp.isNull("date"))
+						queueEntryState.setObjectDate(jp.getString("date"));
+            				if (! jp.isNull("localID"))
+						queueEntryState.setLocalID(jp.getString("localID"));
 					queueEntryState.setQueueNode(queue);
 
 					queueState.addEntry(queueEntryState);
 				} catch (KeeperException.NoNodeException e) {
 					System.out.println("KeeperException.NoNodeException");
 					System.out.println(StringUtil.stackTrace(e));
-				} catch (StreamCorruptedException sce) {
-					String msg = "[Error] getQueueState: Request for ingest queue not valid: " + queue;
-					System.err.println(msg);
-					throw new TException.REQUEST_INVALID(MESSAGE + "[ERROR]: " + msg);
 				} catch (Exception ex) { 
 					System.out.println("Exception");
 					System.out.println(StringUtil.stackTrace(ex));
@@ -289,8 +292,6 @@ public class QueueManager {
 
 			return queueState;
 
-		} catch (TException me) {
-			throw me;
 		} catch (Exception ex) {
 			System.out.println(StringUtil.stackTrace(ex));
 			logger.logError(MESSAGE + "Exception:" + ex, 0);
@@ -332,13 +333,11 @@ public class QueueManager {
 
 				 	data = zooKeeper.getData(path, false, null);
 				   	Item item = Item.fromBytes(data);
-					ByteArrayInputStream bis = new ByteArrayInputStream(item.getData());
-					ObjectInputStream ois = new ObjectInputStream(bis);
-					Properties p = (Properties) ois.readObject();
+					JSONObject jp = new JSONObject(new String(item.getData(), "UTF-8"));
 
 					QueueEntryState queueEntryState = new QueueEntryState();
 					queueEntryState.setDate(item.getTimestamp().toString());
-					if (item.getStatus() == Item.HELD && p.getProperty("profile").matches(profile)) {
+					if (item.getStatus() == Item.HELD && jp.getString("profile").matches(profile)) {
 						String id = headNode;
 						System.out.println("[INFO]" + MESSAGE + "Release held collection entry: " + id);
 						item = distributedQueue.release(id);
@@ -354,16 +353,26 @@ public class QueueManager {
 	        					System.err.println("[error]" + MESSAGE +  "Could not released: " + queue + ":" + id);
 						}
 						queueEntryState.setID(headNode);
-						queueEntryState.setJobID(p.getProperty("jobID"));
-						queueEntryState.setBatchID(p.getProperty("batchID"));
-						queueEntryState.setFileType(p.getProperty("type"));
-						queueEntryState.setUser(p.getProperty("submitter"));
-						queueEntryState.setProfile(p.getProperty("profile"));
-						queueEntryState.setName(p.getProperty("filename"));
-						queueEntryState.setObjectCreator(p.getProperty("creator"));
-						queueEntryState.setObjectTitle(p.getProperty("title"));
-						queueEntryState.setObjectDate(p.getProperty("date"));
-						queueEntryState.setLocalID(p.getProperty("localID"));
+            					if (! jp.isNull("jobID"))
+							queueEntryState.setJobID(jp.getString("jobID"));
+            					if (! jp.isNull("batchID"))
+							queueEntryState.setBatchID(jp.getString("batchID"));
+            					if (! jp.isNull("type"))
+							queueEntryState.setFileType(jp.getString("type"));
+            					if (! jp.isNull("submitter"))
+							queueEntryState.setUser(jp.getString("submitter"));
+            					if (! jp.isNull("profile"))
+							queueEntryState.setProfile(jp.getString("profile"));
+            					if (! jp.isNull("filename"))
+							queueEntryState.setName(jp.getString("filename"));
+            					if (! jp.isNull("creator"))
+							queueEntryState.setObjectCreator(jp.getString("creator"));
+            					if (! jp.isNull("title"))
+							queueEntryState.setObjectTitle(jp.getString("title"));
+            					if (! jp.isNull("date"))
+							queueEntryState.setObjectDate(jp.getString("date"));
+            					if (! jp.isNull("localID"))
+							queueEntryState.setLocalID(jp.getString("localID"));
 						queueEntryState.setQueueNode(queue);
 
 						queueState.addEntry(queueEntryState);
