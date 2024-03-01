@@ -42,10 +42,12 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
+import org.json.JSONObject;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -60,7 +62,6 @@ import java.io.*;
 import java.lang.Long;
 import java.lang.IllegalArgumentException;
 import java.util.Iterator;
-import java.util.Properties;
 
 /**
  * High priority consume queue data and submit to ingest service
@@ -375,7 +376,7 @@ class ConsumerDaemonHighPriority implements Runnable
             	    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                     distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);  
 		} catch (RejectedExecutionException ree) {
-	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission, and requeuing: " + item.toString());
+	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission, and requeuing: " + item.getId());
 		    distributedQueue.requeue(item.getId());
         	    Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
 		} catch (NoSuchElementException nsee) {
@@ -515,15 +516,12 @@ class ConsumeDataHighPriority implements Runnable
 
     public void run()
     {
-        ObjectInputStream ois = null;
         try {
-            if (DEBUG) System.out.println("[info] START: consuming queue data:" + item.toString());
-
-            ois = new ObjectInputStream(new ByteArrayInputStream(item.getData()));
-            Properties p = (Properties) ois.readObject();
+            JSONObject jp = new JSONObject(new String(item.getData(), "UTF-8"));
+            if (DEBUG) System.out.println("[info] START: consuming queue data:" + jp.toString());
 
             // Check if collection level hold
-            if (onHold(p.getProperty("profile"))) {
+            if (onHold(JSONUtil.getValue(jp,"profile"))) {
                 try {
                     zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
                     distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
@@ -541,83 +539,86 @@ class ConsumeDataHighPriority implements Runnable
 
             } else {
 
-	    IngestRequest ingestRequest = new IngestRequest(p.getProperty("submitter"), p.getProperty("profile"),
-			    p.getProperty("filename"), p.getProperty("type"), p.getProperty("size"), p.getProperty("digestType"),
-			    p.getProperty("digestValue"), p.getProperty("objectID"), p.getProperty("creator"), p.getProperty("title"),
-			    p.getProperty("date"), p.getProperty("responseForm"), p.getProperty("note"));
-			    // p.getProperty("retainTargetURL"), p.getProperty("targetURL"));
-	    ingestRequest.getJob().setBatchID(new Identifier(p.getProperty("batchID")));
-	    ingestRequest.getJob().setJobID(new Identifier(p.getProperty("jobID")));
-	    ingestRequest.getJob().setLocalID(p.getProperty("localID"));
-	    try {
-	       if (p.getProperty("retainTargetURL") != null) {
-	          if (p.getProperty("retainTargetURL").equalsIgnoreCase("true")) {
-		     System.out.println("[info] Setting retainTargetURL to " + p.getProperty("retainTargetURL"));
-		     ingestRequest.setRetainTargetURL(true);
-		  }
-	       }
-	    } catch (Exception e) { } 	// assigned with null value
+            IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
+                            JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
+                            JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
+                            JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
+                            JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
+                            JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
+                            // jp.getString("retainTargetURL"), jp.getString("targetURL"));
+            ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
+            ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
+            ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
+
+            try {
+               if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
+                  if (JSONUtil.getValue(jp,"retainTargetURL").equalsIgnoreCase("true")) {
+                     System.out.println("[info] Setting retainTargetURL to " + JSONUtil.getValue(jp,"retainTargetURL"));
+                     ingestRequest.setRetainTargetURL(true);
+                  }
+               }
+            } catch (Exception e) { }   // assigned with null value
 
 	    try {
-	        ingestRequest.setNotificationFormat(p.getProperty("notificationFormat"));
+                ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
 	    } catch (Exception e) { } 	// assigned with null value
 	    try {
-	        ingestRequest.setDataCiteResourceType(p.getProperty("DataCiteResourceType"));
+                ingestRequest.setDataCiteResourceType(JSONUtil.getValue(jp,"DataCiteResourceType"));
 	    } catch (Exception e) {}
 	    try {
-	        ingestRequest.getJob().setAltNotification(p.getProperty("notification"));
+                ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
 	    } catch (Exception e) {}
 
             // process Dublin Core (optional)
-            if (p.getProperty("DCcontributor") != null)
-                ingestRequest.getJob().setDCcontributor(p.getProperty("DCcontributor"));
-            if (p.getProperty("DCcoverage") != null)
-                ingestRequest.getJob().setDCcoverage(p.getProperty("DCcoverage"));
-            if (p.getProperty("DCcreator") != null)
-                ingestRequest.getJob().setDCcreator(p.getProperty("DCcreator"));
-            if (p.getProperty("DCdate") != null)
-                ingestRequest.getJob().setDCdate(p.getProperty("DCdate"));
-            if (p.getProperty("DCdescription") != null)
-                ingestRequest.getJob().setDCdescription(p.getProperty("DCdescription"));
-            if (p.getProperty("DCformat") != null)
-                ingestRequest.getJob().setDCformat(p.getProperty("DCformat"));
-            if (p.getProperty("DCidentifier") != null)
-                ingestRequest.getJob().setDCidentifier(p.getProperty("DCidentifier"));
-            if (p.getProperty("DClanguage") != null)
-                ingestRequest.getJob().setDClanguage(p.getProperty("DClanguage"));
-            if (p.getProperty("DCpublisher") != null)
-                ingestRequest.getJob().setDCpublisher(p.getProperty("DCpublisher"));
-            if (p.getProperty("DCrelation") != null)
-                ingestRequest.getJob().setDCrelation(p.getProperty("DCrelation"));
-            if (p.getProperty("DCrights") != null)
-                ingestRequest.getJob().setDCrights(p.getProperty("DCrights"));
-            if (p.getProperty("DCsource") != null)
-                ingestRequest.getJob().setDCsource(p.getProperty("DCsource"));
-            if (p.getProperty("DCsubject") != null)
-                ingestRequest.getJob().setDCsubject(p.getProperty("DCsubject"));
-            if (p.getProperty("DCtitle") != null)
-                ingestRequest.getJob().setDCtitle(p.getProperty("DCtitle"));
-            if (p.getProperty("DCtype") != null)
-                ingestRequest.getJob().setDCtype(p.getProperty("DCtype"));
+            if (! jp.isNull("DCcontributor"))
+                ingestRequest.getJob().setDCcontributor(jp.getString("DCcontributor"));
+            if (! jp.isNull("DCcoverage"))
+                ingestRequest.getJob().setDCcoverage(jp.getString("DCcoverage"));
+            if (! jp.isNull("DCcreator"))
+                ingestRequest.getJob().setDCcreator(jp.getString("DCcreator"));
+            if (! jp.isNull("DCdate"))
+                ingestRequest.getJob().setDCdate(jp.getString("DCdate"));
+            if (! jp.isNull("DCdescription"))
+                ingestRequest.getJob().setDCdescription(jp.getString("DCdescription"));
+            if (! jp.isNull("DCformat"))
+                ingestRequest.getJob().setDCformat(jp.getString("DCformat"));
+            if (! jp.isNull("DCidentifier"))
+                ingestRequest.getJob().setDCidentifier(jp.getString("DCidentifier"));
+            if (! jp.isNull("DClanguage"))
+                ingestRequest.getJob().setDClanguage(jp.getString("DClanguage"));
+            if (! jp.isNull("DCpublisher"))
+                ingestRequest.getJob().setDCpublisher(jp.getString("DCpublisher"));
+            if (! jp.isNull("DCrelation"))
+                ingestRequest.getJob().setDCrelation(jp.getString("DCrelation"));
+            if (! jp.isNull("DCrights"))
+                ingestRequest.getJob().setDCrights(jp.getString("DCrights"));
+            if (! jp.isNull("DCsource"))
+                ingestRequest.getJob().setDCsource(jp.getString("DCsource"));
+            if (! jp.isNull("DCsubject"))
+                ingestRequest.getJob().setDCsubject(jp.getString("DCsubject"));
+            if (! jp.isNull("DCtitle"))
+                ingestRequest.getJob().setDCtitle(jp.getString("DCtitle"));
+            if (! jp.isNull("DCtype"))
+                ingestRequest.getJob().setDCtype(jp.getString("DCtype"));
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-	    ingestRequest.getJob().setQueuePriority(p.getProperty("queuePriority"));
-	    ingestRequest.getJob().setUpdateFlag(((Boolean) p.get("update")).booleanValue());
+            ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+            Boolean update = new Boolean(JSONUtil.getValue(jp,"update"));
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
             new File(ingestRequest.getQueuePath(), "system").mkdir();
             new File(ingestRequest.getQueuePath(), "producer").mkdir();
 
-	    BatchState.putQueuePath(p.getProperty("batchID"), ingestRequest.getQueuePath().getAbsolutePath());
+            BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
 	    jobState = ingestService.submit(ingestRequest);
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + item.toString());
+                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + item.getId());
 	    	distributedQueue.complete(item.getId());
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		System.out.println("[item]: FAILED queue data:" + item.toString());
+		System.out.println("[item]: FAILED queue data:" + item.getId());
 		System.out.println("Consume Daemon - job message: " + jobState.getJobStatusMessage());
 	    	distributedQueue.fail(item.getId());
 	    } else {
@@ -653,10 +654,6 @@ class ConsumeDataHighPriority implements Runnable
             e.printStackTrace(System.err);
             System.out.println("[error] Consuming queue data");
         } finally {
-	    try {
-	        ois.close();
-	    } catch (IOException ioe) {
-	    }
 	} 
     }
 

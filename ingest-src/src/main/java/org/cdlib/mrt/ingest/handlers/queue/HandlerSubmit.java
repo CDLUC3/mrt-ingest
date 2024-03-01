@@ -30,8 +30,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.handlers.queue;
 
 import java.io.File;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.lang.Boolean;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,6 +52,9 @@ import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+
+import org.json.JSONObject;
+
 
 /**
  * Submit batch submission data
@@ -87,6 +88,7 @@ public class HandlerSubmit extends Handler<BatchState>
         FormatType formatType = null;
 	String status = null;
         Properties properties = new Properties();
+        JSONObject jproperties = new JSONObject();
         ZooKeeper zooKeeper = null;
 
 	try {
@@ -107,131 +109,127 @@ public class HandlerSubmit extends Handler<BatchState>
             DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean + getWorkerID(), null);	// default priority
 
 	    // common across all jobs in batch
-	    properties.put("batchID", batchState.getBatchID().getValue());
-	    properties.put("profile", ingestRequest.getProfile().getValue());
-	    properties.put("type", ingestRequest.getPackageType().getValue());
+	    jproperties.put("batchID", batchState.getBatchID().getValue());
+	    jproperties.put("profile", ingestRequest.getProfile().getValue());
+	    jproperties.put("type", ingestRequest.getPackageType().getValue());
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().grabUserAgent()))
-	        properties.put("submitter", ingestRequest.getJob().grabUserAgent());
-	    properties.put("queuePriority", priority);
+	        jproperties.put("submitter", ingestRequest.getJob().grabUserAgent());
+	    jproperties.put("queuePriority", priority);
 	    // optional input parameters
 	    if (StringUtil.isNotEmpty(ingestRequest.getResponseForm()))
-	    	properties.put("responseForm", ingestRequest.getResponseForm());
+	    	jproperties.put("responseForm", ingestRequest.getResponseForm());
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().getObjectCreator()))
-	    	properties.put("creator", ingestRequest.getJob().getObjectCreator());
+	    	jproperties.put("creator", ingestRequest.getJob().getObjectCreator());
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().getObjectTitle()))
-	    	properties.put("title", ingestRequest.getJob().getObjectTitle());
+	    	jproperties.put("title", ingestRequest.getJob().getObjectTitle());
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().getObjectDate()))
-	    	properties.put("date", ingestRequest.getJob().getObjectDate());
+	    	jproperties.put("date", ingestRequest.getJob().getObjectDate());
 	    if (ingestRequest.getJob().getPrimaryID() != null)
-	        properties.put("objectID", ingestRequest.getJob().getPrimaryID().getValue());
+	        jproperties.put("objectID", ingestRequest.getJob().getPrimaryID().getValue());
 	    if (ingestRequest.getJob().getLocalID() != null)
-	        properties.put("localID", ingestRequest.getJob().getLocalID().getValue());
+	        jproperties.put("localID", ingestRequest.getJob().getLocalID().getValue());
 	    if (ingestRequest.getJob().grabAltNotification() != null)
-	        properties.put("notification", ingestRequest.getJob().grabAltNotification());
+	        jproperties.put("notification", ingestRequest.getJob().grabAltNotification());
 
             // attachment: batch state with user defined formatting
             if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
 	    try {
-	        properties.put("notificationFormat", formatType.toString());
+	        jproperties.put("notificationFormat", formatType.toString());
 	    } catch (Exception e) { }
 	    if (ingestRequest.getDataCiteResourceType() != null)
-	        properties.put("DataCiteResourceType", ingestRequest.getDataCiteResourceType());
+	        jproperties.put("DataCiteResourceType", ingestRequest.getDataCiteResourceType());
 
 	    // process Dublin Core (optional)
 	    if (ingestRequest.getDCcontributor() != null)
-	        properties.put("DCcontributor", ingestRequest.getDCcontributor());
+	        jproperties.put("DCcontributor", ingestRequest.getDCcontributor());
 	    if (ingestRequest.getDCcoverage() != null)
-	        properties.put("DCcoverage", ingestRequest.getDCcoverage());
+	        jproperties.put("DCcoverage", ingestRequest.getDCcoverage());
 	    if (ingestRequest.getDCcreator() != null)
-	        properties.put("DCcreator", ingestRequest.getDCcreator());
+	        jproperties.put("DCcreator", ingestRequest.getDCcreator());
 	    if (ingestRequest.getDCdate() != null)
-	        properties.put("DCdate", ingestRequest.getDCdate());
+	        jproperties.put("DCdate", ingestRequest.getDCdate());
 	    if (ingestRequest.getDCdescription() != null)
-	        properties.put("DCdescription", ingestRequest.getDCdescription());
+	        jproperties.put("DCdescription", ingestRequest.getDCdescription());
 	    if (ingestRequest.getDCformat() != null)
-	        properties.put("DCformat", ingestRequest.getDCformat());
+	        jproperties.put("DCformat", ingestRequest.getDCformat());
 	    if (ingestRequest.getDCidentifier() != null)
-	        properties.put("DCidentifier", ingestRequest.getDCidentifier());
+	        jproperties.put("DCidentifier", ingestRequest.getDCidentifier());
 	    if (ingestRequest.getDClanguage() != null)
-	        properties.put("DClanguage", ingestRequest.getDClanguage());
+	        jproperties.put("DClanguage", ingestRequest.getDClanguage());
 	    if (ingestRequest.getDCpublisher() != null)
-	        properties.put("DCpublisher", ingestRequest.getDCpublisher());
+	        jproperties.put("DCpublisher", ingestRequest.getDCpublisher());
 	    if (ingestRequest.getDCrelation() != null)
-	        properties.put("DCrelation", ingestRequest.getDCrelation());
+	        jproperties.put("DCrelation", ingestRequest.getDCrelation());
 	    if (ingestRequest.getDCrights() != null)
-	        properties.put("DCrights", ingestRequest.getDCrights());
+	        jproperties.put("DCrights", ingestRequest.getDCrights());
 	    if (ingestRequest.getDCsource() != null)
-	        properties.put("DCsource", ingestRequest.getDCsource());
+	        jproperties.put("DCsource", ingestRequest.getDCsource());
 	    if (ingestRequest.getDCsubject() != null)
-	        properties.put("DCsubject", ingestRequest.getDCsubject());
+	        jproperties.put("DCsubject", ingestRequest.getDCsubject());
 	    if (ingestRequest.getDCtitle() != null)
-	        properties.put("DCtitle", ingestRequest.getDCtitle());
+	        jproperties.put("DCtitle", ingestRequest.getDCtitle());
 	    if (ingestRequest.getDCtype() != null)
-	        properties.put("DCtype", ingestRequest.getDCtype());
+	        jproperties.put("DCtype", ingestRequest.getDCtype());
 
 	    // for all jobs in batch
 	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
 	    Iterator iterator = jobStates.keySet().iterator();
 	    while(iterator.hasNext()) {
-        	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        	ObjectOutputStream oos = new ObjectOutputStream(bos);
-
 	        JobState jobState = (JobState) jobStates.get(iterator.next());
 
 		jobState.setBatchID(batchState.getBatchID());
-		properties.put("jobID", jobState.getJobID().getValue());	// overwrite if exists
-		properties.put("filename", jobState.getPackageName());
+		jproperties.put("jobID", jobState.getJobID().getValue());	// overwrite if exists
+		jproperties.put("filename", jobState.getPackageName());
 		try {
-		    properties.put("digestType", jobState.getHashAlgorithm());
+		    jproperties.put("digestType", jobState.getHashAlgorithm());
 		} catch (Exception e) { properties.remove("digestType"); }
 		try {
-		    properties.put("digestValue", jobState.getHashValue());
+		    jproperties.put("digestValue", jobState.getHashValue());
 		} catch (Exception e) { properties.remove("digestValue"); }
 	        try {
-		    properties.put("objectID", jobState.getPrimaryID().getValue());
+		    jproperties.put("objectID", jobState.getPrimaryID().getValue());
 		} catch (Exception e) { 
-		    if (ingestRequest.getJob().getPrimaryID() == null)  properties.remove("objectID"); 
+		    if (ingestRequest.getJob().getPrimaryID() == null)  jproperties.remove("objectID"); 
 		}
 		try {
-		    properties.put("localID", jobState.getLocalID().getValue());
+		    jproperties.put("localID", jobState.getLocalID().getValue());
 		} catch (Exception e) { 
-		    if (ingestRequest.getJob().getLocalID() == null) properties.remove("localID");
+		    if (ingestRequest.getJob().getLocalID() == null) jproperties.remove("localID");
 		}
 		try {
-		    properties.put("title", jobState.getObjectTitle());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectTitle())) properties.remove("title"); }
+		    jproperties.put("title", jobState.getObjectTitle());
+		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectTitle())) jproperties.remove("title"); }
 		try {
-		    properties.put("creator", jobState.getObjectCreator());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectCreator())) properties.remove("creator"); }
+		    jproperties.put("creator", jobState.getObjectCreator());
+		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectCreator())) jproperties.remove("creator"); }
 		try {
-		    properties.put("date", jobState.getObjectDate());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectDate())) properties.remove("date"); }
+		    jproperties.put("date", jobState.getObjectDate());
+		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectDate())) jproperties.remove("date"); }
 		try {
-		    properties.put("note", jobState.getNote());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getNote())) properties.remove("note"); }
+		    jproperties.put("note", jobState.getNote());
+		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getNote())) jproperties.remove("note"); }
 		try {
-	    	    properties.put("type", jobState.getObjectType());
+		    if (jobState.getObjectType() != null) jproperties.put("type", jobState.getObjectType());
 		} catch (Exception e) { }
 		try {
 		    if (ingestRequest.getRetainTargetURL()) {
 			System.out.println("[info] " + MESSAGE + "Setting retainTargetURL to true");
-			properties.put("retainTargetURL", "true");
+			jproperties.put("retainTargetURL", "true");
 		    }
 		} catch (Exception e) { }
 		try {
-	    	    properties.put("update", new Boolean (jobState.grabUpdateFlag()));
+	    	    jproperties.put("update", new Boolean (jobState.grabUpdateFlag()));
 		} catch (Exception e) {
 		    // default
-	    	    properties.put("update", new Boolean(false));
+	    	    jproperties.put("update", new Boolean(false));
 		}
 
-		System.out.println("[info] queue submission: " + properties.toString());
-                oos.writeObject(properties);
+		System.out.println("[info] queue submission: " + jproperties.toString());
 		int retryCount = 0;
 		while (true) {
 		    try {
-                        distributedQueue.submit(bos.toByteArray());
+                        distributedQueue.submit(jproperties.toString().getBytes());
 			break;
 		    } catch (ConnectionLossException cle) {
 			if (retryCount >= 3) throw cle;
@@ -239,10 +237,6 @@ public class HandlerSubmit extends Handler<BatchState>
                 	retryCount++;
 		    }
 		}
-
-                oos.flush();
-                oos.close();
-                bos.close();
 
 		jobState.setJobStatus(JobStatusEnum.PENDING);
 	    }

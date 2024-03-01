@@ -110,6 +110,16 @@ public class JSONUtil
         return JSONUtil.class.toString();
     }
 
+    public static String getValue(JSONObject jo, String key) {
+	if (jo.isNull(key)) return "";
+	try {
+           return jo.getString(key);
+	} catch (Exception e) {
+	   System.err.print("[ERROR] Could not find value in JSONObject: " + key);
+	   return null;
+	}
+    }
+
     private static String removeNamespaceJobState(JobState jobState) {
 
 	String jobStateString = "";
