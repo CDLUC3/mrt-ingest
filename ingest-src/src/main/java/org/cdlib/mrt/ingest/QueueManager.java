@@ -242,18 +242,7 @@ public class QueueManager {
 
 					QueueEntryState queueEntryState = new QueueEntryState();
 					queueEntryState.setDate(item.getTimestamp().toString());
-					if (item.getStatus() == Item.PENDING) 
-						queueEntryState.setStatus("Pending");
-					else if (item.getStatus() == Item.CONSUMED) 
-						queueEntryState.setStatus("Consumed");
-					else if (item.getStatus() == Item.FAILED) 
-						queueEntryState.setStatus("Failed");
-					else if (item.getStatus() == Item.COMPLETED) 
-						queueEntryState.setStatus("Completed");
-					else if (item.getStatus() == Item.DELETED) 
-						queueEntryState.setStatus("Deleted");
-					else if (item.getStatus() == Item.HELD) 
-						queueEntryState.setStatus("Held");
+					queueEntryState.setStatus(item.getStatusStr());
 					queueEntryState.setID(headNode);
             				if (! jp.isNull("jobID"))
 						queueEntryState.setJobID(jp.getString("jobID"));
@@ -438,16 +427,7 @@ public class QueueManager {
 
                                         QueueEntryState queueEntryState = new QueueEntryState();
                                         queueEntryState.setDate(item.getTimestamp().toString());
-                                        if (item.getStatus() == Item.PENDING)
-                                                queueEntryState.setStatus("Pending");
-                                        else if (item.getStatus() == Item.CONSUMED)
-                                                queueEntryState.setStatus("Consumed");
-                                        else if (item.getStatus() == Item.FAILED)
-                                                queueEntryState.setStatus("Failed");
-                                        else if (item.getStatus() == Item.COMPLETED)
-                                                queueEntryState.setStatus("Completed");
-                                        else if (item.getStatus() == Item.DELETED)
-                                                queueEntryState.setStatus("Deleted");
+					queueEntryState.setStatus(item.getStatusStr());
                                         queueEntryState.setQueueNode(queue);
                                         queueEntryState.setID(headNode);
                                         queueEntryState.setToken(jo.getString("token"));
@@ -522,16 +502,7 @@ public class QueueManager {
 
                                         QueueEntryState queueEntryState = new QueueEntryState();
                                         queueEntryState.setDate(item.getTimestamp().toString());
-                                        if (item.getStatus() == Item.PENDING)
-                                                queueEntryState.setStatus("Pending");
-                                        else if (item.getStatus() == Item.CONSUMED)
-                                                queueEntryState.setStatus("Consumed");
-                                        else if (item.getStatus() == Item.FAILED)
-                                                queueEntryState.setStatus("Failed");
-                                        else if (item.getStatus() == Item.COMPLETED)
-                                                queueEntryState.setStatus("Completed");
-                                        else if (item.getStatus() == Item.DELETED)
-                                                queueEntryState.setStatus("Deleted");
+					queueEntryState.setStatus(item.getStatusStr());
                                         queueEntryState.setManifestURL(manifestURL);
                                         queueEntryState.setQueueNode(queue);
                                         queueEntryState.setID(headNode);
@@ -813,16 +784,7 @@ public class QueueManager {
 
 
                         queueEntryState.setDate(item.getTimestamp().toString());
-                        if (item.getStatus() == Item.PENDING)
-                        	queueEntryState.setStatus("Pending");
-                        else if (item.getStatus() == Item.CONSUMED)
-                        	queueEntryState.setStatus("Consumed");
-                        else if (item.getStatus() == Item.FAILED)
-                        	queueEntryState.setStatus("Failed");
-                        else if (item.getStatus() == Item.COMPLETED)
-                        	queueEntryState.setStatus("Completed");
-                        else if (item.getStatus() == Item.DELETED)
-                        	queueEntryState.setStatus("Deleted");
+			queueEntryState.setStatus(item.getStatusStr());
                         queueEntryState.setID(id);
 			queueEntryState.setQueueNode(queue);
 
@@ -919,16 +881,7 @@ public class QueueManager {
 
 
                         queueEntryState.setDate(item.getTimestamp().toString());
-                        if (item.getStatus() == Item.PENDING)
-                        	queueEntryState.setStatus("Pending");
-                        else if (item.getStatus() == Item.CONSUMED)
-                        	queueEntryState.setStatus("Consumed");
-                        else if (item.getStatus() == Item.FAILED)
-                        	queueEntryState.setStatus("Failed");
-                        else if (item.getStatus() == Item.COMPLETED)
-                        	queueEntryState.setStatus("Completed");
-                        else if (item.getStatus() == Item.DELETED)
-                        	queueEntryState.setStatus("Deleted");
+			queueEntryState.setStatus(item.getStatusStr());
                         queueEntryState.setID(id);
 			queueEntryState.setQueueNode(queue);
 
