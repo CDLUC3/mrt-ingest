@@ -242,7 +242,7 @@ public class QueueManager {
 
 					QueueEntryState queueEntryState = new QueueEntryState();
 					queueEntryState.setDate(item.getTimestamp().toString());
-					queueEntryState.setStatus(item.getStatusStr());
+					queueEntryState.setStatus(capFirst(item.getStatusStr()));
 					queueEntryState.setID(headNode);
             				if (! jp.isNull("jobID"))
 						queueEntryState.setJobID(jp.getString("jobID"));
@@ -427,7 +427,7 @@ public class QueueManager {
 
                                         QueueEntryState queueEntryState = new QueueEntryState();
                                         queueEntryState.setDate(item.getTimestamp().toString());
-					queueEntryState.setStatus(item.getStatusStr());
+					queueEntryState.setStatus(capFirst(item.getStatusStr()));
                                         queueEntryState.setQueueNode(queue);
                                         queueEntryState.setID(headNode);
                                         queueEntryState.setToken(jo.getString("token"));
@@ -502,7 +502,7 @@ public class QueueManager {
 
                                         QueueEntryState queueEntryState = new QueueEntryState();
                                         queueEntryState.setDate(item.getTimestamp().toString());
-					queueEntryState.setStatus(item.getStatusStr());
+					queueEntryState.setStatus(capFirst(item.getStatusStr()));
                                         queueEntryState.setManifestURL(manifestURL);
                                         queueEntryState.setQueueNode(queue);
                                         queueEntryState.setID(headNode);
@@ -784,7 +784,7 @@ public class QueueManager {
 
 
                         queueEntryState.setDate(item.getTimestamp().toString());
-			queueEntryState.setStatus(item.getStatusStr());
+			queueEntryState.setStatus(capFirst(item.getStatusStr()));
                         queueEntryState.setID(id);
 			queueEntryState.setQueueNode(queue);
 
@@ -881,7 +881,7 @@ public class QueueManager {
 
 
                         queueEntryState.setDate(item.getTimestamp().toString());
-			queueEntryState.setStatus(item.getStatusStr());
+			queueEntryState.setStatus(capFirst(item.getStatusStr()));
                         queueEntryState.setID(id);
 			queueEntryState.setQueueNode(queue);
 
@@ -1053,6 +1053,10 @@ public class QueueManager {
 			System.out.println(e);
 		}
 		return object;
+	}
+
+	public String capFirst(String str) {
+		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
 
 	public static class Ignorer implements Watcher {
