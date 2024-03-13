@@ -111,7 +111,7 @@ public class JSONUtil
     }
 
     public static String getValue(JSONObject jo, String key) {
-	if (jo.isNull(key)) return "";
+	if (jo.isNull(key)) return null;
 	try {
            return jo.getString(key);
 	} catch (Exception e) {
