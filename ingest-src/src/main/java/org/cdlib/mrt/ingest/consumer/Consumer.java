@@ -623,7 +623,7 @@ class ConsumeData implements Runnable
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
-	    Boolean update = new Boolean(JSONUtil.getValue(jp,"update"));
+	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 

@@ -142,7 +142,11 @@ public class HandlerTransfer extends Handler<JobState>
 	    storeNode = new StoreNode(storeURL, originalStoreNode.getNodeID());
 
 	    // build REST url 
-	    if (jobState.grabUpdateFlag()) action = "/update/";
+	    if (jobState.grabUpdateFlag()) {
+		action = "/update/";
+	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Object update requested.  Overriding default 'add'");
+	    }
+		
 	    String url = storeNode.getStorageLink().toString() + action + storeNode.getNodeID() + 
 			"/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
 
