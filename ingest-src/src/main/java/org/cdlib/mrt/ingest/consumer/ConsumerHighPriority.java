@@ -603,7 +603,7 @@ class ConsumeDataHighPriority implements Runnable
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
             ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
-            Boolean update = new Boolean(JSONUtil.getValue(jp,"update"));
+            Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
