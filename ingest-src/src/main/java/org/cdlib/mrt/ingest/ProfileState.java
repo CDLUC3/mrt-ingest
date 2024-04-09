@@ -74,6 +74,7 @@ public class ProfileState
     private Vector<Notification> contactsEmail = new Vector<Notification>();
     private SortedMap<Integer,HandlerState> ingestHandlers = null;
     private SortedMap<Integer,HandlerState> queueHandlers = null;
+    private SortedMap<Integer,HandlerState> batchHandlers = null;
     private DateState creationDate = null;
     private DateState modificationDate = null;
     private Identifier.Namespace objectScheme = null;
@@ -419,6 +420,9 @@ public class ProfileState
         return queueHandlers;
     }
 
+    public SortedMap<Integer,HandlerState> getBatchHandlers() {
+        return batchHandlers;
+    }
     /**
      * Add object handlers
      * @param HandlerState object handler
@@ -436,11 +440,19 @@ public class ProfileState
     }
 
     /**
-     * Set batch queue handlers
+     * Set job queue handlers
      * @param Vector queue handler
      */
     public void setQueueHandlers(SortedMap<Integer,HandlerState> handlers) {
         this.queueHandlers = handlers;
+    }
+
+    /**
+     * Set batch queue handlers
+     * @param Vector queue handler
+     */
+    public void setBatchHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.batchHandlers = handlers;
     }
 
     public DateState getCreationDate() {

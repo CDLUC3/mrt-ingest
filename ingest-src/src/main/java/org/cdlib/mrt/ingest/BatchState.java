@@ -53,6 +53,7 @@ public class BatchState
 
     private Identifier batchID = null;
     private String batchLabel = null;
+    private String packageName = null;
     private ProfileState batchProfile = null;
     private String userAgent = null;
     private DateState submissionDate = null;
@@ -151,6 +152,22 @@ public class BatchState
 
     public String getBatchLabel() {
         return batchLabel;
+    }
+
+    /**
+      * Get package name
+      * @return Submission package
+      */
+    public String getPackageName() {
+	return packageName;
+    }
+
+    /**
+     * Set package name
+     * @param String Submission package
+     */
+    public void setPackageName(String packageName) {
+	this.packageName = packageName;
     }
 
     /**

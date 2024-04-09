@@ -112,7 +112,8 @@ public class IngestService
         throws TException
     {
 	try {
-	    BatchState batchState = queueManager.submit(ingestRequest);
+	    //BatchState batchState = queueManager.submit(ingestRequest);
+	    BatchState batchState = batchManager.submit(ingestRequest);
 	    return batchState;
 	} catch (TException te) {
 	    te.printStackTrace();

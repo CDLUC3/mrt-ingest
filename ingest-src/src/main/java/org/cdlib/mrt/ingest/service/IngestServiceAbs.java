@@ -33,6 +33,7 @@ import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.AdminManager;
 import org.cdlib.mrt.ingest.IngestManager;
 import org.cdlib.mrt.ingest.QueueManager;
+import org.cdlib.mrt.ingest.BatchManager;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 
@@ -46,6 +47,7 @@ public class IngestServiceAbs
     protected static final String MESSAGE = NAME + ": ";
     protected LoggerInf logger = null;
     protected IngestManager ingestManager = null;
+    protected BatchManager batchManager = null;
     protected QueueManager queueManager = null;
     protected AdminManager adminManager = null;
     //protected String ingestFileS = null;        // prop "IngestService"
@@ -95,6 +97,10 @@ public class IngestServiceAbs
 		ingestConfig.getStoreConf(),
 		ingestConfig.getIngestConf(),
 		ingestConfig.getQueueConf());
+        this.batchManager = BatchManager.getBatchManager(
+		ingestConfig.getLogger(),
+		ingestConfig.getQueueConf(),
+		ingestConfig.getIngestConf());
         this.queueManager = QueueManager.getQueueManager(
 		ingestConfig.getLogger(),
 		ingestConfig.getQueueConf(),
