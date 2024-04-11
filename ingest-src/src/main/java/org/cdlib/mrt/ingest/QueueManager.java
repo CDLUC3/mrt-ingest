@@ -1127,9 +1127,7 @@ public class QueueManager {
 				}
 
 				// ready for consumer to start processing
-				BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
-				System.out.println(
-						MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue());
+				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue());
 
 			} catch (Exception e) {
 				System.out.println(MESSAGE + "Exception detected while posting data to queue.");

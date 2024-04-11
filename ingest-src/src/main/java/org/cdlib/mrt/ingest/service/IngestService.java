@@ -112,8 +112,23 @@ public class IngestService
         throws TException
     {
 	try {
-	    //BatchState batchState = queueManager.submit(ingestRequest);
 	    BatchState batchState = batchManager.submit(ingestRequest);
+	    return batchState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+    @Override
+    public BatchState submitBatch (IngestRequest ingestRequest)
+        throws TException
+    {
+	try {
+	    BatchState batchState = queueManager.submit(ingestRequest);
 	    return batchState;
 	} catch (TException te) {
 	    te.printStackTrace();

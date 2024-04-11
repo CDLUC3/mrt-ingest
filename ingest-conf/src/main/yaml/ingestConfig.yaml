@@ -77,6 +77,8 @@ ingest-docker:
     QueueName: "/ingest"
     InventoryName: "/mrt.inventory.full"
     QueueHoldFile: "/tdr/ingest/queue/HOLD"
+    BatchPollingInterval: "12"
+    BatchNumThreads: "3"
     PollingInterval: "10"
     NumThreads: "3"
     PollingIntervalHighPriority: "15"

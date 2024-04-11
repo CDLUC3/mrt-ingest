@@ -48,11 +48,11 @@ import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+import org.cdlib.mrt.zk.Job;
 import org.json.JSONObject;
 
 
@@ -69,6 +69,7 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
+    public static int sessionTimeout = 40000;
 
     /**
      * Submit batch manifest jobs to queing service
@@ -82,8 +83,9 @@ public class HandlerSubmit extends Handler<BatchState>
 	throws TException 
     {
 
-	boolean isHighPriority = false;
-	String priorityBoolean = "0";
+	//boolean isHighPriority = false;
+	//String priorityBoolean = "0";
+	String priority = null;
 	File file = null;
         FormatType formatType = null;
 	String status = null;
@@ -92,21 +94,18 @@ public class HandlerSubmit extends Handler<BatchState>
         ZooKeeper zooKeeper = null;
 
 	try {
-	    BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 0);
-
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), DistributedQueue.sessionTimeout, new Ignorer());
-	    String priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+	    priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
 	    if (profileState.getPriority() != null) {
 		priority = profileState.getPriority();
 	    	System.out.println("[info] Overwriting calculated queue priority: " + priority);
 	    }
 	    System.out.println("[info] queue priority: " + priority);
-	    isHighPriority = (Integer.parseInt(priority) <= Integer.parseInt(profileState.grabPriorityThreshold()));
-	    if (isHighPriority) priorityBoolean = "1";
-	    System.out.println("[info] Priority Job status: " + isHighPriority);
-            DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean + getWorkerID(), null);	// default priority
+	    // isHighPriority = (Integer.parseInt(priority) <= Integer.parseInt(profileState.grabPriorityThreshold()));
+	    // if (isHighPriority) priorityBoolean = "1";
+	    // System.out.println("[info] Priority Job status: " + isHighPriority);
 
 	    // common across all jobs in batch
 	    jproperties.put("batchID", batchState.getBatchID().getValue());
@@ -225,15 +224,18 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	    jproperties.put("update", new Boolean(false));
 		}
 
-		System.out.println("[info] queue submission: " + jproperties.toString());
 		int retryCount = 0;
 		while (true) {
 		    try {
-                        distributedQueue.submit(jproperties.toString().getBytes());
+			// Create Job 
+			System.out.println("[info] queue submission: " + jproperties.toString());
+			Job job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
+			job.setPriority(zooKeeper, Integer.parseInt(priority));
+
 			break;
-		    } catch (ConnectionLossException cle) {
-			if (retryCount >= 3) throw cle;
-	    	        System.err.println("[error] " + MESSAGE + "Lost queue connection, requeuing: " + cle.getMessage());
+		    } catch (Exception e) {
+			if (retryCount >= 3) throw e;
+	    	        System.err.println("[error] " + MESSAGE + "Lost queue connection, requeuing: " + e.getMessage());
                 	retryCount++;
 		    }
 		}
@@ -245,10 +247,6 @@ public class HandlerSubmit extends Handler<BatchState>
 	    System.out.println("[info] QueueHandlerSubmit: updating batch state.");
 	    BatchState.putBatchState(batchState.getBatchID().getValue(), batchState);
 	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
-	    BatchState.putBatchCompletion(batchState.getBatchID().getValue(), 0); 	//initialize
-	    BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
-	    // serialize object to disk
-	    //ProfileUtil.writeTo(batchState, ingestRequest.getQueuePath());
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (Exception e) {

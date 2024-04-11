@@ -36,6 +36,7 @@ import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ResponseFormEnum;
 import org.cdlib.mrt.ingest.utility.ResourceTypeEnum;
+import org.cdlib.mrt.zk.Batch;
 
 /**
  *
@@ -58,6 +59,7 @@ public class IngestRequest
     private String ingestQueuePath;	// Shareable e.g. EFS
 
     private JobState jobState;
+    private Batch batch;
     private ResponseFormEnum responseForm;
     private ResourceTypeEnum resourceType;
     // http://dublincore.org/documents/dces/
@@ -111,6 +113,16 @@ public class IngestRequest
     // Set job
     public void setJob(JobState jobState) { 
 	this.jobState = jobState;
+    }
+
+    // Get zk batch
+    public Batch getBatch() { 
+	return batch;
+     }
+
+    // Set zk batch
+    public void setBatch(Batch batch) { 
+	this.batch = batch;
     }
 
     /**
@@ -189,7 +201,11 @@ public class IngestRequest
      * @return response form
      */
     public String getResponseForm() {
-        return responseForm.getValue();
+	try {
+           return responseForm.getValue();
+	} catch (Exception e) {
+	   return null;
+	}
     }
 
     /**

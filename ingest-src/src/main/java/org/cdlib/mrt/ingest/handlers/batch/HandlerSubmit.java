@@ -108,7 +108,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    jproperties.put("batchID", batchState.getBatchID().getValue());
 	    jproperties.put("profile", ingestRequest.getProfile().getValue());
 	    jproperties.put("type", ingestRequest.getPackageType().getValue());
-	    jproperties.put("name", batchState.getPackageName());
+	    jproperties.put("filename", batchState.getPackageName());
 	    jproperties.put("update", new Boolean (batchState.grabUpdateFlag()));
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().grabUserAgent()))
 	        jproperties.put("submitter", ingestRequest.getJob().grabUserAgent());
@@ -131,6 +131,8 @@ public class HandlerSubmit extends Handler<BatchState>
             // attachment: batch state with user defined formatting
             if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
+	    else formatType = FormatType.valueOf("xml");;	// default
+
 	    try {
 	        jproperties.put("notificationFormat", formatType.toString());
 	    } catch (Exception e) { }
@@ -175,6 +177,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    //bidInfo.put("BatchID", batchState.getBatchID().getValue());
 	    Batch batch = Batch.createBatch(zooKeeper, jproperties);
 	    System.out.println("[INFO] Batch created: " + batch.id());
+	    System.out.println("[INFO] Batch data: " + batch.data());
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (Exception e) {
@@ -199,12 +202,15 @@ public class HandlerSubmit extends Handler<BatchState>
       if (!QueueItemHelper.exists(zooKeeper, par.toString())) {
         create(par, null);
       }
+try {
       QueueItemHelper.create(zooKeeper, path.toString(), QueueItemHelper.serializeAsBytes(data));
+} catch (Exception e) {}
     }
 
     public void initPaths() throws KeeperException, InterruptedException {
-      //create("/jobs/states", null);
       create("/batches", null);
+      create("/jobs", null);
+      create("/jobs/states", null);
     }
 
    

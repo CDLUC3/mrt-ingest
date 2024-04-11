@@ -80,6 +80,15 @@ public interface IngestServiceInf
     throws TException;
 
     /**
+     * Add an object to this Batch queue service
+     * @param ingestRequest request
+     * @return BatchState batch state information 
+     * @throws TException Exception condition during storage service procssing
+     */
+    public BatchState submitBatch (IngestRequest ingestRequest)
+    throws TException;
+
+    /**
      * Update a object status
      * @param ingestRequest request
      * @return BatchState batch state information 
