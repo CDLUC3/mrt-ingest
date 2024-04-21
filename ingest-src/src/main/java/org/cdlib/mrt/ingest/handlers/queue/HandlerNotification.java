@@ -37,6 +37,8 @@ import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.ByteArrayDataSource;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.Notification;

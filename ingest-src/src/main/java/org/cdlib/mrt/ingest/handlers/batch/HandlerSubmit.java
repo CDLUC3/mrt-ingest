@@ -45,6 +45,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;

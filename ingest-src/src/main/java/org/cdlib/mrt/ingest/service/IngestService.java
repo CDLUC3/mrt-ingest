@@ -75,6 +75,54 @@ public class IngestService
     }
 
     @Override
+    public BatchState submitPost (IngestRequest ingestRequest)
+        throws TException
+    {
+	try {
+	    BatchState batchState = batchManager.submit(ingestRequest);
+	    return batchState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+    @Override
+    public BatchState submitBatch (IngestRequest ingestRequest)
+        throws TException
+    {
+	try {
+	    BatchState batchState = queueManager.submit(ingestRequest);
+	    return batchState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+    @Override
+    public JobState submitProcess (IngestRequest ingestRequest, String state)
+        throws TException
+    {
+	try {
+	    JobState jobState = processManager.submit(ingestRequest, state);
+	    return jobState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+    @Override
     public JobState submit (IngestRequest ingestRequest)
         throws TException
     {
@@ -98,38 +146,6 @@ public class IngestService
 	    IdentifierState identifierState = ingestManager.requestIdentifier(ingestRequest);
 	    return identifierState;
 
-	} catch (TException te) {
-	    te.printStackTrace();
-	    throw te;
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
-	}
-    }
-
-    @Override
-    public BatchState submitPost (IngestRequest ingestRequest)
-        throws TException
-    {
-	try {
-	    BatchState batchState = batchManager.submit(ingestRequest);
-	    return batchState;
-	} catch (TException te) {
-	    te.printStackTrace();
-	    throw te;
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
-	}
-    }
-
-    @Override
-    public BatchState submitBatch (IngestRequest ingestRequest)
-        throws TException
-    {
-	try {
-	    BatchState batchState = queueManager.submit(ingestRequest);
-	    return batchState;
 	} catch (TException te) {
 	    te.printStackTrace();
 	    throw te;

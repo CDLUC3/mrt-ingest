@@ -51,8 +51,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import org.cdlib.mrt.core.DateState;
-import org.cdlib.mrt.ingest.handlers.queue.Handler;
-import org.cdlib.mrt.ingest.handlers.queue.HandlerResult;
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
@@ -1094,6 +1094,7 @@ public class QueueManager {
 				sortedMap = queueHandlers;
 				for (Object key : sortedMap.keySet()) {
 					String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
+System.out.println(" JOB MGR ============> " + handlerS);
 					Handler handler = (Handler) createObject(handlerS);
 					if (handler == null) {
 						throw new TException.INVALID_CONFIGURATION("[error] Could not find queue handler: " + handlerS);

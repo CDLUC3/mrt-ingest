@@ -73,8 +73,10 @@ public class ProfileState
     private File statusView = null;
     private Vector<Notification> contactsEmail = new Vector<Notification>();
     private SortedMap<Integer,HandlerState> ingestHandlers = null;
-    private SortedMap<Integer,HandlerState> queueHandlers = null;
     private SortedMap<Integer,HandlerState> batchHandlers = null;
+    private SortedMap<Integer,HandlerState> queueHandlers = null;
+    private SortedMap<Integer,HandlerState> estimateHandlers = null;
+    private SortedMap<Integer,HandlerState> provisionHandlers = null;
     private DateState creationDate = null;
     private DateState modificationDate = null;
     private Identifier.Namespace objectScheme = null;
@@ -423,6 +425,15 @@ public class ProfileState
     public SortedMap<Integer,HandlerState> getBatchHandlers() {
         return batchHandlers;
     }
+
+    public SortedMap<Integer,HandlerState> getEstimateHandlers() {
+        return estimateHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getProvisionHandlers() {
+        return provisionHandlers;
+    }
+
     /**
      * Add object handlers
      * @param HandlerState object handler
@@ -453,6 +464,22 @@ public class ProfileState
      */
     public void setBatchHandlers(SortedMap<Integer,HandlerState> handlers) {
         this.batchHandlers = handlers;
+    }
+
+    /**
+     * Set estimate queue handlers
+     * @param Vector queue handler
+     */
+    public void setEstimateHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.estimateHandlers = handlers;
+    }
+
+    /**
+     * Set provision queue handlers
+     * @param Vector queue handler
+     */
+    public void setProvisionHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.provisionHandlers = handlers;
     }
 
     public DateState getCreationDate() {

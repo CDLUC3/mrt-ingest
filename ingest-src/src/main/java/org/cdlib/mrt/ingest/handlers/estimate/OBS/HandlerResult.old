@@ -27,18 +27,22 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers.queue;
+package org.cdlib.mrt.ingest.handlers.estimate;
 
 /**
  * Result of handler processing
  */
 public class HandlerResult
 {
-    public boolean success = false;
-    public String description = null;
-    public int returnCode;
+    private boolean success = false;
+    private String description = null;
+    private int returnCode;
 
 
+    // Constructors
+    HandlerResult(boolean success, String description) {
+	this(success, description, 0);
+    }
     HandlerResult(boolean success, String description, int returnCode) {
 	this.success = success;
 	this.description = description;
@@ -67,7 +71,7 @@ public class HandlerResult
      * set success boolean
      * @param boolean success construct
      */
-    public void setSuccess(boolean sucess) {
+    public void setSuccess(boolean success) {
 	this.success = success;
     }
 

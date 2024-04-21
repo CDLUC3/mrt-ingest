@@ -89,6 +89,15 @@ public interface IngestServiceInf
     throws TException;
 
     /**
+     * Process process state queue data
+     * @param ingestRequest request
+     * @return JobState job state information 
+     * @throws TException Exception condition during storage service procssing
+     */
+    public JobState submitProcess (IngestRequest ingestRequest, String state)
+    throws TException;
+
+    /**
      * Update a object status
      * @param ingestRequest request
      * @return BatchState batch state information 

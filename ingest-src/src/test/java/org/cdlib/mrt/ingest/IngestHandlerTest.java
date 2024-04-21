@@ -339,7 +339,7 @@ public class IngestHandlerTest extends IngestTestCore {
                         throws TException {
                 BatchState batch = ingestInput.getBatchState();
                 assertEquals(1, batch.getJobStates().size());
-                org.cdlib.mrt.ingest.handlers.queue.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate()
+                org.cdlib.mrt.ingest.handlers.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate()
                                 .handle(
                                                 ps,
                                                 ir,

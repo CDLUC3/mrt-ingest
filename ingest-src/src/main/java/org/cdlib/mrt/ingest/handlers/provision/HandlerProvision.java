@@ -27,44 +27,62 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers.batch;
+package org.cdlib.mrt.ingest.handlers.provision;
 
-import java.io.*;
+import java.io.File;
+import java.util.Properties;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
+import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
-import org.cdlib.mrt.utility.StateInf;
-import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
+import org.cdlib.mrt.utility.TException;
 
 /**
- * Handler
+ * provision resources
  * @author mreyes
  */
-public abstract class Handler<T extends StateInf>
+public class HandlerProvision extends Handler<JobState>
 {
-    protected static final String NAME = "Handler";
-    protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
-        
-    protected String m_checksum = null;
-    protected String m_checksumType = null;
-    protected long m_inputFileSize = 0;
-    protected long m_extractFileSize = 0;
-    protected File m_jhoveFile = null;
-    protected File m_component = null;
-    protected long m_startMS = 0;
-    protected LoggerInf logger = null;
 
+    private static final String NAME = "HandlerProvision";
+    private static final String MESSAGE = NAME + ": ";
+    private static final boolean DEBUG = true;
+    private LoggerInf logger = null;
+    private Properties conf = null;
 
     /**
-     * processer for handler
-     * @param ProfileState profile
-     * @param IngestRequest ingest request
-     * @param state stateInf based class
-     * @return void
+     * provision resources for request
+     *
+     * @param profileState contains target storage service info
+     * @param ingestRequest contains ingest request info
+     * @param Object stateInf based class
+     * @return HandlerResult object containing processing status 
      */
-    abstract public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, T state) throws TException;
+    public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, JobState jobState) 
+	throws TException 
+    {
 
-    abstract public String getName();
+	try {
+
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Provisioning not yet supported: " + jobState.getJobID().getValue());
+
+
+	    return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning complete", 0);
+	} catch (Exception e) {
+            e.printStackTrace(System.err);
+            String msg = "[error] " + MESSAGE + "provisioning failure: " + e.getMessage();
+            return new HandlerResult(false, msg);
+	} finally {
+	    // cleanup?
+	}
+    }
+   
+    public String getName() {
+	return NAME;
+    }
+
 }

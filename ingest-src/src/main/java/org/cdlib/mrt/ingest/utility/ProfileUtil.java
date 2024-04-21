@@ -83,9 +83,11 @@ public class ProfileUtil
     private static final String matchIdentifierScheme = "Identifier-scheme";
     private static final String matchIdentifierNamespace = "Identifier-namespace";
     private static final String matchNotification = "Notification.";
-    private static final String matchHandlerIngest = "Handler.";
-    private static final String matchHandlerQueue = "HandlerQueue.";
+    private static final String matchHandlerIngest = "HandlerIngest.";
     private static final String matchHandlerBatch = "HandlerBatch.";
+    private static final String matchHandlerQueue = "HandlerQueue.";
+    private static final String matchHandlerEstimate = "HandlerEstimate.";
+    private static final String matchHandlerProvision = "HandlerProvision.";
     private static final String matchStorageService = "StorageService";
     private static final String matchStorageNode = "StorageNode";
     private static final String matchCreationDate = "CreationDate";
@@ -139,8 +141,10 @@ public class ProfileUtil
         throws TException
     {
     	TreeMap<Integer,HandlerState> ingestHandlers = new TreeMap<Integer,HandlerState>();
-    	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> batchHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> estimateHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> provisionHandlers = new TreeMap<Integer,HandlerState>();
 	ProfileState profileState = new ProfileState();
 
 	try {
@@ -252,6 +256,24 @@ public class ProfileUtil
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
 		    batchHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerEstimate)) {
+                    if (DEBUG) System.out.println("[debug] estimate handler: " + value);
+
+                    String handlerEstimateS = key.substring(matchHandlerEstimate.length());
+                    Integer handlerID = Integer.parseInt(handlerEstimateS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    estimateHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerProvision)) {
+                    if (DEBUG) System.out.println("[debug] provision handler: " + value);
+
+                    String handlerProvisionS = key.substring(matchHandlerProvision.length());
+                    Integer handlerID = Integer.parseInt(handlerProvisionS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    provisionHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchStorageService)) {
                     if (DEBUG) System.out.println("[debug] storage service: " + value);
                     try {
@@ -325,8 +347,10 @@ public class ProfileUtil
 	     }
 
 	     profileState.setIngestHandlers(ingestHandlers);
-	     profileState.setQueueHandlers(queueHandlers);
 	     profileState.setBatchHandlers(batchHandlers);
+	     profileState.setQueueHandlers(queueHandlers);
+	     profileState.setEstimateHandlers(estimateHandlers);
+	     profileState.setProvisionHandlers(provisionHandlers);
 	     profileState.setTargetStorage(new StoreNode(storageUrl, node));
  
              return profileState;
@@ -340,8 +364,10 @@ public class ProfileUtil
             throw new TException.GENERAL_EXCEPTION(err);
 	} finally {
 	    ingestHandlers = null;
-	    queueHandlers = null;
 	    batchHandlers = null;
+	    queueHandlers = null;
+	    estimateHandlers = null;
+	    provisionHandlers = null;
 	}
     }
 

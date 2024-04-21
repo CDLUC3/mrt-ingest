@@ -41,6 +41,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
@@ -231,6 +233,8 @@ public class HandlerSubmit extends Handler<BatchState>
 			System.out.println("[info] queue submission: " + jproperties.toString());
 			Job job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
 			job.setPriority(zooKeeper, Integer.parseInt(priority));
+
+job.unlock(zooKeeper);
 
 			break;
 		    } catch (Exception e) {
