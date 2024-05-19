@@ -64,11 +64,11 @@ public class BatchState
     private String queueNode = null;
     private String inventoryNode = null;
     private Map<String, JobState> jobStates = new HashMap<String, JobState>();
-    private static Map<String, BatchState> batchStates = new HashMap<String, BatchState>();
-    private static Map<String, Integer> batchReadiness = new HashMap<String, Integer>();
-    private static Map<String, Integer> batchCompletion = new HashMap<String, Integer>();
-    private static Map<String, String> batchQueuePath = new HashMap<String, String>();
-    private boolean completion = false;
+    //private static Map<String, BatchState> batchStates = new HashMap<String, BatchState>();
+    //private static Map<String, Integer> batchReadiness = new HashMap<String, Integer>();
+    //private static Map<String, Integer> batchCompletion = new HashMap<String, Integer>();
+    //private static Map<String, String> batchQueuePath = new HashMap<String, String>();
+    //private boolean completion = false;
     private boolean updateFlag = false;
 
     // constructors
@@ -80,6 +80,7 @@ public class BatchState
         return copy;  
     }  
 
+/*
     public synchronized static Map<String, BatchState> getBatchStates () {
       return batchStates;
     } 
@@ -136,6 +137,7 @@ public class BatchState
     public synchronized static void removeQueuePath (String id) {
       batchQueuePath.remove(id);
     }
+*/
 
     @Override
     public Identifier getBatchID() {
@@ -373,17 +375,17 @@ public class BatchState
     }
 
     public String dump(String header) {
-	return dump(header, true, false);
+	return dump(header, true);
     }
 
     // Default
-    public String dump(String header, boolean full, boolean jobonly) {
+    public String dump(String header, boolean full) {
 	// not error only
-	return dump(header, full, jobonly, false);
+	return dump(header, full, false);
     }
 
     // Support error notifications
-    public String dump(String header, boolean full, boolean jobonly, boolean errorOnly)
+    public String dump(String header, boolean full, boolean errorOnly)
     {
         String batchIDS = (batchID != null) ? batchID.toString() : "";
         String batchLabelS = (batchLabel != null) ? batchLabel : "";
@@ -400,35 +402,15 @@ public class BatchState
 
 	// gather job status
 	String jobStateS = "\n\n";
-	if (jobonly) {
-	    // Fixed CSV format
-	    header = "\"Job identifier\",";
-	    header += "\"Primary identifier\",";
-	    header += "\"Local identifier\",";
-	    header += "\"Version\",";
-	    header += "\"Filename\",";
-	    header += "\"Object title\",";
-	    header += "\"Object creator\",";
-	    header += "\"Object date\",";
-	    header += "\"Submission date\",";
-	    header += "\"Completion date\",";
-	    header += "\"Status\",";
-	    header += "\"Status message\"\n";
-	}
 	Iterator<String> iterator = getJobStates().keySet().iterator();
         while(iterator.hasNext()) {
              JobState jobState = jobStates.get(iterator.next());
 	    if (full) {
 	        jobStateS = jobStateS + jobState.dump("", "\t", "\n", null) + "\n";
 	    } else {
-		if (jobonly) {
-	            if (errorOnly && (jobState.getJobStatus() != JobStatusEnum.FAILED)) continue;
-	            header += jobState.dump("", "\t", "\n", FormatType.valueOf("csv"));
-		} else {
-		    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) completed++;
-		    if (jobState.getJobStatus() == JobStatusEnum.FAILED) failed++;
-		    if (jobState.getJobStatus() == JobStatusEnum.PENDING) pending++;
-		}
+		if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) completed++;
+		if (jobState.getJobStatus() == JobStatusEnum.FAILED) failed++;
+		if (jobState.getJobStatus() == JobStatusEnum.PENDING) pending++;
 	    }
 	    queuePriorityS = jobState.grabQueuePriority();
 	}
@@ -441,17 +423,15 @@ public class BatchState
 	}
 	jobStateS = jobStateS.substring(1, jobStateS.length() - 1 );
 
-	if (! jobonly) {
-            if (StringUtil.isNotEmpty(batchIDS)) header += "\n" + "Submission ID: " + batchIDS + "\n";
-            if (StringUtil.isNotEmpty(batchLabelS)) header += "Batch label: " + batchLabelS + "\n";
-            if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
-            if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";
-            if (StringUtil.isNotEmpty(queuePriorityS)) header += "Queue Priority: " + queuePriorityS + "\n";
-            if (StringUtil.isNotEmpty(submissionDateS)) header += "Submission date: " + submissionDateS + "\n";
-            if (StringUtil.isNotEmpty(completionDateS)) header += "Completion date: " + completionDateS + "\n";
-            if (StringUtil.isNotEmpty(batchStatusS)) header += "Status: " + batchStatusS + "\n";
-            if (StringUtil.isNotEmpty(batchStatusMessageS)) header += "Status message: " + batchStatusMessageS + "\n";
-	}
+        if (StringUtil.isNotEmpty(batchIDS)) header += "\n" + "Submission ID: " + batchIDS + "\n";
+        if (StringUtil.isNotEmpty(batchLabelS)) header += "Batch label: " + batchLabelS + "\n";
+        if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
+        if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";
+        if (StringUtil.isNotEmpty(queuePriorityS)) header += "Queue Priority: " + queuePriorityS + "\n";
+        if (StringUtil.isNotEmpty(submissionDateS)) header += "Submission date: " + submissionDateS + "\n";
+        if (StringUtil.isNotEmpty(completionDateS)) header += "Completion date: " + completionDateS + "\n";
+        if (StringUtil.isNotEmpty(batchStatusS)) header += "Status: " + batchStatusS + "\n";
+        if (StringUtil.isNotEmpty(batchStatusMessageS)) header += "Status message: " + batchStatusMessageS + "\n";
 
         return header; 
 

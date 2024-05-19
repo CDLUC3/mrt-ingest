@@ -27,9 +27,10 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers;
+package org.cdlib.mrt.ingest.handlers.batchReport;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Iterator;
 
 import javax.mail.internet.InternetAddress;
@@ -38,6 +39,14 @@ import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.ByteArrayDataSource;
 
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
+
+import org.cdlib.mrt.core.DateState;
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.JobState;
@@ -47,9 +56,18 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.zk.Batch;
+import org.cdlib.mrt.zk.Job;
+import org.cdlib.mrt.zk.ZKKey;
+import org.cdlib.mrt.zk.QueueItemHelper;
+import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 
 
 /**
@@ -64,6 +82,8 @@ public class HandlerNotification extends Handler<BatchState>
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
     private LoggerInf logger = null;
+    public static int sessionTimeout = 40000;
+    private ZooKeeper zooKeeper = null;
 
     /**
      * notify user(s)
@@ -79,7 +99,6 @@ public class HandlerNotification extends Handler<BatchState>
     {
   	MultiPartEmail email = new MultiPartEmail();
         JobState jobState = ingestRequest.getJob();
-	boolean isBatch = true;
 	boolean batchComplete = false;
 	boolean verbose = false;
 	boolean csv = false;
@@ -106,18 +125,40 @@ public class HandlerNotification extends Handler<BatchState>
                 }
 	    } catch (Exception e) {}
 
-	    // Is this a batch submission?
-	    if (jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-		isBatch = false;
-	    }
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
 
 	    String batchID = batchState.getBatchID().getValue();
-            if ( isBatch) {
-                if (BatchState.getBatchCompletion(batchID) == BatchState.getBatchState(batchID).getJobStates().size()) {
-		    batchComplete = true;
-	        }
+	    Batch batch = Batch.findByUuid(zooKeeper, batchID);
+
+	    List<Job> jobs = batch.getProcessingJobs(zooKeeper);
+	    if (jobs.isEmpty()) {
+                if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected BATCH is complete: " + batch.batchUuid());
+		batchComplete = true;
+	    } else {
+               return new HandlerResult(true, "SUCCESS: " + NAME + " Exiting, Batch not complete: " + batchID, 0);
 	    }
 
+	    // Completed Jobs
+	    jobs = batch.getCompletedJobs(zooKeeper);
+	    JSONArray jac = new JSONArray();
+	    for (Job jobCompleted: jobs) {
+   	        jobCompleted.load(zooKeeper);
+   	        jac.put(jobCompleted.data());
+	    }
+System.out.println("JOBS COMPLETED -----------------------");
+System.out.println(jac);
+
+	    // Failed Jobs
+	    jobs = batch.getFailedJobs(zooKeeper);
+	    JSONArray jaf = new JSONArray();
+	    for (Job jobFailed: jobs) {
+   	        jobFailed.load(zooKeeper);
+   	        jaf.put(jobFailed.data());
+	    }
+System.out.println("JOBS FAILED -----------------------");
+System.out.println(jaf);
+
+	    batch.loadProperties(zooKeeper);
   	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled
 	    if (jobState.grabAltNotification() == null) {
 	        for (Notification recipient : profileState.getContactsEmail()) {
@@ -166,13 +207,8 @@ public class HandlerNotification extends Handler<BatchState>
 		    else if (ingestServiceName.contains("Stage")) server = "stg";
 	    } catch (NullPointerException npe) {}
 
-	    if ( ! isBatch) {
-		jobState = batchState.getJobState(batchState.getJobStates().keySet().iterator().next());	// s/b only one key
 
-  	        email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Job Processed", jobState.getJobID().getValue()));
-  	        email.setMsg(jobState.dump("", "", "\n", null));
-  	        email.send();
-	    } else if (batchComplete) {
+	    if (batchComplete) {
 		// send summary in body and report as attachment
 		try {
  	            if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
@@ -187,6 +223,10 @@ public class HandlerNotification extends Handler<BatchState>
 		       aggregate = "[" + profileState.getAggregateType() + "] ";
 		} catch (NullPointerException npe) {}
 
+
+System.out.println("BATCH STATUS ----------> " + batchState.getBatchStatus());
+
+		// subject
 		if (! verbose) 
   	            email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Processed", aggregate + batchState.getBatchID().getValue()));
 		else {
@@ -201,22 +241,32 @@ public class HandlerNotification extends Handler<BatchState>
 		    }
 		}
 
+		if (jaf != null) 
+		    email.attach(new ByteArrayDataSource(jaf.toString(), "application/json; header=present"), "failed.json", "Error report for " + batchID, EmailAttachment.ATTACHMENT);
+		    // email.attach(new ByteArrayDataSource(jaf.toString(), "failed.json", "Error report for " + batchID, EmailAttachment.ATTACHMENT);
+		if (jac  != null) 
+		    email.attach(new ByteArrayDataSource(jac.toString(), "application/json; header=present"), "completed.json", "Completion report for " + batchID, EmailAttachment.ATTACHMENT);
+		    //email.attach(jac.toString(), "completed.json", "Completion report for " + batchID, EmailAttachment.ATTACHMENT);
+
+/*
 		if (csv) {
 		    // Comma delimited
-		    email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
+		    email.attach(new ByteArrayDataSource(batchState.dump("", false), "text/csv; header=present"),
 			 batchID + ".csv", "Comma delimited Job Report for " +  batchID, EmailAttachment.ATTACHMENT);
 		}
 
 		if (! status.equals("OK")) {
 		    // Create CSV error attachment
-		    email.attach(new ByteArrayDataSource(batchState.dump("", false, true, true), "text/csv; header=present"),
+		    email.attach(new ByteArrayDataSource(batchState.dump("", false, true), "text/csv; header=present"),
 			 "error-" + batchID + ".csv", "Comma delimited Job Error Report for " +  batchID, EmailAttachment.ATTACHMENT);
 		}
+*/
 
                 // attachment: batch state with user defined formatting
                 if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
                 else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
 
+/*
 		try {
 		    email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
 			batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
@@ -226,11 +276,14 @@ public class HandlerNotification extends Handler<BatchState>
 		    email.attach(new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"), "text/plain"),
 			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
 		}
+*/
 
-		if (! verbose) 
-		    email.setMsg(batchState.dump("", false, false));	// summary only
-		else
+		if (! verbose) {
+		    email.setMsg(batchDump(batch, ""));
+System.out.println(batchDump(batch, ""));
+		} else {
   	            email.setMsg(getVerboseMsg(jobState));
+		}
 
 		try {
   	            email.send();
@@ -280,5 +333,69 @@ public class HandlerNotification extends Handler<BatchState>
     public String getName() {
 	return NAME;
     }
+
+   public static class Ignorer implements Watcher {
+        public void process(WatchedEvent event){}
+   }
+
+
+    // was in BatchState
+    public String batchDump(Batch batch, String header)
+    {
+
+	JSONObject b = null;
+        JSONObject batchJSON = batch.data();
+        String batchIDS = (batch != null) ? batch.batchUuid() : "";
+        String submissionDateS = (batchJSON != null) ? batchJSON.getString("submissionDate") : "";
+        String completionDateS = DateUtil.getCurrentDate().toString();
+        String userAgentS = (batchJSON != null) ? batchJSON.getString("submitter") : "";
+        String batchStatusS = "COMPLETED";
+        String batchStatusMessageS = "Success";
+	if (batch.hasFailure()) {
+	   // Grab error message from first failure
+	   try {
+	      Job jf = batch.getFailedJobs(zooKeeper).get(0);
+	      batchStatusS = jf.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Status.key());
+	      batchStatusMessageS = jf.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Message.key());
+	   } catch (Exception eee) {}
+	}
+
+
+        String queuePriorityS = "00";	// default
+
+	int completed = 0;
+	int failed = 0;
+	int pending = 0;
+
+	try {
+	   completed = batch.getCompletedJobs(zooKeeper).size();
+	   failed = batch.getFailedJobs(zooKeeper).size();
+	   pending = batch.getProcessingJobs(zooKeeper).size();
+	} catch (Exception zke) {
+	   System.err.println("[ERROR] Could not determine status for batch: " + batch.id());
+	}
+
+	// gather job status
+	String jobStateS = "\n\n\n";
+	jobStateS = jobStateS + "\t:Number of pending job(s): " + pending + "\n";
+	jobStateS = jobStateS + "\t:Number of completed job(s): " + completed + "\n";
+	jobStateS = jobStateS + "\t:Number of failed job(s): " + failed + "\n";
+	jobStateS = jobStateS + "\n";
+	jobStateS = jobStateS.substring(1, jobStateS.length() - 1 );
+
+        if (StringUtil.isNotEmpty(batchIDS)) header += "\n" + "Submission ID: " + batchIDS + "\n";
+        if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
+        if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";
+        if (StringUtil.isNotEmpty(queuePriorityS)) header += "Queue Priority: " + queuePriorityS + "\n";
+        if (StringUtil.isNotEmpty(submissionDateS)) header += "Submission date: " + submissionDateS + "\n";
+        if (StringUtil.isNotEmpty(completionDateS)) header += "Completion date: " + completionDateS + "\n";
+        if (StringUtil.isNotEmpty(batchStatusS)) header += "Status: " + batchStatusS + "\n";
+        if (StringUtil.isNotEmpty(batchStatusMessageS)) header += "Status Message: " + batchStatusMessageS + "\n";
+
+        return header; 
+
+    }
+
+
 
 }

@@ -97,6 +97,54 @@ public interface ProfileStateInf
      * Get handlers
      * @return Vector<Handler> handlers
      */
+    public SortedMap<Integer,HandlerState> getBatchProcessHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getBatchReportHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getProcessHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getEstimateHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getProvisionHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getDownloadHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getRecordHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
+    public SortedMap<Integer,HandlerState> getNotifyHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
     public SortedMap<Integer,HandlerState> getIngestHandlers();
 
     /**

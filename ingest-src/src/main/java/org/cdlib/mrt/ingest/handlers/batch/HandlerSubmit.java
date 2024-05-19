@@ -58,6 +58,7 @@ import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.utility.DateUtil;
 
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.QueueItemHelper;
@@ -130,6 +131,13 @@ public class HandlerSubmit extends Handler<BatchState>
 	    if (ingestRequest.getJob().grabAltNotification() != null)
 	        jproperties.put("notification", ingestRequest.getJob().grabAltNotification());
 
+	    if (ingestRequest.getJob().getHashAlgorithm() != null)
+                jproperties.put("digestType", ingestRequest.getJob().getHashAlgorithm());
+	    if (ingestRequest.getJob().getHashValue() != null)
+                jproperties.put("digestValue", ingestRequest.getJob().getHashValue());
+	    if (ingestRequest.getJob().getNote() != null)
+                jproperties.put("note", ingestRequest.getJob().getNote());
+
             // attachment: batch state with user defined formatting
             if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
@@ -172,6 +180,9 @@ public class HandlerSubmit extends Handler<BatchState>
 	        jproperties.put("DCtitle", ingestRequest.getDCtitle());
 	    if (ingestRequest.getDCtype() != null)
 	        jproperties.put("DCtype", ingestRequest.getDCtype());
+
+	    // Submission date
+	    jproperties.put("submissionDate", DateUtil.getCurrentDate().toString());
 
 	    // Create ZK batch
 	    initPaths();

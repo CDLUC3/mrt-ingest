@@ -42,11 +42,15 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
+import org.cdlib.mrt.ingest.utility.JSONUtil;
+import org.cdlib.mrt.zk.Job;
+//import org.cdlib.mrt.zk.JobState;
+import org.cdlib.mrt.zk.ZKKey;
+import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -62,25 +66,26 @@ import java.io.*;
 import java.lang.Long;
 import java.lang.IllegalArgumentException;
 import java.util.Iterator;
+import java.util.Properties;
 
 /**
- * High priority consume queue data and submit to ingest service
+ * Consume process state queue data and submit to ingest service
  * - zookeeper is the defined queueing service
  * 
  */
-public class ConsumerHighPriority extends HttpServlet
+public class RecordConsumer extends HttpServlet
 {
 
-    private static final String NAME = "Consumer";
+    private static final String NAME = "RecordConsumer";
     private static final String MESSAGE = NAME + ": ";
-    private volatile Thread consumerHighPriorityThread = null;
+    private volatile Thread consumerThread = null;
+    private volatile Thread cleanupThread = null;
 
-    private String queueConnectionString = "localhost:2181";	// Default single server connection
-    private String queueNode = "/server.1";	// Default queue
+    private String queueConnectionString = "localhost:2181";	// default single server connection
+    private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
-    private int numThreads = 5;			// Default size
-    private int pollingInterval = 2;		// Default interval (minutes)
-    private int highPriorityThreshold = 5;	// Default threshold level ( HP <= highPriorityThreshold)
+    private int numThreads = 5;		// default size
+    private int pollingInterval = 2;	// default interval (minutes)
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -89,7 +94,6 @@ public class ConsumerHighPriority extends HttpServlet
 	String queueConnectionString = null;
 	String numThreads = null;
 	String pollingInterval = null;
-	String highPriorityThreshold = null;
         IngestServiceInit ingestServiceInit = null;
         IngestServiceInf ingestService = null;
 
@@ -135,70 +139,94 @@ public class ConsumerHighPriority extends HttpServlet
 
 
 	try {
-	    numThreads = ingestService.getQueueServiceConf().getString("NumThreadsHighPriority");
+	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting high priority thread pool size: " + numThreads);
+	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
 		this.numThreads = new Integer(numThreads).intValue();
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set high priority thread pool size: " + numThreads + "  - using default: " + this.numThreads);
+	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
 	}
 
 	try {
-	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingIntervalHighPriority");
+	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting polling interval for high priority consumer daemon: " + pollingInterval);
+	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
 		this.pollingInterval = new Integer(pollingInterval).intValue();
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval for high priority consumer daemon: " + pollingInterval + "  - using default: " + this.pollingInterval);
+	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
 	}
-
-/*
-	try {
-	    highPriorityThreshold = ingestService.getQueueServiceConf().getString("HighPriorityThreshold");
-	    if (StringUtil.isNotEmpty(highPriorityThreshold)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting high priortity threshold: " + highPriorityThreshold);
-		this.highPriorityThreshold = new Integer(highPriorityThreshold).intValue();
-	    }
-	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set high priority threshold: " + highPriorityThreshold + "  - using default: " + this.highPriorityThreshold);
-	}
-*/
 
         try {
-            // Start the Consumer high priority thread
-            if (consumerHighPriorityThread == null) {
-	    	System.out.println("[info] " + MESSAGE + "starting high priority consumer daemon");
-		startConsumerHighPriorityThread(servletConfig);
+            // Start the Consumer thread
+            if (consumerThread == null) {
+	    	System.out.println("[info] " + MESSAGE + "starting consumer daemon");
+		startRecordConsumerThread(servletConfig);
 	    }
         } catch (Exception e) {
-	    throw new ServletException("[error] " + MESSAGE + "could not start high priority consumer daemon");
+	    throw new ServletException("[error] " + MESSAGE + "could not start consumer daemon");
         }
 
+        try {
+            // Start the Queue cleanup thread
+            if (cleanupThread == null) {
+	    	//System.out.println("[info] " + MESSAGE + "starting Queue cleanup daemon");
+		//startRecordCleanupThread(servletConfig);
+	    }
+        } catch (Exception e) {
+	    throw new ServletException("[error] " + MESSAGE + "could not queue cleanup daemon");
+        }
     }
 
 
     /**
      * Start consumer thread
      */
-    private synchronized void startConsumerHighPriorityThread(ServletConfig servletConfig)
+    private synchronized void startRecordConsumerThread(ServletConfig servletConfig)
         throws Exception
     {
         try {
-            if (consumerHighPriorityThread != null) {
+            if (consumerThread != null) {
                 System.out.println("[info] " + MESSAGE + "consumer daemon already started");
                 return;
             }
 
-            ConsumerDaemonHighPriority consumerDaemon = new ConsumerDaemonHighPriority(queueConnectionString, queueNode,
-		servletConfig, pollingInterval, numThreads, highPriorityThreshold);
+            RecordConsumerDaemon jobConsumerDaemon = new RecordConsumerDaemon(queueConnectionString, queueNode,
+		servletConfig, pollingInterval, numThreads);
 
-            consumerHighPriorityThread =  new Thread(consumerDaemon);
-            consumerHighPriorityThread.setDaemon(true);                // Kill thread when servlet dies
-            consumerHighPriorityThread.start();
+            consumerThread =  new Thread(jobConsumerDaemon);
+            consumerThread.setDaemon(true);                // Kill thread when servlet dies
+            consumerThread.start();
 
-	    System.out.println("[info] " + MESSAGE + "consumer high priority daemon started");
+	    System.out.println("[info] " + MESSAGE + "consumer daemon started");
+
+            return;
+
+        } catch (Exception ex) {
+            throw new Exception(ex);
+        }
+    }
+
+    /**
+     * Start Queue cleanup thread
+     */
+    private synchronized void startRecordCleanupThread(ServletConfig servletConfig)
+        throws Exception
+    {
+        try {
+            if (cleanupThread != null) {
+                System.out.println("[info] " + MESSAGE + "Queue cleanup daemon already started");
+                return;
+            }
+
+            RecordCleanupDaemon cleanupDaemon = new RecordCleanupDaemon(queueConnectionString, queueNode, servletConfig);
+
+            cleanupThread =  new Thread(cleanupDaemon);
+            cleanupThread.setDaemon(true);                // Kill thread when servlet dies
+            cleanupThread.start();
+
+	    System.out.println("[info] " + MESSAGE + "cleanup daemon started");
 
             return;
 
@@ -213,23 +241,8 @@ public class ConsumerHighPriority extends HttpServlet
 
     public void destroy() {
 	try {
-	    System.out.println("[info] " + MESSAGE + "interrupting consumer high priority daemon");
-            consumerHighPriorityThread.interrupt();
-	    saveState();
-	} catch (Exception e) {
-	    e.printStackTrace(System.err);
-	}
-    }
-
-    public void saveState() {
-	try {
-            Iterator iterator = BatchState.getBatchStates().keySet().iterator();
-            while(iterator.hasNext()){
-                BatchState batchState = BatchState.getBatchState((String) iterator.next());
-                System.out.println("[warning] " + MESSAGE + "Shutdown detected, writing to disk: " + batchState.getBatchID().getValue());
-                System.out.println("[warning] " + MESSAGE + "queue path: " + queuePath + "/" + batchState.getBatchID().getValue());
-                ProfileUtil.writeTo(batchState, new File(queuePath + "/" + batchState.getBatchID().getValue()));
-            }
+	    System.out.println("[info] " + MESSAGE + "interrupting consumer daemon");
+            consumerThread.interrupt();
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
 	}
@@ -237,10 +250,10 @@ public class ConsumerHighPriority extends HttpServlet
 
 }
 
-class ConsumerDaemonHighPriority implements Runnable
+class RecordConsumerDaemon implements Runnable
 {
    
-    private static final String NAME = "ConsumerDaemonHighPriority";
+    private static final String NAME = "RecordConsumerDaemon";
     private static final String MESSAGE = NAME + ": ";
 
     private IngestServiceInit ingestServiceInit = null;
@@ -250,7 +263,6 @@ class ConsumerDaemonHighPriority implements Runnable
     private String queueNode = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
-    private Integer highPriorityThreshold = null;
 
     private ZooKeeper zooKeeper = null;
     private DistributedQueue distributedQueue = null;
@@ -261,14 +273,13 @@ class ConsumerDaemonHighPriority implements Runnable
 
 
     // Constructor
-    public ConsumerDaemonHighPriority(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
-		Integer pollingInterval, Integer poolSize, Integer highPriorityThreshold)
+    public RecordConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
         this.queueNode = queueNode;
 	this.pollingInterval = pollingInterval;
 	this.poolSize = poolSize;
-	this.highPriorityThreshold = highPriorityThreshold;
 
 	try {
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
@@ -286,13 +297,13 @@ class ConsumerDaemonHighPriority implements Runnable
     {
         boolean init = true;
         String status = null;
-        ArrayBlockingQueue<ConsumeDataHighPriority> workQueue = new ArrayBlockingQueue<ConsumeDataHighPriority>(poolSize);
+        ArrayBlockingQueue<RecordConsumeData> workQueue = new ArrayBlockingQueue<RecordConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) 5, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
 	sessionAuth = zooKeeper.getSessionPasswd();
-        Item item = null;
+        //Item item = null;
 
         try {
             long queueSize = workQueue.size();
@@ -300,10 +311,11 @@ class ConsumerDaemonHighPriority implements Runnable
 
                 // Wait for next interval.
                 if (! init) {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     Thread.yield();
                     Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
                 } else {
+                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     init = false;
                 }
 
@@ -334,50 +346,30 @@ class ConsumerDaemonHighPriority implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    String worker = getWorkerID();
-			    System.out.println(MESSAGE + "Checking for additional High Priority tasks for Worker " + worker + "  -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
-			    item = distributedQueue.consume(getWorkerID(), true);
-			    System.out.println("Found a high Priority Zookeeper entry: " + item.getId());
-                     	    executorService.execute(new ConsumeDataHighPriority(ingestService, item, distributedQueue, queueConnectionString, queueNode));
+			    //String worker = getWorkerID();
+			    //item = distributedQueue.consume(worker, false);
+                            //executorService.execute(new RecordConsumeData(ingestService, item, distributedQueue, queueConnectionString, queueNode));
+
+			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+                            Job job = null;
+                            job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Recording);
+
+                            if ( job != null) {
+                                System.out.println(MESSAGE + "Found recording job data: " + job.id());
+                                executorService.execute(new RecordConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
+                            } else {
+                                break;
+                            }
+
+
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
 			}
 		    }
 
-        	} catch (ConnectionLossException cle) {
-		    System.err.println("[error] " + MESSAGE + "Lost connection to queueing service.");
-		    cle.printStackTrace(System.err);
-		    String[] parse = cle.getMessage().split(queueNode + "/");	// ConnectionLoss for /q/qn-000000000970 
-		    if (parse.length > 1) {
-		        // attempt to requeue
-			int i = 0;
-			final int MAX_ATTEMPT = 3;
-		        while (i < MAX_ATTEMPT) {
-	    	            System.out.println("[info]" + MESSAGE +  i + ":Attempting to requeue: " + parse[1]);
-		            if (requeue(parse[1])) {
-			        break;
-		    	    }
-			    i++;
-	    	            Thread.currentThread().sleep(30 * 1000);		// wait for ZK to recover
-		        }
-			if (i >= MAX_ATTEMPT){
-	    	            System.out.println("[error]" + MESSAGE + "Could not requeue ITEM: " + parse[1]);
-			    // session expired ?  If so, can we recover or just eror
-			    // throw new org.apache.zookeeper.KeeperException.SessionExpiredException();
-		            //zooKeeper = new ZooKeeper(connectionString, sessionTimeout, new Ignorer(), sessionID, sessionAuth);
-			}
-		    } else {
-		        System.err.println("[info] " + MESSAGE + "Did not interrupt queue create.  We're OK.");
-		    }   
-        	} catch (SessionExpiredException see) {
-		    see.printStackTrace(System.err);
-		    System.err.println("[warn] " + MESSAGE + "Session expired.  Attempting to recreate session.");
-            	    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
-                    distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);  
 		} catch (RejectedExecutionException ree) {
-	            System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission, and requeuing: " + item.getId());
-		    distributedQueue.requeue(item.getId());
+	            //System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission, and requeuing: " + item.getId());
         	    Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
 		} catch (NoSuchElementException nsee) {
 		    // no data in queue
@@ -433,48 +425,6 @@ class ConsumerDaemonHighPriority implements Runnable
         return false;
     }
 
-    private boolean requeue(String id)
-    {
-        try {
-
-	    Item item = null;
-	    try {
-	        item = distributedQueue.updateStatus(id, Item.CONSUMED, Item.PENDING);
-	    } catch (SessionExpiredException see) {
-	        System.err.println("[error]" + MESSAGE +  "Session expired.  Attempting to recreate session while requeueing.");
-                zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
-                distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-
-		return false;
-	    }
-
-	    if (item != null) {
-		System.out.println("** [info] ** " + MESSAGE + "Successfully requeued: " + item.toString());
-	    } else {
-	        System.err.println("[error]" + MESSAGE +  "Could not requeue: " + id);
-		return false;
-	    }
-        } catch (Exception e) {
-	    e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    private String getWorkerID() {
-
-        String workerID = "0";
-
-        try {
-            // Set in setenv.sh (e.g. ingest01-stg)
-            String workerEnv = System.getenv("WORKERNAME");
-            workerID = workerEnv.substring("ingest0".length(), "ingest0".length() + 1);
-        } catch (Exception e ) {
-            // System.out.println("[info] Can not calculate Ingest worker.  Setting to '0'.");
-        }
-
-        return workerID;
-    }
 
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
@@ -486,10 +436,10 @@ class ConsumerDaemonHighPriority implements Runnable
 }
 
 
-class ConsumeDataHighPriority implements Runnable
+class RecordConsumeData implements Runnable
 {
    
-    private static final String NAME = "ConsumeDataHighPriority";
+    private static final String NAME = "RecordConsumeData";
     private static final String MESSAGE = NAME + ":";
     private static final boolean DEBUG = true;
     protected static final String FS = System.getProperty("file.separator");
@@ -497,17 +447,16 @@ class ConsumeDataHighPriority implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private ZooKeeper zooKeeper = null;
-    private DistributedQueue distributedQueue = null;
 
-    private Item item = null;
+    private Job job = null;
     private IngestServiceInf ingestService = null;
     private JobState jobState = null;
 
     // Constructor
-    public ConsumeDataHighPriority(IngestServiceInf ingestService, Item item, DistributedQueue distributedQueue, String queueConnectionString, String queueNode)
+    public RecordConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
     {
-	this.distributedQueue = distributedQueue;
-	this.item = item;
+        this.zooKeeper = zooKeeper;
+	this.job = job;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
@@ -517,56 +466,55 @@ class ConsumeDataHighPriority implements Runnable
     public void run()
     {
         try {
-            JSONObject jp = new JSONObject(new String(item.getData(), "UTF-8"));
-            if (DEBUG) System.out.println("[info] START: consuming queue data:" + jp.toString());
+
+            JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
 
             // Check if collection level hold
             if (onHold(JSONUtil.getValue(jp,"profile"))) {
-                try {
-                    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
-                    distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-	            distributedQueue.holdConsumed(item.getId());
-                    System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
-                } catch (ConnectionLossException cle) {
-                    System.err.println("[error] " + MESSAGE + "Queueing service is down.");
-                    cle.printStackTrace(System.err);
-                } catch (Exception e) {
-                    System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
-                    e.printStackTrace(System.err);
-                } finally {
-                    zooKeeper.close();
-                }
-
+                //try {
+                    //zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                    //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	            //distributedQueue.holdConsumed(item.getId());
+                    //System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
+                //} catch (ConnectionLossException cle) {
+                    //System.err.println("[error] " + MESSAGE + "Queueing service is down.");
+                    //cle.printStackTrace(System.err);
+                //} catch (Exception e) {
+                    //System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
+                    //e.printStackTrace(System.err);
+                //} finally {
+		    //zooKeeper.close();
+		//}
             } else {
 
-            IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
-                            JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
-                            JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
-                            JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
-                            JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
-                            JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
-                            // jp.getString("retainTargetURL"), jp.getString("targetURL"));
-            ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
-            ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
-            ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
-
-            try {
-               if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
-                  if (JSONUtil.getValue(jp,"retainTargetURL").equalsIgnoreCase("true")) {
-                     System.out.println("[info] Setting retainTargetURL to " + JSONUtil.getValue(jp,"retainTargetURL"));
-                     ingestRequest.setRetainTargetURL(true);
-                  }
-               }
-            } catch (Exception e) { }   // assigned with null value
+	    IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
+			    JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
+			    JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
+			    JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
+			    JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
+			    JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
+			    // jp.getString("retainTargetURL"), jp.getString("targetURL"));
+	    ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
+	    ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
+	    ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
+	    try {
+	       if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
+	          if (JSONUtil.getValue(jp,"retainTargetURL").equalsIgnoreCase("true")) {
+		     System.out.println("[info] Setting retainTargetURL to " + JSONUtil.getValue(jp,"retainTargetURL"));
+		     ingestRequest.setRetainTargetURL(true);
+		  }
+	       }
+	    } catch (Exception e) { } 	// assigned with null value
 
 	    try {
-                ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
+	        ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
 	    } catch (Exception e) { } 	// assigned with null value
 	    try {
-                ingestRequest.setDataCiteResourceType(JSONUtil.getValue(jp,"DataCiteResourceType"));
+	        ingestRequest.setDataCiteResourceType(JSONUtil.getValue(jp,"DataCiteResourceType"));
 	    } catch (Exception e) {}
 	    try {
-                ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
+	        ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
 	    } catch (Exception e) {}
 
             // process Dublin Core (optional)
@@ -602,51 +550,55 @@ class ConsumeDataHighPriority implements Runnable
                 ingestRequest.getJob().setDCtype(jp.getString("DCtype"));
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-            ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
-            Boolean update = new Boolean(jp.getBoolean("update"));
-            ingestRequest.getJob().setUpdateFlag(update.booleanValue());
+	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+	    Boolean update = new Boolean(jp.getBoolean("update"));
+	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
             new File(ingestRequest.getQueuePath(), "system").mkdir();
             new File(ingestRequest.getQueuePath(), "producer").mkdir();
 
-            BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
+	    //BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
-	    jobState = ingestService.submit(ingestRequest);
+	    String process = "Record";
+	    jobState = ingestService.submitProcess(ingestRequest, process);
+
+            job.setStatus(zooKeeper, job.status().success());
+	    //job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Recording));
+            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
+            System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + item.getId());
-	    	distributedQueue.complete(item.getId());
+                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + jp.toString());
+	    	//distributedQueue.complete(item.getId());
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		System.out.println("[item]: FAILED queue data:" + item.getId());
-		System.out.println("Consume Daemon - job message: " + jobState.getJobStatusMessage());
-	    	distributedQueue.fail(item.getId());
+		//System.out.println("[item]: FAILED queue data:" + item.getId());
+		System.out.println("RecordConsume Daemon - job message: " + jobState.getJobStatusMessage());
+	    	//distributedQueue.fail(item.getId());
 	    } else {
-		System.out.println("Consume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
+		System.out.println("RecordConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
 	}	// end of else
 
-	    // inform queue that we're done
-
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
-            System.err.println("[warn] ConsumeDataHighPriority" + MESSAGE + "Session expired.  Attempting to recreate session.");
+            System.err.println("[warn] RecordConsumeData" + MESSAGE + "Session expired.  Attempting to recreate session.");
 	    try {
                 zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
-                distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-	        distributedQueue.complete(item.getId());
+                //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	        //distributedQueue.complete(item.getId());
 	    } catch (Exception e) {
                 e.printStackTrace(System.err);
                 System.out.println("[error] Consuming queue data: Could not recreate session.");
 	    }
         } catch (ConnectionLossException cle) {
             cle.printStackTrace(System.err);
-            System.err.println("[warn] ConsumeDataHighPriority" + MESSAGE + "Connection loss.  Attempting to reconnect.");
+            System.err.println("[warn] RecordConsumeData" + MESSAGE + "Connection loss.  Attempting to reconnect.");
 	    try {
                 zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
-                distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-	        distributedQueue.complete(item.getId());
+                //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	        //distributedQueue.complete(item.getId());
 	    } catch (Exception e) {
                 e.printStackTrace(System.err);
                 System.out.println("[error] Consuming queue data: Could not reconnect.");
@@ -684,3 +636,127 @@ class ConsumeDataHighPriority implements Runnable
    }
 }
 
+
+class RecordCleanupDaemon implements Runnable
+{
+
+    private static final String NAME = "RecordCleanupDaemon";
+    private static final String MESSAGE = NAME + ": ";
+
+    private String queueConnectionString = null;
+    private String queueNode = null;
+    private Integer pollingInterval = 3600;	// seconds
+
+    private ZooKeeper zooKeeper = null;
+    private DistributedQueue distributedQueue = null;
+
+    // session data
+    private long sessionID;
+    private byte[] sessionAuth;
+
+
+    // Constructor
+    public RecordCleanupDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig)
+    {
+        this.queueConnectionString = queueConnectionString;
+        this.queueNode = queueNode;
+
+        try {
+            zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+
+            distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
+    }
+
+    public void run()
+    {
+        boolean init = true;
+        String status = null;
+
+        sessionID = zooKeeper.getSessionId();
+        System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
+        sessionAuth = zooKeeper.getSessionPasswd();
+
+        try {
+            while (true) {      // Until service is shutdown
+
+                // Wait for next interval.
+                if (! init) {
+                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    Thread.yield();
+                    Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
+                } else {
+                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    init = false;
+                }
+
+                // have we shutdown?
+                if (Thread.currentThread().isInterrupted()) {
+                    System.out.println(MESSAGE + "interruption detected.");
+                    throw new InterruptedException();
+                }
+
+                // Perform some work
+                try {
+                    long numActiveTasks = 0;
+
+                    // To prevent long shutdown, no more than poolsize tasks queued.
+                    while (true) {
+                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
+			try {
+			    distributedQueue.cleanup(Item.COMPLETED);
+			} catch (NoSuchElementException nsee) {
+			    // No more data
+			} 
+                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
+			// Will throw NoSuchElementException to break tight loop
+			distributedQueue.cleanup(Item.DELETED);
+
+                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
+                    }
+
+                } catch (ConnectionLossException cle) {
+                    System.err.println("[error] " + MESSAGE + "Lost connection to queueing service.");
+                    cle.printStackTrace(System.err);
+                } catch (SessionExpiredException see) {
+                    see.printStackTrace(System.err);
+                    System.err.println("[warn] " + MESSAGE + "Session expired.  Attempting to recreate session.");
+                    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                    distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+                } catch (RejectedExecutionException ree) {
+                    System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
+                } catch (NoSuchElementException nsee) {
+                    // no data in queue
+                    System.out.println("[info] " + MESSAGE + "No data in queue to clean");
+                } catch (IllegalArgumentException iae) {
+                    // no queue exists
+                    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
+                } catch (Exception e) {
+                    System.err.println("[warn] " + MESSAGE + "General exception.");
+                    e.printStackTrace();
+                }
+            }
+        } catch (InterruptedException ie) {
+            try {
+                // zooKeeper.close();
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+            }
+        } catch (Exception e) {
+            System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");
+            e.printStackTrace(System.err);
+        } finally {
+	    sessionAuth = null;
+        }
+    }
+
+   public class Ignorer implements Watcher {
+       public void process(WatchedEvent event){
+           if (event.getState().equals("Disconnected"))
+               System.out.println("Disconnected: " + event.toString());
+       }
+   }
+
+}

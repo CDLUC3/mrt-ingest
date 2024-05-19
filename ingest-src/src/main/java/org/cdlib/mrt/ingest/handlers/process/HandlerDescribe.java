@@ -27,7 +27,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers;
+package org.cdlib.mrt.ingest.handlers.process;
 
 import java.io.File;
 import java.io.InputStream;
@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.cloud.VersionMap;
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -90,7 +92,6 @@ public class HandlerDescribe extends Handler<JobState>
             File producerEMLFile = new File(producerTargetDir, "mrt-eml.xml");
             File producerEmbargoFile = new File(producerTargetDir, "mrt-embargo.txt");
             File systemDCFile = new File(systemTargetDir, "mrt-dc.xml");
-            File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
             // save deletion file
             if (jobState.grabUpdateFlag()) {

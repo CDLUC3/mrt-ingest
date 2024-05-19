@@ -67,8 +67,8 @@ public interface IngestServiceInf
      * @return JobState job state information 
      * @throws TException Exception condition during storage service procssing
      */
-    public JobState submit (IngestRequest ingestRequest)
-    throws TException;
+    //public JobState submit (IngestRequest ingestRequest)
+    //throws TException;
 
     /**
      * Add an object to this queue service
@@ -76,7 +76,7 @@ public interface IngestServiceInf
      * @return BatchState batch state information 
      * @throws TException Exception condition during storage service procssing
      */
-    public BatchState submitPost (IngestRequest ingestRequest)
+    public BatchState submitPost (IngestRequest ingestRequest, String string)
     throws TException;
 
     /**
@@ -103,8 +103,8 @@ public interface IngestServiceInf
      * @return BatchState batch state information 
      * @throws TException Exception condition during storage service procssing
      */
-    public BatchState updatePost (IngestRequest ingestRequest)
-    throws TException;
+    //public BatchState updatePost (IngestRequest ingestRequest)
+    //throws TException;
 
     /**
      * Request identifier

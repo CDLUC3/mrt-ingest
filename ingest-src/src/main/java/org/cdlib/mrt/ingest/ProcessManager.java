@@ -355,41 +355,6 @@ public class ProcessManager {
 		}
 	}
 
-	public BatchState updateStatus(String batchID, String jobID, String status) throws TException {
-		Map<String, JobState> jobStates;
-		try {
-			File queueDir = new File(ingestFileS, "queue");
-			File file = new File(queueDir, batchID);
-			if (!file.exists()) {
-				System.out.println(
-						"[warn]" + MESSAGE + "Batch does not exist, can not update status: " + file.getAbsolutePath());
-				throw new TException.GENERAL_EXCEPTION(
-						MESSAGE + "Batch does not exist, can not update status: " + file.getAbsolutePath());
-			}
-			BatchState batchState = BatchState.getBatchState(batchID);
-
-			jobStates = (HashMap<String, JobState>) batchState.getJobStates();
-			JobState jobStateTemp = (JobState) jobStates.get(jobID);
-			System.out.println("[info]" + MESSAGE + "updating job: " + jobStateTemp.getJobID());
-
-			// update status
-			jobStateTemp.setJobStatus(JobStatusEnum.RESOLVED); // only option for now
-
-			BatchState.removeBatchState(batchID);
-			BatchState.putBatchState(batchID, batchState);
-
-			return batchState;
-
-		} catch (TException te) {
-			throw te;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-			jobStates = null;
-		}
-	}
 
 	public JobState submit(IngestRequest ingestRequest, String state) throws Exception {
 		ProfileState profileState = null;
@@ -486,63 +451,6 @@ public class ProcessManager {
 				System.out.println("[debug] " + profileState.dump("profileState"));
 			jobState.setObjectProfile(profileState);
 
-			// wait until posting completes a) only for very large batches b) recovering
-			// after shutdown
-			if (!jobState.grabBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-				while (BatchState.getBatchReadiness(jobState.grabBatchID().getValue()) != 1) {
-					System.out.println("[info]" + MESSAGE + "waiting for posting to complete: " + jobState.getJobID());
-
-					// are we recovering from a shutdown?
-					try {
-						/*
-						 * synchronized (this) { if (BatchState.getBatchStates().size() == 0) { if
-						 * (BatchState.getBatchStates().size() == 0) { // in case two objects pending,
-						 * only let one through
-						 * System.out.println("IngestManager [info] Accessing serialized object: " +
-						 * ingestRequest.getQueuePath().getParentFile()); BatchState batchState = new
-						 * BatchState(); batchState = ProfileUtil.readFrom(batchState,
-						 * ingestRequest.getQueuePath().getParentFile());
-						 * BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
-						 * 
-						 * System.out.println(batchState.dump("------> recovering from shutdown")); int
-						 * completed = 0;
-						 * 
-						 * iterator = batchState.getJobStates().keySet().iterator();
-						 * while(iterator.hasNext()) { JobState jobStateTemp = (JobState)
-						 * batchState.getJobState((String) iterator.next()); if
-						 * (jobStateTemp.getJobStatus() != JobStatusEnum.PENDING) completed++; }
-						 * 
-						 * System.out.println("-------> number of completed jobs: " + completed);
-						 * BatchState.putBatchCompletion(jobState.grabBatchID().getValue(), completed);
-						 * BatchState.putBatchReadiness(jobState.grabBatchID().getValue(), 1); break; }
-						 * } }
-						 */
-						if (override(ingestRequest)) {
-							BatchState batchState = new BatchState();
-							// batchstate has been flushed, need to recreate
-							try {
-								// process serialized object
-								batchState = ProfileUtil.readFrom(batchState,
-										ingestRequest.getQueuePath().getParentFile());
-							} catch (Exception e) {
-								// we can still continue for batches of size 1
-								System.err.println(
-										"[warn] no serialized object: " + ingestRequest.getQueuePath().getParentFile());
-							}
-							BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
-							BatchState.putBatchReadiness(jobState.grabBatchID().getValue(), 1);
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-						// System.err.println("IngestManager [error] accessing serialized object: " +
-						// ingestRequest.getQueuePath().getParentFile());
-						// break; // prevent looping in recovery
-					}
-
-					Thread.currentThread().sleep(30 * 1000);
-				}
-			}
-
 			// link for ingest to expose manifest data
 			ingestRequest.setLink(this.getServiceState().getAccessServiceURL().toString());
 
@@ -556,24 +464,24 @@ public class ProcessManager {
 			SortedMap sortedMap = Collections.synchronizedSortedMap(new TreeMap()); // thread-safe
 			if (state.matches("Estimate")) sortedMap = profileState.getEstimateHandlers();
 			if (state.matches("Provision")) sortedMap = profileState.getProvisionHandlers();
-			if (state.matches("Download")) sortedMap = profileState.getIngestHandlers();
-			if (state.matches("Process")) sortedMap = profileState.getIngestHandlers();
-			if (state.matches("Record")) sortedMap = profileState.getIngestHandlers();
-			if (state.matches("Notify")) sortedMap = profileState.getIngestHandlers();
+			if (state.matches("Download")) sortedMap = profileState.getDownloadHandlers();
+			if (state.matches("Process")) sortedMap = profileState.getProcessHandlers();
+			if (state.matches("Record")) sortedMap = profileState.getRecordHandlers();
+			if (state.matches("Notify")) sortedMap = profileState.getNotifyHandlers();
 			for (Object key : sortedMap.keySet()) {
 				String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
-System.out.println("PROCESS MGR ============> " + handlerS);
+System.out.println("PROCESS MGR (" + state + ")  ============> " + handlerS);
 				Handler handler = (Handler) createObject(handlerS);
 				
 				if (handler == null) {
 					throw new TException.INVALID_CONFIGURATION("[error] Could not find handler: " + handlerS);
 				}
 				StateInf stateClass = jobState;
-				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.HandlerNotification.class) && (handler.getClass() != org.cdlib.mrt.ingest.handlers.HandlerCallback.class)) {
+				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerNotification.class) && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerCallback.class)) {
 					System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 					continue;
 				}
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerNotification.class) {
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerNotification.class) {
 					if (!isError) {
 						jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
 								+ jobState.grabTargetStorage().getNodeID() + "/"
@@ -593,9 +501,6 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 					if ( ! reQueue ) {
 						stateClass = batchState;
 
-						BatchState.putBatchCompletion(jobState.grabBatchID().getValue(),
-							BatchState.getBatchCompletion(jobState.grabBatchID().getValue()) + 1); // increment
-
 						// update persistent URL if necessary
 						jobState.setPersistentURL(profileState.getPURL() + jobState.getPrimaryID());
 					} else {
@@ -603,7 +508,7 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 					}
 				}
 
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerCallback.class) {
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerCallback.class) {
 					if (isError) {
 						jobState.setJobStatus(JobStatusEnum.FAILED);
 						// No batch for requeud jobs
@@ -615,20 +520,25 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 					}
 				}
 
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerInventoryQueue.class) {
-					if ( ! reQueue && (!batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID))
-							&& (batchState.grabTargetQueue() != null)) {
-						jobState.setMisc(batchState.grabTargetQueue());
-						jobState.setExtra(batchState.grabTargetInventoryNode());
-					} else {
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue.class) {
+					//if ( ! reQueue && (!batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID))
+							//&& (batchState.grabTargetQueue() != null)) {
+
+jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
+	+ jobState.grabTargetStorage().getNodeID() + "/"
+	+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
+System.out.println("-----------------> JOB OBJECT STATE: " + jobState.grabObjectState());
+					jobState.setMisc(queueConf.getString("QueueService"));
+					jobState.setExtra(queueConf.getString("InventoryName"));
+					//} else {
 						// not a batch or in recovery mode or requeued job
-						System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
-						jobState.setMisc(queueConf.getString("QueueService"));
-						jobState.setExtra(queueConf.getString("InventoryName"));
-					}
+						//System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
+						//jobState.setMisc(queueConf.getString("QueueService"));
+						//jobState.setExtra(queueConf.getString("InventoryName"));
+					//}
 				}
 
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.HandlerTransfer.class) {
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {
 					System.out.println("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(ingestConf.getString("ingestLock"));
@@ -644,11 +554,11 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 				}
 
 				// Abort if failure
-				if (DEBUG)
-					System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
+				if (DEBUG) System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
 				if (handlerResult.getSuccess()) {
-					if (!isError)
-						jobState.setJobStatus(JobStatusEnum.COMPLETED);
+					if (!isError) {
+					   jobState.setJobStatus(JobStatusEnum.COMPLETED);
+					}
 				} else {
 					// do not abort, but skip all further processing and note exception
 					jobState.setJobStatus(JobStatusEnum.FAILED);
@@ -662,25 +572,6 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 						+ jobState.grabTargetStorage().getNodeID() + "/"
 						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
 			}
-
-			// batch complete?
-/*
-			if (! reQueue && ! batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID)) {
-				try {
-					if (BatchState.getBatchCompletion(batchState.getBatchID().getValue()) == BatchState
-							.getBatchState(batchState.getBatchID().getValue()).getJobStates().size()) {
-						if (DEBUG)
-							System.out.println("[debug] " + MESSAGE + ": Batch is complete.");
-						BatchState.removeBatchState(jobState.grabBatchID().getValue());
-						BatchState.removeBatchReadiness(jobState.grabBatchID().getValue());
-						BatchState.removeBatchCompletion(jobState.grabBatchID().getValue());
-						BatchState.removeQueuePath(jobState.grabBatchID().getValue());
-					}
-				} catch (Exception e) {
-					// ignore threads that may get here late
-				}
-			}
-*/
 
 			return jobState;
 
@@ -828,7 +719,7 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 				batchState = new BatchState(jobState.grabBatchID());
 
 				try {
-				   batchState = BatchState.getBatchState(jobState.grabBatchID().getValue());
+				   //batchState = BatchState.getBatchState(jobState.grabBatchID().getValue());
 				   batchState.setBatchID(jobState.grabBatchID());
 				} catch (Exception eee) {
 				   // Recover from restart
@@ -855,7 +746,7 @@ System.out.println("PROCESS MGR ============> " + handlerS);
 				// Does not scale!!
 				// ProfileUtil.writeTo(batchState,
 				// ingestRequest.getQueuePath().getParentFile());
-				BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
+				//BatchState.putBatchState(jobState.grabBatchID().getValue(), batchState);
 			}
 
 			return batchState;

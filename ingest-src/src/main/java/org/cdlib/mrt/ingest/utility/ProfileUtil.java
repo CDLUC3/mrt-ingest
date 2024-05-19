@@ -84,10 +84,15 @@ public class ProfileUtil
     private static final String matchIdentifierNamespace = "Identifier-namespace";
     private static final String matchNotification = "Notification.";
     private static final String matchHandlerIngest = "HandlerIngest.";
-    private static final String matchHandlerBatch = "HandlerBatch.";
+    private static final String matchHandlerBatchProcess = "HandlerBatchProcess.";
+    private static final String matchHandlerBatchReport = "HandlerBatchReport.";
     private static final String matchHandlerQueue = "HandlerQueue.";
     private static final String matchHandlerEstimate = "HandlerEstimate.";
     private static final String matchHandlerProvision = "HandlerProvision.";
+    private static final String matchHandlerDownload = "HandlerDownload.";
+    private static final String matchHandlerProcess = "HandlerProcess.";
+    private static final String matchHandlerRecord = "HandlerRecord.";
+    private static final String matchHandlerNotify = "HandlerNotify.";
     private static final String matchStorageService = "StorageService";
     private static final String matchStorageNode = "StorageNode";
     private static final String matchCreationDate = "CreationDate";
@@ -141,10 +146,15 @@ public class ProfileUtil
         throws TException
     {
     	TreeMap<Integer,HandlerState> ingestHandlers = new TreeMap<Integer,HandlerState>();
-    	TreeMap<Integer,HandlerState> batchHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> batchProcessHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> batchReportHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> estimateHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> provisionHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> downloadHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> processHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> recordHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> notifyHandlers = new TreeMap<Integer,HandlerState>();
 	ProfileState profileState = new ProfileState();
 
 	try {
@@ -247,15 +257,24 @@ public class ProfileUtil
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
 		    queueHandlers.put(handlerID, handler);
-		} else if (key.startsWith(matchHandlerBatch)) {
-                    if (DEBUG) System.out.println("[debug] batch handler: " + value);
+		} else if (key.startsWith(matchHandlerBatchProcess)) {
+                    if (DEBUG) System.out.println("[debug] batch process handler: " + value);
 
-                    String handlerBatchS = key.substring(matchHandlerBatch.length());
-                    Integer handlerID = Integer.parseInt(handlerBatchS);
+                    String handlerBatchProcessS = key.substring(matchHandlerBatchProcess.length());
+                    Integer handlerID = Integer.parseInt(handlerBatchProcessS);
 
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
-		    batchHandlers.put(handlerID, handler);
+		    batchProcessHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerBatchReport)) {
+                    if (DEBUG) System.out.println("[debug] batch report handler: " + value);
+
+                    String handlerBatchReportS = key.substring(matchHandlerBatchReport.length());
+                    Integer handlerID = Integer.parseInt(handlerBatchReportS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    batchReportHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerEstimate)) {
                     if (DEBUG) System.out.println("[debug] estimate handler: " + value);
 
@@ -274,6 +293,42 @@ public class ProfileUtil
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
 		    provisionHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerDownload)) {
+                    if (DEBUG) System.out.println("[debug] download handler: " + value);
+
+                    String handlerDownloadS = key.substring(matchHandlerDownload.length());
+                    Integer handlerID = Integer.parseInt(handlerDownloadS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    downloadHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerProcess)) {
+                    if (DEBUG) System.out.println("[debug] process handler: " + value);
+
+                    String handlerProcessS = key.substring(matchHandlerProcess.length());
+                    Integer handlerID = Integer.parseInt(handlerProcessS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    processHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerRecord)) {
+                    if (DEBUG) System.out.println("[debug] record handler: " + value);
+
+                    String handlerRecordS = key.substring(matchHandlerRecord.length());
+                    Integer handlerID = Integer.parseInt(handlerRecordS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    recordHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerNotify)) {
+                    if (DEBUG) System.out.println("[debug] notify handler: " + value);
+
+                    String handlerNotifyS = key.substring(matchHandlerNotify.length());
+                    Integer handlerID = Integer.parseInt(handlerNotifyS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    notifyHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchStorageService)) {
                     if (DEBUG) System.out.println("[debug] storage service: " + value);
                     try {
@@ -347,10 +402,15 @@ public class ProfileUtil
 	     }
 
 	     profileState.setIngestHandlers(ingestHandlers);
-	     profileState.setBatchHandlers(batchHandlers);
+	     profileState.setBatchProcessHandlers(batchProcessHandlers);
+	     profileState.setBatchReportHandlers(batchReportHandlers);
 	     profileState.setQueueHandlers(queueHandlers);
 	     profileState.setEstimateHandlers(estimateHandlers);
 	     profileState.setProvisionHandlers(provisionHandlers);
+	     profileState.setDownloadHandlers(downloadHandlers);
+	     profileState.setProcessHandlers(processHandlers);
+	     profileState.setRecordHandlers(recordHandlers);
+	     profileState.setNotifyHandlers(notifyHandlers);
 	     profileState.setTargetStorage(new StoreNode(storageUrl, node));
  
              return profileState;
@@ -364,10 +424,14 @@ public class ProfileUtil
             throw new TException.GENERAL_EXCEPTION(err);
 	} finally {
 	    ingestHandlers = null;
-	    batchHandlers = null;
+	    batchProcessHandlers = null;
+	    batchReportHandlers = null;
 	    queueHandlers = null;
 	    estimateHandlers = null;
-	    provisionHandlers = null;
+	    downloadHandlers = null;
+	    processHandlers = null;
+	    recordHandlers = null;
+	    notifyHandlers = null;
 	}
     }
 

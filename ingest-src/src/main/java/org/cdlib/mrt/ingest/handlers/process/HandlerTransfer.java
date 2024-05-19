@@ -27,7 +27,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers;
+package org.cdlib.mrt.ingest.handlers.process;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -59,7 +59,8 @@ import java.util.NoSuchElementException;
 
 import javax.ws.rs.core.MediaType;
 
-
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
@@ -98,7 +99,7 @@ public class HandlerTransfer extends Handler<JobState>
     private Integer defaultStorage = null;
     private StoreNode storeNode = null;			// Worker
     private StoreNode originalStoreNode = null;		// Load balancer
-    private ZooKeeper zooKeeper;
+    private ZooKeeper zooKeeper = null;
     private String zooConnectString = null;
     private String zooLockNode = null;
     private DistributedLock distributedLock;
@@ -128,6 +129,7 @@ public class HandlerTransfer extends Handler<JobState>
 
 	zooConnectString = jobState.grabMisc();
 	zooLockNode = jobState.grabExtra();
+
 	boolean lock = getLock(jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
         HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
 

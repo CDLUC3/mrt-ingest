@@ -27,7 +27,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers;
+package org.cdlib.mrt.ingest.handlers.process;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -38,6 +38,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
@@ -87,7 +89,6 @@ public class HandlerMinter extends Handler<JobState>
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File metadataFile = new File(systemTargetDir, "mrt-ingest.txt");
             File momFile = new File(systemTargetDir, "mrt-mom.txt");
-            File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 	    boolean resetObject = true;	 // recheck this logic now that we have localIDs
 	    String returnValue = null;
 	    String assignedObjectID = null;

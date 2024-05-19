@@ -27,7 +27,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers;
+package org.cdlib.mrt.ingest.handlers.process;
 
 import java.nio.charset.Charset;
 
@@ -47,6 +47,8 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
@@ -102,7 +104,6 @@ public class HandlerCharacterize extends Handler<JobState>
 
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File metadataFile = new File(systemTargetDir, "mrt-jhove2.xml");
-            File mapFile = new File(systemTargetDir, "mrt-object-map.ttl");
 
 	    // iterate through all components
 	    String characterizeString = ""; 

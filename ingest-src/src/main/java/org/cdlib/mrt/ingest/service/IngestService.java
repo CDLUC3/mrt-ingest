@@ -75,11 +75,11 @@ public class IngestService
     }
 
     @Override
-    public BatchState submitPost (IngestRequest ingestRequest)
+    public BatchState submitPost (IngestRequest ingestRequest, String state)
         throws TException
     {
 	try {
-	    BatchState batchState = batchManager.submit(ingestRequest);
+	    BatchState batchState = batchManager.submit(ingestRequest, state);
 	    return batchState;
 	} catch (TException te) {
 	    te.printStackTrace();
@@ -122,6 +122,7 @@ public class IngestService
 	}
     }
 
+/*
     @Override
     public JobState submit (IngestRequest ingestRequest)
         throws TException
@@ -137,13 +138,14 @@ public class IngestService
 	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
 	}
     }
+*/
 
     @Override
     public IdentifierState requestIdentifier(IngestRequest ingestRequest)
         throws TException
     {
 	try {
-	    IdentifierState identifierState = ingestManager.requestIdentifier(ingestRequest);
+	    IdentifierState identifierState = processManager.requestIdentifier(ingestRequest);
 	    return identifierState;
 
 	} catch (TException te) {
@@ -155,6 +157,7 @@ public class IngestService
 	}
     }
 
+/*
     @Override
     public BatchState updatePost (IngestRequest ingestRequest)
         throws TException
@@ -170,12 +173,13 @@ public class IngestService
 	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
 	}
     }
+*/
 
     @Override
     public IngestServiceState getServiceState()
         throws TException
     {
-        return ingestManager.getServiceState();
+        return processManager.getServiceState();
     }
 
     @Override
@@ -232,7 +236,7 @@ public class IngestService
     public JobsState getStatus(String type)
         throws TException
     {
-        return ingestManager.getStatus(type);
+        return processManager.getStatus(type);
     }
 
     @Override
@@ -357,13 +361,13 @@ public class IngestService
     @Override
     public String getIngestServiceProp()
     {
-        return ingestManager.getIngestServiceProp();
+        return processManager.getIngestServiceProp();
     }
 
     @Override
     public JSONObject getIngestServiceConf()
     {
-        return ingestManager.getIngestServiceConf();
+        return processManager.getIngestServiceConf();
     }
 
     @Override

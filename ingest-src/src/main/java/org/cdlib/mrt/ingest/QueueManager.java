@@ -713,15 +713,14 @@ public class QueueManager {
 			Post post = new Post(batchState, ingestRequest, profileState);
 			Thread postThread = new Thread(post);
 			postThread.start();
-			// undocumented synchronous request
-			if (ingestRequest.getSynchronousMode()) {
-				try {
-					postThread.join();
-					if (DEBUG)
-						System.out.println("[debug] Synchronous mode");
-				} catch (InterruptedException ignore) {
-				}
-			}
+
+                                try {
+                                        postThread.join();
+                                        if (DEBUG)
+                                                System.out.println(NAME + "[debug] Synchronous mode processing");
+                                } catch (InterruptedException ignore) {
+                                }
+
 
 			return batchState;
 
@@ -1094,7 +1093,7 @@ public class QueueManager {
 				sortedMap = queueHandlers;
 				for (Object key : sortedMap.keySet()) {
 					String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
-System.out.println(" JOB MGR ============> " + handlerS);
+System.out.println(" JOB QUEUE MGR ============> " + handlerS);
 					Handler handler = (Handler) createObject(handlerS);
 					if (handler == null) {
 						throw new TException.INVALID_CONFIGURATION("[error] Could not find queue handler: " + handlerS);

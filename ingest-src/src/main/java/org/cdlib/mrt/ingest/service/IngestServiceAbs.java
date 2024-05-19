@@ -31,7 +31,7 @@ package org.cdlib.mrt.ingest.service;
 
 import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.AdminManager;
-import org.cdlib.mrt.ingest.IngestManager;
+//import org.cdlib.mrt.ingest.IngestManager;
 import org.cdlib.mrt.ingest.QueueManager;
 import org.cdlib.mrt.ingest.BatchManager;
 import org.cdlib.mrt.ingest.ProcessManager;
@@ -47,7 +47,6 @@ public class IngestServiceAbs
     protected static final String NAME = "IngestServiceAbs";
     protected static final String MESSAGE = NAME + ": ";
     protected LoggerInf logger = null;
-    protected IngestManager ingestManager = null;
     protected BatchManager batchManager = null;
     protected QueueManager queueManager = null;
     protected ProcessManager processManager = null;
@@ -94,11 +93,6 @@ public class IngestServiceAbs
                     MESSAGE + "Required Ingest Configuration data is missing");
         }
         this.logger = ingestConfig.getLogger();
-        this.ingestManager = IngestManager.getIngestManager(
-		ingestConfig.getLogger(),
-		ingestConfig.getStoreConf(),
-		ingestConfig.getIngestConf(),
-		ingestConfig.getQueueConf());
         this.batchManager = BatchManager.getBatchManager(
 		ingestConfig.getLogger(),
 		ingestConfig.getQueueConf(),

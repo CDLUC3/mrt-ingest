@@ -27,7 +27,10 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
-package org.cdlib.mrt.ingest.handlers.queue;
+package org.cdlib.mrt.ingest.handlers.batchProcess;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.io.File;
 import java.lang.Boolean;
@@ -39,6 +42,7 @@ import java.util.Properties;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
@@ -50,11 +54,15 @@ import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.utility.LoggerInf;
+import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
-import org.cdlib.mrt.zk.Job;
+import org.cdlib.mrt.zk.Batch;
+import org.cdlib.mrt.zk.QueueItemHelper;
+
 import org.json.JSONObject;
 
 
@@ -71,7 +79,7 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
-    public static int sessionTimeout = 40000;
+    ZooKeeper zooKeeper = null;
 
     /**
      * Submit batch manifest jobs to queing service
@@ -85,37 +93,29 @@ public class HandlerSubmit extends Handler<BatchState>
 	throws TException 
     {
 
-	//boolean isHighPriority = false;
-	//String priorityBoolean = "0";
-	String priority = null;
 	File file = null;
         FormatType formatType = null;
 	String status = null;
         Properties properties = new Properties();
         JSONObject jproperties = new JSONObject();
-        ZooKeeper zooKeeper = null;
+	Batch batch = null;
 
 	try {
+
+
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
-	    priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
-	    if (profileState.getPriority() != null) {
-		priority = profileState.getPriority();
-	    	System.out.println("[info] Overwriting calculated queue priority: " + priority);
-	    }
-	    System.out.println("[info] queue priority: " + priority);
-	    // isHighPriority = (Integer.parseInt(priority) <= Integer.parseInt(profileState.grabPriorityThreshold()));
-	    // if (isHighPriority) priorityBoolean = "1";
-	    // System.out.println("[info] Priority Job status: " + isHighPriority);
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), DistributedQueue.sessionTimeout, new Ignorer());
+            // DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean + getWorkerID(), null);	// default priority
 
 	    // common across all jobs in batch
 	    jproperties.put("batchID", batchState.getBatchID().getValue());
 	    jproperties.put("profile", ingestRequest.getProfile().getValue());
 	    jproperties.put("type", ingestRequest.getPackageType().getValue());
+	    jproperties.put("filename", batchState.getPackageName());
+	    jproperties.put("update", new Boolean (batchState.grabUpdateFlag()));
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().grabUserAgent()))
 	        jproperties.put("submitter", ingestRequest.getJob().grabUserAgent());
-	    jproperties.put("queuePriority", priority);
 	    // optional input parameters
 	    if (StringUtil.isNotEmpty(ingestRequest.getResponseForm()))
 	    	jproperties.put("responseForm", ingestRequest.getResponseForm());
@@ -132,9 +132,18 @@ public class HandlerSubmit extends Handler<BatchState>
 	    if (ingestRequest.getJob().grabAltNotification() != null)
 	        jproperties.put("notification", ingestRequest.getJob().grabAltNotification());
 
+	    if (ingestRequest.getJob().getHashAlgorithm() != null)
+                jproperties.put("digestType", ingestRequest.getJob().getHashAlgorithm());
+	    if (ingestRequest.getJob().getHashValue() != null)
+                jproperties.put("digestValue", ingestRequest.getJob().getHashValue());
+	    if (ingestRequest.getJob().getNote() != null)
+                jproperties.put("note", ingestRequest.getJob().getNote());
+
             // attachment: batch state with user defined formatting
             if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
+	    else formatType = FormatType.valueOf("xml");;	// default
+
 	    try {
 	        jproperties.put("notificationFormat", formatType.toString());
 	    } catch (Exception e) { }
@@ -173,90 +182,26 @@ public class HandlerSubmit extends Handler<BatchState>
 	    if (ingestRequest.getDCtype() != null)
 	        jproperties.put("DCtype", ingestRequest.getDCtype());
 
-	    // for all jobs in batch
-	    Map<String, JobState> jobStates = (HashMap) batchState.getJobStates();
-	    Iterator iterator = jobStates.keySet().iterator();
-	    while(iterator.hasNext()) {
-	        JobState jobState = (JobState) jobStates.get(iterator.next());
+	    jproperties.put("submissionDate", DateUtil.getCurrentDate());
 
-		jobState.setBatchID(batchState.getBatchID());
-		jproperties.put("jobID", jobState.getJobID().getValue());	// overwrite if exists
-		jproperties.put("filename", jobState.getPackageName());
-		try {
-		    jproperties.put("digestType", jobState.getHashAlgorithm());
-		} catch (Exception e) { properties.remove("digestType"); }
-		try {
-		    jproperties.put("digestValue", jobState.getHashValue());
-		} catch (Exception e) { properties.remove("digestValue"); }
-	        try {
-		    jproperties.put("objectID", jobState.getPrimaryID().getValue());
-		} catch (Exception e) { 
-		    if (ingestRequest.getJob().getPrimaryID() == null)  jproperties.remove("objectID"); 
-		}
-		try {
-		    jproperties.put("localID", jobState.getLocalID().getValue());
-		} catch (Exception e) { 
-		    if (ingestRequest.getJob().getLocalID() == null) jproperties.remove("localID");
-		}
-		try {
-		    jproperties.put("title", jobState.getObjectTitle());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectTitle())) jproperties.remove("title"); }
-		try {
-		    jproperties.put("creator", jobState.getObjectCreator());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectCreator())) jproperties.remove("creator"); }
-		try {
-		    jproperties.put("date", jobState.getObjectDate());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectDate())) jproperties.remove("date"); }
-		try {
-		    jproperties.put("note", jobState.getNote());
-		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getNote())) jproperties.remove("note"); }
-		try {
-		    if (jobState.getObjectType() != null) jproperties.put("type", jobState.getObjectType());
-		} catch (Exception e) { }
-		try {
-		    if (ingestRequest.getRetainTargetURL()) {
-			System.out.println("[info] " + MESSAGE + "Setting retainTargetURL to true");
-			jproperties.put("retainTargetURL", "true");
-		    }
-		} catch (Exception e) { }
-		try {
-	    	    jproperties.put("update", new Boolean (jobState.grabUpdateFlag()));
-		} catch (Exception e) {
-		    // default
-	    	    jproperties.put("update", new Boolean(false));
-		}
+	    // Create ZK batch
+	    initPaths();
+	    //JSONObject bid = new JSONObject();
+	    //bidInfo.put("BatchID", batchState.getBatchID().getValue());
+	    batch = Batch.createBatch(zooKeeper, jproperties);
+	    System.out.println("[INFO] Batch created: " + batch.id());
+	    System.out.println("[INFO] Batch data: " + batch.data());
 
-		int retryCount = 0;
-		while (true) {
-		    try {
-			// Create Job 
-			System.out.println("[info] queue submission: " + jproperties.toString());
-			Job job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
-			job.setPriority(zooKeeper, Integer.parseInt(priority));
-
-job.unlock(zooKeeper);
-
-			break;
-		    } catch (Exception e) {
-			if (retryCount >= 3) throw e;
-	    	        System.err.println("[error] " + MESSAGE + "Lost queue connection, requeuing: " + e.getMessage());
-                	retryCount++;
-		    }
-		}
-
-		jobState.setJobStatus(JobStatusEnum.PENDING);
-	    }
-
-	    // global
-	    ////System.out.println("[info] QueueHandlerSubmit: updating batch state.");
-	    //BatchState.putBatchState(batchState.getBatchID().getValue(), batchState);
-	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
-
+	    batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Completed, "Completed");
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (Exception e) {
 	    e.printStackTrace();
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();
 	    System.err.println(msg);
+	    try {
+	       batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, e.getMessage());
+	    } catch (Exception zke) {
+	    }
             return new HandlerResult(false, msg, 10);
 	} finally {
 	    try {
@@ -265,37 +210,30 @@ job.unlock(zooKeeper);
 	    }
 	}
     }
+
+    public void create(String s, Object data) throws KeeperException, InterruptedException {
+      create(Paths.get(s), data);
+    }
+
+    public void create(Path path, Object data) throws KeeperException, InterruptedException {
+      Path par = path.getParent();
+      if (!QueueItemHelper.exists(zooKeeper, par.toString())) {
+        create(par, null);
+      }
+try {
+      QueueItemHelper.create(zooKeeper, path.toString(), QueueItemHelper.serializeAsBytes(data));
+} catch (Exception e) {}
+    }
+
+    public void initPaths() throws KeeperException, InterruptedException {
+      create("/batches", null);
+      create("/jobs", null);
+      create("/jobs/states", null);
+    }
+
    
     public String getName() {
 	return NAME;
-    }
-
-    // very simple priority queue algorithm  (05 - 99)
-    private String calculatePriority(int batchSize) {
-	
-	Double a = new Double((Math.log(new Integer(batchSize).doubleValue()) * 10.0d) + 5);
-	if (a > 99.0d) a = 99.0d;
-	if (a < 0.0d) a = 0.0d;
-	String priority = String.format("%02d", a.intValue());
-	System.out.println("[info] Calculated queue priority: " + priority);
-	return priority;
-    }
-
-    private String getWorkerID() {
-
-	String workerID = "0";
-	
-	try {
-	    // Set in setenv.sh (e.g. ingest01-stg)
-	    String workerEnv = System.getenv("WORKERNAME");
-	    workerID = workerEnv.substring("ingest0".length(), "ingest0".length() + 1);
-	    System.out.println("[info] Setting Ingest worker: " + workerID);
-
-	} catch (Exception e ) {
-	    System.out.println("[info] Can not calculate Ingest worker.  Setting to '0'.");
-	}
-
-	return workerID;
     }
 
    public static class Ignorer implements Watcher {

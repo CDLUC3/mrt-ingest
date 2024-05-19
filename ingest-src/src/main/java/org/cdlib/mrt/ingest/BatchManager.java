@@ -670,9 +670,10 @@ public class BatchManager {
 		}
 	}
 
-	public BatchState submit(IngestRequest ingestRequest) throws Exception {
+	public BatchState submit(IngestRequest ingestRequest, String state) throws Exception {
 		ProfileState profileState = null;
 		try {
+
 			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
 
@@ -710,18 +711,18 @@ public class BatchManager {
 			ingestRequest.setLink(this.getServiceState().getAccessServiceURL().toString());
 
 			// The work of posting is done asynchronously to prevent UI timeout
-			Post post = new Post(batchState, ingestRequest, profileState);
+			Post post = new Post(batchState, ingestRequest, profileState, state);
 			Thread postThread = new Thread(post);
-			postThread.start();
-			// undocumented synchronous request
-			if (ingestRequest.getSynchronousMode()) {
-				try {
-					postThread.join();
-					if (DEBUG)
-						System.out.println("[debug] Synchronous mode");
-				} catch (InterruptedException ignore) {
-				}
-			}
+ 			postThread.start();
+                        // Async for initial posting of data only
+                        //if ( ! state.matches("Process")) {
+                                try {
+                                        postThread.join();
+                                        if (DEBUG)
+                                                System.out.println(NAME + "[debug] Synchronous mode processing: " + state);
+                                } catch (InterruptedException ignore) {
+                                }
+                        //}
 
 			return batchState;
 
@@ -1072,16 +1073,19 @@ public class BatchManager {
 		private BatchState batchState = null;
 		private IngestRequest ingestRequest = null;
 		private ProfileState profileState = null;
-		private TreeMap<Integer, HandlerState> batchHandlers = null;
+		//private TreeMap<Integer, HandlerState> batchHandlers = null;
+		private String state = null;
 		private boolean isError = false;
 
 		// Constructor
-		public Post(BatchState batchState, IngestRequest ingestRequest, ProfileState profileState) {
+		public Post(BatchState batchState, IngestRequest ingestRequest, ProfileState profileState, String state) {
 			try {
 				this.batchState = batchState;
 				this.ingestRequest = ingestRequest;
 				this.profileState = profileState;
-				this.batchHandlers = new TreeMap<Integer, HandlerState>(profileState.getBatchHandlers());
+				this.state = state;
+				//this.batchHandlers = new TreeMap<Integer, HandlerState>(profileState.getBatchHandlers());
+				//this.batchHandlers = new TreeMap<Integer, HandlerState>();
 			} catch (Exception e) {
 				e.printStackTrace(System.err);
 			}
@@ -1091,7 +1095,10 @@ public class BatchManager {
 			try {
 				// call appropriate handlers
 				SortedMap sortedMap = Collections.synchronizedSortedMap(new TreeMap()); // thread-safe
-				sortedMap = batchHandlers;
+	                        if (state.matches("Process")) sortedMap = profileState.getBatchProcessHandlers();
+                        	if (state.matches("Report")) sortedMap = profileState.getBatchReportHandlers();
+
+				//sortedMap = batchHandlers;
 				for (Object key : sortedMap.keySet()) {
 					String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
 System.out.println("BATCH MGR ============> " + handlerS);
@@ -1100,12 +1107,14 @@ System.out.println("BATCH MGR ============> " + handlerS);
 						throw new TException.INVALID_CONFIGURATION("[error] Could not find queue handler: " + handlerS);
 					}
 					StateInf stateClass = batchState;
+/*
 					if (isError && (!handler.getName().equals("HandlerNotification"))) {
 						System.out
 								.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 						continue;
 					}
 
+*/
 					HandlerResult handlerResult = null;
 					try {
 						handlerResult = handler.handle(profileState, ingestRequest, stateClass);
@@ -1119,7 +1128,6 @@ System.out.println("BATCH MGR ============> " + handlerS);
 						System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
 					if (handlerResult.getSuccess()) {
 						batchState.setBatchStatus(BatchStatusEnum.QUEUED);
-
 					} else {
 						batchState.setBatchStatus(BatchStatusEnum.FAILED);
 						batchState.setBatchStatusMessage(handlerResult.getDescription());
@@ -1128,15 +1136,14 @@ System.out.println("BATCH MGR ============> " + handlerS);
 				}
 
 				// ready for consumer to start processing
-				BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
-				System.out.println(
-						MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue());
+				//BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
+				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue());
 
 			} catch (Exception e) {
 				System.out.println(MESSAGE + "Exception detected while posting data to queue.");
 				e.printStackTrace(System.err);
 			} finally {
-				batchHandlers = null;
+				//batchHandlers = null;
 			}
 		}
 

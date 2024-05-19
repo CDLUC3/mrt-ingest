@@ -32,26 +32,26 @@ package org.cdlib.mrt.ingest.consumer;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
+import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
+import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.ZKKey;
+import org.cdlib.mrt.zk.MerrittJsonKey;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -65,18 +65,18 @@ import javax.servlet.http.*;
 import java.io.*;
 import java.lang.Long;
 import java.lang.IllegalArgumentException;
-import java.util.List;
 import java.util.Iterator;
+import java.util.Properties;
 
 /**
- * Consume Batch queue data and create Jobs 
+ * Consume process state queue data and submit to ingest service
  * - zookeeper is the defined queueing service
  * 
  */
-public class BatchConsumer extends HttpServlet
+public class ProcessConsumer extends HttpServlet
 {
 
-    private static final String NAME = "BatchConsumer";
+    private static final String NAME = "ProcessConsumer";
     private static final String MESSAGE = NAME + ": ";
     private volatile Thread consumerThread = null;
     private volatile Thread cleanupThread = null;
@@ -86,6 +86,7 @@ public class BatchConsumer extends HttpServlet
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 2;	// default interval (minutes)
+    public static int sessionTimeout = 40000;
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -139,7 +140,7 @@ public class BatchConsumer extends HttpServlet
 
 
 	try {
-	    numThreads = ingestService.getQueueServiceConf().getString("BatchNumThreads");
+	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
 		this.numThreads = new Integer(numThreads).intValue();
@@ -149,7 +150,7 @@ public class BatchConsumer extends HttpServlet
 	}
 
 	try {
-	    pollingInterval = ingestService.getQueueServiceConf().getString("BatchPollingInterval");
+	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
 		this.pollingInterval = new Integer(pollingInterval).intValue();
@@ -162,28 +163,19 @@ public class BatchConsumer extends HttpServlet
             // Start the Consumer thread
             if (consumerThread == null) {
 	    	System.out.println("[info] " + MESSAGE + "starting consumer daemon");
-		startBatchConsumerThread(servletConfig);
+		startProcessConsumerThread(servletConfig);
 	    }
         } catch (Exception e) {
 	    throw new ServletException("[error] " + MESSAGE + "could not start consumer daemon");
         }
 
-        try {
-            // Start the Queue cleanup thread
-            if (cleanupThread == null) {
-	    	//System.out.println("[info] " + MESSAGE + "starting Queue cleanup daemon");
-		//startCleanupThread(servletConfig);
-	    }
-        } catch (Exception e) {
-	    throw new ServletException("[error] " + MESSAGE + "could not queue cleanup daemon");
-        }
     }
 
 
     /**
      * Start consumer thread
      */
-    private synchronized void startBatchConsumerThread(ServletConfig servletConfig)
+    private synchronized void startProcessConsumerThread(ServletConfig servletConfig)
         throws Exception
     {
         try {
@@ -192,10 +184,10 @@ public class BatchConsumer extends HttpServlet
                 return;
             }
 
-            BatchConsumerDaemon consumerDaemon = new BatchConsumerDaemon(queueConnectionString, queueNode,
+            ProcessConsumerDaemon jobConsumerDaemon = new ProcessConsumerDaemon(queueConnectionString, queueNode,
 		servletConfig, pollingInterval, numThreads);
 
-            consumerThread =  new Thread(consumerDaemon);
+            consumerThread =  new Thread(jobConsumerDaemon);
             consumerThread.setDaemon(true);                // Kill thread when servlet dies
             consumerThread.start();
 
@@ -208,32 +200,6 @@ public class BatchConsumer extends HttpServlet
         }
     }
 
-    /**
-     * Start Queue cleanup thread
-     */
-    private synchronized void startCleanupThread(ServletConfig servletConfig)
-        throws Exception
-    {
-        try {
-            if (cleanupThread != null) {
-                System.out.println("[info] " + MESSAGE + "Queue cleanup daemon already started");
-                return;
-            }
-
-            BatchCleanupDaemon cleanupDaemon = new BatchCleanupDaemon(queueConnectionString, queueNode, servletConfig);
-
-            cleanupThread =  new Thread(cleanupDaemon);
-            cleanupThread.setDaemon(true);                // Kill thread when servlet dies
-            cleanupThread.start();
-
-	    System.out.println("[info] " + MESSAGE + "cleanup daemon started");
-
-            return;
-
-        } catch (Exception ex) {
-            throw new Exception(ex);
-        }
-    }
 
     public String getName() {
         return NAME;
@@ -250,10 +216,10 @@ public class BatchConsumer extends HttpServlet
 
 }
 
-class BatchConsumerDaemon implements Runnable
+class ProcessConsumerDaemon implements Runnable
 {
    
-    private static final String NAME = "BatchConsumerDaemon";
+    private static final String NAME = "ProcessConsumerDaemon";
     private static final String MESSAGE = NAME + ": ";
 
     private IngestServiceInit ingestServiceInit = null;
@@ -266,6 +232,7 @@ class BatchConsumerDaemon implements Runnable
     public static int sessionTimeout = 40000;
 
     private ZooKeeper zooKeeper = null;
+    private Job job = null;
 
     // session data
     private long sessionID;
@@ -273,7 +240,7 @@ class BatchConsumerDaemon implements Runnable
 
 
     // Constructor
-    public BatchConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+    public ProcessConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
@@ -286,7 +253,6 @@ class BatchConsumerDaemon implements Runnable
             ingestService = ingestServiceInit.getIngestService();
 	
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
 	}
@@ -296,12 +262,13 @@ class BatchConsumerDaemon implements Runnable
     {
         boolean init = true;
         String status = null;
-        ArrayBlockingQueue<BatchConsumeData> workQueue = new ArrayBlockingQueue<BatchConsumeData>(poolSize);
+        ArrayBlockingQueue<ProcessConsumeData> workQueue = new ArrayBlockingQueue<ProcessConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) 5, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
 	sessionAuth = zooKeeper.getSessionPasswd();
+        //Item item = null;
 
         try {
             long queueSize = workQueue.size();
@@ -318,19 +285,10 @@ class BatchConsumerDaemon implements Runnable
                 }
 
                 // Let's check to see if we are on hold
-/*
                 if (onHold()) {
-		    try {
-                        distributedQueue.peek();
-                        System.out.println(MESSAGE + "detected 'on hold' condition");
-		    } catch (ConnectionLossException cle) {
-			System.err.println("[warn] " + MESSAGE + "Queueing service is down.");
-			cle.printStackTrace(System.err);
-		    } catch (Exception e) {
-		    }
+                    System.out.println(MESSAGE + "detected 'on hold' condition");
                     continue;
                 }
-*/
 
                 // have we shutdown?
                 if (Thread.currentThread().isInterrupted()) {
@@ -342,33 +300,33 @@ class BatchConsumerDaemon implements Runnable
 		try {
 		    long numActiveTasks = 0;
 
-		    initPaths();
 		    // To prevent long shutdown, no more than poolsize tasks queued.
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    System.out.println(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    //String worker = getWorkerID();
+			    //item = distributedQueue.consume(worker, false);
+                            //executorService.execute(new ProcessConsumeData(ingestService, item, distributedQueue, queueConnectionString, queueNode));
 
-			    Batch batch = null;
-                            batch = Batch.acquirePendingBatch(zooKeeper);
-			    if ( batch != null) { 
-System.out.println(NAME + " =================> ACQUIRED PENDING batch state " + batch.status());
-			        // batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Processing));
-System.out.println(NAME + " =================> ACQUIRED PENDING batch status " + batch.status());
-			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
-                                executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString, queueNode));
-			    } else {
-				break;
-		     	    }
+			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+                            job = null;
+                            job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Processing);
+
+                            if ( job != null) {
+                                System.out.println(MESSAGE + "Found processing job data: " + job.id());
+                                executorService.execute(new ProcessConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
+                            } else {
+                                break;
+                            }
+
 
 			} else {
 			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
 			}
 		    }
-
 		} catch (RejectedExecutionException ree) {
-        	    //Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
+        	    Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
 		} catch (NoSuchElementException nsee) {
 		    // no data in queue
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
@@ -423,25 +381,6 @@ System.out.println(NAME + " =================> ACQUIRED PENDING batch status " +
         return false;
     }
 
-    public void create(String s, Object data) throws KeeperException, InterruptedException {
-      create(Paths.get(s), data);
-    }
-
-    public void create(Path path, Object data) throws KeeperException, InterruptedException {
-      Path par = path.getParent();
-      if (!QueueItemHelper.exists(zooKeeper, par.toString())) {
-        create(par, null);
-      }
-try {
-      QueueItemHelper.create(zooKeeper, path.toString(), QueueItemHelper.serializeAsBytes(data));
-} catch (Exception e) {}
-    }
-
-    public void initPaths() throws KeeperException, InterruptedException {
-      create("/batches", null);
-      create("/batch-uuids", null);
-    }
-
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
@@ -452,10 +391,10 @@ try {
 }
 
 
-class BatchConsumeData implements Runnable
+class ProcessConsumeData implements Runnable
 {
    
-    private static final String NAME = "BatchConsumeData";
+    private static final String NAME = "ProcessConsumeData";
     private static final String MESSAGE = NAME + ":";
     private static final boolean DEBUG = true;
     protected static final String FS = System.getProperty("file.separator");
@@ -463,16 +402,17 @@ class BatchConsumeData implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private ZooKeeper zooKeeper = null;
+    public static int sessionTimeout = 40000;
 
+    private Job job = null;
     private IngestServiceInf ingestService = null;
-    private BatchState batchState = null;
-    private Batch batch = null;
+    private JobState jobState = null;
 
     // Constructor
-    public BatchConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
+    public ProcessConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
     {
-	this.zooKeeper = zooKeeper;
-	this.batch = batch;
+        this.zooKeeper = zooKeeper;
+	this.job = job;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
@@ -483,14 +423,26 @@ class BatchConsumeData implements Runnable
     {
         try {
 
-	    // UTF-8 ??
-	    JSONObject jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
-            if (DEBUG) System.out.println("[info] START: consuming batch queue " + batch.id() + " - " + jp.toString());
+            JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
 
             // Check if collection level hold
-            //if (onHold(JSONUtil.getValue(jp,"profile"))) {
-		// Need this hold anymore??
-            //} else {
+            if (onHold(JSONUtil.getValue(jp,"profile"))) {
+                //try {
+                    //zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                    //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
+	            //distributedQueue.holdConsumed(item.getId());
+                    //System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
+                //} catch (ConnectionLossException cle) {
+                    //System.err.println("[error] " + MESSAGE + "Queueing service is down.");
+                    //cle.printStackTrace(System.err);
+                //} catch (Exception e) {
+                    //System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
+                    //e.printStackTrace(System.err);
+                //} finally {
+		    //zooKeeper.close();
+		//}
+            } else {
 
 	    IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
 			    JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
@@ -500,6 +452,7 @@ class BatchConsumeData implements Runnable
 			    JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
 			    // jp.getString("retainTargetURL"), jp.getString("targetURL"));
 	    ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
+	    ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
 	    ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
 	    try {
 	       if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
@@ -512,7 +465,7 @@ class BatchConsumeData implements Runnable
 
 	    try {
 	        ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
-	    } catch (Exception e) { e.printStackTrace(); } 	// assigned with null value
+	    } catch (Exception e) { } 	// assigned with null value
 	    try {
 	        ingestRequest.setDataCiteResourceType(JSONUtil.getValue(jp,"DataCiteResourceType"));
 	    } catch (Exception e) {}
@@ -557,42 +510,63 @@ class BatchConsumeData implements Runnable
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
-			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue()));
-	    //ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
-			//"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
-		        //ingestRequest.getJob().getJobID().getValue()));
-            //new File(ingestRequest.getQueuePath(), "system").mkdir();
-            //new File(ingestRequest.getQueuePath(), "producer").mkdir();
+			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
+		        ingestRequest.getJob().getJobID().getValue()));
+            new File(ingestRequest.getQueuePath(), "system").mkdir();
+            new File(ingestRequest.getQueuePath(), "producer").mkdir();
 
 	    //BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
-	    ingestRequest.setBatch(batch);
-	    batchState = ingestService.submitBatch(ingestRequest);
+	    String process = "Process";
+	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-            //batch.setStatus(zooKeeper, batch.status().success());
-                                batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Reporting));
-	    System.out.println(NAME + " =================> Change batch state to: " + batch.status().name());
-	    batch.unlock(zooKeeper);
+// Extract specific data and call ZK update
+//- creator
+//- title
+//- date
+//- objectID
+//- localID
 
+            //job.setStatus(zooKeeper, job.status().success(), jobState.getJobStatusMessage());
+	    //job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Recording));
+            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
+            System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 
-
-//=========== CHange state to Success here???  
-//Little is known other than BID
-
-/*
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + jp.toString());
-	    	distributedQueue.complete(item.getId());
+                if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString());
+	        //job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Completed, jobState.getJobStatusMessage());
+	        job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		System.out.println("[item]: FAILED queue data:" + item.getId());
-		System.out.println("Consume Daemon - job message: " + jobState.getJobStatusMessage());
-	    	distributedQueue.fail(item.getId());
-	    } else {
-		System.out.println("Consume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
-	    }
-*/
-	//}	// end of else
+		System.out.println("[item]: ProcessConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
 
+
+		//Batch b = new Batch(job.bid());
+		//b.load(zooKeeper);
+		//b.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Processing, jobState.getJobStatusMessage());
+	    } else {
+		System.out.println("ProcessConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
+	    }
+	}	// end of else
+
+        } catch (SessionExpiredException see) {
+            see.printStackTrace(System.err);
+            System.err.println("[warn] ProcessConsumeData" + MESSAGE + "Session expired.  Attempting to recreate session.");
+	    try {
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+	    } catch (Exception e) {
+                e.printStackTrace(System.err);
+                System.out.println("[error] Consuming queue data: Could not recreate session.");
+	    }
+        } catch (ConnectionLossException cle) {
+            cle.printStackTrace(System.err);
+            System.err.println("[warn] ProcessConsumeData" + MESSAGE + "Connection loss.  Attempting to reconnect.");
+	    try {
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+	    } catch (Exception e) {
+                e.printStackTrace(System.err);
+                System.out.println("[error] Consuming queue data: Could not reconnect.");
+	    }
         } catch (Exception e) {
             e.printStackTrace(System.err);
             System.out.println("[error] Consuming queue data");
@@ -626,118 +600,3 @@ class BatchConsumeData implements Runnable
    }
 }
 
-
-class BatchCleanupDaemon implements Runnable
-{
-
-    private static final String NAME = "BatchCleanupDaemon";
-    private static final String MESSAGE = NAME + ": ";
-
-    private String queueConnectionString = null;
-    private String queueNode = null;
-    private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 40000;
-
-    private ZooKeeper zooKeeper = null;
-
-    // session data
-    private long sessionID;
-    private byte[] sessionAuth;
-
-
-    // Constructor
-    public BatchCleanupDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig)
-    {
-        this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
-
-        try {
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-        }
-    }
-
-    public void run()
-    {
-        boolean init = true;
-        String status = null;
-
-        sessionID = zooKeeper.getSessionId();
-        System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-        sessionAuth = zooKeeper.getSessionPasswd();
-
-        try {
-            while (true) {      // Until service is shutdown
-
-                // Wait for next interval.
-                if (! init) {
-                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
-                    Thread.yield();
-                    Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
-                } else {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
-                    init = false;
-                }
-
-                // have we shutdown?
-                if (Thread.currentThread().isInterrupted()) {
-                    System.out.println(MESSAGE + "interruption detected.");
-                    throw new InterruptedException();
-                }
-
-                // Perform some work
-                try {
-                    long numActiveTasks = 0;
-
-                    // To prevent long shutdown, no more than poolsize tasks queued.
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
-			try {
-			    //distributedQueue.cleanup(Item.COMPLETED);
-			} catch (NoSuchElementException nsee) {
-			    // No more data
-			} 
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
-			// Will throw NoSuchElementException to break tight loop
-			//distributedQueue.cleanup(Item.DELETED);
-
-                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
-                    }
-
-                } catch (RejectedExecutionException ree) {
-                    System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
-                } catch (NoSuchElementException nsee) {
-                    // no data in queue
-                    System.out.println("[info] " + MESSAGE + "No data in queue to clean");
-                } catch (IllegalArgumentException iae) {
-                    // no queue exists
-                    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
-                } catch (Exception e) {
-                    System.err.println("[warn] " + MESSAGE + "General exception.");
-                    e.printStackTrace();
-                }
-            }
-        } catch (InterruptedException ie) {
-            try {
-                // zooKeeper.close();
-            } catch (Exception e) {
-                e.printStackTrace(System.err);
-            }
-        } catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");
-            e.printStackTrace(System.err);
-        } finally {
-	    sessionAuth = null;
-        }
-    }
-
-   public class Ignorer implements Watcher {
-       public void process(WatchedEvent event){
-           if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
-       }
-   }
-
-}
