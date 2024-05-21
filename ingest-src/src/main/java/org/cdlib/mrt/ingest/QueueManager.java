@@ -1094,6 +1094,7 @@ public class QueueManager {
 				for (Object key : sortedMap.keySet()) {
 					String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
 System.out.println(" JOB QUEUE MGR ============> " + handlerS);
+System.out.println("------------------------> " + ingestRequest.getPackageType());
 					Handler handler = (Handler) createObject(handlerS);
 					if (handler == null) {
 						throw new TException.INVALID_CONFIGURATION("[error] Could not find queue handler: " + handlerS);

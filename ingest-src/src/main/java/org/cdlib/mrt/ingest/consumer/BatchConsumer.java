@@ -352,8 +352,6 @@ class BatchConsumerDaemon implements Runnable
 			    Batch batch = null;
                             batch = Batch.acquirePendingBatch(zooKeeper);
 			    if ( batch != null) { 
-System.out.println(NAME + " =================> ACQUIRED PENDING batch state " + batch.status());
-			        // batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Processing));
 System.out.println(NAME + " =================> ACQUIRED PENDING batch status " + batch.status());
 			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
                                 executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString, queueNode));

@@ -477,7 +477,8 @@ System.out.println("PROCESS MGR (" + state + ")  ============> " + handlerS);
 					throw new TException.INVALID_CONFIGURATION("[error] Could not find handler: " + handlerS);
 				}
 				StateInf stateClass = jobState;
-				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerNotification.class) && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerCallback.class)) {
+				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerNotification.class) 
+					    && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerCallback.class)) {
 					System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 					continue;
 				}
@@ -521,21 +522,14 @@ System.out.println("PROCESS MGR (" + state + ")  ============> " + handlerS);
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue.class) {
-					//if ( ! reQueue && (!batchState.getBatchID().getValue().equalsIgnoreCase(ProfileUtil.DEFAULT_BATCH_ID))
-							//&& (batchState.grabTargetQueue() != null)) {
 
-jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
-	+ jobState.grabTargetStorage().getNodeID() + "/"
-	+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
+System.out.println(jobState.getPrimaryID());
+					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
+						+ jobState.grabTargetStorage().getNodeID() + "/"
+						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
 System.out.println("-----------------> JOB OBJECT STATE: " + jobState.grabObjectState());
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(queueConf.getString("InventoryName"));
-					//} else {
-						// not a batch or in recovery mode or requeued job
-						//System.out.println("[info]" + MESSAGE + "Job only detected, grab SSM queue parms: QueueService|InventoryName");
-						//jobState.setMisc(queueConf.getString("QueueService"));
-						//jobState.setExtra(queueConf.getString("InventoryName"));
-					//}
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {

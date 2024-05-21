@@ -518,10 +518,6 @@ class DownloadConsumeData implements Runnable
 	    String process = "Download";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-            job.setStatus(zooKeeper, job.status().success());
-            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
-            System.out.println("-----> unlock status " + job.unlock(zooKeeper));
-
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: DownloadConsume Daemon - COMPLETED job message:" + jp.toString());
                 job.setStatus(zooKeeper, job.status().success(), "Success");
@@ -531,6 +527,8 @@ class DownloadConsumeData implements Runnable
 	    } else {
 		System.out.println("DownloadConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
+            job.unlock(zooKeeper);
+            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
 	}	// end of else
 
         } catch (SessionExpiredException see) {

@@ -141,9 +141,16 @@ public class HandlerNotification extends Handler<BatchState>
 	    // Completed Jobs
 	    jobs = batch.getCompletedJobs(zooKeeper);
 	    JSONArray jac = new JSONArray();
+   	    JSONObject jctemp = new JSONObject();
 	    for (Job jobCompleted: jobs) {
    	        jobCompleted.load(zooKeeper);
-   	        jac.put(jobCompleted.data());
+   	        jctemp = jobCompleted.data();
+
+		// Add ids
+ 		jctemp.put("primaryId", jobCompleted.primaryId());
+ 		if (jobCompleted.localId() != null) jctemp.put("localId", jobCompleted.localId());
+
+   	        jac.put(jctemp);
 	    }
 	    System.out.println("JOBS COMPLETED -----------------------");
 	    JSONObject jcomplete = new JSONObject();
@@ -157,8 +164,13 @@ public class HandlerNotification extends Handler<BatchState>
 	    for (Job jobFailed: jobs) {
    	        jobFailed.load(zooKeeper);
    	        jftemp = jobFailed.data();
- 		jftemp.put("Status", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Status.key()));
- 		jftemp.put("Message", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Message.key()));
+		// Add error status
+ 		jftemp.put("status", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Status.key()));
+ 		jftemp.put("message", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Message.key()));
+
+		// Add ids
+ 		jftemp.put("primaryId", jobFailed.primaryId());
+ 		if (jobFailed.localId() != null) jftemp.put("localId", jobFailed.localId());
    	        jaf.put(jftemp);
 	    }
 	    System.out.println("JOBS FAILED -----------------------");

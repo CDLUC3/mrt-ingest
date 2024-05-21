@@ -511,9 +511,6 @@ class ProvisionConsumeData implements Runnable
 	    String process = "Provision";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-            job.setStatus(zooKeeper, job.status().success());
-            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
-            System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProvisionConsume Daemon - COMPLETED job message:" + jp.toString());
@@ -524,6 +521,9 @@ class ProvisionConsumeData implements Runnable
 	    } else {
 		System.out.println("ProvisionConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
+            job.unlock(zooKeeper);
+
+            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
 	}	// end of else
 
         } catch (SessionExpiredException see) {

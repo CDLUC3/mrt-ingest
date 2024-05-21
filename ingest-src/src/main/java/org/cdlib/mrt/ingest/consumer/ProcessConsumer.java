@@ -507,6 +507,11 @@ class ProcessConsumeData implements Runnable
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+
+	    // Populate Ids
+	    if (job.localId() != null) ingestRequest.getJob().setLocalID(job.localId());
+	    if (job.primaryId() != null) ingestRequest.getJob().setPrimaryID(job.primaryId());
+
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
@@ -520,15 +525,17 @@ class ProcessConsumeData implements Runnable
 	    String process = "Process";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+	    // Populate IDs if necessary
+	    JSONObject ids = new JSONObject();
+	    if (jobState.getPrimaryID() != null) ids.put(MerrittJsonKey.PrimaryId.key(), jobState.getPrimaryID());
+	    if (jobState.getLocalID() != null) ids.put(MerrittJsonKey.LocalId.key(), jobState.getLocalID());
+	    job.setIdentifiers(zooKeeper, ids);
 // Extract specific data and call ZK update
 //- creator
 //- title
 //- date
 //- objectID
 //- localID
-
-            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
-            System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString());
@@ -539,6 +546,8 @@ class ProcessConsumeData implements Runnable
 	    } else {
 		System.out.println("ProcessConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
+            job.unlock(zooKeeper);
+            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
 	}	// end of else
 
         } catch (SessionExpiredException see) {

@@ -132,8 +132,10 @@ public class HandlerSubmit extends Handler<BatchState>
 	    if (ingestRequest.getJob().grabAltNotification() != null)
 	        jproperties.put("notification", ingestRequest.getJob().grabAltNotification());
 
-	    if (ingestRequest.getJob().getHashAlgorithm() != null)
-                jproperties.put("digestType", ingestRequest.getJob().getHashAlgorithm());
+	    try {
+	        if (ingestRequest.getJob().getHashAlgorithm() != null)
+                   jproperties.put("digestType", ingestRequest.getJob().getHashAlgorithm());
+	    } catch (Exception e) {}
 	    if (ingestRequest.getJob().getHashValue() != null)
                 jproperties.put("digestValue", ingestRequest.getJob().getHashValue());
 	    if (ingestRequest.getJob().getNote() != null)
