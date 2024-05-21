@@ -718,8 +718,7 @@ public class BatchManager {
                         //if ( ! state.matches("Process")) {
                                 try {
                                         postThread.join();
-                                        if (DEBUG)
-                                                System.out.println(NAME + "[debug] Synchronous mode processing: " + state);
+                                        if (DEBUG) System.out.println(NAME + "[debug] Synchronous mode processing: " + state);
                                 } catch (InterruptedException ignore) {
                                 }
                         //}

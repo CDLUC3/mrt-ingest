@@ -512,15 +512,15 @@ class ProvisionConsumeData implements Runnable
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
             job.setStatus(zooKeeper, job.status().success());
-	    //job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Downloading));
             System.out.println(NAME + " =================> Change job state to: " + job.status().name());
             System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + jp.toString());
+                if (DEBUG) System.out.println("[item]: ProvisionConsume Daemon - COMPLETED job message:" + jp.toString());
+                job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		//System.out.println("[item]: FAILED queue data:" + item.getId());
-		System.out.println("ProvisionConsume Daemon - job message: " + jobState.getJobStatusMessage());
+                System.out.println("[item]: ProvisionConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
 	    } else {
 		System.out.println("ProvisionConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

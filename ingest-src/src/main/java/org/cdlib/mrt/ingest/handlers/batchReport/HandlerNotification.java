@@ -145,18 +145,26 @@ public class HandlerNotification extends Handler<BatchState>
    	        jobCompleted.load(zooKeeper);
    	        jac.put(jobCompleted.data());
 	    }
-System.out.println("JOBS COMPLETED -----------------------");
-System.out.println(jac);
+	    System.out.println("JOBS COMPLETED -----------------------");
+	    JSONObject jcomplete = new JSONObject();
+	    jcomplete.put("completedJobs", jac);
+	    System.out.println(jcomplete);
 
 	    // Failed Jobs
 	    jobs = batch.getFailedJobs(zooKeeper);
 	    JSONArray jaf = new JSONArray();
+   	    JSONObject jftemp = new JSONObject();
 	    for (Job jobFailed: jobs) {
    	        jobFailed.load(zooKeeper);
-   	        jaf.put(jobFailed.data());
+   	        jftemp = jobFailed.data();
+ 		jftemp.put("Status", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Status.key()));
+ 		jftemp.put("Message", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Message.key()));
+   	        jaf.put(jftemp);
 	    }
-System.out.println("JOBS FAILED -----------------------");
-System.out.println(jaf);
+	    System.out.println("JOBS FAILED -----------------------");
+	    JSONObject jfail = new JSONObject();
+	    jfail.put("failedJobs", jaf);
+	    System.out.println(jfail);
 
 	    batch.loadProperties(zooKeeper);
   	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled
@@ -241,12 +249,10 @@ System.out.println("BATCH STATUS ----------> " + batchState.getBatchStatus());
 		    }
 		}
 
-		if (jaf != null) 
-		    email.attach(new ByteArrayDataSource(jaf.toString(), "application/json; header=present"), "failed.json", "Error report for " + batchID, EmailAttachment.ATTACHMENT);
-		    // email.attach(new ByteArrayDataSource(jaf.toString(), "failed.json", "Error report for " + batchID, EmailAttachment.ATTACHMENT);
-		if (jac  != null) 
-		    email.attach(new ByteArrayDataSource(jac.toString(), "application/json; header=present"), "completed.json", "Completion report for " + batchID, EmailAttachment.ATTACHMENT);
-		    //email.attach(jac.toString(), "completed.json", "Completion report for " + batchID, EmailAttachment.ATTACHMENT);
+		if ( ! jaf.isEmpty()) 
+		    email.attach(new ByteArrayDataSource(jfail.toString(), "application/json; header=present"), "failed.json", "Error report for " + batchID, EmailAttachment.ATTACHMENT);
+		if ( ! jac.isEmpty()) 
+		    email.attach(new ByteArrayDataSource(jcomplete.toString(), "application/json; header=present"), "completed.json", "Completion report for " + batchID, EmailAttachment.ATTACHMENT);
 
 /*
 		if (csv) {

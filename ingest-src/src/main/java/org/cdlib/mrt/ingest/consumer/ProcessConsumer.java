@@ -527,23 +527,15 @@ class ProcessConsumeData implements Runnable
 //- objectID
 //- localID
 
-            //job.setStatus(zooKeeper, job.status().success(), jobState.getJobStatusMessage());
-	    //job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Recording));
             System.out.println(NAME + " =================> Change job state to: " + job.status().name());
             System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString());
-	        //job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Completed, jobState.getJobStatusMessage());
 	        job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
 		System.out.println("[item]: ProcessConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
-
-
-		//Batch b = new Batch(job.bid());
-		//b.load(zooKeeper);
-		//b.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Processing, jobState.getJobStatusMessage());
 	    } else {
 		System.out.println("ProcessConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

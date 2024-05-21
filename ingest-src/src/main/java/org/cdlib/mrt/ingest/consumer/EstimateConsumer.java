@@ -552,25 +552,15 @@ class EstimateConsumeData implements Runnable
             System.out.println(NAME + " --------------- ABOUT TO SUBMIT JOB: " + job.status().name());
 	    String process = "Estimate";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
-	    if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-                if (DEBUG) System.out.println(NAME + "[ERROR] Job status failed. Changing state to FAILED.");
-		job.setStatus(zooKeeper, job.status().fail());
-	    } else {
-                System.out.println(NAME + " =================> Changing job state from: " + job.status().name());
-	        //job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Provisioning));
-                job.setStatus(zooKeeper, job.status().success());
-	    }
-	    //job.setStatus(zooKeeper, job.status().success());
+
             System.out.println(NAME + " =================> Current job state to: " + job.status().name());
 	    System.out.println("-----> unlock status " + job.unlock(zooKeeper));
-
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + jp.toString());
-	    	//distributedQueue.complete(item.getId());
+                if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString());
+                job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		//System.out.println("[item]: FAILED queue data:" + item.getId());
-		System.out.println("EstimateConsume Daemon - job message: " + jobState.getJobStatusMessage());
-	    	//distributedQueue.fail(item.getId());
+                System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
 	    } else {
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

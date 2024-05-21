@@ -556,10 +556,13 @@ System.out.println("-----------------> JOB OBJECT STATE: " + jobState.grabObject
 				// Abort if failure
 				if (DEBUG) System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
 				if (handlerResult.getSuccess()) {
-					if (!isError) {
-					   jobState.setJobStatus(JobStatusEnum.COMPLETED);
-					}
+					if (DEBUG) System.out.println("[debug] " + handler.getName() + " Success: " + handlerResult.getSuccess());
+					//if (!isError) {
+					jobState.setJobStatus(JobStatusEnum.COMPLETED);
+					jobState.setJobStatusMessage(handlerResult.getDescription());
+					//}
 				} else {
+					if (DEBUG) System.out.println("[debug] " + handler.getName() + " Failure: " + handlerResult.getSuccess());
 					// do not abort, but skip all further processing and note exception
 					jobState.setJobStatus(JobStatusEnum.FAILED);
 					jobState.setJobStatusMessage(handlerResult.getDescription());
