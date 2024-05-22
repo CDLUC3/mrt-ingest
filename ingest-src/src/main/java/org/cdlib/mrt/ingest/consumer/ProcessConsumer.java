@@ -525,11 +525,19 @@ class ProcessConsumeData implements Runnable
 	    String process = "Process";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+
+	    // Populate metadata if necessary
+	    JSONObject meta = new JSONObject();
+	    if (job.ercWhat().isEmpty()) meta.put(MerrittJsonKey.ErcWhat.key(), jobState.getObjectTitle());
+	    if (job.ercWho().isEmpty()) meta.put(MerrittJsonKey.ErcWho.key(), jobState.getObjectCreator());
+	    if (job.ercWhen().isEmpty()) meta.put(MerrittJsonKey.ErcWhen.key(), jobState.getObjectDate());
+	    if ( ! meta.isEmpty()) job.setMetadata(zooKeeper, meta);
+
 	    // Populate IDs if necessary
 	    JSONObject ids = new JSONObject();
 	    if (jobState.getPrimaryID() != null) ids.put(MerrittJsonKey.PrimaryId.key(), jobState.getPrimaryID());
 	    if (jobState.getLocalID() != null) ids.put(MerrittJsonKey.LocalId.key(), jobState.getLocalID());
-	    job.setIdentifiers(zooKeeper, ids);
+	    if (! ids.isEmpty()) job.setIdentifiers(zooKeeper, ids);
 // Extract specific data and call ZK update
 //- creator
 //- title

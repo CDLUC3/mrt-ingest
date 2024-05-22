@@ -146,6 +146,11 @@ public class HandlerNotification extends Handler<BatchState>
    	        jobCompleted.load(zooKeeper);
    	        jctemp = jobCompleted.data();
 
+		// Add meta
+ 		if (! jobCompleted.ercWhat().isEmpty()) jctemp.put("title", jobCompleted.ercWhat());
+ 		if (! jobCompleted.ercWho().isEmpty()) jctemp.put("creator", jobCompleted.ercWho());
+ 		if (! jobCompleted.ercWhen().isEmpty()) jctemp.put("date", jobCompleted.ercWhen());
+
 		// Add ids
  		jctemp.put("primaryId", jobCompleted.primaryId());
  		if (jobCompleted.localId() != null) jctemp.put("localId", jobCompleted.localId());
@@ -167,6 +172,11 @@ public class HandlerNotification extends Handler<BatchState>
 		// Add error status
  		jftemp.put("status", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Status.key()));
  		jftemp.put("message", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Message.key()));
+
+		// Add meta
+ 		if (! jobFailed.ercWhat().isEmpty()) jctemp.put("title", jobFailed.ercWhat());
+ 		if (! jobFailed.ercWho().isEmpty()) jctemp.put("creator", jobFailed.ercWho());
+ 		if (! jobFailed.ercWhen().isEmpty()) jctemp.put("date", jobFailed.ercWhen());
 
 		// Add ids
  		jftemp.put("primaryId", jobFailed.primaryId());
