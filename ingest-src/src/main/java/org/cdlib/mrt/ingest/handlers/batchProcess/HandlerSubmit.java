@@ -112,6 +112,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    jproperties.put("batchID", batchState.getBatchID().getValue());
 	    jproperties.put("profile", ingestRequest.getProfile().getValue());
 	    jproperties.put("type", ingestRequest.getPackageType().getValue());
+	    jproperties.put("size", ingestRequest.getPackageSize());
 	    jproperties.put("filename", batchState.getPackageName());
 	    jproperties.put("update", new Boolean (batchState.grabUpdateFlag()));
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().grabUserAgent()))

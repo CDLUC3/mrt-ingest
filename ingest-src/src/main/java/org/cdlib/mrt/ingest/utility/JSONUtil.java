@@ -45,6 +45,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.mail.MultiPartEmail;
 
+import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -135,6 +136,76 @@ public class JSONUtil
 	}
 
 	return jobStateString;
+    }
+
+    public static IngestRequest populateIngestRequest(JSONObject jp) {
+
+        IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
+		JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
+		JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
+		JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
+		JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
+		JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
+
+	ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
+	try {
+	   ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
+	} catch (Exception e) { System.out.println("Error setting JOB ID for Ingest Request"); }
+	try {
+	   ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
+	} catch (Exception e) { System.out.println("Error setting BATCH ID for Ingest Request"); }
+	Boolean update = new Boolean(jp.getBoolean("update"));
+	ingestRequest.getJob().setUpdateFlag(update.booleanValue());
+	ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+	try {
+	   ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
+	} catch (Exception e) { }
+	try {
+	   ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
+	} catch (Exception e) { }
+	try {
+	   if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
+	      if (JSONUtil.getValue(jp,"retainTargetURL").equalsIgnoreCase("true")) 
+	         ingestRequest.setRetainTargetURL(true);
+	      else 
+	         ingestRequest.setRetainTargetURL(false);
+	   }
+	} catch (Exception e) { }
+
+
+	// process Dublin Core (optional)
+	if (! jp.isNull("DCcontributor"))
+	   ingestRequest.getJob().setDCcontributor(jp.getString("DCcontributor"));
+	if (! jp.isNull("DCcoverage"))
+	   ingestRequest.getJob().setDCcoverage(jp.getString("DCcoverage"));
+	if (! jp.isNull("DCcreator"))
+	   ingestRequest.getJob().setDCcreator(jp.getString("DCcreator"));
+	if (! jp.isNull("DCdate"))
+	   ingestRequest.getJob().setDCdate(jp.getString("DCdate"));
+	if (! jp.isNull("DCdescription"))
+	   ingestRequest.getJob().setDCdescription(jp.getString("DCdescription"));
+	if (! jp.isNull("DCformat"))
+	   ingestRequest.getJob().setDCformat(jp.getString("DCformat"));
+	if (! jp.isNull("DCidentifier"))
+	   ingestRequest.getJob().setDCidentifier(jp.getString("DCidentifier"));
+	if (! jp.isNull("DClanguage"))
+	   ingestRequest.getJob().setDClanguage(jp.getString("DClanguage"));
+	if (! jp.isNull("DCpublisher"))
+	   ingestRequest.getJob().setDCpublisher(jp.getString("DCpublisher"));
+	if (! jp.isNull("DCrelation"))
+	   ingestRequest.getJob().setDCrelation(jp.getString("DCrelation"));
+	if (! jp.isNull("DCrights"))
+	   ingestRequest.getJob().setDCrights(jp.getString("DCrights"));
+	if (! jp.isNull("DCsource"))
+	   ingestRequest.getJob().setDCsource(jp.getString("DCsource"));
+	if (! jp.isNull("DCsubject"))
+	   ingestRequest.getJob().setDCsubject(jp.getString("DCsubject"));
+	if (! jp.isNull("DCtitle"))
+	   ingestRequest.getJob().setDCtitle(jp.getString("DCtitle"));
+	if (! jp.isNull("DCtype"))
+	   ingestRequest.getJob().setDCtype(jp.getString("DCtype"));
+
+        return ingestRequest;
     }
 
 }

@@ -444,73 +444,14 @@ class ProcessConsumeData implements Runnable
 		//}
             } else {
 
-	    IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
-			    JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
-			    JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
-			    JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
-			    JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
-			    JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
-			    // jp.getString("retainTargetURL"), jp.getString("targetURL"));
-	    ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
-	    ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
-	    ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
-	    try {
-	       if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
-	          if (JSONUtil.getValue(jp,"retainTargetURL").equalsIgnoreCase("true")) {
-		     System.out.println("[info] Setting retainTargetURL to " + JSONUtil.getValue(jp,"retainTargetURL"));
-		     ingestRequest.setRetainTargetURL(true);
-		  }
-	       }
-	    } catch (Exception e) { } 	// assigned with null value
-
-	    try {
-	        ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
-	    } catch (Exception e) { } 	// assigned with null value
-	    try {
-	        ingestRequest.setDataCiteResourceType(JSONUtil.getValue(jp,"DataCiteResourceType"));
-	    } catch (Exception e) {}
-	    try {
-	        ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
-	    } catch (Exception e) {}
-
-            // process Dublin Core (optional)
-            if (! jp.isNull("DCcontributor"))
-                ingestRequest.getJob().setDCcontributor(jp.getString("DCcontributor"));
-            if (! jp.isNull("DCcoverage"))
-                ingestRequest.getJob().setDCcoverage(jp.getString("DCcoverage"));
-            if (! jp.isNull("DCcreator"))
-                ingestRequest.getJob().setDCcreator(jp.getString("DCcreator"));
-            if (! jp.isNull("DCdate"))
-                ingestRequest.getJob().setDCdate(jp.getString("DCdate"));
-            if (! jp.isNull("DCdescription"))
-                ingestRequest.getJob().setDCdescription(jp.getString("DCdescription"));
-            if (! jp.isNull("DCformat"))
-                ingestRequest.getJob().setDCformat(jp.getString("DCformat"));
-            if (! jp.isNull("DCidentifier"))
-                ingestRequest.getJob().setDCidentifier(jp.getString("DCidentifier"));
-            if (! jp.isNull("DClanguage"))
-                ingestRequest.getJob().setDClanguage(jp.getString("DClanguage"));
-            if (! jp.isNull("DCpublisher"))
-                ingestRequest.getJob().setDCpublisher(jp.getString("DCpublisher"));
-            if (! jp.isNull("DCrelation"))
-                ingestRequest.getJob().setDCrelation(jp.getString("DCrelation"));
-            if (! jp.isNull("DCrights"))
-                ingestRequest.getJob().setDCrights(jp.getString("DCrights"));
-            if (! jp.isNull("DCsource"))
-                ingestRequest.getJob().setDCsource(jp.getString("DCsource"));
-            if (! jp.isNull("DCsubject"))
-                ingestRequest.getJob().setDCsubject(jp.getString("DCsubject"));
-            if (! jp.isNull("DCtitle"))
-                ingestRequest.getJob().setDCtitle(jp.getString("DCtitle"));
-            if (! jp.isNull("DCtype"))
-                ingestRequest.getJob().setDCtype(jp.getString("DCtype"));
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
 
 	    // Populate Ids
-	    if (job.localId() != null) ingestRequest.getJob().setLocalID(job.localId());
-	    if (job.primaryId() != null) ingestRequest.getJob().setPrimaryID(job.primaryId());
+	    // if (! job.localId().isEmpty()) ingestRequest.getJob().setLocalID(job.localId());
+	    // if (! job.primaryId().isEmpty()) ingestRequest.getJob().setPrimaryID(job.primaryId());
 
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
@@ -525,25 +466,22 @@ class ProcessConsumeData implements Runnable
 	    String process = "Process";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-
 	    // Populate metadata if necessary
-	    JSONObject meta = new JSONObject();
-	    if (job.ercWhat().isEmpty()) meta.put(MerrittJsonKey.ErcWhat.key(), jobState.getObjectTitle());
-	    if (job.ercWho().isEmpty()) meta.put(MerrittJsonKey.ErcWho.key(), jobState.getObjectCreator());
-	    if (job.ercWhen().isEmpty()) meta.put(MerrittJsonKey.ErcWhen.key(), jobState.getObjectDate());
-	    if ( ! meta.isEmpty()) job.setMetadata(zooKeeper, meta);
+	    if (JSONUtil.getValue(jp,"title") == null && jobState.getObjectTitle() != null) 
+		jp.put("title", jobState.getObjectTitle());
+	    if (JSONUtil.getValue(jp,"creator") == null && jobState.getObjectCreator() != null) 
+		jp.put("creator", jobState.getObjectCreator());
+	    if (JSONUtil.getValue(jp,"date") == null && jobState.getObjectDate() != null) 
+		jp.put("date", jobState.getObjectDate());
 
 	    // Populate IDs if necessary
-	    JSONObject ids = new JSONObject();
-	    if (jobState.getPrimaryID() != null) ids.put(MerrittJsonKey.PrimaryId.key(), jobState.getPrimaryID());
-	    if (jobState.getLocalID() != null) ids.put(MerrittJsonKey.LocalId.key(), jobState.getLocalID());
-	    if (! ids.isEmpty()) job.setIdentifiers(zooKeeper, ids);
-// Extract specific data and call ZK update
-//- creator
-//- title
-//- date
-//- objectID
-//- localID
+	    if (JSONUtil.getValue(jp,"localID") == null && jobState.getLocalID() != null)
+		jp.put("localID", jobState.getLocalID().getValue());
+	    if (JSONUtil.getValue(jp,"objectID") == null && jobState.getPrimaryID() != null)
+		jp.put("objectID", jobState.getPrimaryID().getValue());
+
+	    // Write data change
+	    job.setData(zooKeeper, ZKKey.JOB_CONFIGURATION, jp);
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString());

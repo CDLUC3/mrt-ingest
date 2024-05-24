@@ -47,8 +47,8 @@ import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.zk.Job;
-//import org.cdlib.mrt.zk.JobState;
 import org.cdlib.mrt.zk.ZKKey;
+import org.cdlib.mrt.zk.MerrittJsonKey;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
 
@@ -477,66 +477,8 @@ class NotifyConsumeData implements Runnable
 		//}
             } else {
 
-	    IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
-			    JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
-			    JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
-			    JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
-			    JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
-			    JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
-			    // jp.getString("retainTargetURL"), jp.getString("targetURL"));
-	    ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
-	    ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
-	    ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
-	    try {
-	       if (JSONUtil.getValue(jp,"retainTargetURL") != null) {
-	          if (JSONUtil.getValue(jp,"retainTargetURL").equalsIgnoreCase("true")) {
-		     System.out.println("[info] Setting retainTargetURL to " + JSONUtil.getValue(jp,"retainTargetURL"));
-		     ingestRequest.setRetainTargetURL(true);
-		  }
-	       }
-	    } catch (Exception e) { } 	// assigned with null value
 
-	    try {
-	        ingestRequest.setNotificationFormat(JSONUtil.getValue(jp,"notificationFormat"));
-	    } catch (Exception e) { } 	// assigned with null value
-	    try {
-	        ingestRequest.setDataCiteResourceType(JSONUtil.getValue(jp,"DataCiteResourceType"));
-	    } catch (Exception e) {}
-	    try {
-	        ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
-	    } catch (Exception e) {}
-
-            // process Dublin Core (optional)
-            if (! jp.isNull("DCcontributor"))
-                ingestRequest.getJob().setDCcontributor(jp.getString("DCcontributor"));
-            if (! jp.isNull("DCcoverage"))
-                ingestRequest.getJob().setDCcoverage(jp.getString("DCcoverage"));
-            if (! jp.isNull("DCcreator"))
-                ingestRequest.getJob().setDCcreator(jp.getString("DCcreator"));
-            if (! jp.isNull("DCdate"))
-                ingestRequest.getJob().setDCdate(jp.getString("DCdate"));
-            if (! jp.isNull("DCdescription"))
-                ingestRequest.getJob().setDCdescription(jp.getString("DCdescription"));
-            if (! jp.isNull("DCformat"))
-                ingestRequest.getJob().setDCformat(jp.getString("DCformat"));
-            if (! jp.isNull("DCidentifier"))
-                ingestRequest.getJob().setDCidentifier(jp.getString("DCidentifier"));
-            if (! jp.isNull("DClanguage"))
-                ingestRequest.getJob().setDClanguage(jp.getString("DClanguage"));
-            if (! jp.isNull("DCpublisher"))
-                ingestRequest.getJob().setDCpublisher(jp.getString("DCpublisher"));
-            if (! jp.isNull("DCrelation"))
-                ingestRequest.getJob().setDCrelation(jp.getString("DCrelation"));
-            if (! jp.isNull("DCrights"))
-                ingestRequest.getJob().setDCrights(jp.getString("DCrights"));
-            if (! jp.isNull("DCsource"))
-                ingestRequest.getJob().setDCsource(jp.getString("DCsource"));
-            if (! jp.isNull("DCsubject"))
-                ingestRequest.getJob().setDCsubject(jp.getString("DCsubject"));
-            if (! jp.isNull("DCtitle"))
-                ingestRequest.getJob().setDCtitle(jp.getString("DCtitle"));
-            if (! jp.isNull("DCtype"))
-                ingestRequest.getJob().setDCtype(jp.getString("DCtype"));
+	    IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
