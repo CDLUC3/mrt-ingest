@@ -129,6 +129,7 @@ public class HandlerNotification extends Handler<BatchState>
 
 	    String batchID = batchState.getBatchID().getValue();
 	    Batch batch = Batch.findByUuid(zooKeeper, batchID);
+	    if (DEBUG) System.out.println("[info] " + MESSAGE + "Mapping Batch to ZK Batch: " + batchID + " - " + batch.id());
 
 	    List<Job> jobs = batch.getProcessingJobs(zooKeeper);
 	    if (jobs.isEmpty()) {

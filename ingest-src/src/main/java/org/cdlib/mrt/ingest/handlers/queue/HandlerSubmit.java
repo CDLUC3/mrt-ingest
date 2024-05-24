@@ -230,7 +230,7 @@ public class HandlerSubmit extends Handler<BatchState>
 		while (true) {
 		    try {
 			// Create Job 
-			System.out.println("[info] queue submission: " + jproperties.toString());
+			System.out.println("[info] queue submission: " + jproperties.toString() + "  Priority: " + priority);
 			Job job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
 			job.setPriority(zooKeeper, Integer.parseInt(priority));
 
