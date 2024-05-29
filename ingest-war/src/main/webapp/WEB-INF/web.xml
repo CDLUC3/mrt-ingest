@@ -4,27 +4,6 @@
     <display-name>Jersey RESTful</display-name>
     
     <servlet>
-        <servlet-name>Jersey Ingest Web Application</servlet-name>
-        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
-        <init-param>
-            <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.cdlib.mrt.ingest.app.jersey.ingest</param-value>
-        </init-param>
-        <init-param>
-            <param-name>loggerProperties</param-name>
-            <param-value>resources/TIngestLogger.properties</param-value>
-        </init-param>
-        <init-param>
-            <param-name>serviceProperties</param-name>
-            <param-value>resources/TIngestService.properties</param-value>
-        </init-param>
-        <init-param>
-            <param-name>localProperties</param-name>
-            <param-value>resources/TIngestServiceLocal.properties</param-value>
-        </init-param>
-    </servlet>
-
-    <servlet>
         <servlet-name>Jersey Batch Web Application</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
@@ -215,7 +194,7 @@
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>Jersey Ingest Web Application</servlet-name>
+        <servlet-name>Jersey Batch Web Application</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
