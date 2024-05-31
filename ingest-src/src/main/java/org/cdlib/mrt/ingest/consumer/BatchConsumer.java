@@ -45,6 +45,7 @@ import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
+import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.QueueItemHelper;
@@ -343,7 +344,7 @@ class BatchConsumerDaemon implements Runnable
 		try {
 		    long numActiveTasks = 0;
 
-		    initPaths();
+		    Job.initNodes(zooKeeper);
 		    // To prevent long shutdown, no more than poolsize tasks queued.
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
@@ -420,25 +421,6 @@ System.out.println(NAME + " =================> ACQUIRED PENDING batch status " +
             return false;
         }
         return false;
-    }
-
-    public void create(String s, Object data) throws KeeperException, InterruptedException {
-      create(Paths.get(s), data);
-    }
-
-    public void create(Path path, Object data) throws KeeperException, InterruptedException {
-      Path par = path.getParent();
-      if (!QueueItemHelper.exists(zooKeeper, par.toString())) {
-        create(par, null);
-      }
-try {
-      QueueItemHelper.create(zooKeeper, path.toString(), QueueItemHelper.serializeAsBytes(data));
-} catch (Exception e) {}
-    }
-
-    public void initPaths() throws KeeperException, InterruptedException {
-      create("/batches", null);
-      create("/batch-uuids", null);
     }
 
    public class Ignorer implements Watcher {

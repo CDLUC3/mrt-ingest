@@ -61,6 +61,7 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 import org.cdlib.mrt.zk.Batch;
+import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.QueueItemHelper;
 
 import org.json.JSONObject;
@@ -188,9 +189,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	    jproperties.put("submissionDate", DateUtil.getCurrentDate());
 
 	    // Create ZK batch
-	    initPaths();
-	    //JSONObject bid = new JSONObject();
-	    //bidInfo.put("BatchID", batchState.getBatchID().getValue());
+	    Job.initNodes(zooKeeper);
+
 	    batch = Batch.createBatch(zooKeeper, jproperties);
 	    System.out.println("[INFO] Batch created: " + batch.id());
 	    System.out.println("[INFO] Batch data: " + batch.data());
@@ -212,26 +212,6 @@ public class HandlerSubmit extends Handler<BatchState>
 	    } catch (Exception e) {
 	    }
 	}
-    }
-
-    public void create(String s, Object data) throws KeeperException, InterruptedException {
-      create(Paths.get(s), data);
-    }
-
-    public void create(Path path, Object data) throws KeeperException, InterruptedException {
-      Path par = path.getParent();
-      if (!QueueItemHelper.exists(zooKeeper, par.toString())) {
-        create(par, null);
-      }
-try {
-      QueueItemHelper.create(zooKeeper, path.toString(), QueueItemHelper.serializeAsBytes(data));
-} catch (Exception e) {}
-    }
-
-    public void initPaths() throws KeeperException, InterruptedException {
-      create("/batches", null);
-      create("/jobs", null);
-      create("/jobs/states", null);
     }
 
    
