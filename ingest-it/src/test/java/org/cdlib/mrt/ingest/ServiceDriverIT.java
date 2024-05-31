@@ -470,7 +470,8 @@ public class ServiceDriverIT {
         public void FileManifestIngest() throws IOException, JSONException, InterruptedException {
                 String filename = "4blocks.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest", false);
                                
                 // due to async processing, no jobs should exist in the ingest queue
@@ -579,7 +580,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngest() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
 
                 // exepect to see 0 queued jobs 
@@ -593,7 +594,7 @@ public class ServiceDriverIT {
         */
         @Test
         public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
                 json = getJsonObject(json, "job:jobState");
                 String bid = "JOB_ONLY";
@@ -820,7 +821,8 @@ public class ServiceDriverIT {
                 Thread.sleep(5000);
 
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                //json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
 
                 BidJid bidjid = new BidJid(json);
                 verifyJid(bidjid);
@@ -904,7 +906,8 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
         }
 
@@ -913,7 +916,8 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithArk() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
         }
 
@@ -922,7 +926,8 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithArkAndUpdate() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
                 ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
                 url = String.format("http://localhost:%d/%s/update-object/ark/1111/2222", port, cp);
                 ingestFile(url, new File("src/test/resources/data/test.txt"), false);
@@ -933,7 +938,8 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithUpdate() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
                 JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
                 String prim = json.getJSONObject("job:jobState").getString("job:primaryID");
 
@@ -949,7 +955,8 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleZipIngest() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
                 ingestFile(url, new File("src/test/resources/data/test.zip"), false);
         }
 
