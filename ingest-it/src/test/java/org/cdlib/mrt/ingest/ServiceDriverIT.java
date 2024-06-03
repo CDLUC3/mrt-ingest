@@ -36,6 +36,8 @@ import org.cdlib.mrt.zk.IngestState;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.MerrittLocks;
 import org.cdlib.mrt.zk.MerrittZKNodeInvalid;
+import org.cdlib.mrt.zk.QueueItemHelper;
+import org.cdlib.mrt.zk.QueueItem.ZkPaths;
 
 import java.io.IOException;
 
@@ -93,9 +95,6 @@ public class ServiceDriverIT {
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
                 zk = new ZooKeeper(String.format("localhost:%s", zkport), 100, null);
-                Job.initNodes(zk);
-                Access.initNodes(zk);
-                MerrittLocks.initLocks(zk);
         }
 
         /**
@@ -200,51 +199,17 @@ public class ServiceDriverIT {
 
         /**
          * Identify all entries of a queue that are not in a Deleted state.  Call clearQueueEntry to set the queue entry state to deleted.
-         * @param endpoint queue, queue-inv, or queue-acc
-         * @param queue name of the specific queue. For integration test purposes, only 1 ingest queue will exist
+         * @throws KeeperException 
+         * @throws InterruptedException 
          */
-        public void clearQueue(String endpoint, String queue) throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
-                JSONObject json = getJsonContent(url, 200);
-
-                JSONObject j = getJsonObject(json,"que:queueState"); 
-                j = getJsonObject(j, "que:queueEntries");
-                JSONArray ja = getJsonArray(j, "que:queueEntryState");
-                for (int i=0; i < ja.length(); i++) {
-                        JSONObject jo = ja.getJSONObject(i);
-                        String status = getJsonString(jo, "que:status", "").toLowerCase();
-                        if (status.equals("deleted")) {
-                                continue;
-                        }
-                        String id = getJsonString(jo, "que:iD", "");
-                        clearQueueEntry(queue, id, status);
-                }
-        }
-
-        /**
-         * Change the status of a specific queue entry to "Deleted".  Note that this does not delete the actual entry from the queue.
-         * Queue entries will remain present until the docker stack is deleted and restarted.
-         * @param queue name of the queue
-         * @param id id of the queue entry
-         * @param status current status of the queue entry
-         * @throws IOException
-         * @throws JSONException
-         */
-        public void clearQueueEntry(String queue, String id, String status) throws IOException, JSONException {
-                if (status.equals("held")) {
-                        String url = String.format("http://localhost:%d/%s/admin/release/%s/%s", port, cp, queue, id);
-                        try (CloseableHttpClient client = HttpClients.createDefault()) {
-                                JSONObject json = getJsonContent(new HttpPost(url), 200);
-                                json = getJsonObject(json, "ques:queueEntryState");
-                                status = getJsonString(json, "ques:status", "NA").toLowerCase();
-                        }        
-                }
-
-                String url = String.format("http://localhost:%d/%s/admin/deleteq/%s/%s/%s", port, cp, queue, id, status);
-                try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        getJsonContent(new HttpPost(url), 200);
-                }
-
+        public void clearQueue() throws IOException, JSONException, InterruptedException, KeeperException {
+                QueueItemHelper.deleteAll(zk, ZkPaths.Batch.path);
+                QueueItemHelper.deleteAll(zk, ZkPaths.BatchUuids.path);
+                QueueItemHelper.deleteAll(zk, ZkPaths.Job.path);
+                QueueItemHelper.deleteAll(zk, ZkPaths.Locks.path);
+                Job.initNodes(zk);
+                Access.initNodes(zk);
+                MerrittLocks.initLocks(zk);
         }
 
         /**
@@ -314,11 +279,12 @@ public class ServiceDriverIT {
          * - Thaw submission processing (in case it had been frozen)
          * - Thaw submission processing for the test collection (in case it had been frozen)
          * - Tell the mock test service to serve data (in case it had been set to not return data)
+         * @throws KeeperException 
+         * @throws InterruptedException 
          */
         @Before
-        public void clearQueueDirectory() throws IOException, JSONException {
-                clearQueue("queue", "ingest");
-                clearQueue("queue-inv", "mrt.inventory.full");
+        public void clearQueueDirectory() throws IOException, JSONException, InterruptedException, KeeperException {
+                clearQueue();
                 String url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
                 freezeThaw(url, "ing:submissionState", "thawed");
                 url = String.format("http://localhost:%d/%s/admin/submission/thaw/%s", port, cp, profile);
@@ -465,11 +431,12 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest");
+                Thread.sleep(2000);
                                
                 // due to async processing, no jobs should exist in the ingest queue
                 countQueue(3, 1);
                 // one object should be reside on the inventory queue 
-                countQueue(3, 1, org.cdlib.mrt.zk.JobState.Recording);
+                countQueue(5, 1, org.cdlib.mrt.zk.JobState.Recording);
         }
 
         /**
