@@ -41,9 +41,12 @@ services:
     entrypoint: ["catalina.sh", "jpda", "run"]
   zoo-it:
     container_name: zoo-it
-    image: zookeeper
+    image: zookeeper:3.8.4
     networks:
       merrittnet:
+    ports:
+    - published: 8084
+      target: 2181
     restart: unless-stopped
     stdin_open: true
     tty: true

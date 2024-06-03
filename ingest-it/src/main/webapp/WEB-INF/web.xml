@@ -1,29 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app>
-    
+
     <display-name>Jersey RESTful</display-name>
     
-    <servlet>
-        <servlet-name>Jersey Ingest Web Application</servlet-name>
-        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
-        <init-param>
-            <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.cdlib.mrt.ingest.app.jersey.ingest</param-value>
-        </init-param>
-        <init-param>
-            <param-name>loggerProperties</param-name>
-            <param-value>resources/TIngestLogger.properties</param-value>
-        </init-param>
-        <init-param>
-            <param-name>serviceProperties</param-name>
-            <param-value>resources/TIngestService.properties</param-value>
-        </init-param>
-        <init-param>
-            <param-name>localProperties</param-name>
-            <param-value>resources/TIngestServiceLocal.properties</param-value>
-        </init-param>
-    </servlet>
-
     <servlet>
         <servlet-name>Jersey Batch Web Application</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
@@ -89,8 +68,8 @@
     </servlet>          
 
     <servlet>
-        <servlet-name>JobConsumer Daemon</servlet-name>
-        <servlet-class>org.cdlib.mrt.ingest.consumer.JobConsumer</servlet-class>
+        <servlet-name>Batch Report Consumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.BatchReportConsumer</servlet-class>
         <init-param>
             <param-name>loggerProperties</param-name>
             <param-value>resources/TIngestLogger.properties</param-value>
@@ -122,11 +101,11 @@
             <param-value>resources/TIngestServiceLocal.properties</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
-    </servlet>          
+    </servlet>
 
     <servlet>
-        <servlet-name>Consumer Daemon</servlet-name>
-        <servlet-class>org.cdlib.mrt.ingest.consumer.Consumer</servlet-class>
+        <servlet-name>ProvisionConsumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.ProvisionConsumer</servlet-class>
         <init-param>
             <param-name>loggerProperties</param-name>
             <param-value>resources/TIngestLogger.properties</param-value>
@@ -139,12 +118,12 @@
             <param-name>localProperties</param-name>
             <param-value>resources/TIngestServiceLocal.properties</param-value>
         </init-param>
-        <load-on-startup>0</load-on-startup>
-    </servlet>          
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
     <servlet>
-        <servlet-name>Consumer Daemon High Priority</servlet-name>
-        <servlet-class>org.cdlib.mrt.ingest.consumer.ConsumerHighPriority</servlet-class>
+        <servlet-name>DownloadConsumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.DownloadConsumer</servlet-class>
         <init-param>
             <param-name>loggerProperties</param-name>
             <param-value>resources/TIngestLogger.properties</param-value>
@@ -157,11 +136,65 @@
             <param-name>localProperties</param-name>
             <param-value>resources/TIngestServiceLocal.properties</param-value>
         </init-param>
-        <load-on-startup>0</load-on-startup>
-    </servlet>          
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>ProcessConsumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.ProcessConsumer</servlet-class>
+        <init-param>
+            <param-name>loggerProperties</param-name>
+            <param-value>resources/TIngestLogger.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>serviceProperties</param-name>
+            <param-value>resources/TIngestService.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localProperties</param-name>
+            <param-value>resources/TIngestServiceLocal.properties</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>RecordConsumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.RecordConsumer</servlet-class>
+        <init-param>
+            <param-name>loggerProperties</param-name>
+            <param-value>resources/TIngestLogger.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>serviceProperties</param-name>
+            <param-value>resources/TIngestService.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localProperties</param-name>
+            <param-value>resources/TIngestServiceLocal.properties</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>NotifyConsumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.NotifyConsumer</servlet-class>
+        <init-param>
+            <param-name>loggerProperties</param-name>
+            <param-value>resources/TIngestLogger.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>serviceProperties</param-name>
+            <param-value>resources/TIngestService.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localProperties</param-name>
+            <param-value>resources/TIngestServiceLocal.properties</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
     <servlet-mapping>
-        <servlet-name>Jersey Ingest Web Application</servlet-name>
+        <servlet-name>Jersey Batch Web Application</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>

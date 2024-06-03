@@ -138,13 +138,16 @@
                   </run>
                 </image>
                 <image>
-                  <name>zookeeper</name>
+                  <name>zookeeper:3.8.4</name>
                   <alias>zoo-it</alias>
                   <run>
                     <network>
                       <name>network</name>
                       <alias>zoo-it</alias>
                     </network>
+                    <ports>
+                      <port>mrt-zk.port:2181</port>
+                    </ports>
                     <wait>
                       <time>2000</time>
                     </wait>
@@ -220,6 +223,7 @@
           <environmentVariables>
             <it-server.port>${it-server.port}</it-server.port>
             <mock-merritt-it.port>${mock-merritt-it.port}</mock-merritt-it.port>
+            <mrt-zk.port>${mrt-zk.port}</mrt-zk.port>
           </environmentVariables>
         </configuration>
       </plugin>
