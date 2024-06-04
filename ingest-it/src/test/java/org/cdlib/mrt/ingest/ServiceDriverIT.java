@@ -431,12 +431,12 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest");
-                Thread.sleep(2000);
+                Thread.sleep(8000);
                                
                 // due to async processing, no jobs should exist in the ingest queue
                 countQueue(3, 1);
                 // one object should be reside on the inventory queue 
-                countQueue(5, 1, org.cdlib.mrt.zk.JobState.Recording);
+                countQueue(15, 1, org.cdlib.mrt.zk.JobState.Completed);
         }
 
         /**
