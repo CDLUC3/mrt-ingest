@@ -39,7 +39,6 @@ import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobFileState;
 import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
 import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.ManifestsState;
@@ -180,14 +179,6 @@ public interface IngestServiceInf
 	 Map<String, String> profileParms)
         throws TException;
 
-    /**
-     * Get jobs state information about processed jobs
-     * @param type status type
-     * @return batchesState batches state information
-     * @throws TException Exception condition during storage service procssing
-     */
-    public JobsState getStatus(String type)
-        throws TException;
 
     /**
      * Get ingest lock state information 

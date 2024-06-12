@@ -314,47 +314,6 @@ public class ProcessManager {
 		}
 	}
 
-	public JobsState getStatus(String type) throws TException {
-		try {
-			BatchState batchState = null;
-			JobsState jobsState = new JobsState();
-			jobsState.setIngestServer(this.getServiceState().getAccessServiceURL().toString());
-			File queueDir = new File(ingestFileS, "queue");
-
-			File[] files = queueDir.listFiles();
-			// try again
-			if (files == null)
-				files = queueDir.listFiles();
-			if (files == null)
-				throw new Exception(MESSAGE + " listFiles(): I/O exception: " + queueDir.getAbsolutePath());
-			Arrays.sort(files, new Comparator<File>() {
-				public int compare(File f1, File f2) {
-					// newest first
-					return Long.valueOf(f2.lastModified()).compareTo(f1.lastModified());
-				}
-			});
-
-			/*
-			 * for (File queueFile : files) { try { batchState =
-			 * ProfileUtil.readFrom(batchState, queueFile); } catch (Exception e) {
-			 * continue; } if
-			 * (batchState.getBatchStatus().getValue().equalsIgnoreCase(type)) { for
-			 * (JobState jobState : batchState.getJobStates()) { if
-			 * (jobState.getJobStatus().getValue().equalsIgnoreCase(type)) {
-			 * jobsState.addJob(jobState); // System.out.println(jobState.dump("----")); } }
-			 * } }
-			 */
-
-			return jobsState;
-
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-
-		}
-	}
-
 
 	public JobState submit(IngestRequest ingestRequest, String state) throws Exception {
 		ProfileState profileState = null;

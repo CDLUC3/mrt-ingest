@@ -37,7 +37,6 @@ import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.JobFileState;
-import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
@@ -230,13 +229,6 @@ public class IngestService
         throws TException
     {
         return adminManager.postProfileAction(type, environment, notification, profileParms);
-    }
-
-    @Override
-    public JobsState getStatus(String type)
-        throws TException
-    {
-        return processManager.getStatus(type);
     }
 
     @Override
