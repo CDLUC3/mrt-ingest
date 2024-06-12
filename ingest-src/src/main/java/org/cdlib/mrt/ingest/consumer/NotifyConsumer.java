@@ -509,8 +509,6 @@ class NotifyConsumeData implements Runnable
 		} catch (Exception e) {
 		   e.printStackTrace();
 		}
-
-                //job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: NotifyConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());

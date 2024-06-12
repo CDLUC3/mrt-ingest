@@ -492,7 +492,8 @@ class BatchConsumeData implements Runnable
 	    ingestRequest.setBatch(batch);
 	    batchState = ingestService.submitBatch(ingestRequest);
 
-	    batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Reporting));
+	    // batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Reporting));
+	    batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Reporting);
 	    System.out.println(NAME + " =================> Change batch state to: " + batch.status().name());
 	    batch.unlock(zooKeeper);
 

@@ -54,6 +54,7 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.Job;
 import org.json.JSONObject;
 
@@ -232,13 +233,17 @@ public class HandlerSubmit extends Handler<BatchState>
 		    try {
 			// Create Job 
 			System.out.println("[info] queue submission: " + jproperties.toString() + "  Priority: " + priority);
-			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
-			job.setPriority(zooKeeper, Integer.parseInt(priority));
+			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), Integer.parseInt(priority), jproperties);
 
 
 			break;
 		    } catch (Exception e) {
 			e.printStackTrace();
+
+			// Batch failure
+			Batch batch = new Batch(job.bid());
+            		batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, "Failed");
+
 			return new HandlerResult(false, "FAIL: " + NAME + " Submission failed: " + e.getMessage(), 0);
 		    }
 		}

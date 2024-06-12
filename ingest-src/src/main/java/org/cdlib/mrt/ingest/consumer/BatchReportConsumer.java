@@ -494,8 +494,8 @@ class BatchReportConsumeData implements Runnable
 	    ingestRequest.setBatch(batch);
 	    batchState = ingestService.submitPost(ingestRequest, "Report");
 
-            //batch.setStatus(zooKeeper, batch.status().success());
-batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Completed));
+            batch.setStatus(zooKeeper, batch.status().success());
+	    // batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Completed));
 	    System.out.println(NAME + " =================> Change batch state to: " + batch.status().name());
 	    batch.unlock(zooKeeper);
 

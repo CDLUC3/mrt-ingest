@@ -343,14 +343,15 @@ class EstimateConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
                             job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
+
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
 
 				try {
-            			   job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Estimating));
+            			   job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
 				} catch (MerrittStateError mse) {
 				   mse.printStackTrace();
-            			   job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Estimating));
+            			   job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
 				}
 
                                 executorService.execute(new EstimateConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
