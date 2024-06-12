@@ -522,17 +522,19 @@ System.out.println("PROCESS MGR (" + state + ")  ============> " + handlerS);
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue.class) {
-
-System.out.println(jobState.getPrimaryID());
 					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
 						+ jobState.grabTargetStorage().getNodeID() + "/"
 						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
-System.out.println("-----------------> JOB OBJECT STATE: " + jobState.grabObjectState());
+
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(queueConf.getString("InventoryName"));
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {
+					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
+						+ jobState.grabTargetStorage().getNodeID() + "/"
+						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
+
 					System.out.println("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(ingestConf.getString("ingestLock"));

@@ -87,7 +87,7 @@ public class BatchConsumer extends HttpServlet
     private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
-    private int pollingInterval = 2;	// default interval (minutes)
+    private int pollingInterval = 15;	// default interval (seconds)
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -265,7 +265,7 @@ class BatchConsumerDaemon implements Runnable
     private String queueNode = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 300000;	//5 minutes
 
     private ZooKeeper zooKeeper = null;
 
@@ -558,7 +558,7 @@ class BatchCleanupDaemon implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 360000;
 
     private ZooKeeper zooKeeper = null;
 

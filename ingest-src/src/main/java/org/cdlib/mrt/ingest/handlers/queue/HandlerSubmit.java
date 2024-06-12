@@ -227,29 +227,27 @@ public class HandlerSubmit extends Handler<BatchState>
 		}
 
 		int retryCount = 0;
+	        Job job = null;
 		while (true) {
 		    try {
 			// Create Job 
 			System.out.println("[info] queue submission: " + jproperties.toString() + "  Priority: " + priority);
-			Job job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
+			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), jproperties);
 			job.setPriority(zooKeeper, Integer.parseInt(priority));
 
-job.unlock(zooKeeper);
 
 			break;
 		    } catch (Exception e) {
-			if (retryCount >= 3) throw e;
-	    	        System.err.println("[error] " + MESSAGE + "Lost queue connection, requeuing: " + e.getMessage());
-                	retryCount++;
+			e.printStackTrace();
+			return new HandlerResult(false, "FAIL: " + NAME + " Submission failed: " + e.getMessage(), 0);
 		    }
 		}
 
 		jobState.setJobStatus(JobStatusEnum.PENDING);
+		job.unlock(zooKeeper);
 	    }
 
 	    // global
-	    ////System.out.println("[info] QueueHandlerSubmit: updating batch state.");
-	    //BatchState.putBatchState(batchState.getBatchID().getValue(), batchState);
 	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);

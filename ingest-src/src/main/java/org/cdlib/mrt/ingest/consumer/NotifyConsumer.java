@@ -49,6 +49,7 @@ import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.cdlib.mrt.zk.MerrittStateError;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
 
@@ -260,9 +261,10 @@ class NotifyConsumerDaemon implements Runnable
 
     private String queueConnectionString = null;
     private String queueNode = null;
-    private Integer pollingInterval = null;
+    private Integer pollingInterval = 15;	// seconds
     private Integer poolSize = null;
-    public static int sessionTimeout = 40000;
+    // public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 360000;         // hour^M
 
     private ZooKeeper zooKeeper = null;
 
@@ -435,7 +437,7 @@ class NotifyConsumeData implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 360000;
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -498,7 +500,17 @@ class NotifyConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: NotifyConsume Daemon - COMPLETED job message:" + jp.toString());
-                job.setStatus(zooKeeper, job.status().success(), "Success");
+
+		try {
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+		} catch (MerrittStateError mse) {
+		   mse.printStackTrace();
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+		} catch (Exception e) {
+		   e.printStackTrace();
+		}
+
+                //job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: NotifyConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
@@ -570,7 +582,7 @@ class NotifyCleanupDaemon implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 300000;  //5 minutes
 
     private ZooKeeper zooKeeper = null;
 

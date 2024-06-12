@@ -50,6 +50,7 @@ import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.cdlib.mrt.zk.MerrittStateError;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
 
@@ -85,8 +86,8 @@ public class ProcessConsumer extends HttpServlet
     private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
-    private int pollingInterval = 2;	// default interval (minutes)
-    public static int sessionTimeout = 40000;
+    private int pollingInterval = 15;	// default interval (seconds)
+    public static int sessionTimeout = 300000;  //5 minutes
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -466,6 +467,10 @@ class ProcessConsumeData implements Runnable
 	    String process = "Process";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+	    // Populate Manifest URL if necessary
+	    if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
+		job.setInventory(zooKeeper, jobState.grabObjectState(), "");
+
 	    // Populate metadata if necessary
 	    if (JSONUtil.getValue(jp,"title") == null && jobState.getObjectTitle() != null) 
 		jp.put("title", jobState.getObjectTitle());
@@ -485,7 +490,14 @@ class ProcessConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString());
-	        job.setStatus(zooKeeper, job.status().success(), "Success");
+		try {
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+		} catch (MerrittStateError mse) {
+		   mse.printStackTrace();
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+		}
+
+	        //job.setStatus(zooKeeper, job.status().success(), "Success");
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
 		System.out.println("[item]: ProcessConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());

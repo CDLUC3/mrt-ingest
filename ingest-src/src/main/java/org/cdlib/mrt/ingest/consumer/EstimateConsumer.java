@@ -50,6 +50,7 @@ import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.cdlib.mrt.zk.MerrittStateError;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
 
@@ -266,7 +267,7 @@ class EstimateConsumerDaemon implements Runnable
     private Integer poolSize = null;
 
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 300000;  //5 minutes
 
     // session data
     private long sessionID;
@@ -344,7 +345,14 @@ class EstimateConsumerDaemon implements Runnable
                             job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
-            			job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Estimating));
+
+				try {
+            			   job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Estimating));
+				} catch (MerrittStateError mse) {
+				   mse.printStackTrace();
+            			   job.setStatus(zooKeeper, job.status().stateChange(org.cdlib.mrt.zk.JobState.Estimating));
+				}
+
                                 executorService.execute(new EstimateConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
                             } else {
                                 break;
@@ -435,7 +443,8 @@ class EstimateConsumeData implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 40000;
+    // public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 360000;         // hour^M
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -570,14 +579,14 @@ class EstimateCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private String queueNode = null;
-    private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 40000;
+    private Integer pollingInterval = 15;	// seconds
 
     private ZooKeeper zooKeeper = null;
 
     // session data
     private long sessionID;
     private byte[] sessionAuth;
+    public static int sessionTimeout = 360000;
 
 
     // Constructor

@@ -50,6 +50,7 @@ import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.cdlib.mrt.zk.MerrittStateError;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.json.JSONObject;
 
@@ -85,7 +86,7 @@ public class RecordConsumer extends HttpServlet
     private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
-    private int pollingInterval = 2;	// default interval (minutes)
+    private int pollingInterval = 15;	// default interval (seconds)
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -270,6 +271,7 @@ class RecordConsumerDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
+    public static int sessionTimeout = 300000;  //5 minutes
 
 
     // Constructor
@@ -285,7 +287,7 @@ class RecordConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
             distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
 	} catch (Exception e) {
@@ -451,6 +453,7 @@ class RecordConsumeData implements Runnable
     private Job job = null;
     private IngestServiceInf ingestService = null;
     private JobState jobState = null;
+    public static int sessionTimeout = 360000;         // hour
 
     // Constructor
     public RecordConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
@@ -512,7 +515,14 @@ class RecordConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: RecordConsume Daemon - COMPLETED job message:" + jp.toString());
-                job.setStatus(zooKeeper, job.status().success(), "Success");
+
+		try {
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+		} catch (MerrittStateError mse) {
+		   mse.printStackTrace();
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+		}
+
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: RecordConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
@@ -527,7 +537,7 @@ class RecordConsumeData implements Runnable
             see.printStackTrace(System.err);
             System.err.println("[warn] RecordConsumeData" + MESSAGE + "Session expired.  Attempting to recreate session.");
 	    try {
-                zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                 //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
 	        //distributedQueue.complete(item.getId());
 	    } catch (Exception e) {
@@ -538,7 +548,7 @@ class RecordConsumeData implements Runnable
             cle.printStackTrace(System.err);
             System.err.println("[warn] RecordConsumeData" + MESSAGE + "Connection loss.  Attempting to reconnect.");
 	    try {
-                zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                 //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
 	        //distributedQueue.complete(item.getId());
 	    } catch (Exception e) {
@@ -587,7 +597,7 @@ class RecordCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private String queueNode = null;
-    private Integer pollingInterval = 3600;	// seconds
+    private Integer pollingInterval = 15;	// seconds
 
     private ZooKeeper zooKeeper = null;
     private DistributedQueue distributedQueue = null;
@@ -595,6 +605,7 @@ class RecordCleanupDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
+    public static int sessionTimeout = 360000;         // hour
 
 
     // Constructor
@@ -604,7 +615,7 @@ class RecordCleanupDaemon implements Runnable
         this.queueNode = queueNode;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
             distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
         } catch (Exception e) {
@@ -665,7 +676,7 @@ class RecordCleanupDaemon implements Runnable
                 } catch (SessionExpiredException see) {
                     see.printStackTrace(System.err);
                     System.err.println("[warn] " + MESSAGE + "Session expired.  Attempting to recreate session.");
-                    zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                     distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
                 } catch (RejectedExecutionException ree) {
                     System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
