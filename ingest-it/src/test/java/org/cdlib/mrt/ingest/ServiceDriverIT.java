@@ -491,7 +491,7 @@ public class ServiceDriverIT {
          * @throws KeeperException 
          */
         @Test
-        public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+        public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
                 // tell the mock-merritt-it service to temporarily suspend content delivery
                 String url = String.format("http://localhost:%d/status/stop", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
@@ -769,7 +769,7 @@ public class ServiceDriverIT {
          * @throws KeeperException 
          */
         @Test
-        public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+        public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
                 String url = String.format("http://localhost:%d/%s/admin/submission/freeze/%s", port, cp, profile);
                 freezeThaw(url, "ing:collectionSubmissionState", profile);
                 Thread.sleep(SLEEP_SUBMIT);
