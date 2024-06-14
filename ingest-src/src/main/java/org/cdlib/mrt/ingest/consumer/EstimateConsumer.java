@@ -34,6 +34,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
@@ -342,16 +343,23 @@ class EstimateConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
+try {
                             job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
+} catch (NodeExistsException nee) {
+nee.printStackTrace();
+System.out.println("================================= KEEPER EXCEPTION ================");
+break;
+}
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
 
 				try {
-            			   job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
+            			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
+            			   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
 				} catch (MerrittStateError mse) {
 				   mse.printStackTrace();
-            			   job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
+            			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
 				}
 
                                 executorService.execute(new EstimateConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
@@ -506,7 +514,6 @@ class EstimateConsumeData implements Runnable
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
             System.out.println(NAME + " =================> Current job state to: " + job.status().name());
-	    System.out.println("-----> unlock status " + job.unlock(zooKeeper));
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString());
                 job.setStatus(zooKeeper, job.status().success(), "Success");
@@ -516,29 +523,23 @@ class EstimateConsumeData implements Runnable
 	    } else {
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
+	    boolean stat = job.unlock(zooKeeper);
+	    System.out.println(NAME + "-----> unlock status " + stat);
 	}	// end of else
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
-            System.err.println("[warn] EstimateConsumeData" + MESSAGE + "Session expired.  Attempting to recreate session.");
-	    try {
-                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-	    } catch (Exception e) {
-                e.printStackTrace(System.err);
-                System.out.println("[error] Consuming queue data: Could not recreate session.");
-	    }
+	    System.out.println(NAME + "[error] Consuming queue data: Could not recreate session.");
         } catch (ConnectionLossException cle) {
             cle.printStackTrace(System.err);
-            System.err.println("[warn] EstimateConsumeData" + MESSAGE + "Connection loss.  Attempting to reconnect.");
-	    try {
-                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-	    } catch (Exception e) {
-                e.printStackTrace(System.err);
-                System.out.println("[error] Consuming queue data: Could not reconnect.");
-	    }
+	    System.out.println(NAME + "[error] Consuming queue data: Could not reconnect.");
         } catch (Exception e) {
             e.printStackTrace(System.err);
-            System.out.println("[error] Consuming queue data");
+            try {
+                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, e.getMessage());
+                job.unlock(zooKeeper);
+           } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
+           System.out.println("Exception [error] Consuming queue data");
         } finally {
 	} 
     }

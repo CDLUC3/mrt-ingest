@@ -467,7 +467,7 @@ class BatchReportConsumeData implements Runnable
 
 	    // UTF-8 ??
 	    JSONObject jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
-            if (DEBUG) System.out.println("[info] START: consuming batch queue " + batch.id() + " - " + jp.toString());
+            if (DEBUG) System.out.println("[info] START: consuming batch report queue " + batch.id() + " - " + jp.toString());
 
             // Check if collection level hold
             //if (onHold(JSONUtil.getValue(jp,"profile"))) {
