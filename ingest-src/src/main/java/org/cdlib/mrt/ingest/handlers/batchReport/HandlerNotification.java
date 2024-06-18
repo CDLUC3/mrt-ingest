@@ -150,7 +150,6 @@ public class HandlerNotification extends Handler<BatchState>
 	    System.out.println("JOBS COMPLETED -----------------------");
 	    JSONObject jcomplete = new JSONObject();
 	    jcomplete.put("completedJobs", jac);
-	    System.out.println(jcomplete);
 
 	    // Failed Jobs
 	    jobs = batch.getFailedJobs(zooKeeper);
@@ -169,7 +168,6 @@ public class HandlerNotification extends Handler<BatchState>
 	    System.out.println("JOBS FAILED -----------------------");
 	    JSONObject jfail = new JSONObject();
 	    jfail.put("failedJobs", jaf);
-	    System.out.println(jfail);
 
 	    batch.loadProperties(zooKeeper);
   	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled

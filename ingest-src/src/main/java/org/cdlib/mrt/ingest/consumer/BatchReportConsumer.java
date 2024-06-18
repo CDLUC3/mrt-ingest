@@ -50,6 +50,7 @@ import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.cdlib.mrt.zk.MerrittStateError;
 import org.json.JSONObject;
 
 import java.nio.file.Path;
@@ -668,12 +669,15 @@ class BatchReportCleanupDaemon implements Runnable
                         List<String> batches = null;
                         try {
                            batches = Batch.deleteCompletedBatches(zooKeeper);
+System.out.println("---------> " + batches.toString());
 			   for (String batchName: batches) {
                                System.out.println(NAME + " Found completed batch.  Removing: " + batchName);
 			   } 
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-			   ke.printStackTrace();
-                           System.out.println(MESSAGE + "Error removing completed batches: " + ke.toString());
+                        } catch (MerrittStateError mse) {
+                           System.out.println(MESSAGE + "Found items but they in failed/processing state: " + mse.getMessage());
+                        } catch (Exception e) {
+			   e.printStackTrace();
+                           System.out.println(MESSAGE + "Error removing completed batches: " + e.getMessage());
                         }
 
                         //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
