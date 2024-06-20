@@ -355,7 +355,6 @@ class BatchReportConsumerDaemon implements Runnable
 			    Batch batch = null;
 			    batch = Batch.acquireBatchForReporting(zooKeeper);
 			    if ( batch != null) { 
-System.out.println(NAME + " =================> ACQUIRED REPORTING batch state " + batch.status().name());
 			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
                                 executorService.execute(new BatchReportConsumeData(ingestService, batch, zooKeeper, queueConnectionString, queueNode));
 			    } else {
@@ -496,28 +495,7 @@ class BatchReportConsumeData implements Runnable
 	    batchState = ingestService.submitPost(ingestRequest, "Report");
 
             batch.setStatus(zooKeeper, batch.status().success());
-	    // batch.setStatus(zooKeeper, batch.status().stateChange(org.cdlib.mrt.zk.BatchState.Completed));
-	    System.out.println(NAME + " =================> Change batch state to: " + batch.status().name());
 	    batch.unlock(zooKeeper);
-
-
-
-//=========== CHange state to Success here???  
-//Little is known other than BID
-
-/*
-	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + jp.toString());
-	    	distributedQueue.complete(item.getId());
-	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		System.out.println("[item]: FAILED queue data:" + item.getId());
-		System.out.println("Consume Daemon - job message: " + jobState.getJobStatusMessage());
-	    	distributedQueue.fail(item.getId());
-	    } else {
-		System.out.println("Consume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
-	    }
-*/
-	//}	// end of else
 
         } catch (Exception e) {
             e.printStackTrace(System.err);
@@ -669,7 +647,6 @@ class BatchReportCleanupDaemon implements Runnable
                         List<String> batches = null;
                         try {
                            batches = Batch.deleteCompletedBatches(zooKeeper);
-System.out.println("---------> " + batches.toString());
 			   for (String batchName: batches) {
                                System.out.println(NAME + " Found completed batch.  Removing: " + batchName);
 			   } 

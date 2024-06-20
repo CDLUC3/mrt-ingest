@@ -475,7 +475,6 @@ class DownloadConsumeData implements Runnable
 		System.out.println("DownloadConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
             job.unlock(zooKeeper);
-            System.out.println(NAME + " =================> Change job state to: " + job.status().name());
 	}	// end of else
 
         } catch (SessionExpiredException see) {

@@ -354,7 +354,6 @@ class BatchConsumerDaemon implements Runnable
 			    Batch batch = null;
                             batch = Batch.acquirePendingBatch(zooKeeper);
 			    if ( batch != null) { 
-System.out.println(NAME + " =================> ACQUIRED PENDING batch status " + batch.status());
 			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
                                 executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString, queueNode));
 			    } else {
@@ -493,27 +492,7 @@ class BatchConsumeData implements Runnable
 	    batchState = ingestService.submitBatch(ingestRequest);
 
 	    batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Reporting);
-	    System.out.println(NAME + " =================> Change batch state to: " + batch.status().name());
 	    batch.unlock(zooKeeper);
-
-
-
-//=========== Change state to Success here???  
-//Little is known other than BID
-
-/*
-	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: COMPLETED queue data:" + jp.toString());
-	    	distributedQueue.complete(item.getId());
-	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-		System.out.println("[item]: FAILED queue data:" + item.getId());
-		System.out.println("Consume Daemon - job message: " + jobState.getJobStatusMessage());
-	    	distributedQueue.fail(item.getId());
-	    } else {
-		System.out.println("Consume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
-	    }
-*/
-	//}	// end of else
 
         } catch (Exception e) {
             e.printStackTrace(System.err);

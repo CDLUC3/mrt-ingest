@@ -343,13 +343,12 @@ class EstimateConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
-try {
-                            job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-} catch (NodeExistsException nee) {
-nee.printStackTrace();
-System.out.println("================================= KEEPER EXCEPTION ================");
-break;
-}
+			    try {
+                                job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
+			    } catch (NodeExistsException nee) {
+				nee.printStackTrace();
+				break;
+			    }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
@@ -509,11 +508,9 @@ class EstimateConsumeData implements Runnable
 
 	    //BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
-            System.out.println(NAME + " --------------- ABOUT TO SUBMIT JOB: " + job.status().name());
 	    String process = "Estimate";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-            System.out.println(NAME + " =================> Current job state to: " + job.status().name());
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString());
                 job.setStatus(zooKeeper, job.status().success(), "Success");
@@ -524,7 +521,6 @@ class EstimateConsumeData implements Runnable
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
 	    boolean stat = job.unlock(zooKeeper);
-	    System.out.println(NAME + "-----> unlock status " + stat);
 	}	// end of else
 
         } catch (SessionExpiredException see) {
