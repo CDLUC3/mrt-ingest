@@ -154,6 +154,9 @@ public class HandlerNotification extends Handler<BatchState>
             if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();	// POST parm overrides profile parm
 
+	    // Force JSON
+	    formatType = FormatType.valueOf("json");
+
             try {
                 email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
                     batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
