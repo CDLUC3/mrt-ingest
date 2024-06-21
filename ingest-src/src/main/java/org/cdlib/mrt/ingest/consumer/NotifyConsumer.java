@@ -464,7 +464,7 @@ class NotifyConsumeData implements Runnable
             // Check if collection level hold
             if (onHold(JSONUtil.getValue(jp,"profile"))) {
                 //try {
-                    //zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                    //zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                     //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
 	            //distributedQueue.holdConsumed(item.getId());
                     //System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());

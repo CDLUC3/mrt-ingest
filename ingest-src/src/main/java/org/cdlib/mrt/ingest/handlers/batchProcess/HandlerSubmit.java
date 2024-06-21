@@ -54,7 +54,6 @@ import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.queue.DistributedQueue;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.StringUtil;
@@ -78,6 +77,7 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final String NAME = "HandlerSubmit";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
+    private static int sessionTimeout = 300000;  //5 minutes
     protected LoggerInf logger = null;
     protected Properties conf = null;
     ZooKeeper zooKeeper = null;
@@ -106,7 +106,7 @@ public class HandlerSubmit extends Handler<BatchState>
 
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), DistributedQueue.sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
             // DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean + getWorkerID(), null);	// default priority
 
 	    // common across all jobs in batch

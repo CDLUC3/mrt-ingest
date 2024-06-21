@@ -147,7 +147,7 @@ public class HandlerNotification extends Handler<BatchState>
    	        jobCompleted.load(zooKeeper);
    	        jac.put(jobCompleted.data());
 	    }
-	    System.out.println("JOBS COMPLETED -----------------------");
+	    System.out.println("------ JOBS COMPLETED ------");
 	    JSONObject jcomplete = new JSONObject();
 	    jcomplete.put("completedJobs", jac);
 
@@ -165,7 +165,7 @@ public class HandlerNotification extends Handler<BatchState>
 
    	        jaf.put(jftemp);
 	    }
-	    System.out.println("JOBS FAILED -----------------------");
+	    System.out.println("------ JOBS FAILED ------");
 	    JSONObject jfail = new JSONObject();
 	    jfail.put("failedJobs", jaf);
 
@@ -234,8 +234,6 @@ public class HandlerNotification extends Handler<BatchState>
 		       aggregate = "[" + profileState.getAggregateType() + "] ";
 		} catch (NullPointerException npe) {}
 
-
-System.out.println("BATCH STATUS ----------> " + batchState.getBatchStatus());
 
 		// subject
 		if (! verbose) 

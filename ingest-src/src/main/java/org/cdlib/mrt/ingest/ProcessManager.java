@@ -429,7 +429,6 @@ public class ProcessManager {
 			if (state.matches("Notify")) sortedMap = profileState.getNotifyHandlers();
 			for (Object key : sortedMap.keySet()) {
 				String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
-System.out.println("PROCESS MGR (" + state + ")  ============> " + handlerS);
 				Handler handler = (Handler) createObject(handlerS);
 				
 				if (handler == null) {

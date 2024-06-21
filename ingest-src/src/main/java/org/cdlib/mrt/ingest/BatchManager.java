@@ -80,6 +80,7 @@ public class BatchManager {
 	private static final String NAME = "BatchManager";
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
+    	private static int sessionTimeout = 300000;  //5 minutes
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
@@ -222,7 +223,7 @@ public class BatchManager {
 
 			// open a single connection to zookeeper for all queue posting
 			// todo: create an interface
-			zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+			zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 			DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
 			TreeMap<Long, String> orderedChildren;
@@ -305,7 +306,7 @@ public class BatchManager {
                         if ( ! queue.startsWith("/")) queue = "/" + queue;
 
 			// open a single connection to zookeeper for all queue posting
-			zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+			zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 			DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
 			try {
@@ -401,7 +402,7 @@ public class BatchManager {
                         QueueState accessQueueState = new QueueState();
 
                         // open a single connection to zookeeper for all queue posting
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
                         try {
@@ -475,7 +476,7 @@ public class BatchManager {
                         QueueState inventoryQueueState = new QueueState();
 
                         // open a single connection to zookeeper for all queue posting
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null); // default priority
 
                         try {
@@ -549,7 +550,7 @@ public class BatchManager {
 			String pathID = null;  // Not needed for tree listing
 
                         // open a single connection to zookeeper for all lock posting
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedLock.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedLock distributedLock = new DistributedLock(zooKeeper, lockNode, pathID, null);
 
                         try {
@@ -766,7 +767,7 @@ public class BatchManager {
 	    		Item item = null;
 			if ( ! queue.startsWith("/")) queue = "/" + queue;
 
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
 			if (fromState.contains("fail")) {
 	        		System.out.println("[INFO]" + MESSAGE +  "Requeue from Fail state: " + queue + ":" + id);
@@ -813,7 +814,7 @@ public class BatchManager {
 	    		Item item = null;
 			if ( ! queue.startsWith("/")) queue = "/" + queue;
 
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
 
 			if (action.matches("release")) {
@@ -857,7 +858,7 @@ public class BatchManager {
 	    		Item item = null;
 			if ( ! queue.startsWith("/")) queue = "/" + queue;
 
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
 			if (fromState.contains("fail")) {
 	        		System.out.println("[INFO]" + MESSAGE +  "Delete from Fail state: " + queue + ":" + id);
@@ -911,7 +912,7 @@ public class BatchManager {
 	    		Item item = null;
 			if ( ! queue.startsWith("/")) queue = "/" + queue;
 
-                        zooKeeper = new ZooKeeper(queueConnectionString, DistributedQueue.sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, queue, null);
 
                         System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queue);
@@ -1100,7 +1101,6 @@ public class BatchManager {
 				//sortedMap = batchHandlers;
 				for (Object key : sortedMap.keySet()) {
 					String handlerS = ((HandlerState) sortedMap.get((Integer) key)).getHandlerName();
-System.out.println("BATCH MGR ============> " + handlerS);
 					Handler handler = (Handler) createObject(handlerS);
 					if (handler == null) {
 						throw new TException.INVALID_CONFIGURATION("[error] Could not find queue handler: " + handlerS);

@@ -40,7 +40,11 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -70,8 +74,6 @@ import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
-import org.cdlib.mrt.queue.DistributedLock;
-import org.cdlib.mrt.queue.DistributedLock.Ignorer;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -80,6 +82,8 @@ import org.cdlib.mrt.utility.HttpGet;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
+
+import org.cdlib.mrt.zk.MerrittLocks;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -94,6 +98,7 @@ public class HandlerTransfer extends Handler<JobState>
     private static final String NAME = "HandlerTransfer";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
+    private static int sessionTimeout = 300000;  //5 minutes
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
@@ -102,7 +107,6 @@ public class HandlerTransfer extends Handler<JobState>
     private ZooKeeper zooKeeper = null;
     private String zooConnectString = null;
     private String zooLockNode = null;
-    private DistributedLock distributedLock;
     private String hostKey = "canonicalHostname";
     private String hostDomain = "cdlib.org";
     private String hostDockerDomain = "store";
@@ -265,7 +269,7 @@ public class HandlerTransfer extends Handler<JobState>
             msgMap = null;
 	    clientResponse = null;
 	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
-	    releaseLock();
+	    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
 	}
     }
    
@@ -393,25 +397,21 @@ public class HandlerTransfer extends Handler<JobState>
     private boolean getLock(String primaryID, String payload) {
     try {
 
-       // Zookeeper treats slashes as nodes
-       String lockID = primaryID.replace(":", "").replace("/", "-");
-
-       zooKeeper = new ZooKeeper(zooConnectString, DistributedLock.sessionTimeout, new Ignorer());
-       distributedLock = new DistributedLock(zooKeeper, zooLockNode, lockID, null);
+       zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
        boolean locked = false;
 
 	while (! locked) {
 	    try {
                System.out.println("[info] " + MESSAGE + " Attempting to gain lock");
-	       locked = distributedLock.submit(payload);
+	       locked = MerrittLocks.lockObjectStorage(zooKeeper, primaryID);
 	    } catch (Exception e) {
-              if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining lock: " + lockID);
+              if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining lock: " + primaryID);
 	    }
 	    if (locked) break;
-            System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for ID: " + lockID + " Waiting 15 seconds before retry");
+            System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for ID: " + primaryID + " Waiting 15 seconds before retry");
 	    Thread.currentThread().sleep(15 * 1000);	// Wait 15 seconds before attempting to gain lock for ID
 	}
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for ID: " + lockID + " -- " + payload);
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for ID: " + primaryID + " -- " + payload);
 	    
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -427,12 +427,10 @@ public class HandlerTransfer extends Handler<JobState>
      * @param none needed inputs are global
      * @return void
      */
-    private void releaseLock() {
+    private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
     	try {
 
-		this.distributedLock.cleanup();
-		this.distributedLock = null;
-		this.zooKeeper = null;
+		MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
 	
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -513,5 +511,8 @@ public class HandlerTransfer extends Handler<JobState>
     }
 */
 
-}
+   public static class Ignorer implements Watcher {
+        public void process(WatchedEvent event){}
+   }
 
+}

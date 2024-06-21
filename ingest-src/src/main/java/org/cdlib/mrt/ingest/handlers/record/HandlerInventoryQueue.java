@@ -49,6 +49,7 @@ public class HandlerInventoryQueue extends Handler<JobState> {
     private ZooKeeper zooKeeper;
     private DistributedQueue distributedQueue;
     private Properties prop = null;
+    private static int sessionTimeout = 300000;  //5 minutes
     
     public void submit (byte[] bytes) throws KeeperException, InterruptedException {
         int retryCount = 0;
@@ -76,7 +77,7 @@ public class HandlerInventoryQueue extends Handler<JobState> {
         try {
 	    // MySQL (full schema)
             zooKeeper = 
-                new ZooKeeper(jobState.grabMisc(), DistributedQueue.sessionTimeout, new Ignorer());
+                new ZooKeeper(jobState.grabMisc(), sessionTimeout, new Ignorer());
             distributedQueue = 
                 new DistributedQueue(zooKeeper, jobState.grabExtra(), null);
 	    prop = getInventoryProps(profileState, jobState);

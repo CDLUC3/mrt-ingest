@@ -279,6 +279,7 @@ public class LocalIDUtil
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
+		    System.err.println("[error] Local ID add.  Response code: " + responseCode + "  - Message: " + responseMessage);
                     throw new TException.REQUEST_INVALID(responseMessage);
                 } catch (TException te) {
                     throw te;
