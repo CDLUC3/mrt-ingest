@@ -428,24 +428,6 @@ class ProcessConsumeData implements Runnable
             JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
             if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
 
-            // Check if collection level hold
-            if (onHold(JSONUtil.getValue(jp,"profile"))) {
-                //try {
-                    //zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                    //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-	            //distributedQueue.holdConsumed(item.getId());
-                    //System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
-                //} catch (ConnectionLossException cle) {
-                    //System.err.println("[error] " + MESSAGE + "Queueing service is down.");
-                    //cle.printStackTrace(System.err);
-                //} catch (Exception e) {
-                    //System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
-                    //e.printStackTrace(System.err);
-                //} finally {
-		    //zooKeeper.close();
-		//}
-            } else {
-
             IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
@@ -504,7 +486,6 @@ class ProcessConsumeData implements Runnable
 		System.out.println("ProcessConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
             job.unlock(zooKeeper);
-	}	// end of else
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
@@ -521,24 +502,6 @@ class ProcessConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
 	} 
-    }
-
-    // Support collection level hold
-    private boolean onHold(String collection)
-    {
-        String append = "";
-        try {
-            if (collection != null) append = "_" + collection;
-            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile") + append);
-            System.out.println("[info]" + NAME + ": Checking for collection hold: " + holdFile.getAbsolutePath());
-            if (holdFile.exists()) {
-                System.out.println("[info]" + NAME + ": Hold file exists for collection, not processing: " + holdFile.getAbsolutePath());
-                return true;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return false;
     }
 
    public class Ignorer implements Watcher {

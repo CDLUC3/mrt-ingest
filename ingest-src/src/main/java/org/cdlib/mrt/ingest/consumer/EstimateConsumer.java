@@ -355,6 +355,23 @@ class EstimateConsumerDaemon implements Runnable
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
 
+			        JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+			        String profile = JSONUtil.getValue(jp,"profile");
+			        System.out.println("[info]: Checking if profile is held: " + job.id() + " - " + profile);
+
+			        // Check if collection level hold
+			        if (onHold(profile)) {
+			           try {
+				      System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held' state: " + job.id() + " - " + profile);
+				      job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Held);
+				      break;
+			           } catch (Exception e) {
+				      System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held': " + job.id());
+				      e.printStackTrace(System.err);
+			           } finally {
+			           }
+			        } 
+
 				try {
             			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
             			   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
@@ -430,6 +447,21 @@ class EstimateConsumerDaemon implements Runnable
         return false;
     }
 
+    // Support collection level hold
+    private boolean onHold(String collection)
+    {
+        try {
+            if (StringUtil.isEmpty(collection)) {
+                System.out.println("[warn]" + NAME + ": Collection hold check not valid: " + collection);
+	        return false;
+	    }
+            System.out.println("[info]" + NAME + ": Checking for collection hold: " + collection);
+	    return MerrittLocks.checkLockCollection(zooKeeper, collection);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
@@ -476,24 +508,6 @@ class EstimateConsumeData implements Runnable
             JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
             if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
 
-            // Check if collection level hold
-            if (onHold(JSONUtil.getValue(jp,"profile"))) {
-                //try {
-                    //zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                    //distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);
-	            //distributedQueue.holdConsumed(item.getId());
-                    //System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held': " + item.getId());
-                //} catch (ConnectionLossException cle) {
-                    //System.err.println("[error] " + MESSAGE + "Queueing service is down.");
-                    //cle.printStackTrace(System.err);
-                //} catch (Exception e) {
-                    //System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held'");
-                    //e.printStackTrace(System.err);
-                //} finally {
-		    //zooKeeper.close();
-		//}
-            } else {
-
             IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
@@ -521,7 +535,6 @@ class EstimateConsumeData implements Runnable
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
 	    boolean stat = job.unlock(zooKeeper);
-	}	// end of else
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
@@ -538,24 +551,6 @@ class EstimateConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
 	} 
-    }
-
-    // Support collection level hold
-    private boolean onHold(String collection)
-    {
-        String append = "";
-        try {
-            if (collection != null) append = "_" + collection;
-            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile") + append);
-            System.out.println("[info]" + NAME + ": Checking for collection hold: " + holdFile.getAbsolutePath());
-            if (holdFile.exists()) {
-                System.out.println("[info]" + NAME + ": Hold file exists for collection, not processing: " + holdFile.getAbsolutePath());
-                return true;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return false;
     }
 
    public class Ignorer implements Watcher {

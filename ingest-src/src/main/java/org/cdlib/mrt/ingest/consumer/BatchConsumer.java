@@ -458,11 +458,6 @@ class BatchConsumeData implements Runnable
 	    JSONObject jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             if (DEBUG) System.out.println("[info] START: consuming batch queue " + batch.id() + " - " + jp.toString());
 
-            // Check if collection level hold
-            //if (onHold(JSONUtil.getValue(jp,"profile"))) {
-		// Need this hold anymore??
-            //} else {
-
             IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
@@ -490,24 +485,6 @@ class BatchConsumeData implements Runnable
             System.out.println("[error] Consuming queue data");
         } finally {
 	} 
-    }
-
-    // Support collection level hold
-    private boolean onHold(String collection)
-    {
-        String append = "";
-        try {
-            if (collection != null) append = "_" + collection;
-            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile") + append);
-            System.out.println("[info]" + NAME + ": Checking for collection hold: " + holdFile.getAbsolutePath());
-            if (holdFile.exists()) {
-                System.out.println("[info]" + NAME + ": Hold file exists for collection, not processing: " + holdFile.getAbsolutePath());
-                return true;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return false;
     }
 
    public class Ignorer implements Watcher {
