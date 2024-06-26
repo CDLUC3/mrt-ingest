@@ -44,6 +44,11 @@ import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -61,6 +66,8 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
+import org.cdlib.mrt.zk.MerrittLocks;
+
 import org.json.JSONObject;
 
 /**
@@ -77,9 +84,11 @@ public class ProcessManager {
         private JSONObject storeConf = null;
         private JSONObject ingestConf = null;
         private JSONObject queueConf = null;
+        private String queueConnectionString = null;
 	private Integer defaultStorage = null;
 	private URL ingestLink = null;
 	private boolean debugDump = false;
+        private static int sessionTimeout = 300000;  //5 minutes
 	private Hashtable<Integer, URL> m_store = new Hashtable<Integer, URL>(20);
 	private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
@@ -150,12 +159,16 @@ public class ProcessManager {
                         if (ingestConf == null) {
                                 throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Ingest Config properties not set");
                         }
+                        if (queueConf == null) {
+                                throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Queue Config properties not set");
+                        }
 
 			String key = null;
 			String value = null;
 			String matchStorage = "store.";
 			String matchAccess = "access.";
 			String matchLocalID = "localID";
+                        String matchQueueService = "QueueService";
 			String matchEmailContact = "mail-contact";
 			String matchEmailReplyTo = "mail-replyto";
 			String matchAdmin = "admin";
@@ -164,6 +177,9 @@ public class ProcessManager {
 			String matchNumDownloadThreads = "NumDownloadThreads";
 			String defaultIDKey = "IDDefault";
 			Integer id = null;
+
+                        // QueueService - host1:2181,host2:2181
+                        this.queueConnectionString = queueConf.getString(matchQueueService);
 
 			// Iterate through store vars for multiple access/store
 			Iterator<String> keys = storeConf.keys();
@@ -565,9 +581,11 @@ public class ProcessManager {
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
-                String QUEUEHOLDFILE = "QueueHoldFile";
 
            try {
+                ZooKeeper zooKeeper = null;
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+
 		String serviceNameS = ingestConf.getString(SERVICENAME);
 		if (serviceNameS != null) {
 			ingestState.setServiceName(serviceNameS);
@@ -631,22 +649,18 @@ public class ProcessManager {
 		}
 		ingestState.setMailHost(mailHost);
 
-                // submission state
-                String queueHoldString = queueConf.getString(QUEUEHOLDFILE);
-                File queueHoldFile = new File(queueHoldString);
                 String onHold = null;
-                if (queueHoldFile.exists()) {
+                // Submission state
+                if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
                    onHold = "frozen";
                 } else {
                    onHold = "thawed";
                 }
                 ingestState.setSubmissionState(onHold);
 
-                // collection submission state
-                File parent = queueHoldFile.getParentFile();
-                String regex = queueHoldFile.getName() + "_*";
-                String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
-                ingestState.setCollectionSubmissionState(heldCollections);
+                // Collection submission state
+                // String heldCollections = MerrittLocks.getHeldCollections(zooKeeper);
+                // ingestState.setCollectionSubmissionState(heldCollections);
 
                 // service start time
             	ingestState.setServiceStartTime(new DateState(jvmStartTime.longValue()));
@@ -761,4 +775,9 @@ public class ProcessManager {
 		}
 		return object;
 	}
+
+        public static class Ignorer implements Watcher {
+                public void process(WatchedEvent event) {
+                }
+        }
 }

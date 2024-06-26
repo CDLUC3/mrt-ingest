@@ -66,6 +66,7 @@ import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.ZooCodeUtil;
+import org.cdlib.mrt.zk.MerrittLocks;
 
 import org.json.JSONObject;
 import org.json.JSONException;
@@ -739,14 +740,38 @@ public class QueueManager {
 
         public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
                 try {
-			String append = "";
-			if (StringUtil.isNotEmpty(collection)) append = "_" + collection;
-			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile") + append));
+                        ZooKeeper zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
                         IngestServiceState ingestState = new IngestServiceState();
+			if (StringUtil.isNotEmpty(collection)) {
+			    // Collection			   
+			   if (action.matches("freeze")) {
+			      MerrittLocks.lockCollection(zooKeeper, collection);
+			      ingestState.setSubmissionState(action);
+			   } else if (action.matches("thaw")) {
+			      MerrittLocks.lockCollection(zooKeeper, collection);
+			      ingestState.setSubmissionState(action);
+			   } else {
+			      System.err.println("Exception: Ingest collection action not valid: " + action );
+			      throw new TException.REQUEST_INVALID(MESSAGE + "Exception: Ingest collection action not valid: " + action );
+			   }
+			} else {
+			   // Ingest queue
+			   if (action.matches("freeze")) {
+			      MerrittLocks.lockIngestQueue(zooKeeper);
+			      ingestState.setSubmissionState(action);
+			   } else if (action.matches("thaw")) {
+			      MerrittLocks.unlockIngestQueue(zooKeeper);
+			      ingestState.setSubmissionState(action);
+			   } else {
+			      System.err.println("Exception: Ingest queue action not valid: " + action );
+			      throw new TException.REQUEST_INVALID(MESSAGE + "Exception: Ingest queue action not valid: " + action );
+			   }
+			}
+
                         URL storageInstance = null;
                         ingestState.addQueueInstance(queueConnectionString);
-
+			
                         setIngestStateProperties(ingestState);
                         return ingestState;
                 } catch (TException me) {
@@ -952,7 +977,9 @@ public class QueueManager {
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
-                String QUEUEHOLDFILE = "QueueHoldFile";
+
+                ZooKeeper zooKeeper = null;
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -1013,22 +1040,18 @@ public class QueueManager {
 		}
 		ingestState.setMailHost(mailHost);
 
-                // submission state
-                String queueHoldString = queueConf.getString(QUEUEHOLDFILE);
-                File queueHoldFile = new File(queueHoldString);
 		String onHold = null;
-		if (queueHoldFile.exists()) {
+                // Submission state
+		if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
 		   onHold = "frozen";
 		} else {
 		   onHold = "thawed";
 		}
 		ingestState.setSubmissionState(onHold);
 
-                // collection submission state
-		File parent = queueHoldFile.getParentFile();
-		String regex = queueHoldFile.getName() + "_*";
-                String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
-		ingestState.setCollectionSubmissionState(heldCollections);
+                // Collection submission state
+                // String heldCollections = MerrittLocks.getHeldCollections(zooKeeper);
+		// ingestState.setCollectionSubmissionState(heldCollections);
 
             } catch (TException me) {
                     throw me;

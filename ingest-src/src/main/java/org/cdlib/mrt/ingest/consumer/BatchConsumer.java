@@ -50,6 +50,8 @@ import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.cdlib.mrt.zk.MerrittLocks;
+
 import org.json.JSONObject;
 
 import java.nio.file.Path;
@@ -320,19 +322,10 @@ class BatchConsumerDaemon implements Runnable
                 }
 
                 // Let's check to see if we are on hold
-/*
                 if (onHold()) {
-		    try {
-                        distributedQueue.peek();
-                        System.out.println(MESSAGE + "detected 'on hold' condition");
-		    } catch (ConnectionLossException cle) {
-			System.err.println("[warn] " + MESSAGE + "Queueing service is down.");
-			cle.printStackTrace(System.err);
-		    } catch (Exception e) {
-		    }
+                    System.out.println(MESSAGE + "detected 'on hold' condition");
                     continue;
                 }
-*/
 
                 // have we shutdown?
                 if (Thread.currentThread().isInterrupted()) {
@@ -407,13 +400,11 @@ class BatchConsumerDaemon implements Runnable
 	}
     }
 
-    // to do: make this a service call
     private boolean onHold()
     {
         try {
-            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile"));
-            if (holdFile.exists()) {
-                System.out.println("[info]" + NAME + ": hold file exists, not processing queue: " + holdFile.getAbsolutePath());
+            if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
+                System.out.println("[info]" + NAME + ": hold file exists, not processing queue.");
                 return true;
             }
         } catch (Exception e) {

@@ -66,6 +66,7 @@ import org.cdlib.mrt.utility.StateInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.ZooCodeUtil;
+import org.cdlib.mrt.zk.MerrittLocks;
 
 import org.json.JSONObject;
 import org.json.JSONException;
@@ -184,6 +185,11 @@ public class BatchManager {
                         // email reply-to
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
+
+			// Initialize ZK locks
+			ZooKeeper zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                        System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
+			MerrittLocks.initLocks(zooKeeper);
 
 		} catch (TException tex) {
 			throw tex;
@@ -738,27 +744,6 @@ public class BatchManager {
 		}
 	}
 
-        public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
-                try {
-			String append = "";
-			if (StringUtil.isNotEmpty(collection)) append = "_" + collection;
-			FileUtilAlt.modifyHoldFile(action, new File(queueConf.getString("QueueHoldFile") + append));
-
-                        IngestServiceState ingestState = new IngestServiceState();
-                        URL storageInstance = null;
-                        ingestState.addQueueInstance(queueConnectionString);
-
-                        setIngestStateProperties(ingestState);
-                        return ingestState;
-                } catch (TException me) {
-                        throw me;
-
-                } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
-                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-                }
-        }
 
         public QueueEntryState postRequeue(String queue, String id, String fromState) throws TException {
                 ZooKeeper zooKeeper = null;
@@ -953,7 +938,10 @@ public class BatchManager {
 		String ACCESSURI = "access-uri";
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
-                String QUEUEHOLDFILE = "QueueHoldFile";
+                // String QUEUEHOLDFILE = "QueueHoldFile";
+
+                ZooKeeper zooKeeper = null;
+                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -1014,23 +1002,18 @@ public class BatchManager {
 		}
 		ingestState.setMailHost(mailHost);
 
+                String onHold = null;
                 // submission state
-                String queueHoldString = queueConf.getString(QUEUEHOLDFILE);
-                File queueHoldFile = new File(queueHoldString);
-		String onHold = null;
-		if (queueHoldFile.exists()) {
-		   onHold = "frozen";
-		} else {
-		   onHold = "thawed";
-		}
-		ingestState.setSubmissionState(onHold);
+                if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
+                   onHold = "frozen";
+                } else {
+                   onHold = "thawed";
+                }
+                ingestState.setSubmissionState(onHold);
 
-                // collection submission state
-		File parent = queueHoldFile.getParentFile();
-		String regex = queueHoldFile.getName() + "_*";
-                String heldCollections = FileUtilAlt.getHeldCollections(parent, regex);
-		ingestState.setCollectionSubmissionState(heldCollections);
-
+                // Collection submission state
+                // String heldCollections = MerrittLocks.getHeldCollections(zooKeeper);
+                // ingestState.setCollectionSubmissionState(heldCollections);
             } catch (TException me) {
                     throw me;
 

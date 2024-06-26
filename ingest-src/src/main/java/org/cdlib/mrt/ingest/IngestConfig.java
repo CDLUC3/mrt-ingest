@@ -82,7 +82,6 @@ public class IngestConfig
     protected String QueueService = null;
     protected String QueueName = null;
     protected String QueueInventoryName = null;
-    protected String QueueHoldFile = null;
     protected Integer QueuePollingInterval = null;
     protected Integer QueueNumThreads = null;
     protected Integer QueueNumDownloadThreads = null;

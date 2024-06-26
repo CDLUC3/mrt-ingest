@@ -156,6 +156,7 @@ public class FileUtilAlt {
      * @param holdFile File that defines submission processing
      * @throws org.cdlib.mrt.utility.MException
      */
+/*
     public static boolean modifyHoldFile(String action, File holdFile)
         throws Exception
     {
@@ -186,6 +187,7 @@ public class FileUtilAlt {
             throw new TException.GENERAL_EXCEPTION( err);
         }
     }
+*/
 
     /**
      * Get held collections
@@ -193,6 +195,7 @@ public class FileUtilAlt {
      * @param String regex for collection holds
      * @throws org.cdlib.mrt.utility.MException
      */
+/*
     public static String getHeldCollections(File checkDir, String collectionRegex)
         throws Exception
     {
@@ -225,4 +228,5 @@ public class FileUtilAlt {
             throw new TException.GENERAL_EXCEPTION( err);
         }
     }
+*/
 }

@@ -53,6 +53,8 @@ import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
 import org.cdlib.mrt.zk.MerrittStateError;
 import org.cdlib.mrt.zk.QueueItemHelper;
+import org.cdlib.mrt.zk.MerrittLocks;
+
 import org.json.JSONObject;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -415,13 +417,11 @@ class EstimateConsumerDaemon implements Runnable
 	}
     }
 
-    // to do: make this a service call
     private boolean onHold()
     {
         try {
-            File holdFile = new File(ingestService.getQueueServiceConf().getString("QueueHoldFile"));
-            if (holdFile.exists()) {
-                System.out.println("[info]" + NAME + ": hold file exists, not processing queue: " + holdFile.getAbsolutePath());
+            if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
+                System.out.println("[info]" + NAME + ": hold file exists, not processing queue.");
                 return true;
             }
         } catch (Exception e) {
