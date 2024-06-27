@@ -421,7 +421,6 @@ public class HandlerTransfer extends Handler<JobState>
 	    return false;
 	} finally {
 	    try {
-		zooKeeper.close();
 	    } catch (Exception ze) {}
 	}
     return true;
@@ -443,7 +442,6 @@ public class HandlerTransfer extends Handler<JobState>
 	    e.printStackTrace();
         } finally {
             try {
-                zooKeeper.close();
             } catch (Exception ze) {}
         }
 

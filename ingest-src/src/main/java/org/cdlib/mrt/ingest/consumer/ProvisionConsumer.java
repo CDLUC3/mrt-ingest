@@ -254,7 +254,6 @@ class ProvisionConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
         } finally {
            try {
-              zooKeeper.close();
            } catch(Exception ze) {}
         }
 
@@ -381,7 +380,6 @@ class ProvisionConsumerDaemon implements Runnable
             return false;
         } finally {
            try {
-              zooKeeper.close();
            } catch(Exception ze) {}
         }
 
@@ -429,8 +427,13 @@ class ProvisionConsumeData implements Runnable
     public void run()
     {
         try {
-
-            JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            JSONObject jp = null;
+            try {
+               jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            } catch (SessionExpiredException see) {
+               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            }
             if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
 
             IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
@@ -483,7 +486,6 @@ class ProvisionConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
            try {
-              zooKeeper.close();
            } catch(Exception ze) {}
         }
 

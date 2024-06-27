@@ -438,6 +438,7 @@ class BatchReportConsumeData implements Runnable
     private String queueConnectionString = null;
     private String queueNode = null;
     private ZooKeeper zooKeeper = null;
+    public static int sessionTimeout = 360000;
 
     private IngestServiceInf ingestService = null;
     private BatchState batchState = null;
@@ -459,7 +460,14 @@ class BatchReportConsumeData implements Runnable
         try {
 
 	    // UTF-8 ??
-	    JSONObject jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
+            JSONObject jp = null;
+            try {
+	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
+            } catch (SessionExpiredException see) {
+               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
+            }
+
             if (DEBUG) System.out.println("[info] START: consuming batch report queue " + batch.id() + " - " + jp.toString());
 
             IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
@@ -489,7 +497,6 @@ class BatchReportConsumeData implements Runnable
             System.out.println("[error] Consuming queue data");
         } finally {
 	    try {
-		zooKeeper.close();
 	    } catch(Exception ze) {}
 	} 
     }
