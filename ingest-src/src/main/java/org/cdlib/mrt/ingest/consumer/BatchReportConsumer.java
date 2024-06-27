@@ -488,6 +488,9 @@ class BatchReportConsumeData implements Runnable
             e.printStackTrace(System.err);
             System.out.println("[error] Consuming queue data");
         } finally {
+	    try {
+		zooKeeper.close();
+	    } catch(Exception ze) {}
 	} 
     }
 
@@ -641,7 +644,11 @@ class BatchReportCleanupDaemon implements Runnable
                 } catch (Exception e) {
                     System.err.println("[warn] " + MESSAGE + "General exception.");
                     e.printStackTrace();
-                }
+                } finally {
+		    try {
+			zooKeeper.close();
+		    } catch (Exception ze) {}
+		}
             }
         } catch (Exception e) {
             System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");

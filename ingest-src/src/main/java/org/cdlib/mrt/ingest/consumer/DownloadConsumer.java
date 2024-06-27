@@ -364,7 +364,11 @@ class DownloadConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
-	}
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
+
     }
 
     // to do: make this a service call
@@ -473,6 +477,9 @@ class DownloadConsumeData implements Runnable
            } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
            System.out.println("Exception [error] Consuming queue data");
         } finally {
+	   try {
+		zooKeeper.close();
+	   } catch(Exception ze) {}
         }
     }
 

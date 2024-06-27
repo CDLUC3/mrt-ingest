@@ -520,7 +520,10 @@ class RecordConsumeData implements Runnable
 	   } catch (Exception ex) { ex.printStackTrace(); System.out.println("Exception [error] Error failing job: " + job.id());}
 	   System.out.println("Exception [error] Consuming queue data");
         } finally {
-	} 
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
     }
 
    public class Ignorer implements Watcher {
@@ -563,7 +566,12 @@ class RecordCleanupDaemon implements Runnable
             distributedQueue = new DistributedQueue(zooKeeper, queueNode, null);    // default priority
         } catch (Exception e) {
             e.printStackTrace(System.err);
+        } finally {
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
+
     }
 
     public void run()
@@ -645,7 +653,11 @@ class RecordCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
 	    sessionAuth = null;
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
+
     }
 
    public class Ignorer implements Watcher {

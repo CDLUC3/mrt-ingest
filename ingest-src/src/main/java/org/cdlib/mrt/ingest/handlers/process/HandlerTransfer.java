@@ -270,6 +270,9 @@ public class HandlerTransfer extends Handler<JobState>
 	    clientResponse = null;
 	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
 	    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+	    try {
+		zooKeeper.close();
+	    } catch (Exception e) {}
 	}
     }
    
@@ -416,6 +419,10 @@ public class HandlerTransfer extends Handler<JobState>
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    return false;
+	} finally {
+	    try {
+		zooKeeper.close();
+	    } catch (Exception ze) {}
 	}
     return true;
     }
@@ -434,7 +441,12 @@ public class HandlerTransfer extends Handler<JobState>
 	
 	} catch (Exception e) {
 	    e.printStackTrace();
-	}
+        } finally {
+            try {
+                zooKeeper.close();
+            } catch (Exception ze) {}
+        }
+
     }
 
     /**

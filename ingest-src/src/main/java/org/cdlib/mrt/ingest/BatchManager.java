@@ -138,6 +138,7 @@ public class BatchManager {
 	 * @throws TException process exceptions
 	 */
 	public void init(JSONObject queueConf, JSONObject ingestConf) throws TException {
+		ZooKeeper zooKeeper = null;
 		try {
 			if (queueConf == null) {
 				throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "Queue Config properties not set");
@@ -187,7 +188,7 @@ public class BatchManager {
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
 			// Initialize ZK locks
-			ZooKeeper zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+			zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                         System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
 			MerrittLocks.initLocks(zooKeeper);
 
@@ -198,7 +199,13 @@ public class BatchManager {
 			logger.logError(msg, 3);
 			logger.logError(StringUtil.stackTrace(ex), 0);
 			throw new TException.GENERAL_EXCEPTION(msg);
-		}
+                } finally {
+                        try {
+                                zooKeeper.close();
+                        } catch (Exception e) {
+                        }
+                }
+
 	}
 
 	public IngestServiceState getServiceState() throws TException {
@@ -928,6 +935,7 @@ public class BatchManager {
     	}
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
+           ZooKeeper zooKeeper = null;
 	   try {
 		String SERVICENAME = "name";
 		String SERVICEID = "identifier";
@@ -940,7 +948,6 @@ public class BatchManager {
 		String MAILHOST = "mail-host";
                 // String QUEUEHOLDFILE = "QueueHoldFile";
 
-                ZooKeeper zooKeeper = null;
                 zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name
@@ -1021,7 +1028,11 @@ public class BatchManager {
                     System.out.println(StringUtil.stackTrace(ex));
                     logger.logError(MESSAGE + "Exception:" + ex, 0);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-            }
+            } finally {
+		try {
+		   zooKeeper.close();
+		} catch(Exception ze) {}
+	    }
 	}
 
 	static Object createObject(String className) {

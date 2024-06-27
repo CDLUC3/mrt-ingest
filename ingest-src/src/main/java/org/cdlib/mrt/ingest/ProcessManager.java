@@ -582,8 +582,8 @@ public class ProcessManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
+           ZooKeeper zooKeeper = null;
            try {
-                ZooKeeper zooKeeper = null;
                 zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -672,8 +672,12 @@ public class ProcessManager {
                     System.out.println(StringUtil.stackTrace(ex));
                     logger.logError(MESSAGE + "Exception:" + ex, 0);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-            }
+            } finally {
+		try {
+		   zooKeeper.close();
+		} catch(Exception ze) {}
 
+	    }
 	}
 
 	protected synchronized BatchState updateBatch(BatchState sourceBatchState, IngestRequest ingestRequest,

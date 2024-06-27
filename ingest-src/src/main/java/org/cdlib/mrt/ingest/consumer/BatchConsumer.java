@@ -397,7 +397,10 @@ class BatchConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
-	}
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
     }
 
     private boolean onHold()
@@ -409,7 +412,12 @@ class BatchConsumerDaemon implements Runnable
             }
         } catch (Exception e) {
             return false;
+        } finally {
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
+
         return false;
     }
 
@@ -484,7 +492,11 @@ class BatchConsumeData implements Runnable
             e.printStackTrace(System.err);
             System.out.println("[error] Consuming queue data");
         } finally {
-	} 
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
+
     }
 
    public class Ignorer implements Watcher {
@@ -599,6 +611,9 @@ class BatchCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
 	    sessionAuth = null;
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
     }
 

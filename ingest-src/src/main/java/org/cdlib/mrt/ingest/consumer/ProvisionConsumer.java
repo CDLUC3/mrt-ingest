@@ -252,7 +252,12 @@ class ProvisionConsumerDaemon implements Runnable
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
-	}
+        } finally {
+           try {
+              zooKeeper.close();
+           } catch(Exception ze) {}
+        }
+
     }
 
     public void run()
@@ -358,7 +363,10 @@ class ProvisionConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
-	}
+           try {
+              zooKeeper.close();
+           } catch(Exception ze) {}
+        }
     }
 
     // to do: make this a service call
@@ -371,7 +379,12 @@ class ProvisionConsumerDaemon implements Runnable
             }
         } catch (Exception e) {
             return false;
+        } finally {
+           try {
+              zooKeeper.close();
+           } catch(Exception ze) {}
         }
+
         return false;
     }
 
@@ -469,7 +482,11 @@ class ProvisionConsumeData implements Runnable
            } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
            System.out.println("Exception [error] Consuming queue data");
         } finally {
-	} 
+           try {
+              zooKeeper.close();
+           } catch(Exception ze) {}
+        }
+
     }
 
    public class Ignorer implements Watcher {

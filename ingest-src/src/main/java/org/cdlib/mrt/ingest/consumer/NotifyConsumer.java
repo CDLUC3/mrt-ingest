@@ -513,7 +513,11 @@ class NotifyConsumeData implements Runnable
            } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
            System.out.println("Exception [error] Consuming queue data");
         } finally {
-	} 
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
+
     }
 
    public class Ignorer implements Watcher {
@@ -553,7 +557,12 @@ class NotifyCleanupDaemon implements Runnable
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
         } catch (Exception e) {
             e.printStackTrace(System.err);
+        } finally {
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
+
     }
 
     public void run()
@@ -618,6 +627,9 @@ class NotifyCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
 	    sessionAuth = null;
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
     }
 

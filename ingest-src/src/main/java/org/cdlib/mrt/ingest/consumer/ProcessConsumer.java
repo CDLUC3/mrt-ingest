@@ -258,7 +258,12 @@ class ProcessConsumerDaemon implements Runnable
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
-	}
+        } finally {
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
+
     }
 
     public void run()
@@ -366,7 +371,10 @@ class ProcessConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
-	}
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
+        }
     }
 
     // to do: make this a service call
@@ -379,6 +387,10 @@ class ProcessConsumerDaemon implements Runnable
             }
         } catch (Exception e) {
             return false;
+        } finally {
+           try {
+                zooKeeper.close();
+           } catch(Exception ze) {}
         }
         return false;
     }
@@ -452,7 +464,7 @@ class ProcessConsumeData implements Runnable
 
 	    // Populate Manifest URL if necessary
 	    if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
-		job.setInventory(zooKeeper, jobState.grabObjectState(), "");
+		job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
 
 	    // Populate metadata if necessary
 	    if (JSONUtil.getValue(jp,"title") == null && jobState.getObjectTitle() != null) 
@@ -501,6 +513,9 @@ class ProcessConsumeData implements Runnable
            } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
            System.out.println("Exception [error] Consuming queue data");
         } finally {
+	   try {
+	      zooKeeper.close();
+	   } catch(Exception ze) {}
 	} 
     }
 

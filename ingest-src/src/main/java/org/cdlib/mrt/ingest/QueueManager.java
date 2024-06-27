@@ -289,9 +289,8 @@ public class QueueManager {
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 			try {
-				zooKeeper.close();
-			} catch (Exception e) {
-			}
+			   zooKeeper.close();
+			} catch (Exception e) {}
 		}
 	}
 
@@ -824,9 +823,8 @@ public class QueueManager {
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                         try {
-                                zooKeeper.close();
-                        } catch (Exception e) {
-                        }
+                           zooKeeper.close();
+                        } catch (Exception e) {}
                 }
         	return queueEntryState;
     	}
@@ -868,9 +866,8 @@ public class QueueManager {
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                         try {
-                                zooKeeper.close();
-                        } catch (Exception e) {
-                        }
+                           zooKeeper.close();
+                        } catch (Exception e) {}
                 }
         	return queueEntryState;
     	}
@@ -921,9 +918,8 @@ public class QueueManager {
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                         try {
-                                zooKeeper.close();
-                        } catch (Exception e) {
-                        }
+                           zooKeeper.close();
+                        } catch (Exception e) {}
                 }
 
         	return queueEntryState;
@@ -959,14 +955,14 @@ public class QueueManager {
             		throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                         try {
-                                zooKeeper.close();
-                        } catch (Exception e) {
-                        }
+                           zooKeeper.close();
+                        } catch (Exception e) {}
                 }
 
     	}
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
+           ZooKeeper zooKeeper = null;
 	   try {
 		String SERVICENAME = "name";
 		String SERVICEID = "identifier";
@@ -978,7 +974,6 @@ public class QueueManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-                ZooKeeper zooKeeper = null;
                 zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name
@@ -1060,7 +1055,11 @@ public class QueueManager {
                     System.out.println(StringUtil.stackTrace(ex));
                     logger.logError(MESSAGE + "Exception:" + ex, 0);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-            }
+            } finally {
+		    try {
+		        zooKeeper.close();
+		    } catch (Exception e) {}
+	    }
 	}
 
 	static Object createObject(String className) {

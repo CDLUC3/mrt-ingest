@@ -308,6 +308,9 @@ System.out.println(batchDump(batch, ""));
             String msg = "[error] " + MESSAGE + "in notification: " + e.getMessage();
 	    throw new TException.GENERAL_EXCEPTION(msg);
 	} finally {
+	    try {
+		zooKeeper.close();
+	    } catch (Exception e) {}
             formatterUtil = null;
 	    formatType = null;
 	}

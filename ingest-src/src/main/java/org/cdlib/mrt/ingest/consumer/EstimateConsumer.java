@@ -550,6 +550,9 @@ class EstimateConsumeData implements Runnable
            } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
            System.out.println("Exception [error] Consuming queue data");
         } finally {
+	   try {
+	      zooKeeper.close();
+	   } catch(Exception ze) {}
 	} 
     }
 
@@ -707,6 +710,9 @@ class EstimateCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
 	    sessionAuth = null;
+	    try {
+		zooKeeper.close();
+	    } catch(Exception ze) {}
         }
     }
 
