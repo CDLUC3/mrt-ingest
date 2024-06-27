@@ -128,16 +128,17 @@ public class HandlerTransfer extends Handler<JobState>
 	throws TException 
     {
 
+        HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
         HttpResponse clientResponse = null;
 	String action = "/add/";
 
 	zooConnectString = jobState.grabMisc();
 	zooLockNode = jobState.grabExtra();
 
-	boolean lock = getLock(jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
-        HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
-
 	try {
+            zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
+	    boolean lock = getLock(zooKeeper, jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
+
 	    originalStoreNode = profileState.getTargetStorage();
             if (DEBUG) System.out.println("[info] " + MESSAGE + " Original Storage endpoint: " + originalStoreNode.getStorageLink().toString());
 	    storeURL = getStoreHost(originalStoreNode.getStorageLink());
@@ -264,12 +265,12 @@ public class HandlerTransfer extends Handler<JobState>
 
             return new HandlerResult(false, msg);
 	} finally {
+	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
+	    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
             ThreadContext.clearMap();
             msgMap.clear();
             msgMap = null;
 	    clientResponse = null;
-	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
-	    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
 	    try {
 		zooKeeper.close();
 	    } catch (Exception e) {}
@@ -397,10 +398,9 @@ public class HandlerTransfer extends Handler<JobState>
      * @param String jobID
      * @return Boolean result of obtaining lock
      */
-    private boolean getLock(String primaryID, String payload) {
+    private boolean getLock(ZooKeeper zooKeeper, String primaryID, String payload) {
     try {
 
-       zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
        boolean locked = false;
 
 	while (! locked) {
