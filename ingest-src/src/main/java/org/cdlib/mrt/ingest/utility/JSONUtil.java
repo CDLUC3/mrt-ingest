@@ -116,7 +116,7 @@ public class JSONUtil
 	try {
            return jo.getString(key);
 	} catch (Exception e) {
-	   System.err.print("[ERROR] Could not find value in JSONObject: " + key);
+	   System.err.println("[warn] Could not find value in JSONObject: " + key);
 	   return null;
 	}
     }
