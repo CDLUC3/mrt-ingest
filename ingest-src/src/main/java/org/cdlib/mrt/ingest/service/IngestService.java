@@ -189,41 +189,6 @@ public class IngestService
     }
 
     @Override
-    public QueueEntryState postRequeue(String queue, String id, String fromState)
-        throws TException
-    {
-        return queueManager.postRequeue(queue, id, fromState);
-    }
-
-    @Override
-    public QueueEntryState postHoldRelease(String action, String queue, String id)
-        throws TException
-    {
-        return queueManager.postHoldRelease(action, queue, id);
-    }
-
-    @Override
-    public QueueEntryState postDeleteq(String queue, String id, String fromState)
-        throws TException
-    {
-        return queueManager.postDeleteq(queue, id, fromState);
-    }
-
-    @Override
-    public QueueState postCleanupq(String queue)
-        throws TException
-    {
-        return queueManager.postCleanupq(queue);
-    }
-
-    @Override
-    public QueueState postReleaseAll(String queue, String profile)
-        throws TException
-    {
-        return queueManager.postReleaseAll(queue, profile);
-    }
-
-    @Override
     public GenericState postProfileAction(String type, String environment, String notification, 
 	Map<String, String> profileParms)
         throws TException
@@ -299,48 +264,6 @@ public class IngestService
         throws TException
     {
         return queueManager.getIngestLockState();
-    }
-
-    @Override
-    public IngestQueueNameState getIngestQueueState()
-        throws TException
-    {
-        return queueManager.getIngestQueueState();
-    }
-
-    @Override
-    public IngestQueueNameState getAccessQueueState()
-        throws TException
-    {
-        return queueManager.getAccessQueueState();
-    }
-
-    @Override
-    public IngestQueueNameState getInventoryQueueState()
-        throws TException
-    {
-        return queueManager.getInventoryQueueState();
-    }
-
-    @Override
-    public QueueState getQueueState(String queue)
-        throws TException
-    {
-        return queueManager.getQueueState(queue);
-    }
-
-    @Override
-    public QueueState getAccessQueueState(String queue)
-        throws TException
-    {
-        return queueManager.getAccessQueueState(queue);
-    }
-
-    @Override
-    public QueueState getInventoryQueueState(String queue)
-        throws TException
-    {
-        return queueManager.getInventoryQueueState(queue);
     }
 
     @Override

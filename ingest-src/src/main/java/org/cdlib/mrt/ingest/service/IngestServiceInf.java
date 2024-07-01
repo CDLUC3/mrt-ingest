@@ -131,46 +131,6 @@ public interface IngestServiceInf
         throws TException;
 
     /**
-     * Requeue queue entry
-     * @return QueueEntryState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueEntryState postRequeue(String queue, String id, String fromState)
-        throws TException;
-
-    /**
-     * Release queue entry
-     * @return QueueEntryState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueEntryState postHoldRelease(String action, String queue, String id)
-        throws TException;
-
-    /**
-     * Delete queue entry
-     * @return QueueEntryState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueEntryState postDeleteq(String queue, String id, String fromState)
-        throws TException;
-
-    /**
-     * Clean up queue 
-     * @return QueueState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueState postCleanupq(String queue)
-        throws TException;
-
-    /**
-     * Release queue entries at a collection level
-     * @return QueueState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueState postReleaseAll(String queue, String profile)
-        throws TException;
-
-    /**
      * Profile creation
      * @return GenericState service state information
      * @throws TException Exception condition 
@@ -188,54 +148,6 @@ public interface IngestServiceInf
     public IngestLockNameState getIngestLockState()
         throws TException;
 
-    /**
-     * Get ingest queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestQueueNameState getIngestQueueState()
-        throws TException;
-
-    /**
-     * Get access queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestQueueNameState getAccessQueueState()
-        throws TException;
-
-    /**
-     * Get inventory queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestQueueNameState getInventoryQueueState()
-        throws TException;
-
-    /**
-     * Get queue state information 
-     * @param queue Queue to examine
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public QueueState getQueueState(String queue)
-        throws TException;
-
-    /**
-     * Get access queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public QueueState getAccessQueueState(String queue)
-        throws TException;
-
-    /**
-     * Get inventory queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public QueueState getInventoryQueueState(String queue)
-        throws TException;
 
     /**
      * Get lock state information 

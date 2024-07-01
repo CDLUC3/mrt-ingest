@@ -105,9 +105,7 @@ public class HandlerSubmit extends Handler<BatchState>
 
 
             // open a single connection to zookeeper for all queue posting
-            // todo: create an interface
             zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
-            // DistributedQueue distributedQueue = new DistributedQueue(zooKeeper, batchState.grabTargetQueueNode(), priority + priorityBoolean + getWorkerID(), null);	// default priority
 
 	    // common across all jobs in batch
 	    jproperties.put("batchID", batchState.getBatchID().getValue());

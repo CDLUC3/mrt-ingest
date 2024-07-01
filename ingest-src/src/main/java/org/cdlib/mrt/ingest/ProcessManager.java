@@ -495,15 +495,6 @@ public class ProcessManager {
 					}
 				}
 
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue.class) {
-					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
-						+ jobState.grabTargetStorage().getNodeID() + "/"
-						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
-
-					jobState.setMisc(queueConf.getString("QueueService"));
-					jobState.setExtra(queueConf.getString("InventoryName"));
-				}
-
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {
 					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
 						+ jobState.grabTargetStorage().getNodeID() + "/"
