@@ -87,7 +87,6 @@ public class BatchReportConsumer extends HttpServlet
     private volatile Thread cleanupThread = null;
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
-    private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
@@ -118,17 +117,6 @@ public class BatchReportConsumer extends HttpServlet
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
-	}
-
-	try {
-	    queueNode = ingestService.getQueueServiceConf().getString("QueueName");
-	    if (StringUtil.isNotEmpty(queueNode)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue node: " + queueNode);
-		this.queueNode = queueNode;
-	    }
-	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue node: " + queueNode +
-		 "  - using default: " + this.queueNode);
 	}
 
 	try {
@@ -197,7 +185,7 @@ public class BatchReportConsumer extends HttpServlet
                 return;
             }
 
-            BatchReportConsumerDaemon consumerDaemon = new BatchReportConsumerDaemon(queueConnectionString, queueNode,
+            BatchReportConsumerDaemon consumerDaemon = new BatchReportConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(consumerDaemon);
@@ -225,7 +213,7 @@ public class BatchReportConsumer extends HttpServlet
                 return;
             }
 
-            BatchReportCleanupDaemon cleanupDaemon = new BatchReportCleanupDaemon(queueConnectionString, queueNode, servletConfig);
+            BatchReportCleanupDaemon cleanupDaemon = new BatchReportCleanupDaemon(queueConnectionString, servletConfig);
 
             cleanupThread =  new Thread(cleanupDaemon);
             cleanupThread.setDaemon(true);                // Kill thread when servlet dies
@@ -265,7 +253,6 @@ class BatchReportConsumerDaemon implements Runnable
     private IngestServiceInf ingestService = null;
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
 
@@ -278,11 +265,10 @@ class BatchReportConsumerDaemon implements Runnable
 
 
     // Constructor
-    public BatchReportConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+    public BatchReportConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 	this.pollingInterval = pollingInterval;
 	this.poolSize = poolSize;
 
@@ -350,7 +336,7 @@ class BatchReportConsumerDaemon implements Runnable
 			    batch = Batch.acquireBatchForReporting(zooKeeper);
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
-                                executorService.execute(new BatchReportConsumeData(ingestService, batch, zooKeeper, queueConnectionString, queueNode));
+                                executorService.execute(new BatchReportConsumeData(ingestService, batch, zooKeeper, queueConnectionString));
 			    } else {
 				break;
 		     	    }
@@ -368,7 +354,6 @@ class BatchReportConsumerDaemon implements Runnable
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
-		    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
 		} catch (Exception e) {
 		    System.err.println("[warn] " + MESSAGE + "General exception.");
 	            e.printStackTrace();
@@ -436,7 +421,6 @@ class BatchReportConsumeData implements Runnable
     protected static final String FS = System.getProperty("file.separator");
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 360000;
 
@@ -445,14 +429,13 @@ class BatchReportConsumeData implements Runnable
     private Batch batch = null;
 
     // Constructor
-    public BatchReportConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
+    public BatchReportConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString)
     {
 	this.zooKeeper = zooKeeper;
 	this.batch = batch;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
     }
 
     public void run()
@@ -517,9 +500,7 @@ class BatchReportCleanupDaemon implements Runnable
     private static final String MESSAGE = NAME + ": ";
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = 3600;	// seconds
-    // public static int sessionTimeout = 40000;
     public static int sessionTimeout = 360000;         // hour^M
 
     private ZooKeeper zooKeeper = null;
@@ -530,10 +511,9 @@ class BatchReportCleanupDaemon implements Runnable
 
 
     // Constructor
-    public BatchReportCleanupDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig)
+    public BatchReportCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 
         try {
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
@@ -622,10 +602,17 @@ class BatchReportCleanupDaemon implements Runnable
 
 		    // COMPLETED BATCHES
                     while (true) {
-                        System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
                         List<String> batches = null;
                         try {
-                           batches = Batch.deleteCompletedBatches(zooKeeper);
+			   try {
+                              batches = Batch.deleteCompletedBatches(zooKeeper);
+			   } catch (SessionExpiredException see) {
+               		      zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                              System.out.println(MESSAGE + "Error removing completed batches, retrying: " + see.getMessage());
+                              batches = Batch.deleteCompletedBatches(zooKeeper);
+			   }
+
 			   for (String batchName: batches) {
                                System.out.println(NAME + " Found completed batch.  Removing: " + batchName);
 			   } 
@@ -647,7 +634,6 @@ class BatchReportCleanupDaemon implements Runnable
                     System.out.println("[info] " + MESSAGE + "No data in queue to clean");
                 } catch (IllegalArgumentException iae) {
                     // no queue exists
-                    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
                 } catch (Exception e) {
                     System.err.println("[warn] " + MESSAGE + "General exception.");
                     e.printStackTrace();

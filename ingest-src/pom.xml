@@ -173,11 +173,6 @@
             <version>${merritt-core.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.cdlib.mrt</groupId>
-            <artifactId>cdl-zk-queue</artifactId>
-            <version>0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>org.cdlib.mrt.zk</groupId>
             <artifactId>MerrittZK</artifactId>
             <version>1.0</version>

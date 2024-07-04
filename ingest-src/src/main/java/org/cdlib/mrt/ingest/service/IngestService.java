@@ -41,12 +41,9 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.ingest.LockState;
-import org.cdlib.mrt.ingest.QueueState;
-import org.cdlib.mrt.ingest.QueueEntryState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
-import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.ManifestsState;
@@ -257,20 +254,6 @@ public class IngestService
         throws TException
     {
         return adminManager.getJobManifestState(batchID, jobID);
-    }
-
-    @Override
-    public IngestLockNameState getIngestLockState()
-        throws TException
-    {
-        return queueManager.getIngestLockState();
-    }
-
-    @Override
-    public LockState getIngestLockState(String lock)
-        throws TException
-    {
-        return queueManager.getIngestLockState(lock);
     }
 
     @Override

@@ -42,7 +42,6 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
@@ -84,7 +83,6 @@ public class ProvisionConsumer extends HttpServlet
     private volatile Thread cleanupThread = null;
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
-    private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
@@ -116,17 +114,6 @@ public class ProvisionConsumer extends HttpServlet
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
-	}
-
-	try {
-	    queueNode = ingestService.getQueueServiceConf().getString("QueueName");
-	    if (StringUtil.isNotEmpty(queueNode)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue node: " + queueNode);
-		this.queueNode = queueNode;
-	    }
-	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue node: " + queueNode +
-		 "  - using default: " + this.queueNode);
 	}
 
 	try {
@@ -186,7 +173,7 @@ public class ProvisionConsumer extends HttpServlet
                 return;
             }
 
-            ProvisionConsumerDaemon jobConsumerDaemon = new ProvisionConsumerDaemon(queueConnectionString, queueNode,
+            ProvisionConsumerDaemon jobConsumerDaemon = new ProvisionConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(jobConsumerDaemon);
@@ -223,7 +210,6 @@ class ProvisionConsumerDaemon implements Runnable
     private IngestServiceInf ingestService = null;
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
 
@@ -237,11 +223,10 @@ class ProvisionConsumerDaemon implements Runnable
 
 
     // Constructor
-    public ProvisionConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+    public ProvisionConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 	this.pollingInterval = pollingInterval;
 	this.poolSize = poolSize;
 
@@ -311,7 +296,7 @@ class ProvisionConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found provisioning job data: " + job.id());
-                                executorService.execute(new ProvisionConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
+                                executorService.execute(new ProvisionConsumeData(ingestService, job, zooKeeper, queueConnectionString));
                             } else {
                                 break;
                             }
@@ -331,7 +316,6 @@ class ProvisionConsumerDaemon implements Runnable
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
-		    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
 		} catch (Exception e) {
 		    System.err.println("[warn] " + MESSAGE + "General exception.");
 	            e.printStackTrace();
@@ -405,7 +389,6 @@ class ProvisionConsumeData implements Runnable
     protected static final String FS = System.getProperty("file.separator");
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 360000;
 
@@ -414,14 +397,13 @@ class ProvisionConsumeData implements Runnable
     private JobState jobState = null;
 
     // Constructor
-    public ProvisionConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
+    public ProvisionConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
     {
         this.zooKeeper = zooKeeper;
 	this.job = job;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
     }
 
     public void run()

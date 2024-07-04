@@ -56,8 +56,6 @@ import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
-import org.cdlib.mrt.queue.Item;
-import org.cdlib.mrt.queue.LockItem;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StateInf;
@@ -68,9 +66,6 @@ import org.cdlib.mrt.zk.MerrittLocks;
 
 import org.json.JSONObject;
 import org.json.JSONException;
-
-import org.cdlib.mrt.queue.DistributedLock;
-
 
 /**
  * Basic manager for Queuing Service
@@ -87,12 +82,6 @@ public class QueueManager {
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
 	private String queueConnectionString = null;
-	private String queueNode = null;
-	private String ingestQNames = null;
-	private String ingestLName = null;
-	private String inventoryNode = "/inv"; // default
-	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
-	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
 	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
@@ -151,9 +140,6 @@ public class QueueManager {
 			String value = null;
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
-			String matchQueueNode = "QueueName";
-			String matchIngestLName = "ingestLock";
-			String matchInventoryNode = "InventoryName";
 			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
@@ -165,14 +151,6 @@ public class QueueManager {
 
 			// QueueService - host1:2181,host2:2181
 			this.queueConnectionString = queueConf.getString(matchQueueService);
-			// QueueName - /ingest.ingest01.1
-			this.queueNode = queueConf.getString(matchQueueNode);
-			// InventoryName - /mrt.inventory.full
-			this.inventoryNode = queueConf.getString(matchInventoryNode);
-			// Priority Threshold
-			this.highPriorityThreshold = queueConf.getString(matchHighPriorityThreshold);
-			// All Ingest Lock Names - "zkLock,..."
-			this.ingestLName = ingestConf.getString(matchIngestLName);
 
 			// email list
 			value = ingestConf.getString(matchAdmin);
@@ -216,135 +194,6 @@ public class QueueManager {
 		}
 	}
 
-        public LockState getIngestLockState(String lockNode) throws TException {
-                ZooKeeper zooKeeper = null;
-                TreeMap<Long, String> orderedChildren;
-                byte[] data = null;
-                try {
-                        LockState ingestLockState = new LockState(); 
-			String pathID = null;  // Not needed for tree listing
-
-                        // open a single connection to zookeeper for all lock posting
-                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                        DistributedLock distributedLock = new DistributedLock(zooKeeper, lockNode, pathID, null);
-
-                        try {
-                                orderedChildren = distributedLock.orderedChildren(null);
-                        } catch (KeeperException.NoNodeException e) {
-                                orderedChildren = null;
-                                // throw new NoSuchElementException();
-                        }
-                        if ( orderedChildren != null) {
-                           for (String headNode : orderedChildren.values()) {
-                                   String path = String.format("%s/%s", distributedLock.node, headNode);
-                                   try {
-                                        data = zooKeeper.getData(path, false, null);
-                                        LockItem lockItem = LockItem.fromBytes(data);
-
-                                        LockEntryState lockEntryState = new LockEntryState();
-                                        lockEntryState.setDate(lockItem.getTimestamp().toString());
-                                        lockEntryState.setJobID(lockItem.getData());
-                                        lockEntryState.setID(headNode);
-
-                                        ingestLockState.addEntry(lockEntryState);
-                                } catch (KeeperException.NoNodeException e) {
-                                        System.out.println("KeeperException.NoNodeException");
-                                        System.out.println(StringUtil.stackTrace(e));
-                                } catch (Exception ex) {
-                                        System.out.println("Exception");
-                                        System.out.println(StringUtil.stackTrace(ex));
-                                } finally {
-					data = null;
-				}
-                            }
-                        }
-
-                        return ingestLockState;
-
-                } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
-                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-                } finally {
-                        try {
-                                zooKeeper.close();
-                                orderedChildren = null;
-                        } catch (Exception e) {
-                        }
-                }
-        }
-
-
-	public IngestLockNameState getIngestLockState() throws TException {
-		String[] nodes;
-		try {
-			IngestLockNameState ingestLockNameState = new IngestLockNameState();
-			// comma delimiter if multiple ingest ZK locks
-			nodes = ingestLName.split(",");
-			for (String node: nodes) {
-			   ingestLockNameState.addEntry(node);
-			}
-			return ingestLockNameState;
-
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-			nodes = null;
-		}
-	}
-
-	public IngestQueueNameState getIngestQueueState() throws TException {
-		String[] nodes;
-		try {
-			IngestQueueNameState ingestQueueNameState = new IngestQueueNameState();
-			// comma delimiter if multiple ingest ZK queues
-			nodes = queueNode.split(",");
-			for (String node: nodes) {
-			   ingestQueueNameState.addEntry(node);
-			}
-			return ingestQueueNameState;
-
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-			nodes = null;
-		}
-	}
-
-	public IngestQueueNameState getInventoryQueueState() throws TException {
-		try {
-			IngestQueueNameState inventoryQueueNameState = new IngestQueueNameState();
-			// Assume a single Inventory ZK queue
-			inventoryQueueNameState.addEntry(inventoryNode);
-
-			return inventoryQueueNameState;
-
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		}
-	}
-
-	public IngestQueueNameState getAccessQueueState() throws TException {
-		try {
-			IngestQueueNameState accessQueueNameState = new IngestQueueNameState();
-			// get small and large queue
-			accessQueueNameState.addEntry(accessSmallNode);
-			accessQueueNameState.addEntry(accessLargeNode);
-
-			return accessQueueNameState;
-
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		}
-	}
 
 	public BatchState submit(IngestRequest ingestRequest) throws Exception {
 		ProfileState profileState = null;
@@ -356,8 +205,6 @@ public class QueueManager {
 			BatchState batchState = new BatchState();
 			batchState.clear();
 			batchState.setTargetQueue(queueConnectionString);
-			batchState.setTargetQueueNode(queueNode);
-			batchState.setTargetInventoryNode(inventoryNode);
 			batchState.setUserAgent(ingestRequest.getJob().grabUserAgent());
 			batchState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 			batchState.setBatchStatus(BatchStatusEnum.QUEUED);

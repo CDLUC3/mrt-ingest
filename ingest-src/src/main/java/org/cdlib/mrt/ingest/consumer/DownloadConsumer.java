@@ -42,7 +42,6 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
@@ -84,7 +83,6 @@ public class DownloadConsumer extends HttpServlet
     private volatile Thread cleanupThread = null;
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
-    private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
@@ -116,17 +114,6 @@ public class DownloadConsumer extends HttpServlet
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
-	}
-
-	try {
-	    queueNode = ingestService.getQueueServiceConf().getString("QueueName");
-	    if (StringUtil.isNotEmpty(queueNode)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue node: " + queueNode);
-		this.queueNode = queueNode;
-	    }
-	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue node: " + queueNode +
-		 "  - using default: " + this.queueNode);
 	}
 
 	try {
@@ -186,7 +173,7 @@ public class DownloadConsumer extends HttpServlet
                 return;
             }
 
-            DownloadConsumerDaemon jobConsumerDaemon = new DownloadConsumerDaemon(queueConnectionString, queueNode,
+            DownloadConsumerDaemon jobConsumerDaemon = new DownloadConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(jobConsumerDaemon);
@@ -227,7 +214,6 @@ class DownloadConsumerDaemon implements Runnable
     private IngestServiceInf ingestService = null;
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
     public static int sessionTimeout = 40000;
@@ -240,11 +226,10 @@ class DownloadConsumerDaemon implements Runnable
 
 
     // Constructor
-    public DownloadConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+    public DownloadConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 	this.pollingInterval = pollingInterval;
 	this.poolSize = poolSize;
 
@@ -304,17 +289,13 @@ class DownloadConsumerDaemon implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    //String worker = getWorkerID();
-			    //item = distributedQueue.consume(worker, false);
-                            //executorService.execute(new DownloadConsumeData(ingestService, item, distributedQueue, queueConnectionString, queueNode));
-
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
                             job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Downloading);
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found downloading job data: " + job.id());
-                                executorService.execute(new DownloadConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
+                                executorService.execute(new DownloadConsumeData(ingestService, job, zooKeeper, queueConnectionString));
                             } else {
                                 break;
                             }
@@ -333,7 +314,6 @@ class DownloadConsumerDaemon implements Runnable
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
-		    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
 		} catch (Exception e) {
 		    System.err.println("[warn] " + MESSAGE + "General exception.");
 	            e.printStackTrace();
@@ -404,7 +384,6 @@ class DownloadConsumeData implements Runnable
     protected static final String FS = System.getProperty("file.separator");
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 360000;
 
@@ -413,14 +392,13 @@ class DownloadConsumeData implements Runnable
     private JobState jobState = null;
 
     // Constructor
-    public DownloadConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
+    public DownloadConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
     {
         this.zooKeeper = zooKeeper;
 	this.job = job;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
     }
 
     public void run()

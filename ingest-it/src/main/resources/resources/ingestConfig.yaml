@@ -26,8 +26,8 @@ ingest-info:
 
   queue-info:
     QueueService: "zoo-it:2181"
-    QueueName: "/ingest"
-    InventoryName: "/mrt.inventory.full"
+    # QueueName: "/ingest"
+    # InventoryName: "/mrt.inventory.full"
     PollingInterval: "2"
     NumThreads: "3"
     NumThreadsHighPriority: "2"

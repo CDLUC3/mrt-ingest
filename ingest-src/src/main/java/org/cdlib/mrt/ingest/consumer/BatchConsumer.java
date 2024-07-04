@@ -86,7 +86,6 @@ public class BatchConsumer extends HttpServlet
     private volatile Thread cleanupThread = null;
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
-    private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
@@ -117,17 +116,6 @@ public class BatchConsumer extends HttpServlet
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
-	}
-
-	try {
-	    queueNode = ingestService.getQueueServiceConf().getString("QueueName");
-	    if (StringUtil.isNotEmpty(queueNode)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue node: " + queueNode);
-		this.queueNode = queueNode;
-	    }
-	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue node: " + queueNode +
-		 "  - using default: " + this.queueNode);
 	}
 
 	try {
@@ -196,7 +184,7 @@ public class BatchConsumer extends HttpServlet
                 return;
             }
 
-            BatchConsumerDaemon consumerDaemon = new BatchConsumerDaemon(queueConnectionString, queueNode,
+            BatchConsumerDaemon consumerDaemon = new BatchConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(consumerDaemon);
@@ -224,7 +212,7 @@ public class BatchConsumer extends HttpServlet
                 return;
             }
 
-            BatchCleanupDaemon cleanupDaemon = new BatchCleanupDaemon(queueConnectionString, queueNode, servletConfig);
+            BatchCleanupDaemon cleanupDaemon = new BatchCleanupDaemon(queueConnectionString, servletConfig);
 
             cleanupThread =  new Thread(cleanupDaemon);
             cleanupThread.setDaemon(true);                // Kill thread when servlet dies
@@ -264,7 +252,6 @@ class BatchConsumerDaemon implements Runnable
     private IngestServiceInf ingestService = null;
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
     public static int sessionTimeout = 300000;	//5 minutes
@@ -277,11 +264,10 @@ class BatchConsumerDaemon implements Runnable
 
 
     // Constructor
-    public BatchConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+    public BatchConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 	this.pollingInterval = pollingInterval;
 	this.poolSize = poolSize;
 
@@ -348,7 +334,7 @@ class BatchConsumerDaemon implements Runnable
                             batch = Batch.acquirePendingBatch(zooKeeper);
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
-                                executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString, queueNode));
+                                executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString));
 			    } else {
 				break;
 		     	    }
@@ -366,7 +352,6 @@ class BatchConsumerDaemon implements Runnable
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
-		    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
 		} catch (Exception e) {
 		    System.err.println("[warn] " + MESSAGE + "General exception.");
 	            e.printStackTrace();
@@ -438,7 +423,6 @@ class BatchConsumeData implements Runnable
     protected static final String FS = System.getProperty("file.separator");
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 360000;
 
@@ -447,14 +431,13 @@ class BatchConsumeData implements Runnable
     private Batch batch = null;
 
     // Constructor
-    public BatchConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
+    public BatchConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString)
     {
 	this.zooKeeper = zooKeeper;
 	this.batch = batch;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
     }
 
     public void run()
@@ -520,7 +503,6 @@ class BatchCleanupDaemon implements Runnable
     private static final String MESSAGE = NAME + ": ";
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = 3600;	// seconds
     public static int sessionTimeout = 360000;
 
@@ -532,10 +514,9 @@ class BatchCleanupDaemon implements Runnable
 
 
     // Constructor
-    public BatchCleanupDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig)
+    public BatchCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 
         try {
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
@@ -579,13 +560,13 @@ class BatchCleanupDaemon implements Runnable
 
                     // To prevent long shutdown, no more than poolsize tasks queued.
                     while (true) {
-                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString);
 			try {
 			    //distributedQueue.cleanup(Item.COMPLETED);
 			} catch (NoSuchElementException nsee) {
 			    // No more data
 			} 
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString);
 			// Will throw NoSuchElementException to break tight loop
 			//distributedQueue.cleanup(Item.DELETED);
 
@@ -599,7 +580,6 @@ class BatchCleanupDaemon implements Runnable
                     System.out.println("[info] " + MESSAGE + "No data in queue to clean");
                 } catch (IllegalArgumentException iae) {
                     // no queue exists
-                    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
                 } catch (Exception e) {
                     System.err.println("[warn] " + MESSAGE + "General exception.");
                     e.printStackTrace();

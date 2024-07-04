@@ -27,8 +27,8 @@ ingest-info:
 
   queue-info:
     QueueService: "localhost:{!ENV: it-zoo.port !DEFAULT: 2181}"
-    QueueName: "/ingest"
-    InventoryName: "/mrt.inventory.full"
+    # QueueName: "/ingest"
+    # InventoryName: "/mrt.inventory.full"
     PollingInterval: "10"
     NumThreads: "5"
 

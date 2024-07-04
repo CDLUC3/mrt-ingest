@@ -40,12 +40,9 @@ import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobFileState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
-import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.LockState;
-import org.cdlib.mrt.ingest.QueueState;
-import org.cdlib.mrt.ingest.QueueEntryState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
@@ -139,24 +136,6 @@ public interface IngestServiceInf
 	 Map<String, String> profileParms)
         throws TException;
 
-
-    /**
-     * Get ingest lock state information 
-     * @return LockState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestLockNameState getIngestLockState()
-        throws TException;
-
-
-    /**
-     * Get lock state information 
-     * @param lock Lock to examine
-     * @return LockState state information
-     * @throws TException Exception condition during lock service processing
-     */
-    public LockState getIngestLockState(String lock)
-        throws TException;
 
     /**
      * Get profile state information 

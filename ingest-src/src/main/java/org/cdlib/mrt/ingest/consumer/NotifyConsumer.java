@@ -42,7 +42,6 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
-import org.cdlib.mrt.queue.Item;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
@@ -84,7 +83,6 @@ public class NotifyConsumer extends HttpServlet
     private volatile Thread cleanupThread = null;
 
     private String queueConnectionString = "localhost:2181";	// default single server connection
-    private String queueNode = "/server.1";	// default queue
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 2;	// default interval (minutes)
@@ -115,17 +113,6 @@ public class NotifyConsumer extends HttpServlet
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
-	}
-
-	try {
-	    queueNode = ingestService.getQueueServiceConf().getString("QueueName");
-	    if (StringUtil.isNotEmpty(queueNode)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue node: " + queueNode);
-		this.queueNode = queueNode;
-	    }
-	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue node: " + queueNode +
-		 "  - using default: " + this.queueNode);
 	}
 
 	try {
@@ -194,7 +181,7 @@ public class NotifyConsumer extends HttpServlet
                 return;
             }
 
-            NotifyConsumerDaemon jobConsumerDaemon = new NotifyConsumerDaemon(queueConnectionString, queueNode,
+            NotifyConsumerDaemon jobConsumerDaemon = new NotifyConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(jobConsumerDaemon);
@@ -222,7 +209,7 @@ public class NotifyConsumer extends HttpServlet
                 return;
             }
 
-            NotifyCleanupDaemon cleanupDaemon = new NotifyCleanupDaemon(queueConnectionString, queueNode, servletConfig);
+            NotifyCleanupDaemon cleanupDaemon = new NotifyCleanupDaemon(queueConnectionString, servletConfig);
 
             cleanupThread =  new Thread(cleanupDaemon);
             cleanupThread.setDaemon(true);                // Kill thread when servlet dies
@@ -262,7 +249,6 @@ class NotifyConsumerDaemon implements Runnable
     private IngestServiceInf ingestService = null;
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = 15;	// seconds
     private Integer poolSize = null;
     // public static int sessionTimeout = 40000;
@@ -276,11 +262,10 @@ class NotifyConsumerDaemon implements Runnable
 
 
     // Constructor
-    public NotifyConsumerDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig, 
+    public NotifyConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 	this.pollingInterval = pollingInterval;
 	this.poolSize = poolSize;
 
@@ -340,17 +325,13 @@ class NotifyConsumerDaemon implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    //String worker = getWorkerID();
-			    //item = distributedQueue.consume(worker, false);
-                            //executorService.execute(new NotifyConsumeData(ingestService, item, distributedQueue, queueConnectionString, queueNode));
-
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
                             job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Notify);
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found notifying job data: " + job.id());
-                                executorService.execute(new NotifyConsumeData(ingestService, job, zooKeeper, queueConnectionString, queueNode));
+                                executorService.execute(new NotifyConsumeData(ingestService, job, zooKeeper, queueConnectionString));
                             } else {
                                 break;
                             }
@@ -369,7 +350,6 @@ class NotifyConsumerDaemon implements Runnable
 		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
-		    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
 		} catch (Exception e) {
 		    System.err.println("[warn] " + MESSAGE + "General exception.");
 	            e.printStackTrace();
@@ -436,7 +416,6 @@ class NotifyConsumeData implements Runnable
     protected static final String FS = System.getProperty("file.separator");
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 360000;
 
@@ -445,14 +424,13 @@ class NotifyConsumeData implements Runnable
     private JobState jobState = null;
 
     // Constructor
-    public NotifyConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString, String queueNode)
+    public NotifyConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
     {
         this.zooKeeper = zooKeeper;
 	this.job = job;
 	this.ingestService = ingestService;
 
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
     }
 
     public void run()
@@ -541,7 +519,6 @@ class NotifyCleanupDaemon implements Runnable
     private static final String MESSAGE = NAME + ": ";
 
     private String queueConnectionString = null;
-    private String queueNode = null;
     private Integer pollingInterval = 3600;	// seconds
     public static int sessionTimeout = 300000;  //5 minutes
 
@@ -553,10 +530,9 @@ class NotifyCleanupDaemon implements Runnable
 
 
     // Constructor
-    public NotifyCleanupDaemon(String queueConnectionString, String queueNode, ServletConfig servletConfig)
+    public NotifyCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
     {
         this.queueConnectionString = queueConnectionString;
-        this.queueNode = queueNode;
 
         try {
             zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
@@ -604,7 +580,7 @@ class NotifyCleanupDaemon implements Runnable
 
                     // To prevent long shutdown, no more than poolsize tasks queued.
                     while (true) {
-                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
+                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString);
                         Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
                     }
 
@@ -615,7 +591,6 @@ class NotifyCleanupDaemon implements Runnable
                     System.out.println("[info] " + MESSAGE + "No data in queue to clean");
                 } catch (IllegalArgumentException iae) {
                     // no queue exists
-                    System.out.println("[info] " + MESSAGE + "New queue does not yet exist: " + queueNode);
                 } catch (Exception e) {
                     System.err.println("[warn] " + MESSAGE + "General exception.");
                     e.printStackTrace();
