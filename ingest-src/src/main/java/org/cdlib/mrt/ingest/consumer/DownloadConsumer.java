@@ -216,6 +216,7 @@ class DownloadConsumerDaemon implements Runnable
     private String queueConnectionString = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
+    private int keepAliveTime = 60;     // when poolSize is exceeded
     public static int sessionTimeout = 40000;
 
     private ZooKeeper zooKeeper = null;
@@ -248,7 +249,7 @@ class DownloadConsumerDaemon implements Runnable
         boolean init = true;
         String status = null;
         ArrayBlockingQueue<DownloadConsumeData> workQueue = new ArrayBlockingQueue<DownloadConsumeData>(poolSize);
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) 5, TimeUnit.SECONDS, (BlockingQueue) workQueue);
+        ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
@@ -296,6 +297,7 @@ class DownloadConsumerDaemon implements Runnable
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found downloading job data: " + job.id());
                                 executorService.execute(new DownloadConsumeData(ingestService, job, zooKeeper, queueConnectionString));
+                                Thread.currentThread().sleep(5 * 1000);
                             } else {
                                 break;
                             }

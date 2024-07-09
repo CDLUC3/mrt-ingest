@@ -254,6 +254,7 @@ class BatchReportConsumerDaemon implements Runnable
 
     private String queueConnectionString = null;
     private Integer pollingInterval = null;
+    private int keepAliveTime = 60;     // when poolSize is exceeded
     private Integer poolSize = null;
 
     private ZooKeeper zooKeeper = null;
@@ -288,7 +289,7 @@ class BatchReportConsumerDaemon implements Runnable
         boolean init = true;
         String status = null;
         ArrayBlockingQueue<BatchReportConsumeData> workQueue = new ArrayBlockingQueue<BatchReportConsumeData>(poolSize);
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) 5, TimeUnit.SECONDS, (BlockingQueue) workQueue);
+        ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
@@ -337,6 +338,7 @@ class BatchReportConsumerDaemon implements Runnable
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
                                 executorService.execute(new BatchReportConsumeData(ingestService, batch, zooKeeper, queueConnectionString));
+                                Thread.currentThread().sleep(5 * 1000);
 			    } else {
 				break;
 		     	    }

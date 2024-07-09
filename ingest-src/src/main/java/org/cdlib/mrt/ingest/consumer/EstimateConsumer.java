@@ -254,6 +254,7 @@ class EstimateConsumerDaemon implements Runnable
     private String queueConnectionString = null;
     private Integer pollingInterval = null;
     private Integer poolSize = null;
+    private int keepAliveTime = 60;     // when poolSize is exceeded
 
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 300000;  //5 minutes
@@ -287,7 +288,7 @@ class EstimateConsumerDaemon implements Runnable
         boolean init = true;
         String status = null;
         ArrayBlockingQueue<EstimateConsumeData> workQueue = new ArrayBlockingQueue<EstimateConsumeData>(poolSize);
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) 5, TimeUnit.SECONDS, (BlockingQueue) workQueue);
+        ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
@@ -366,6 +367,7 @@ class EstimateConsumerDaemon implements Runnable
 				}
 
                                 executorService.execute(new EstimateConsumeData(ingestService, job, zooKeeper, queueConnectionString));
+                                Thread.currentThread().sleep(5 * 1000);
                             } else {
                                 break;
                             }
