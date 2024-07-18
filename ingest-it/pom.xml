@@ -183,7 +183,7 @@
                   </run>
                 </image>
                 <image>
-                  <name>${itDockerRegistry}/fakesmtp</name>
+                  <name>${itDockerRegistry}/fakesmtp:dev</name>
                   <alias>smtp</alias>
                   <run>
                     <network>
