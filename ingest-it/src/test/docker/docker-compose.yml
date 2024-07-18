@@ -52,7 +52,7 @@ services:
     tty: true
   smtp:
     container_name: smtp 
-    image: ghusta/fakesmtp
+    image: ${ECR_REGISTRY}/fakesmtp
     networks:
       merrittnet:
     restart: unless-stopped

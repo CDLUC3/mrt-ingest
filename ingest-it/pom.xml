@@ -183,7 +183,7 @@
                   </run>
                 </image>
                 <image>
-                  <name>ghusta/fakesmtp</name>
+                  <name>${itDockerRegistry}/fakesmtp</name>
                   <alias>smtp</alias>
                   <run>
                     <network>
