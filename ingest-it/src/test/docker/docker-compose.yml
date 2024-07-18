@@ -17,7 +17,7 @@ services:
       merrittnet:
   it-server:
     container_name: it-server
-    image: tomcat:8-jre8
+    image: ${ECR_REGISTRY}/merritt-tomcat:dev
     volumes:
     - "ingest:/tdr/ingest"
     - "queue:/tdr/ingest/queue"
@@ -41,7 +41,7 @@ services:
     entrypoint: ["catalina.sh", "jpda", "run"]
   zoo-it:
     container_name: zoo-it
-    image: zookeeper:3.8.4
+    image: public.ecr.aws/docker/library/zookeeper:3.8.4
     networks:
       merrittnet:
     ports:
