@@ -270,7 +270,7 @@ public class QueueManager {
 			      MerrittLocks.lockCollection(zooKeeper, collection);
 			      ingestState.setSubmissionState(action);
 			   } else if (action.matches("thaw")) {
-			      MerrittLocks.lockCollection(zooKeeper, collection);
+			      MerrittLocks.unlockCollection(zooKeeper, collection);
 			      ingestState.setSubmissionState(action);
 			   } else {
 			      System.err.println("Exception: Ingest collection action not valid: " + action );
