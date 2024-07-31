@@ -4,7 +4,7 @@
   <groupId>org.cdlib.mrt</groupId>
   <artifactId>mrt-ingestinit</artifactId>
   <packaging>pom</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>3.0-SNAPSHOT</version>
   <name>UC3-mrtIngestInit</name>
   <url>http://uc3.cdlib.org</url>
 

@@ -5,7 +5,7 @@
   <groupId>org.cdlib.mrt</groupId>
   <artifactId>mrt-ingestwar</artifactId>
   <packaging>war</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>3.0-SNAPSHOT</version>
   <name>UC3-mrtBatchWar</name>
   <url>http://uc3.cdlib.org</url>
 
@@ -30,7 +30,7 @@
                 <artifactItem>
                   <groupId>org.cdlib.mrt</groupId>
                   <artifactId>mrt-ingestwar</artifactId>
-                  <version>1.0-SNAPSHOT</version>
+                  <version>${project.version}</version>
                   <type>war</type>
                   <overWrite>true</overWrite>
                   <outputDirectory>./war</outputDirectory>
@@ -51,13 +51,13 @@
       <dependency>
           <groupId>org.cdlib.mrt</groupId>
           <artifactId>mrt-ingestconf</artifactId>
-          <version>1.0-SNAPSHOT</version>
+          <version>${project.version}</version>
       </dependency>
 
     <dependency>
       <groupId>org.cdlib.mrt</groupId>
       <artifactId>mrt-ingestsrc</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
 
   </dependencies>

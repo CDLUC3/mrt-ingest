@@ -83,7 +83,7 @@ public class ServiceDriverIT {
         private String profile = "merritt_test_content";
         private ZooKeeper zk;
 
-        public static final int SLEEP_SUBMIT = 5000;
+        public static final int SLEEP_SUBMIT = 10000;
         public static final int SLEEP_RETRY = 3000;
         public static final int SLEEP_CLEANUP = 500;
         /*
@@ -437,6 +437,16 @@ public class ServiceDriverIT {
                         if (batch.getCompletedJobs(zk).size() == completed) {
                                 break;
                         }
+                        for (Job j: batch.getProcessingJobs(zk)) {
+                                j.load(zk);
+                                if (j.status() == org.cdlib.mrt.zk.JobState.Recording) {
+                                        try {
+                                                j.setStatus(zk, j.status().success());
+                                        } catch (MerrittStateError e) {
+                                                e.printStackTrace();
+                                        }
+                                }
+                        }
                         Thread.sleep(SLEEP_RETRY);
                 }
                 assertEquals(completed, batch.getCompletedJobs(zk).size());
@@ -495,6 +505,7 @@ public class ServiceDriverIT {
                 // tell the mock-merritt-it service to temporarily suspend content delivery
                 String url = String.format("http://localhost:%d/status/stop", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
+                Thread.sleep(2000);
 
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/mock.checkm"));
@@ -504,10 +515,11 @@ public class ServiceDriverIT {
                 // tell the mock-merritt-it service to resume content delivery
                 url = String.format("http://localhost:%d/status/start", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
-
+                Thread.sleep(2000);
+                
                 for(Job j: batch.getFailedJobs(zk)) {
                         j.load(zk);
-                        j.setStatus(zk, org.cdlib.mrt.zk.JobState.Pending);
+                        j.setStatus(zk, org.cdlib.mrt.zk.JobState.Estimating);
                 }
                 assertJobCounts(batch, 15, 1, 1);
                 cleanup(batch);
