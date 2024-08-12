@@ -21,7 +21,7 @@ phases:
     - echo "Branchtag ${BRANCHTAG}"
 
   build:
-    on-failure: ABORT
+    on-failure: ABORT 
     commands:
     - mvn -ntp clean install -Ddocker.skip -DskipITs -Dmaven.test.skip=true
     # - mvn -ntp clean install
