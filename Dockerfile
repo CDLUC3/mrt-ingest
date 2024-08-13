@@ -11,7 +11,7 @@ FROM ${ECR_REGISTRY}/merritt-tomcat:dev
 COPY ingest-war/target/mrt-ingestwar-*.war /usr/local/tomcat/webapps/ingest.war
 
 RUN mkdir -p /build/static && \
-    echo 'mrt-ingest: ${COMMITDATE}' > /build/static/build.content.txt && \
+    echo "mrt-ingest: ${COMMITDATE}" > /build/static/build.content.txt && \
     jar uf /usr/local/tomcat/webapps/ingest.war -C /build static/build.content.txt
 
 RUN mkdir -p /tdr/tmpdir/logs 
