@@ -4,10 +4,9 @@
 #*********************************************************************
 
 ARG ECR_REGISTRY=ecr_registry_not_set
-ARG COMMITDATE=''
 
 FROM ${ECR_REGISTRY}/merritt-tomcat:dev
-ENV COMMITDATE=$COMMITDATE
+ARG COMMITDATE=''
 
 COPY ingest-war/target/mrt-ingestwar-*.war /usr/local/tomcat/webapps/ingest.war
 
