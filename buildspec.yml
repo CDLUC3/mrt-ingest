@@ -19,7 +19,7 @@ phases:
     - BRANCHTAG=`git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git name-rev $(git rev-parse --short HEAD) | cut -d' ' -f2 || git rev-parse --short HEAD`
     - DOCKTAG=$BRANCHTAG
     - COMMITDATE=`git --no-pager log -1 --pretty='format:%cd' --date='format:%Y-%m-%d %H:%M:%S'`
-    - echo "Branchtag ${BRANCHTAG}"
+    - echo "Branchtag ${BRANCHTAG}; COMMITDATE=${COMMITDATE}"
 
   build:
     on-failure: ABORT

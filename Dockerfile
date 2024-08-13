@@ -4,7 +4,7 @@
 #*********************************************************************
 
 ARG ECR_REGISTRY=ecr_registry_not_set
-ARG COMMITDATE=
+ARG COMMITDATE=''
 
 FROM ${ECR_REGISTRY}/merritt-tomcat:dev
 
