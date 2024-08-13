@@ -47,5 +47,5 @@ phases:
     - |
         docker build --push --quiet \
         --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
-        --build-arg COMMITDATE=${COMMITDATE} \
+        --build-arg COMMITDATE='${COMMITDATE}' \
         -t ${ECR_REGISTRY}/mrt-ingest:${DOCKTAG} .
