@@ -93,7 +93,7 @@ phases:
           aws codeartifact delete-package-versions \
             --domain=cdlib-uc3-mrt --repository=uc3-mrt-java \
             --format=maven --namespace=org.cdlib.mrt \
-            --package=$pkg --version=$ver --no-cli-pager
+            --package=$pkg --versions=$ver --no-cli-pager
         done
       done
 
