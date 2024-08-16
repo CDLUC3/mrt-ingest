@@ -437,6 +437,7 @@ public class ProcessManager {
 
 			// call appropriate handlers
 			SortedMap sortedMap = Collections.synchronizedSortedMap(new TreeMap()); // thread-safe
+			if (state.matches("Initialize")) sortedMap = profileState.getInitializeHandlers();
 			if (state.matches("Estimate")) sortedMap = profileState.getEstimateHandlers();
 			if (state.matches("Provision")) sortedMap = profileState.getProvisionHandlers();
 			if (state.matches("Download")) sortedMap = profileState.getDownloadHandlers();

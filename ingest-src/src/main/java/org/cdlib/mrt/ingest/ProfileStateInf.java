@@ -115,6 +115,12 @@ public interface ProfileStateInf
      * Get handlers
      * @return Vector<Handler> handlers
      */
+    public SortedMap<Integer,HandlerState> getInitializeHandlers();
+
+    /**
+     * Get handlers
+     * @return Vector<Handler> handlers
+     */
     public SortedMap<Integer,HandlerState> getEstimateHandlers();
 
     /**

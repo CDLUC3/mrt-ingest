@@ -13,8 +13,8 @@ Role: MRT-content
 Aggregate:
 Owner: ark:/13030/j2rn30xp
 # Notification.1: terrence.brady@ucop.edu
-# Notification.2: mark.reyes@ucop.edu
-Notification.1: skidly_2@yahoo.com
+Notification.2: mark.reyes@ucop.edu
+# Notification.1: skidly_2@yahoo.com
 # === START Handlers ===
 # Post Batch
 HandlerBatchProcess.1: org.cdlib.mrt.ingest.handlers.batchProcess.HandlerPost
@@ -23,11 +23,13 @@ HandlerBatchProcess.2: org.cdlib.mrt.ingest.handlers.batchProcess.HandlerSubmit
 HandlerQueue.1: org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate
 HandlerQueue.2: org.cdlib.mrt.ingest.handlers.queue.HandlerSubmit
 HandlerQueue.3: org.cdlib.mrt.ingest.handlers.queue.HandlerNotification
+# Process Initialize
+HandlerInitialize.1: org.cdlib.mrt.ingest.handlers.initialize.HandlerInitialize
+HandlerInitialize.2: org.cdlib.mrt.ingest.handlers.initialize.HandlerAccept
+HandlerInitialize.3: org.cdlib.mrt.ingest.handlers.initialize.HandlerVerify
+HandlerInitialize.4: org.cdlib.mrt.ingest.handlers.initialize.HandlerDisaggregate
 # Process Estimating
-HandlerEstimate.1: org.cdlib.mrt.ingest.handlers.estimate.HandlerInitialize
-HandlerEstimate.2: org.cdlib.mrt.ingest.handlers.estimate.HandlerAccept
-HandlerEstimate.3: org.cdlib.mrt.ingest.handlers.estimate.HandlerVerify
-HandlerEstimate.4: org.cdlib.mrt.ingest.handlers.estimate.HandlerDisaggregate
+HandlerEstimate.1: org.cdlib.mrt.ingest.handlers.estimate.HandlerEstimate
 # Process Provisioning
 HandlerProvision.1: org.cdlib.mrt.ingest.handlers.provision.HandlerProvision
 # Process Downloading

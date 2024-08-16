@@ -76,6 +76,7 @@ public class ProfileState
     private SortedMap<Integer,HandlerState> batchProcessHandlers = null;
     private SortedMap<Integer,HandlerState> batchReportHandlers = null;
     private SortedMap<Integer,HandlerState> queueHandlers = null;
+    private SortedMap<Integer,HandlerState> initializeHandlers = null;
     private SortedMap<Integer,HandlerState> estimateHandlers = null;
     private SortedMap<Integer,HandlerState> provisionHandlers = null;
     private SortedMap<Integer,HandlerState> downloadHandlers = null;
@@ -435,6 +436,10 @@ public class ProfileState
         return batchReportHandlers;
     }
 
+    public SortedMap<Integer,HandlerState> getInitializeHandlers() {
+        return initializeHandlers;
+    }
+
     public SortedMap<Integer,HandlerState> getEstimateHandlers() {
         return estimateHandlers;
     }
@@ -497,6 +502,14 @@ public class ProfileState
      */
     public void setBatchReportHandlers(SortedMap<Integer,HandlerState> handlers) {
         this.batchReportHandlers = handlers;
+    }
+
+    /**
+     * Set initialize queue handlers
+     * @param Vector queue handler
+     */
+    public void setInitializeHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.initializeHandlers = handlers;
     }
 
     /**

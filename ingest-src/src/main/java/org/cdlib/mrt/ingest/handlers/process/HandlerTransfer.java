@@ -219,7 +219,9 @@ public class HandlerTransfer extends Handler<JobState>
             int responseCode = clientResponse.getStatusLine().getStatusCode();
             String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
             String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code: " + responseCode);
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response message: " + responseMessage);
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " URL: " + url);
 
             // Log POST
             long endTime = DateUtil.getEpochUTCDate();

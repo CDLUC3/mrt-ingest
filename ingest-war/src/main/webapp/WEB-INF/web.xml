@@ -86,6 +86,24 @@
     </servlet>          
 
     <servlet>
+        <servlet-name>InitializeConsumer Daemon</servlet-name>
+        <servlet-class>org.cdlib.mrt.ingest.consumer.InitializeConsumer</servlet-class>
+        <init-param>
+            <param-name>loggerProperties</param-name>
+            <param-value>resources/TIngestLogger.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>serviceProperties</param-name>
+            <param-value>resources/TIngestService.properties</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localProperties</param-name>
+            <param-value>resources/TIngestServiceLocal.properties</param-value>
+        </init-param>
+        <load-on-startup>${InitializeConsumerDaemon}</load-on-startup>
+    </servlet>
+
+    <servlet>
         <servlet-name>EstimateConsumer Daemon</servlet-name>
         <servlet-class>org.cdlib.mrt.ingest.consumer.EstimateConsumer</servlet-class>
         <init-param>
@@ -157,6 +175,7 @@
         <load-on-startup>${ProcessConsumerDaemon}</load-on-startup>
     </servlet>
 
+<!--
     <servlet>
         <servlet-name>RecordConsumer Daemon</servlet-name>
         <servlet-class>org.cdlib.mrt.ingest.consumer.RecordConsumer</servlet-class>
@@ -174,6 +193,7 @@
         </init-param>
         <load-on-startup>${RecordConsumerDaemon}</load-on-startup>
     </servlet>
+-->
 
     <servlet>
         <servlet-name>NotifyConsumer Daemon</servlet-name>

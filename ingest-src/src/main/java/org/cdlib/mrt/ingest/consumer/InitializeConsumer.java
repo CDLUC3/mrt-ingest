@@ -77,10 +77,10 @@ import java.util.Properties;
  * - zookeeper is the defined queueing service
  * 
  */
-public class EstimateConsumer extends HttpServlet
+public class InitializeConsumer extends HttpServlet
 {
 
-    private static final String NAME = "EstimateConsumer";
+    private static final String NAME = "InitializeConsumer";
     private static final String MESSAGE = NAME + ": ";
     private volatile Thread consumerThread = null;
     private volatile Thread cleanupThread = null;
@@ -154,7 +154,7 @@ public class EstimateConsumer extends HttpServlet
             // Start the Consumer thread
             if (consumerThread == null) {
 	    	System.out.println("[info] " + MESSAGE + "starting consumer daemon");
-		startEstimateConsumerThread(servletConfig);
+		startInitializeConsumerThread(servletConfig);
 	    }
         } catch (Exception e) {
 	    throw new ServletException("[error] " + MESSAGE + "could not start consumer daemon");
@@ -164,7 +164,7 @@ public class EstimateConsumer extends HttpServlet
             // Start the Queue cleanup thread
             if (cleanupThread == null) {
 	    	//System.out.println("[info] " + MESSAGE + "starting Batch/Job cleanup daemon");
-		//startEstimateleanupThread(servletConfig);
+		//startInitializeCleanupThread(servletConfig);
 	    }
         } catch (Exception e) {
 	    throw new ServletException("[error] " + MESSAGE + "could not Batch/Job cleanup daemon");
@@ -175,7 +175,7 @@ public class EstimateConsumer extends HttpServlet
     /**
      * Start consumer thread
      */
-    private synchronized void startEstimateConsumerThread(ServletConfig servletConfig)
+    private synchronized void startInitializeConsumerThread(ServletConfig servletConfig)
         throws Exception
     {
         try {
@@ -184,7 +184,7 @@ public class EstimateConsumer extends HttpServlet
                 return;
             }
 
-            EstimateConsumerDaemon jobConsumerDaemon = new EstimateConsumerDaemon(queueConnectionString,
+            InitializeConsumerDaemon jobConsumerDaemon = new InitializeConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(jobConsumerDaemon);
@@ -203,7 +203,7 @@ public class EstimateConsumer extends HttpServlet
     /**
      * Start Queue cleanup thread
      */
-    private synchronized void startEstimateCleanupThread(ServletConfig servletConfig)
+    private synchronized void startInitializeCleanupThread(ServletConfig servletConfig)
         throws Exception
     {
         try {
@@ -212,7 +212,7 @@ public class EstimateConsumer extends HttpServlet
                 return;
             }
 
-            EstimateCleanupDaemon cleanupDaemon = new EstimateCleanupDaemon(queueConnectionString, servletConfig);
+            InitializeCleanupDaemon cleanupDaemon = new InitializeCleanupDaemon(queueConnectionString, servletConfig);
 
             cleanupThread =  new Thread(cleanupDaemon);
             cleanupThread.setDaemon(true);                // Kill thread when servlet dies
@@ -242,10 +242,10 @@ public class EstimateConsumer extends HttpServlet
 
 }
 
-class EstimateConsumerDaemon implements Runnable
+class InitializeConsumerDaemon implements Runnable
 {
    
-    private static final String NAME = "EstimateConsumerDaemon";
+    private static final String NAME = "InitializeConsumerDaemon";
     private static final String MESSAGE = NAME + ": ";
 
     private IngestServiceInit ingestServiceInit = null;
@@ -265,7 +265,7 @@ class EstimateConsumerDaemon implements Runnable
 
 
     // Constructor
-    public EstimateConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
+    public InitializeConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
@@ -287,7 +287,7 @@ class EstimateConsumerDaemon implements Runnable
     {
         boolean init = true;
         String status = null;
-        ArrayBlockingQueue<EstimateConsumeData> workQueue = new ArrayBlockingQueue<EstimateConsumeData>(poolSize);
+        ArrayBlockingQueue<InitializeConsumeData> workQueue = new ArrayBlockingQueue<InitializeConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	sessionID = zooKeeper.getSessionId();
@@ -332,14 +332,14 @@ class EstimateConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
 			    try {
-                                job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
+                                job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
 			    } catch (NodeExistsException nee) {
 				nee.printStackTrace();
 				break;
 			    }
 
                             if ( job != null) {
-                                System.out.println(MESSAGE + "Found estimating job data: " + job.id());
+                                System.out.println(MESSAGE + "Found initialize job data: " + job.id());
 
 			        JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
 			        String profile = JSONUtil.getValue(jp,"profile");
@@ -359,14 +359,14 @@ class EstimateConsumerDaemon implements Runnable
 			        } 
 
 				//try {
-            			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
-            			   //job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
+            			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Iniitialize, job.priority());
+            			   //job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Initializeing);
 				//} catch (MerrittStateError mse) {
 				   //mse.printStackTrace();
             			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
 				//}
 
-                                executorService.execute(new EstimateConsumeData(ingestService, job, zooKeeper, queueConnectionString));
+                                executorService.execute(new InitializeConsumeData(ingestService, job, zooKeeper, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
                             } else {
                                 break;
@@ -458,10 +458,10 @@ class EstimateConsumerDaemon implements Runnable
 }
 
 
-class EstimateConsumeData implements Runnable
+class InitializeConsumeData implements Runnable
 {
    
-    private static final String NAME = "EstimateConsumeData";
+    private static final String NAME = "InitializeConsumeData";
     private static final String MESSAGE = NAME + ":";
     private static final boolean DEBUG = true;
     protected static final String FS = System.getProperty("file.separator");
@@ -476,7 +476,7 @@ class EstimateConsumeData implements Runnable
     private JobState jobState = null;
 
     // Constructor
-    public EstimateConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
+    public InitializeConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
     {
         this.zooKeeper = zooKeeper;
 	this.job = job;
@@ -512,17 +512,17 @@ class EstimateConsumeData implements Runnable
 
 	    //BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
-	    String process = "Estimate";
+	    String process = "Initialize";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString());
-                job.setStatus(zooKeeper, job.status().success(), "Success");
+                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString());
+                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-                System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                System.out.println("[item]: InitializeConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
 	    } else {
-		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
+		System.out.println("InitializeConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
 	    boolean stat = job.unlock(zooKeeper);
 
@@ -556,10 +556,10 @@ class EstimateConsumeData implements Runnable
 
 
 
-class EstimateCleanupDaemon implements Runnable
+class InitializeCleanupDaemon implements Runnable
 {
 
-    private static final String NAME = "EstimateCleanupDaemon";
+    private static final String NAME = "InitializeCleanupDaemon";
     private static final String MESSAGE = NAME + ": ";
 
     private String queueConnectionString = null;
@@ -574,7 +574,7 @@ class EstimateCleanupDaemon implements Runnable
 
 
     // Constructor
-    public EstimateCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
+    public InitializeCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
     {
         this.queueConnectionString = queueConnectionString;
 

@@ -37,7 +37,8 @@ public class IngestProfileUnitTest extends IngestTestCore {
                 assertEquals(2, ps.getBatchProcessHandlers().size());
                 assertEquals(1, ps.getBatchReportHandlers().size());
                 assertEquals(3, ps.getQueueHandlers().size());
-                assertEquals(4, ps.getEstimateHandlers().size());
+                assertEquals(4, ps.getInitializeHandlers().size());
+                assertEquals(1, ps.getEstimateHandlers().size());
                 assertEquals(1, ps.getProvisionHandlers().size());
                 assertEquals(1, ps.getDownloadHandlers().size());
                 assertEquals(7, ps.getProcessHandlers().size());

@@ -21,16 +21,16 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.cdlib.mrt.ingest.handlers.estimate.HandlerInitialize;
-import org.cdlib.mrt.ingest.handlers.estimate.HandlerAccept;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerInitialize;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerAccept;
 import org.cdlib.mrt.ingest.handlers.process.HandlerDescribe;
 import org.cdlib.mrt.ingest.handlers.process.HandlerCharacterize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.handlers.download.HandlerRetrieve;
-import org.cdlib.mrt.ingest.handlers.estimate.HandlerVerify;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerVerify;
 import org.cdlib.mrt.ingest.handlers.process.HandlerCorroborate;
 import org.cdlib.mrt.ingest.handlers.process.HandlerDigest;
-import org.cdlib.mrt.ingest.handlers.estimate.HandlerDisaggregate;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerDisaggregate;
 import org.cdlib.mrt.ingest.handlers.process.HandlerDocument;
 import org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup;
 

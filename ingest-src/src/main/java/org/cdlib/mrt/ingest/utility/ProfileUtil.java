@@ -87,6 +87,7 @@ public class ProfileUtil
     private static final String matchHandlerBatchProcess = "HandlerBatchProcess.";
     private static final String matchHandlerBatchReport = "HandlerBatchReport.";
     private static final String matchHandlerQueue = "HandlerQueue.";
+    private static final String matchHandlerInitialize = "HandlerInitialize.";
     private static final String matchHandlerEstimate = "HandlerEstimate.";
     private static final String matchHandlerProvision = "HandlerProvision.";
     private static final String matchHandlerDownload = "HandlerDownload.";
@@ -149,6 +150,7 @@ public class ProfileUtil
     	TreeMap<Integer,HandlerState> batchProcessHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> batchReportHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> queueHandlers = new TreeMap<Integer,HandlerState>();
+    	TreeMap<Integer,HandlerState> initializeHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> estimateHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> provisionHandlers = new TreeMap<Integer,HandlerState>();
     	TreeMap<Integer,HandlerState> downloadHandlers = new TreeMap<Integer,HandlerState>();
@@ -275,6 +277,15 @@ public class ProfileUtil
 		    HandlerState handler = new HandlerState();
 		    handler.setHandlerName(value);
 		    batchReportHandlers.put(handlerID, handler);
+		} else if (key.startsWith(matchHandlerInitialize)) {
+                    if (DEBUG) System.out.println("[debug] initialize handler: " + value);
+
+                    String handlerInitializeS = key.substring(matchHandlerInitialize.length());
+                    Integer handlerID = Integer.parseInt(handlerInitializeS);
+
+		    HandlerState handler = new HandlerState();
+		    handler.setHandlerName(value);
+		    initializeHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerEstimate)) {
                     if (DEBUG) System.out.println("[debug] estimate handler: " + value);
 
@@ -405,6 +416,7 @@ public class ProfileUtil
 	     profileState.setBatchProcessHandlers(batchProcessHandlers);
 	     profileState.setBatchReportHandlers(batchReportHandlers);
 	     profileState.setQueueHandlers(queueHandlers);
+	     profileState.setInitializeHandlers(initializeHandlers);
 	     profileState.setEstimateHandlers(estimateHandlers);
 	     profileState.setProvisionHandlers(provisionHandlers);
 	     profileState.setDownloadHandlers(downloadHandlers);
