@@ -22,7 +22,7 @@ services:
     - "ingest:/tdr/ingest"
     - "queue:/tdr/ingest/queue"
     - "${MDIR}/ingest-it/src/test/resources/profiles:/tdr/ingest/profiles"
-    - "${MDIR}/ingest-it/target/mrt-ingest-it-1.0-SNAPSHOT.war:/usr/local/tomcat/webapps/mrtingest.war"
+    - "${MDIR}/ingest-it/target/mrt-ingest-it-3.0-SNAPSHOT.war:/usr/local/tomcat/webapps/mrtingest.war"
     ports:
     - published: 8080
       target: 8080

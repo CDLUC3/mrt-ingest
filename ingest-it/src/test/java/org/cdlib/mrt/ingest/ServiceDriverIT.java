@@ -33,6 +33,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.cdlib.mrt.zk.Access;
 import org.cdlib.mrt.zk.Batch;
+import org.cdlib.mrt.zk.BatchState;
 import org.cdlib.mrt.zk.IngestState;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.MerrittLocks;
@@ -83,7 +84,7 @@ public class ServiceDriverIT {
         private String profile = "merritt_test_content";
         private ZooKeeper zk;
 
-        public static final int SLEEP_SUBMIT = 10000;
+        public static final int SLEEP_SUBMIT = 15000;
         public static final int SLEEP_RETRY = 3000;
         public static final int SLEEP_CLEANUP = 500;
         /*
@@ -416,7 +417,11 @@ public class ServiceDriverIT {
 
         public void cleanup(Batch batch) {
                 try {
-                        Thread.sleep(SLEEP_CLEANUP);
+                        if (batch.status() == BatchState.Processing) {
+                                batch.setStatus(zk, batch.status().success());
+                                batch.setStatus(zk, batch.status().success());        
+                        }
+                        //Thread.sleep(SLEEP_CLEANUP);
                         batch.delete(zk);
                 } catch(Exception e) {
                         System.out.println(e);
