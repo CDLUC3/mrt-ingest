@@ -52,7 +52,7 @@ services:
     tty: true
   smtp:
     container_name: smtp 
-    image: ${ECR_REGISTRY}/fakesmtp:dev
+    image: registry-1.docker.io/ghusta/fakesmtp:dev
     networks:
       merrittnet:
     restart: unless-stopped
