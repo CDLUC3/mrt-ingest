@@ -187,7 +187,7 @@
                   </run>
                 </image>
                 <image>
-                  <name>registry-1.docker.io/ghusta/fakesmtp</name>
+                  <name>$ECR_REGISTRY/docker-hub/ghusta/fakesmtp</name>
                   <alias>smtp</alias>
                   <run>
                     <network>
