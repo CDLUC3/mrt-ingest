@@ -25,6 +25,7 @@ phases:
     on-failure: ABORT
     commands:
     # - mvn -ntp clean install -Ddocker.skip -DskipITs -Dmaven.test.skip=true
+    - docker pull ${ECR_REGISTRY}/docker-hub/ghusta/fakesmtp
     - mvn -ntp clean install
     - |
       if [[ "${BRANCHTAG}" == "main" ]]
