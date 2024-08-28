@@ -203,7 +203,10 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		    jobState.setHashValue(fileComponent.getMessageDigest().getValue());
 		} catch (Exception e) {}
 		jobState.setPrimaryID(fileComponent.getPrimaryID());
-		jobState.setLocalID(fileComponent.getLocalID());
+		if (StringUtil.isNotEmpty(fileComponent.getLocalID())) {
+		    // dedup
+		    jobState.setLocalID(MintUtil.sanitize(fileComponent.getLocalID()));
+		}
 	    	jobState.setObjectType(getObjectType(manifestRow.getProfile()));
 		try {
 		    jobState.setObjectTitle(fileComponent.getTitle());

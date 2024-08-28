@@ -30,6 +30,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.cdlib.mrt.ingest.utility;
 
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,7 +38,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.text.SimpleDateFormat;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -543,4 +545,29 @@ public class MintUtil
         String strDate = sdfDate.format(now);
         return strDate;
     }
+
+    public static String sanitize(String s) {
+        Set<String> set = new LinkedHashSet<String>();
+
+        String rebuild = "";
+        boolean first = true;
+        for (String p: s.split(";")) {
+            p = p.trim();
+
+            if (! set.contains(p)) {
+                if (first) {
+                    rebuild = p;
+                    first = false;
+                } else {
+                    rebuild += ";" + p;
+                }
+                set.add(p);
+            }
+        }
+        if (first) rebuild = s;
+        System.out.println("[info] " + MESSAGE + "sanitized localid: " + s + " ---> " + rebuild);
+
+        return rebuild;
+    }
+
 }

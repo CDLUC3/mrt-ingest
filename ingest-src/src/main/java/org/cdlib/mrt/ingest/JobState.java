@@ -41,6 +41,7 @@ import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.DigestEnum;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.utility.StateInf;
@@ -328,8 +329,14 @@ public class JobState
 	 */
 	public void setLocalID(String localID) {
 		try {
-			this.localID = new Identifier(localID, Identifier.Namespace.Local);  // default Local namespace
+		   if (getLocalID() != null) {
+		      // Augment
+		      localID = MintUtil.sanitize(getLocalID().getValue() + ";" + localID);
+		      System.out.println("[DEBUG]: Augmenting Local ID to: " + localID);
+		   }
+		   this.localID = new Identifier(localID, Identifier.Namespace.Local);  // default Local namespace
 		} catch (Exception e) {
+		   e.printStackTrace();
 		}
 	}
 

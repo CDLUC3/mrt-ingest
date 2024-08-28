@@ -490,15 +490,18 @@ class EstimateConsumeData implements Runnable
         try {
 
             JSONObject jp = null;
+            JSONObject ji = null;
 	    try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    } catch (SessionExpiredException see) {
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    }
-            if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString());
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
@@ -517,7 +520,7 @@ class EstimateConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString());
-                job.setStatus(zooKeeper, job.status().success(), "Success");
+                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Provisioning);
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());

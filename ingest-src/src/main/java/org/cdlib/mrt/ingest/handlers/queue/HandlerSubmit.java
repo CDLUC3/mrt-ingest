@@ -94,6 +94,9 @@ public class HandlerSubmit extends Handler<BatchState>
 	String status = null;
         Properties properties = new Properties();
         JSONObject jproperties = new JSONObject();
+        JSONObject jidentifiers = new JSONObject();
+	String primaryID = null;
+	String localID = null;
         ZooKeeper zooKeeper = null;
 
 	try {
@@ -126,10 +129,17 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	jproperties.put("title", ingestRequest.getJob().getObjectTitle());
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().getObjectDate()))
 	    	jproperties.put("date", ingestRequest.getJob().getObjectDate());
-	    if (ingestRequest.getJob().getPrimaryID() != null)
-	        jproperties.put("objectID", ingestRequest.getJob().getPrimaryID().getValue());
-	    if (ingestRequest.getJob().getLocalID() != null)
-	        jproperties.put("localID", ingestRequest.getJob().getLocalID().getValue());
+
+	    if (ingestRequest.getJob().getPrimaryID() != null) {
+	        // jproperties.put("objectID", ingestRequest.getJob().getPrimaryID().getValue());
+	        primaryID =  ingestRequest.getJob().getPrimaryID().getValue();
+	    }
+	    if (ingestRequest.getJob().getLocalID() != null) {
+	        // jproperties.put("localID", ingestRequest.getJob().getLocalID().getValue());
+	        localID = ingestRequest.getJob().getLocalID().getValue();
+	    }
+	    jidentifiers = Job.createJobIdentifiers(primaryID, localID);
+
 	    if (ingestRequest.getJob().grabAltNotification() != null)
 	        jproperties.put("notification", ingestRequest.getJob().grabAltNotification());
 
@@ -199,6 +209,15 @@ public class HandlerSubmit extends Handler<BatchState>
 		} catch (Exception e) { 
 		    if (ingestRequest.getJob().getLocalID() == null) jproperties.remove("localID");
 		}
+
+		String pid = "";
+		String lid = "";
+		if (jobState.getPrimaryID() != null)
+                    pid = jobState.getPrimaryID().getValue();
+		if (jobState.getLocalID() != null)
+                    lid = jobState.getLocalID().getValue();
+                jidentifiers = Job.createJobIdentifiers(pid, lid);
+
 		try {
 		    jproperties.put("title", jobState.getObjectTitle());
 		} catch (Exception e) { if (StringUtil.isEmpty(ingestRequest.getJob().getObjectTitle())) jproperties.remove("title"); }
@@ -232,8 +251,10 @@ public class HandlerSubmit extends Handler<BatchState>
 		while (true) {
 		    try {
 			// Create Job 
-			System.out.println("[info] queue submission: " + jproperties.toString() + "  Priority: " + priority);
-			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), Integer.parseInt(priority), jproperties);
+			System.out.println("[info] queue submission: " + jproperties.toString() 
+				+ "  --- Priority: " + priority 
+				+ " --- Identifiers: " + jidentifiers.toString());
+			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), Integer.parseInt(priority), jproperties, jidentifiers);
 
 
 			break;

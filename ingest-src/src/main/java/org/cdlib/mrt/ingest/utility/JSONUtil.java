@@ -31,6 +31,8 @@ package org.cdlib.mrt.ingest.utility;
 
 import java.net.URL;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 import java.security.SecureRandom;
 import javax.net.ssl.HostnameVerifier;
@@ -55,6 +57,8 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.json.JSONObject;
+import org.json.JSONArray;
+import org.cdlib.mrt.zk.MerrittJsonKey;
 
 
 /**
@@ -138,16 +142,23 @@ public class JSONUtil
 	return jobStateString;
     }
 
-    public static IngestRequest populateIngestRequest(JSONObject jp) {
+    public static IngestRequest populateIngestRequest(JSONObject jp, JSONObject ji) {
 
         IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
 		JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
 		JSONUtil.getValue(jp,"digestType"), JSONUtil.getValue(jp,"digestValue"),
-		JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"creator"),
+		ji.getString(MerrittJsonKey.PrimaryId.key()), JSONUtil.getValue(jp,"creator"),
 		JSONUtil.getValue(jp,"title"), JSONUtil.getValue(jp,"date"),
 		JSONUtil.getValue(jp,"responseForm"), JSONUtil.getValue(jp,"note"));
 
-	ingestRequest.getJob().setLocalID(JSONUtil.getValue(jp,"localID"));
+	// Local ID processing
+	JSONArray ja = ji.getJSONArray(MerrittJsonKey.LocalId.key());
+	if (!ja.isEmpty()) {
+	   ja = dedupArray(ja);
+	   String localid = ja.join(";").replaceAll("\"","");
+	   if (StringUtil.isNotEmpty(localid)) ingestRequest.getJob().setLocalID(localid);
+	}
+
 	try {
 	   ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
 	} catch (Exception e) { System.out.println("Error setting JOB ID for Ingest Request"); }
@@ -208,4 +219,15 @@ public class JSONUtil
         return ingestRequest;
     }
 
+    private static JSONArray dedupArray(JSONArray ja) {
+	Set<String> set = new LinkedHashSet<String>();
+
+	Iterator<Object> elements = ja.iterator();
+	while (elements.hasNext()) {
+	   String element = (String) elements.next();
+	   if (! set.contains(element)) set.add(element);
+	}
+
+	return new JSONArray(set.toArray());
+    }
 }

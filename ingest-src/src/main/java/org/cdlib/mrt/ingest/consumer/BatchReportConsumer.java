@@ -446,16 +446,18 @@ class BatchReportConsumeData implements Runnable
 
 	    // UTF-8 ??
             JSONObject jp = null;
+            JSONObject ji = null;
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (SessionExpiredException see) {
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             }
+            ji = Job.createJobIdentifiers(JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"localID"));
 
-            if (DEBUG) System.out.println("[info] START: consuming batch report queue " + batch.id() + " - " + jp.toString());
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming batch report queue " + batch.id() + " - " + jp.toString() + " - " + ji.toString());
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
