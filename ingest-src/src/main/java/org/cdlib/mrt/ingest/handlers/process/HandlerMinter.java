@@ -37,6 +37,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+//import java.util.Set;
+//import java.util.LinkedHashSet;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -527,7 +529,7 @@ public class HandlerMinter extends Handler<JobState>
                                     }
                                 }
 			    } 
-			    value = sanitize(value);
+			    value = MintUtil.sanitize(value);
                             jobState.setLocalID(trimLeft(trimRight(value)));
                             if (DEBUG) System.out.println("[info]" + MESSAGE + "Found local ID(s) in metadata file: " + value);
 			}
@@ -561,17 +563,23 @@ public class HandlerMinter extends Handler<JobState>
         return s.replaceAll("\\s+$", "");
     }
 
-    public String sanitize(String s) {
+/*
+    public static String sanitize(String s) {
+        Set<String> set = new LinkedHashSet<String>();
+
 	String rebuild = "";
 	boolean first = true;
 	for (String p: s.split(";")) {
 	    p = p.trim();
-	    if (! rebuild.contains(p)) {
+
+	    if (! set.contains(p)) {
 		if (first) {
 		    rebuild = p;
 		    first = false;
-		} else
-		    rebuild += "; " + p;
+		} else {
+		    rebuild += ";" + p;
+		}
+	        set.add(p);
 	    }
 	}
 	if (first) rebuild = s;
@@ -579,6 +587,7 @@ public class HandlerMinter extends Handler<JobState>
 
         return rebuild;
     }
+*/
 
     public String getName() {
 	return NAME;

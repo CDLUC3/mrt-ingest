@@ -416,16 +416,20 @@ class ProcessConsumeData implements Runnable
         try {
 
             JSONObject jp = null;
+            JSONObject ji = null;
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
+	       see.printStackTrace();
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             }
 
-            if (DEBUG) System.out.println("[info] START: consuming job queue " + job.id() + " - " + jp.toString());
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString());
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
@@ -460,10 +464,23 @@ class ProcessConsumeData implements Runnable
 		jp.put("date", jobState.getObjectDate());
 
 	    // Populate IDs if necessary
-	    if (JSONUtil.getValue(jp,"localID") == null && jobState.getLocalID() != null)
+	    String lid = null;
+	    String pid = null;
+	    if (StringUtil.isEmpty(JSONUtil.getValue(jp,"localID")) && jobState.getLocalID() != null) {
 		jp.put("localID", jobState.getLocalID().getValue());
-	    if (JSONUtil.getValue(jp,"objectID") == null && jobState.getPrimaryID() != null)
+		lid = jobState.getLocalID().getValue();
+	    } else if (jobState.getLocalID() != null) {
+		lid = jobState.getLocalID().getValue();
+	    }
+	    if (JSONUtil.getValue(jp,"objectID") == null && jobState.getPrimaryID() != null) {
 		jp.put("objectID", jobState.getPrimaryID().getValue());
+		pid = jobState.getPrimaryID().getValue();
+	    } else if (jobState.getPrimaryID() != null) {
+		pid = jobState.getPrimaryID().getValue();
+	    }
+	    if (lid != null || pid != null) {
+	        job.setIdentifiers(zooKeeper, Job.createJobIdentifiers(pid, lid));
+	    }
 
 	    // Write data change
 	    job.setData(zooKeeper, ZKKey.JOB_CONFIGURATION, jp);

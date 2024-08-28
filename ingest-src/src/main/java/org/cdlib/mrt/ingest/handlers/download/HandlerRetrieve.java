@@ -360,6 +360,7 @@ public class HandlerRetrieve extends Handler<JobState>
             }
 	    return true;
 	} catch (Exception e) {
+e.printStackTrace();
 	    System.err.println("[ERROR] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
 	    return false;
 	} finally {
