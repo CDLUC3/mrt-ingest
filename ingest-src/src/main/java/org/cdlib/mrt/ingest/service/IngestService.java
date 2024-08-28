@@ -175,7 +175,7 @@ public class IngestService
     public IngestServiceState getServiceState()
         throws TException
     {
-        return queueManager.getServiceState();
+        return processManager.getServiceState();
     }
 
     @Override

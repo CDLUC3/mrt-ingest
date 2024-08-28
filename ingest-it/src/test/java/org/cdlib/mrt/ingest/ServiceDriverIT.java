@@ -101,7 +101,11 @@ public class ServiceDriverIT {
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
                 zk = new ZooKeeper(String.format("localhost:%s", zkport), 100, null);
-                clearQueue();
+		try {
+                	clearQueue();
+		} catch (Exception e) {
+                	clearQueue();
+		}
         }
 
         /**
@@ -239,7 +243,7 @@ public class ServiceDriverIT {
         /**
          * Test the Ingest state endpoint
          */
-        //@Test
+        @Test
         public void SimpleTest() throws IOException, JSONException {
                 String url = String.format("http://localhost:%d/%s/state?t=json", port, cp);
                 JSONObject json = getJsonContent(url, 200);
@@ -377,7 +381,7 @@ public class ServiceDriverIT {
          * @throws KeeperException 
          * @throws MerrittStateError 
          */
-        //@Test
+        @Test
         public void FileManifestIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
                 String filename = "4blocks.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
@@ -455,7 +459,7 @@ public class ServiceDriverIT {
          * @throws KeeperException 
          * @throws MerrittStateError 
          */
-        //@Test
+        @Test
         public void TestManifest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
 		System.out.println("[ServiceDriverIT] TestManifest - Test manifest.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
@@ -483,7 +487,7 @@ public class ServiceDriverIT {
          * @throws MerrittZKNodeInvalid 
          * @throws KeeperException 
          */
-        //@Test
+        @Test
         public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
 		System.out.println("[ServiceDriverIT] TestManifestWithRequeue - Test manifest while forcing failure.");
                 // tell the mock-merritt-it service to temporarily suspend content delivery
@@ -509,7 +513,7 @@ public class ServiceDriverIT {
                 cleanup(batch);
         }
 
-        //@Test
+        @Test
         public void BatchManifestIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
 		System.out.println("[ServiceDriverIT] BatchManifestIngest - Submit batch manifest.");
                 String filename = "sampleBatchOfManifests.checkm";
@@ -528,7 +532,7 @@ public class ServiceDriverIT {
          * @throws MerrittZKNodeInvalid 
          * @throws KeeperException 
          */
-        //@Test
+        @Test
         public void BatchFilesIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
 		System.out.println("[ServiceDriverIT] BatchFilesIngest - Submit batch manifest by URL.");
                 String filename = "sampleBatchOfFiles.checkm";
@@ -545,7 +549,7 @@ public class ServiceDriverIT {
          * @throws MerrittZKNodeInvalid 
          * @throws KeeperException 
          */
-        //@Test
+        @Test
         public void SimpleFileIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
 		System.out.println("[ServiceDriverIT] SimpleFileIngest - Submit single file.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
@@ -560,7 +564,7 @@ public class ServiceDriverIT {
          * @throws MerrittZKNodeInvalid 
          * @throws KeeperException 
         */
-        //@Test
+        @Test
         public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
 		System.out.println("[ServiceDriverIT] SimpleFileIngestCheckJob - Submit single file. Test Job endpoints");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
@@ -828,8 +832,8 @@ public class ServiceDriverIT {
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
 		// Form parameter localIDs 4/5 are appended with ERC file localIDs 1/2/3
-		// System.out.println("-------------> job.localId(): " + job.localId());
                 assertEquals("localidfour;localidfive;localid;localidtwo;localidthree", job.localId());
+                assertEquals("ark:/99999/dummy", job.primaryId());
                 cleanup(batch);
         }
 
@@ -850,8 +854,8 @@ public class ServiceDriverIT {
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
 		// Manifest localIDs 4/5/6 are appended with ERC file localIDs 1/2/3
-		// System.out.println("-------------> job.localId(): " + job.localId());
                 assertEquals("localidfour;localidfive;localidsix;localid;localidtwo;localidthree", job.localId());
+                assertEquals("ark:/99999/dummy", job.primaryId());
                 cleanup(batch);
         }
 
@@ -873,7 +877,6 @@ public class ServiceDriverIT {
                 Job job = getJob(batch);
 		// Form localID 10 is overwritten with Manifest localIDs 7/8/9
 		// LocalID Form parameter can not be applied to Batch manifest
-		// System.out.println("-------------> job.localId(): " + job.localId());
                 assertEquals("localidseven;localideight;localidnine", job.localId());
                 cleanup(batch);
         }
@@ -891,6 +894,8 @@ public class ServiceDriverIT {
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                assertEquals("ark/1111/2222", job.primaryId());
                 cleanup(batch);
         }
 
@@ -912,6 +917,8 @@ public class ServiceDriverIT {
                 bid = ingestFile(url, new File("src/test/resources/data/test.txt"));
                 batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                assertEquals("ark/1111/2222", job.primaryId());
                 cleanup(batch);
         }
         
