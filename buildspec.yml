@@ -43,12 +43,21 @@ phases:
         SEMVER="-Dversion=${BRANCHTAG}"
       fi
     - echo "Semver [${SEMVER}]"
-    - mvn -ntp deploy:deploy-file -Durl=${CODEARTIFACT_URL} -DrepositoryId=cdlib-uc3-mrt-uc3-mrt-java -Dfile=$(ls ingest-war/target/mrt-ingestwar-*.war) ${SEMVER}
+
+    - mkdir -p /build/static
+    - |
+      echo "build_tag: ${BRANCHTAG}" > /build/static/build.content.txt 
+    - ${JAVA_HOME}/bin/jar uf $(ls ingest-war/target/mrt-ingestwar-*.war) -C /build static/build.content.txt
 
     - |
-        docker build --push --quiet \
+      mvn -ntp deploy:deploy-file \
+        -Durl=${CODEARTIFACT_URL} \
+        -DrepositoryId=cdlib-uc3-mrt-uc3-mrt-java \
+        -Dfile=$(ls ingest-war/target/mrt-ingestwar-*.war) ${SEMVER}
+
+    - |
+      docker build --push --quiet \
         --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
-        --build-arg COMMITDATE="${COMMITDATE}" \
         -t ${ECR_REGISTRY}/${REPONAME}:${DOCKTAG} .
 
     # report results
