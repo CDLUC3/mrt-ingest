@@ -42,7 +42,7 @@
 
   <Loggers>
     
-    <Root level="${env:LOGLEVEL:-info}">
+    <Root level="${env:LOGLEVEL:-warn}">
         <AppenderRef ref="Text-Console" level="TRACE"/>
         <AppenderRef ref="Text-File" level="TRACE"/>
         <AppenderRef ref="ECS-File" level="INFO"/>
