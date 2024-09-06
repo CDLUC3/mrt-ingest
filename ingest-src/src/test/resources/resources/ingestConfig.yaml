@@ -19,6 +19,7 @@ ingest-info:
     ingestServicePath: "/tmp/ingest"
     ingestQueuePath: "/tmp/ingest/queue"
     ingestLock: "/mrt.lock"
+    NumDownloadThreads: "3"
 
   store-info:
     store.1: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"

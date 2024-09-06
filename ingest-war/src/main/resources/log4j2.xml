@@ -16,7 +16,6 @@
           serviceNodeName="${env:HOSTNAME:-${env:SERVICE:-service}}"
           eventDataset="tomcat"
           includeMarkers="true"
-          stackTraceAsArray="false"
           includeOrigin="true">
       </EcsLayout>
       
@@ -29,8 +28,7 @@
     <RollingFile
         name="Text-File"
         fileName="${env:CATALINA_BASE:-.}/logs/log4j-text.log"
-        filePattern="logs/log4j-text-json-%d{yyyy-MM-dd}-%i.log"
-	stackTraceAsArray="true">
+        filePattern="logs/log4j-text-json-%d{yyyy-MM-dd}-%i.log">
       <Policies>
         <SizeBasedTriggeringPolicy size="19500KB" />
       </Policies>
@@ -42,17 +40,17 @@
 
   <Loggers>
     
-    <Root level="${env:LOGLEVEL:-warn}">
-        <AppenderRef ref="Text-Console" level="TRACE"/>
-        <AppenderRef ref="Text-File" level="TRACE"/>
+    <Root level="${env:LOGLEVEL:-info}">
+        <AppenderRef ref="Text-Console" level="INFO"/>
+        <AppenderRef ref="Text-File" level="INFO"/>
         <AppenderRef ref="ECS-File" level="INFO"/>
     </Root>
 
-    <Logger name="FileLog" level="DEBUG" additivity="false">
+    <Logger name="FileLog" level="INFO" additivity="false">
         <AppenderRef ref="Text-File" />
     </Logger>
     
-    <Logger name="ConsoleLog" level="DEBUG" additivity="false">
+    <Logger name="ConsoleLog" level="INFO" additivity="false">
         <AppenderRef ref="Text-Console" />
     </Logger>
     

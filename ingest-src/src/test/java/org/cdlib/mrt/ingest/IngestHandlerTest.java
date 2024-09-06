@@ -339,11 +339,7 @@ public class IngestHandlerTest extends IngestTestCore {
                         throws TException {
                 BatchState batch = ingestInput.getBatchState();
                 assertEquals(1, batch.getJobStates().size());
-                org.cdlib.mrt.ingest.handlers.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate()
-                                .handle(
-                                                ps,
-                                                ir,
-                                                batch);
+                org.cdlib.mrt.ingest.handlers.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate().handle(ps, ir, batch);
                 assertTrue(hr.getSuccess());
                 assertEquals(ingestInput.sampleFile.files.size() + 1, batch.getJobStates().size());
                 for (JobState tjs : batch.getJobStates().values()) {

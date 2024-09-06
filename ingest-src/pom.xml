@@ -212,6 +212,14 @@
             <!--ignore mvn dep warn-->
             <scope>compile</scope>
         </dependency>
+	<dependency>
+    	    <groupId>ch.qos.logback</groupId>
+    	    <artifactId>logback-core</artifactId>
+	</dependency>
+    	<dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+    	</dependency>
         <dependency>
             <groupId>net.sf.opencsv</groupId>
             <artifactId>opencsv</artifactId>

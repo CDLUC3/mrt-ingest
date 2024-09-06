@@ -739,6 +739,7 @@ public class ServiceDriverIT {
                 assertEquals(0, batch.getProcessingJobs(zk).size() + batch.getCompletedJobs(zk).size());
 
                 MerrittLocks.unlockIngestQueue(zk);
+                Thread.sleep(SLEEP_SUBMIT);
                 assertJobCounts(batch, 15, 1, 1);
                 cleanup(batch);
         }
