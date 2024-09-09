@@ -173,7 +173,7 @@ public class HandlerNotification extends Handler<BatchState>
 		// send summary in body and report as attachment
 		try {
  	            if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
-		        status = "Fail";
+		        status = "FAIL";
 		    }
 		} catch (Exception e) {}
 

@@ -169,6 +169,7 @@ public class HandlerNotification extends Handler<BatchState>
 
             try {
 	       if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+		  status = "FAIL";
                   email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queue Failed", aggregate + batchState.getBatchID().getValue()));
 	       } else {
                   email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued", aggregate + batchState.getBatchID().getValue()));
