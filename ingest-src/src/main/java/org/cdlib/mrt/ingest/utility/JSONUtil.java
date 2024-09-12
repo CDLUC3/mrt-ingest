@@ -161,10 +161,10 @@ public class JSONUtil
 
 	try {
 	   ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
-	} catch (Exception e) { System.out.println("Error setting JOB ID for Ingest Request"); }
+	} catch (Exception e) { System.out.println("[WARN] Could not set JOB ID for Ingest Request"); }
 	try {
 	   ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
-	} catch (Exception e) { System.out.println("Error setting BATCH ID for Ingest Request"); }
+	} catch (Exception e) { System.out.println("[ERROR] Could not set BATCH ID for Ingest Request"); }
 	Boolean update = new Boolean(jp.getBoolean("update"));
 	ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));

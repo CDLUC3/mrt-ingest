@@ -650,7 +650,7 @@ public class ProcessManager {
                 String onHold = null;
                 boolean locked = false;
                 // Submission state
-		if (unitTest) {
+		if (! unitTest) {
 		    try { 
                         locked = MerrittLocks.checkLockIngestQueue(zooKeeper);
 		    } catch (Exception e) {

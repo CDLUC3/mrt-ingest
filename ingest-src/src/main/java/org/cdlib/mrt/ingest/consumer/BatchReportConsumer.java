@@ -621,7 +621,7 @@ class BatchReportCleanupDaemon implements Runnable
                                System.out.println(NAME + " Found completed batch.  Removing: " + batchName);
 			   } 
                         } catch (MerrittStateError mse) {
-                           System.out.println(MESSAGE + "Found items but they in failed/processing state: " + mse.getMessage());
+                           System.out.println(MESSAGE + "Found items but in failed/processing state: " + mse.getMessage());
                         } catch (Exception e) {
 			   e.printStackTrace();
                            System.out.println(MESSAGE + "Error removing completed batches: " + e.getMessage());
