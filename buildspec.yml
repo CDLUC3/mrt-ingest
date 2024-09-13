@@ -14,7 +14,7 @@ phases:
     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${ECR_REGISTRY}
  
     - COMMIT=`git rev-parse --short HEAD`
-    - TAG=`git describe --tags --exact-match 2> /dev/null || echo ''`
+    - TAG=`(git tag --contains $COMMIT | egrep "^\d+\.\d+\.\d+$" || git tag --contains $COMMIT || echo '') | sort | tail -1`
     - |
       if [[ "$MODE" == "OnPush" ]]
       then
