@@ -291,6 +291,18 @@ class BatchConsumerDaemon implements Runnable
         ArrayBlockingQueue<BatchConsumeData> workQueue = new ArrayBlockingQueue<BatchConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
+        // Refresh connection. if necessary
+        try {
+            // Test connection
+            zooKeeper.exists("/",false);
+        } catch (KeeperException ke) {
+            ke.printStackTrace();
+            System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
+            try {
+               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            } catch (IOException ioe){}
+        } catch (Exception e) {}
+
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
 	sessionAuth = zooKeeper.getSessionPasswd();

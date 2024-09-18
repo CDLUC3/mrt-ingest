@@ -32,6 +32,7 @@ package org.cdlib.mrt.ingest.consumer;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
@@ -289,6 +290,18 @@ class InitializeConsumerDaemon implements Runnable
         String status = null;
         ArrayBlockingQueue<InitializeConsumeData> workQueue = new ArrayBlockingQueue<InitializeConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
+
+        // Refresh connection. if necessary
+        try {
+            // Test connection
+            zooKeeper.exists("/",false);
+        } catch (KeeperException ke) {
+            ke.printStackTrace();
+            System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
+            try {
+               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            } catch (IOException ioe){}
+        } catch (Exception e) {}
 
 	sessionID = zooKeeper.getSessionId();
 	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
