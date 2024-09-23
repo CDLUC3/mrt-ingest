@@ -363,6 +363,7 @@ class InitializeConsumerDaemon implements Runnable
 			           try {
 				      System.out.println(MESSAGE + "detected collection level hold.  Setting ZK entry state to 'held' state: " + job.id() + " - " + profile);
 				      job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Held);
+            			      job.unlock(zooKeeper);
 				      break;
 			           } catch (Exception e) {
 				      System.err.println("[error] " + MESSAGE + "Exception while placing entry to 'held': " + job.id());
@@ -557,6 +558,7 @@ class InitializeConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
 	   try {
+              job.unlock(zooKeeper);
 	   } catch(Exception ze) {}
 	} 
     }

@@ -485,6 +485,7 @@ class ProvisionConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
            try {
+             job.unlock(zooKeeper);
            } catch(Exception ze) {}
         }
 
