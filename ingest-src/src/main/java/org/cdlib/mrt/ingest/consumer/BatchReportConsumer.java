@@ -346,7 +346,18 @@ class BatchReportConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
 
 			    Batch batch = null;
-			    batch = Batch.acquireBatchForReporting(zooKeeper);
+			    try {
+			        batch = Batch.acquireBatchForReporting(zooKeeper);
+                            } catch (KeeperException ke) {
+                                ke.printStackTrace();
+                                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                                try {
+                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                                   Thread.currentThread().sleep(2 * 1000);
+			           batch = Batch.acquireBatchForReporting(zooKeeper);
+                                } catch (IOException ioe){}
+                            } catch (Exception e) {}
+
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
                                 executorService.execute(new BatchReportConsumeData(ingestService, batch, zooKeeper, queueConnectionString));

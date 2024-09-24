@@ -345,7 +345,18 @@ class BatchConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
 
 			    Batch batch = null;
-                            batch = Batch.acquirePendingBatch(zooKeeper);
+			    try {
+                                batch = Batch.acquirePendingBatch(zooKeeper);
+                            } catch (KeeperException ke) {
+                                ke.printStackTrace();
+                                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                                try {
+                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                                   Thread.currentThread().sleep(2 * 1000);
+                                   batch = Batch.acquirePendingBatch(zooKeeper);
+                                } catch (IOException ioe){}
+                            } catch (Exception e) {}
+
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
                                 executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString));

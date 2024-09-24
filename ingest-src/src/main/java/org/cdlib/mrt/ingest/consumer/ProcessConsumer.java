@@ -312,7 +312,17 @@ class ProcessConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             job = null;
-                            job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Processing);
+			    try {
+                                job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Processing);
+                            } catch (KeeperException ke) {
+                                ke.printStackTrace();
+                                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                                try {
+                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                                   Thread.currentThread().sleep(2 * 1000);
+                            	   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Processing);
+                                } catch (IOException ioe){}
+                            } catch (Exception e) {}
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found processing job data: " + job.id());

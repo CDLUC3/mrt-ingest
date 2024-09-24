@@ -346,10 +346,26 @@ class InitializeConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-			    } catch (NodeExistsException nee) {
-				nee.printStackTrace();
-				break;
-			    }
+                            } catch (NodeExistsException nee) {
+                                nee.printStackTrace();
+                                break;
+                            } catch (ConnectionLossException cle) {
+                                cle.printStackTrace();
+                                System.out.println(MESSAGE + "[WARN] Connection loss.  Reconnecting...");
+                                try {
+                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                                   Thread.currentThread().sleep(2 * 1000);
+                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
+                                } catch (IOException ioe){}
+                            } catch (SessionExpiredException see) {
+                                see.printStackTrace();
+                                System.out.println(MESSAGE + "[WARN] Session Expired.  Reconnecting...");
+                                try {
+                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                                   Thread.currentThread().sleep(2 * 1000);
+                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
+                                } catch (IOException ioe){}
+                            } catch (Exception e) {}
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found initialize job data: " + job.id());
