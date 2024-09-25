@@ -163,7 +163,7 @@ public class BatchConsumer extends HttpServlet
         try {
             // Start the Queue cleanup thread
             if (cleanupThread == null) {
-	    	System.out.println("[info] " + MESSAGE + "NOT starting Batch Queue cleanup daemon.  Cleanup is performed after submission");
+	    	System.out.println("[info] " + MESSAGE + "NOT starting Batch Queue cleanup daemon.  Cleanup is performed in final Batch Daemon");
 	    	//System.out.println("[info] " + MESSAGE + "starting Queue cleanup daemon");
 		//startCleanupThread(servletConfig);
 	    }
