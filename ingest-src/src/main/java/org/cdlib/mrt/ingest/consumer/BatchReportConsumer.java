@@ -417,7 +417,7 @@ class BatchReportConsumerDaemon implements Runnable
     {
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
-                System.out.println("[info]" + NAME + ": hold file exists, not processing queue.");
+                System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
                 return true;
             }
         } catch (Exception e) {

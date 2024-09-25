@@ -44,6 +44,7 @@ import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.zk.Job;
@@ -381,7 +382,7 @@ class ProvisionConsumerDaemon implements Runnable
     {
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
-                System.out.println("[info]" + NAME + ": hold file exists, not processing queue.");
+                System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
                 return true;
             }
         } catch (Exception e) {
@@ -460,6 +461,14 @@ class ProvisionConsumeData implements Runnable
 	    //BatchState.putQueuePath(JSONUtil.getValue(jp,"batchID"), ingestRequest.getQueuePath().getAbsolutePath());
 
 	    String process = "Provision";
+            if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), process + "_FAIL")) {
+                System.out.println("[item]: ProcessConsume Daemon - FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + process + "_FAIL");
+                System.out.println("[item]: ProcessConsume Daemon - Forcing a failure.");
+                job.setStatus(zooKeeper, job.status().fail(), "FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile() + "/" + process + "_FAIL  -  Forcing a failure.");
+                job.unlock(zooKeeper);
+                return;
+            }
+
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
 
