@@ -605,26 +605,7 @@ class BatchReportCleanupDaemon implements Runnable
 
                         Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
                     }
-
 		   
-		    // DELETED JOBS
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Deleted);
-                           if (job != null) {
-                               System.out.println(NAME + " Found deleted job.  Removing: " + job.id() + " - " + job.primaryId());
-                               job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-
-                        Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
-                    }
 */
 
 		    // COMPLETED BATCHES
@@ -652,6 +633,33 @@ class BatchReportCleanupDaemon implements Runnable
 
                         //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
 			break;
+                    }
+
+		    // DELETED JOBS that are orphaned
+                    while (true) {
+                        System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString);
+                        List<String> jobs = null;
+                        try {
+                           try {
+                              jobs = Batch.deleteDeletedJobs(zooKeeper);
+                           } catch (SessionExpiredException see) {
+                              zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                              System.out.println(MESSAGE + "Error removing deleted Jobs, retrying: " + see.getMessage());
+                              jobs = Batch.deleteDeletedJobs(zooKeeper);
+                           }
+
+                           for (String jobName: jobs) {
+                               System.out.println(NAME + " Found deleted job.  Removing: " + jobName);
+                           }
+                        } catch (MerrittStateError mse) {
+                           System.out.println(MESSAGE + "Found items but in failed/processing state: " + mse.getMessage());
+                        } catch (Exception e) {
+                           e.printStackTrace();
+                           System.out.println(MESSAGE + "Error removing deleted jobs: " + e.getMessage());
+                        }
+
+                        //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
+                        break;
                     }
 
                 } catch (RejectedExecutionException ree) {
