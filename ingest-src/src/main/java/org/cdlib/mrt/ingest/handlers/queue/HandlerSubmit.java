@@ -114,6 +114,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    // System.out.println("[info] Priority Job status: " + isHighPriority);
 
 	    // common across all jobs in batch
+	    jproperties.put("submissionDate", batchState.getSubmissionDate().toString());
 	    jproperties.put("batchID", batchState.getBatchID().getValue());
 	    jproperties.put("profile", ingestRequest.getProfile().getValue());
 	    jproperties.put("type", ingestRequest.getPackageType().getValue());

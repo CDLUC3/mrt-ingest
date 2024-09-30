@@ -483,9 +483,16 @@ class ProcessConsumeData implements Runnable
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-	    // Populate Manifest URL if necessary
-	    if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
-		job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+	    // Force an Inventory failure
+	    if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), "Record_FAIL")) {
+                System.out.println("[item]: ProcessConsume Daemon - Record FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + "Record_FAIL");
+                System.out.println("[item]: ProcessConsume Daemon - Mangling Inventory data which will force a failure.");
+		job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest-phantom/"), "");
+	    } else {
+	       // Populate Manifest URL if necessary
+	       if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
+		   job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+	    }
 
 	    // Populate metadata if necessary
 	    if (JSONUtil.getValue(jp,"title") == null && jobState.getObjectTitle() != null) 
