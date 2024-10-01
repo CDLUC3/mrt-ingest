@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.Boolean;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -187,7 +188,18 @@ public class HandlerSubmit extends Handler<BatchState>
 	    jproperties.put("submissionDate", DateUtil.getCurrentDate());
 
 	    // Create ZK batch
-	    Job.initNodes(zooKeeper);
+            try {
+                Job.initNodes(zooKeeper);
+            } catch (KeeperException ke) {
+                ke.printStackTrace();
+                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                try {
+            	    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+                    Thread.currentThread().sleep(2 * 1000);
+                    Job.initNodes(zooKeeper);
+                } catch (IOException ioe){}
+            } catch (Exception e) {}
+
 
 	    batch = Batch.createBatch(zooKeeper, jproperties);
 	    System.out.println("[INFO] Batch created: " + batch.id());

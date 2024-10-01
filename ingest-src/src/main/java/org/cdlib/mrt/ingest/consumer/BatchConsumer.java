@@ -337,7 +337,18 @@ class BatchConsumerDaemon implements Runnable
 		try {
 		    long numActiveTasks = 0;
 
-		    Job.initNodes(zooKeeper);
+                   try {
+                       Job.initNodes(zooKeeper);
+                   } catch (KeeperException ke) {
+                       ke.printStackTrace();
+                       System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                       try {
+                           zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                           Thread.currentThread().sleep(2 * 1000);
+                           Job.initNodes(zooKeeper);
+                       } catch (IOException ioe){}
+                   } catch (Exception e) {}
+
 		    // To prevent long shutdown, no more than poolsize tasks queued.
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
