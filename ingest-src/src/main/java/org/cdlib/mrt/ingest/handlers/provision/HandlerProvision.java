@@ -78,7 +78,7 @@ public class HandlerProvision extends Handler<JobState>
 	    Long capacitySpace = queueFile.getTotalSpace();
 	    Long freeSpace = queueFile.getFreeSpace();
 
-	    Double usage = (freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D;
+	    Double usage = 100D - ((freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D);
 	    while (usage.intValue() > zfsThreshold ) {
 		// Loop until resolved
 	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS usage exceeds Threshold.  Looping (60s) until resolved.");
