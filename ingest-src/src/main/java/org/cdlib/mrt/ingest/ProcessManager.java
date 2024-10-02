@@ -335,13 +335,18 @@ public class ProcessManager {
 		ProfileState profileState = null;
 		JobState jobState = null;
 		try {
-			// add ingest queue path to request
-			// ingestRequest.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
+			// add ingest queue path and threshold to request
 	                try {
                 	    ingestRequest.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
             	        } catch (org.json.JSONException je) {
                 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
                 	    ingestRequest.setIngestQueuePath(null);
+            	        }
+	                try {
+                	    ingestRequest.setIngestZfsThreshold(ingestConf.getString("ingestZfsThreshold"));
+            	        } catch (org.json.JSONException je) {
+                	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ingestZfsThreshold not set.  Can not provision accurately");
+                	    ingestRequest.setIngestZfsThreshold(null);
             	        }
 
 			// add service state properties to ingest request

@@ -16,6 +16,7 @@ ingest:
     purl: "http://n2t.net/"
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
     ingestQueuePath: "{!SSM: ingest/config/ingestQueuePath !DEFAULT: /apps/ingest-stg-shared/ingest_home/queue}"
+    ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
     ingestLock: "{!SSM: ingest/zoo/lockName !DEFAULT: /mrt.lock}"
     NumDownloadThreads: "{!SSM: ingest/config/numDownloadThreads !DEFAULT: 4}"
 
@@ -63,6 +64,7 @@ ingest-docker:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
+    ingestZfsThreshold: "80"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "2"
 

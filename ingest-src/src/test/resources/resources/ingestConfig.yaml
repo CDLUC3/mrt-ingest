@@ -18,6 +18,7 @@ ingest-info:
     mail-replyto: "{!SSM: ingest/config/mail-replyto !DEFAULT: uc3@ucop.edu}"
     ingestServicePath: "/tmp/ingest"
     ingestQueuePath: "/tmp/ingest/queue"
+    ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "3"
 

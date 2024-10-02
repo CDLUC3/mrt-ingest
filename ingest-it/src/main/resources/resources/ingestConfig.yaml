@@ -16,6 +16,7 @@ ingest-info:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
+    ingestZfsThreshold: "80"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "3"
 

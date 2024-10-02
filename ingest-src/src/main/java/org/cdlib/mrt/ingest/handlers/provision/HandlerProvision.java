@@ -68,9 +68,30 @@ public class HandlerProvision extends Handler<JobState>
 
 	try {
 
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Provisioning not yet supported: " + jobState.getJobID().getValue());
+	    Integer zfsThreshold = new Integer(ingestRequest.getIngestZfsThreshold());
+	    if (zfsThreshold == null) {
+	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS Threshold not defined.  Provisioning not supported.");
+	        return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning not supported", 0);
+	    }
+	    String ingestQueuePath = ingestRequest.getIngestQueuePath();
+	    File queueFile = new File(ingestQueuePath);
+	    Long capacitySpace = queueFile.getTotalSpace();
+	    Long freeSpace = queueFile.getFreeSpace();
 
+	    Double usage = (freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D;
+	    while (usage.intValue() > zfsThreshold ) {
+		// Loop until resolved
+	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS usage exceeds Threshold.  Looping (60s) until resolved.");
+	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
+		Thread.sleep(60000);
+	    	queueFile = new File(ingestQueuePath);
+	    	capacitySpace = queueFile.getTotalSpace();
+	    	freeSpace = queueFile.getFreeSpace();
+	    	usage = (freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D;
+	    } 
 
+	    if (DEBUG) System.out.println("[INFO] " + MESSAGE + "ZFS usage within threshold boundary.");
+	    if (DEBUG) System.out.println("[INFO] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning complete", 0);
 	} catch (Exception e) {
             e.printStackTrace(System.err);

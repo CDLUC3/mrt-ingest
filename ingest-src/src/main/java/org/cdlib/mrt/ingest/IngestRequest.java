@@ -57,6 +57,7 @@ public class IngestRequest
 
     private File queueDir;
     private String ingestQueuePath;	// Shareable e.g. EFS
+    private String ingestZfsThreshold;	// Percentage
 
     private JobState jobState;
     private Batch batch;
@@ -327,6 +328,14 @@ public class IngestRequest
     }
 
     /**
+     * Get ingest ZFS threshold
+     * @return Percentage for ZFS threshold
+     */
+    public String getIngestZfsThreshold() {
+        return ingestZfsThreshold;
+    }
+
+    /**
      * Set queue path
      * @param File submission queuing directory
      */
@@ -340,6 +349,14 @@ public class IngestRequest
      */
     public void setIngestQueuePath(String ingestQueuePath) {
         this.ingestQueuePath = ingestQueuePath;
+    }
+
+    /**
+     * Set ingest ZFS threshold
+     * @param String ZFS threshold
+     */
+    public void setIngestZfsThreshold(String ingestZfsThreshold) {
+        this.ingestZfsThreshold = ingestZfsThreshold;
     }
 
     /**
