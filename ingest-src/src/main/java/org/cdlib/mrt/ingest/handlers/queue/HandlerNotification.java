@@ -37,6 +37,8 @@ import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.ByteArrayDataSource;
 
+import org.cdlib.mrt.ingest.handlers.Handler;
+import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.Notification;
@@ -152,6 +154,9 @@ public class HandlerNotification extends Handler<BatchState>
             if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
             else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();	// POST parm overrides profile parm
 
+	    // Force JSON
+	    formatType = FormatType.valueOf("json");
+
             try {
                 email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
                     batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
@@ -164,6 +169,7 @@ public class HandlerNotification extends Handler<BatchState>
 
             try {
 	       if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+		  status = "FAIL";
                   email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queue Failed", aggregate + batchState.getBatchID().getValue()));
 	       } else {
                   email.setSubject(FormatterUtil.getSubject(SERVICE, server, status, "Submission Queued", aggregate + batchState.getBatchID().getValue()));

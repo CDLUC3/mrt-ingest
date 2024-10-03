@@ -18,7 +18,9 @@ ingest-info:
     mail-replyto: "{!SSM: ingest/config/mail-replyto !DEFAULT: uc3@ucop.edu}"
     ingestServicePath: "/tmp/ingest"
     ingestQueuePath: "/tmp/ingest/queue"
+    ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
     ingestLock: "/mrt.lock"
+    NumDownloadThreads: "3"
 
   store-info:
     store.1: "http://localhost:{!ENV: it-server.port !DEFAULT: 4567}"
@@ -27,9 +29,8 @@ ingest-info:
 
   queue-info:
     QueueService: "localhost:{!ENV: it-zoo.port !DEFAULT: 2181}"
-    QueueName: "/ingest"
-    InventoryName: "/mrt.inventory.full"
-    QueueHoldFile: "/tmp/ingest/queue/HOLD"
+    # QueueName: "/ingest"
+    # InventoryName: "/mrt.inventory.full"
     PollingInterval: "10"
     NumThreads: "5"
 

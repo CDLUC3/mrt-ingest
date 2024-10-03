@@ -73,7 +73,16 @@ public class ProfileState
     private File statusView = null;
     private Vector<Notification> contactsEmail = new Vector<Notification>();
     private SortedMap<Integer,HandlerState> ingestHandlers = null;
+    private SortedMap<Integer,HandlerState> batchProcessHandlers = null;
+    private SortedMap<Integer,HandlerState> batchReportHandlers = null;
     private SortedMap<Integer,HandlerState> queueHandlers = null;
+    private SortedMap<Integer,HandlerState> initializeHandlers = null;
+    private SortedMap<Integer,HandlerState> estimateHandlers = null;
+    private SortedMap<Integer,HandlerState> provisionHandlers = null;
+    private SortedMap<Integer,HandlerState> downloadHandlers = null;
+    private SortedMap<Integer,HandlerState> processHandlers = null;
+    private SortedMap<Integer,HandlerState> recordHandlers = null;
+    private SortedMap<Integer,HandlerState> notifyHandlers = null;
     private DateState creationDate = null;
     private DateState modificationDate = null;
     private Identifier.Namespace objectScheme = null;
@@ -419,6 +428,42 @@ public class ProfileState
         return queueHandlers;
     }
 
+    public SortedMap<Integer,HandlerState> getBatchProcessHandlers() {
+        return batchProcessHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getBatchReportHandlers() {
+        return batchReportHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getInitializeHandlers() {
+        return initializeHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getEstimateHandlers() {
+        return estimateHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getProvisionHandlers() {
+        return provisionHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getDownloadHandlers() {
+        return downloadHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getProcessHandlers() {
+        return processHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getRecordHandlers() {
+        return recordHandlers;
+    }
+
+    public SortedMap<Integer,HandlerState> getNotifyHandlers() {
+        return notifyHandlers;
+    }
+
     /**
      * Add object handlers
      * @param HandlerState object handler
@@ -436,11 +481,83 @@ public class ProfileState
     }
 
     /**
-     * Set batch queue handlers
+     * Set job queue handlers
      * @param Vector queue handler
      */
     public void setQueueHandlers(SortedMap<Integer,HandlerState> handlers) {
         this.queueHandlers = handlers;
+    }
+
+    /**
+     * Set batch process queue handlers
+     * @param Vector queue handler
+     */
+    public void setBatchProcessHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.batchProcessHandlers = handlers;
+    }
+
+    /**
+     * Set batch report queue handlers
+     * @param Vector queue handler
+     */
+    public void setBatchReportHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.batchReportHandlers = handlers;
+    }
+
+    /**
+     * Set initialize queue handlers
+     * @param Vector queue handler
+     */
+    public void setInitializeHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.initializeHandlers = handlers;
+    }
+
+    /**
+     * Set estimate queue handlers
+     * @param Vector queue handler
+     */
+    public void setEstimateHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.estimateHandlers = handlers;
+    }
+
+    /**
+     * Set provision queue handlers
+     * @param Vector queue handler
+     */
+    public void setProvisionHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.provisionHandlers = handlers;
+    }
+
+    /**
+     * Set download queue handlers
+     * @param Vector queue handler
+     */
+    public void setDownloadHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.downloadHandlers = handlers;
+    }
+
+    /**
+     * Set process queue handlers
+     * @param Vector queue handler
+     */
+    public void setProcessHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.processHandlers = handlers;
+    }
+
+    /**
+     * Set record queue handlers
+     * @param Vector queue handler
+     */
+    public void setRecordHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.recordHandlers = handlers;
+    }
+
+    /**
+     * Set notify queue handlers
+     * @param Vector queue handler
+     */
+    public void setNotifyHandlers(SortedMap<Integer,HandlerState> handlers) {
+        this.notifyHandlers = handlers;
     }
 
     public DateState getCreationDate() {
@@ -651,6 +768,13 @@ public class ProfileState
                 + " - email contacts =" + contactsEmail.toString()
                 + " - ingestHandlers =" + ingestHandlers.toString()
                 + " - queueHandlers =" + queueHandlers.toString()
+                + " - batchProcessHandlers =" + batchProcessHandlers.toString()
+                + " - batchReportHandlers =" + batchReportHandlers.toString()
+                + " - estimateHandlers =" + estimateHandlers.toString()
+                + " - provisionHandlers =" + provisionHandlers.toString()
+                + " - downloadHandlers =" + downloadHandlers.toString()
+                + " - processHandlers =" + processHandlers.toString()
+                + " - recordHandlers =" + recordHandlers.toString()
                 + " - context =" + context
                 + " - creationDate=" + creationDate
                 + " - modificationDate=" + modificationDate;

@@ -128,40 +128,6 @@ public class JerseyPost extends JerseyBase
     }
 
 
-    // Get job status
-    // NOT YET SUPPORTED
-    @GET
-    @Path("/status")
-    public Response getBatchStates(
-            @QueryParam("t") String formatType,
-            @DefaultValue("FAILED") @QueryParam("f") String type,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            formatType = processFormatType(request.getHeader("Accept"), formatType);	// xml default
-            log("getBatchStates entered:" + " - formatType=" + formatType);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getStatus(type);
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-
     // Update object 
     // No object ID supplied in URL
     @POST

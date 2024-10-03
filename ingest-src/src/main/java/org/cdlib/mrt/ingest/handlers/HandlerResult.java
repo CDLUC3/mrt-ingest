@@ -40,10 +40,10 @@ public class HandlerResult
 
 
     // Constructors
-    HandlerResult(boolean success, String description) {
+    public HandlerResult(boolean success, String description) {
 	this(success, description, 0);
     }
-    HandlerResult(boolean success, String description, int returnCode) {
+    public HandlerResult(boolean success, String description, int returnCode) {
 	this.success = success;
 	this.description = description;
 	this.returnCode = returnCode;

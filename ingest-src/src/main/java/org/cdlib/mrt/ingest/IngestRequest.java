@@ -36,6 +36,7 @@ import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.ingest.utility.ResponseFormEnum;
 import org.cdlib.mrt.ingest.utility.ResourceTypeEnum;
+import org.cdlib.mrt.zk.Batch;
 
 /**
  *
@@ -56,8 +57,10 @@ public class IngestRequest
 
     private File queueDir;
     private String ingestQueuePath;	// Shareable e.g. EFS
+    private String ingestZfsThreshold;	// Percentage
 
     private JobState jobState;
+    private Batch batch;
     private ResponseFormEnum responseForm;
     private ResourceTypeEnum resourceType;
     // http://dublincore.org/documents/dces/
@@ -81,7 +84,6 @@ public class IngestRequest
     private PackageTypeEnum packageType;
     private IngestServiceState serviceState;
     private boolean updateFlag;
-    private boolean synchronousMode;
     private boolean retainTargetURL;
 
     // constructors
@@ -95,7 +97,6 @@ public class IngestRequest
 	    this.profile = new Identifier(profile);
 	    this.setPackageType(packageType);
 	    this.setUpdateFlag(false);
-	    this.setSynchronousMode(false);
 	    if (packageSize != null) this.packageSize = new Integer(packageSize).intValue();
 	    ResponseFormEnum.setResponseForm(responseForm);
 	} catch (Exception e) {
@@ -111,6 +112,16 @@ public class IngestRequest
     // Set job
     public void setJob(JobState jobState) { 
 	this.jobState = jobState;
+    }
+
+    // Get zk batch
+    public Batch getBatch() { 
+	return batch;
+     }
+
+    // Set zk batch
+    public void setBatch(Batch batch) { 
+	this.batch = batch;
     }
 
     /**
@@ -189,7 +200,11 @@ public class IngestRequest
      * @return response form
      */
     public String getResponseForm() {
-        return responseForm.getValue();
+	try {
+           return responseForm.getValue();
+	} catch (Exception e) {
+	   return null;
+	}
     }
 
     /**
@@ -313,6 +328,14 @@ public class IngestRequest
     }
 
     /**
+     * Get ingest ZFS threshold
+     * @return Percentage for ZFS threshold
+     */
+    public String getIngestZfsThreshold() {
+        return ingestZfsThreshold;
+    }
+
+    /**
      * Set queue path
      * @param File submission queuing directory
      */
@@ -326,6 +349,14 @@ public class IngestRequest
      */
     public void setIngestQueuePath(String ingestQueuePath) {
         this.ingestQueuePath = ingestQueuePath;
+    }
+
+    /**
+     * Set ingest ZFS threshold
+     * @param String ZFS threshold
+     */
+    public void setIngestZfsThreshold(String ingestZfsThreshold) {
+        this.ingestZfsThreshold = ingestZfsThreshold;
     }
 
     /**
@@ -375,22 +406,6 @@ public class IngestRequest
      */
     public boolean getUpdateFlag() {
         return updateFlag;
-    }
-
-    /**
-     * Set synchronous boolean
-     * @param boolean process queueing in synchronously 
-     */
-    public void setSynchronousMode(boolean synchronousMode) {
-        this.synchronousMode = synchronousMode;
-    }
-
-    /**
-     * Get synchronous boolean
-     * @return queueing done synchronously 
-     */
-    public boolean getSynchronousMode() {
-        return synchronousMode;
     }
 
     /**

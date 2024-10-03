@@ -21,18 +21,18 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.cdlib.mrt.ingest.handlers.HandlerInitialize;
-import org.cdlib.mrt.ingest.handlers.HandlerAccept;
-import org.cdlib.mrt.ingest.handlers.HandlerDescribe;
-import org.cdlib.mrt.ingest.handlers.HandlerCharacterize;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerInitialize;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerAccept;
+import org.cdlib.mrt.ingest.handlers.process.HandlerDescribe;
+import org.cdlib.mrt.ingest.handlers.process.HandlerCharacterize;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
-import org.cdlib.mrt.ingest.handlers.HandlerRetrieve;
-import org.cdlib.mrt.ingest.handlers.HandlerVerify;
-import org.cdlib.mrt.ingest.handlers.HandlerCorroborate;
-import org.cdlib.mrt.ingest.handlers.HandlerDigest;
-import org.cdlib.mrt.ingest.handlers.HandlerDisaggregate;
-import org.cdlib.mrt.ingest.handlers.HandlerDocument;
-import org.cdlib.mrt.ingest.handlers.HandlerCleanup;
+import org.cdlib.mrt.ingest.handlers.download.HandlerRetrieve;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerVerify;
+import org.cdlib.mrt.ingest.handlers.process.HandlerCorroborate;
+import org.cdlib.mrt.ingest.handlers.process.HandlerDigest;
+import org.cdlib.mrt.ingest.handlers.initialize.HandlerDisaggregate;
+import org.cdlib.mrt.ingest.handlers.process.HandlerDocument;
+import org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup;
 
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.TException;
@@ -165,7 +165,7 @@ public class IngestHandlerTest extends IngestTestCore {
                         this.tempdir = tempdir;
                 }
 
-                public IngestRequest getIngestRequest(IngestManager im, JobState js) throws TException {
+                public IngestRequest getIngestRequest(ProcessManager im, JobState js) throws TException {
                         IngestRequest ir = new IngestRequest();
                         ir.setQueuePath(this.tempdir.toFile());
                         ir.setServiceState(im.getServiceState());
@@ -293,11 +293,11 @@ public class IngestHandlerTest extends IngestTestCore {
         ProfileState ps;
 
         IngestConfig ingestConfig;
-        IngestManager im;
+        ProcessManager im;
 
         public IngestHandlerTest() throws TException {
                 ingestConfig = IngestConfig.useYaml();
-                im = new IngestManager(ingestConfig.getLogger(), ingestConfig.getStoreConf(),
+                im = new ProcessManager(ingestConfig.getLogger(), ingestConfig.getStoreConf(),
                                 ingestConfig.getIngestConf(), ingestConfig.getQueueConf());
                 im.init(ingestConfig.getStoreConf(), ingestConfig.getIngestConf(), ingestConfig.getQueueConf());
         }
@@ -339,11 +339,7 @@ public class IngestHandlerTest extends IngestTestCore {
                         throws TException {
                 BatchState batch = ingestInput.getBatchState();
                 assertEquals(1, batch.getJobStates().size());
-                org.cdlib.mrt.ingest.handlers.queue.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate()
-                                .handle(
-                                                ps,
-                                                ir,
-                                                batch);
+                org.cdlib.mrt.ingest.handlers.HandlerResult hr = new org.cdlib.mrt.ingest.handlers.queue.HandlerDisaggregate().handle(ps, ir, batch);
                 assertTrue(hr.getSuccess());
                 assertEquals(ingestInput.sampleFile.files.size() + 1, batch.getJobStates().size());
                 for (JobState tjs : batch.getJobStates().values()) {

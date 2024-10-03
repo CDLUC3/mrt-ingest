@@ -34,8 +34,16 @@ public class IngestProfileUnitTest extends IngestTestCore {
                 assertEquals("ark:/99999/j2000000", ps.getOwner());
                 assertEquals(1, ps.getContactsEmail().size());
                 assertEquals("test.email@test.edu", ps.getContactsEmail().get(0).getContactEmail());
-                assertEquals(15, ps.getIngestHandlers().size());
+                assertEquals(2, ps.getBatchProcessHandlers().size());
+                assertEquals(1, ps.getBatchReportHandlers().size());
                 assertEquals(3, ps.getQueueHandlers().size());
+                assertEquals(4, ps.getInitializeHandlers().size());
+                assertEquals(1, ps.getEstimateHandlers().size());
+                assertEquals(1, ps.getProvisionHandlers().size());
+                assertEquals(1, ps.getDownloadHandlers().size());
+                assertEquals(7, ps.getProcessHandlers().size());
+                assertEquals(1, ps.getRecordHandlers().size());
+                assertEquals(2, ps.getNotifyHandlers().size());
                 assertEquals(9999, ps.getTargetStorage().getNodeID());
                 assertEquals("03", ps.getPriority());
                 assertTrue(ps.getCreationDate().getDate().after(jan1_2022()));

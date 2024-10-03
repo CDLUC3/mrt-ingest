@@ -82,10 +82,11 @@ public class IngestConfig
     protected String QueueService = null;
     protected String QueueName = null;
     protected String QueueInventoryName = null;
-    protected String QueueHoldFile = null;
     protected Integer QueuePollingInterval = null;
     protected Integer QueueNumThreads = null;
     protected Integer QueueNumDownloadThreads = null;
+    protected Integer BatchPollingInterval = null;
+    protected Integer BatchNumThreads = null;
     // config-info
     protected Integer messageMaximumLevel = null;
     protected Integer messageMaximumError = null;

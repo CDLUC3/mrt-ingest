@@ -151,78 +151,24 @@ public class FileUtilAlt {
 
 
     /**
-     * Submission processing action
-     * @param action Action to perform for submission processing by Daemon
-     * @param holdFile File that defines submission processing
+     * Quick failure if file exists
+     * @param File directory
+     * @param String daemon process name
      * @throws org.cdlib.mrt.utility.MException
      */
-    public static boolean modifyHoldFile(String action, File holdFile)
+    public static boolean quickFailure(File failDir, String daemonName)
         throws Exception
     {
         try {
 
-	    if (action.matches("freeze")) {
-                if (holdFile.exists()) {
-                   System.out.println("[info]" + NAME + ": hold file already exists, not action taken");
-		} else {
-                   System.out.println("[info]" + NAME + ": creating hold file: " + holdFile.getAbsolutePath());
-		   FileUtils.touch(holdFile);
-		}
-	    } else if (action.matches("thaw")) {
-                if (holdFile.exists()) {
-                   System.out.println("[info]" + NAME + ": removing hold file: " + holdFile.getAbsolutePath());
-		   holdFile.delete();
-		} else {
-                   System.out.println("[info]" + NAME + ": hold file does not exist, no action taken");
-		}
-	    } else {
-                System.out.println("[info]" + NAME + ": request not recognized.  No action taken: " + action);
-	    }
-
-            return true;
+	    File daemonFile = new File(failDir, "/" + daemonName);
+            return daemonFile.exists();
         } catch(Exception ex) {
 	    ex.printStackTrace();
-            String err = MESSAGE + "submissionAction() - Exception:" + ex;
-            throw new TException.GENERAL_EXCEPTION( err);
+            String err = MESSAGE + "quickFailure() - Exception:" + ex;
+            // throw new TException.GENERAL_EXCEPTION(err);
+	    return false;
         }
     }
 
-    /**
-     * Get held collections
-     * @param File held directory
-     * @param String regex for collection holds
-     * @throws org.cdlib.mrt.utility.MException
-     */
-    public static String getHeldCollections(File checkDir, String collectionRegex)
-        throws Exception
-    {
-        try {
-	    String delimiter = ",";
-	    String collectionHeld = "";
-
-	    FileFilter fileFilter = new WildcardFileFilter(collectionRegex);
-	    File[] files = checkDir.listFiles(fileFilter);
-
-	    boolean first = true;
-	    if (files != null ) {
-                for (File f : files) {
-		
-		    String fs = f.getName().substring("HOLD_".length());
-	            if (! first) {
-		        fs = delimiter + fs;
-		    } else {
-		        first = false;
-		    }
-
-		    collectionHeld = collectionHeld + fs;
-	        }
-	    }
-
-            return collectionHeld;
-        } catch(Exception ex) {
-	    ex.printStackTrace();
-            String err = MESSAGE + "getHeldCollections() - Exception:" + ex;
-            throw new TException.GENERAL_EXCEPTION( err);
-        }
-    }
 }

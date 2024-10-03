@@ -16,6 +16,7 @@ ingest-info:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
+    ingestZfsThreshold: "80"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "3"
 
@@ -26,9 +27,8 @@ ingest-info:
 
   queue-info:
     QueueService: "zoo-it:2181"
-    QueueName: "/ingest"
-    InventoryName: "/mrt.inventory.full"
-    QueueHoldFile: "/tdr/ingest/queue/HOLD"
+    # QueueName: "/ingest"
+    # InventoryName: "/mrt.inventory.full"
     PollingInterval: "2"
     NumThreads: "3"
     NumThreadsHighPriority: "2"

@@ -189,6 +189,7 @@ public class JerseyBase
      * @return formatted version state information
      * @throws TException processing exception
      */
+/*
     public Response submit(IngestRequest ingestRequest, HttpServletRequest request, CloseableService cs, ServletConfig sc)
         throws TException
     {
@@ -218,6 +219,7 @@ public class JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
+*/
 
 
     /**
@@ -266,6 +268,7 @@ public class JerseyBase
      * @return version state information for added item
      * @throws TException processing exception
      */
+/*
     protected StateInf submit(
             IngestRequest ingestRequest,
             IngestServiceInf ingestService,
@@ -288,7 +291,7 @@ public class JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
-
+*/
 
     /**
     /**
@@ -344,7 +347,7 @@ public class JerseyBase
             ingestRequest = getFormData(ingestRequest, request, ingestService.getIngestServiceProp() + "/queue", logger);
 	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
             jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
-            BatchState responseState = ingestService.submitPost(ingestRequest);
+            BatchState responseState = ingestService.submitPost(ingestRequest, "Process");
 
             int retryCount = 0;
 	    Response response = null;
@@ -746,12 +749,6 @@ public class JerseyBase
 		       if (item.getString("utf-8").equalsIgnoreCase("true")) {
 		           ingestRequest.setRetainTargetURL(true);
 		           if (DEBUG) System.err.println("[debug] Retain EZID target URL set");
-			}
-		    } else if (item.getFieldName().equals("synchronousMode")) {
-		       field = "synchronousMode";
-		       if (item.getString("utf-8").matches("true")) {
-		           ingestRequest.setSynchronousMode(true);
-		           if (DEBUG) System.err.println("[debug] Synchronous mode set");
 			}
 		    } else {
             	       System.err.println("[warning] Form field not supported: " + item.getFieldName());

@@ -37,17 +37,13 @@ import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestConfig;
 import org.cdlib.mrt.ingest.JobFileState;
-import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.ingest.LockState;
-import org.cdlib.mrt.ingest.QueueState;
-import org.cdlib.mrt.ingest.QueueEntryState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
-import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.ManifestsState;
@@ -75,12 +71,12 @@ public class IngestService
     }
 
     @Override
-    public JobState submit (IngestRequest ingestRequest)
+    public BatchState submitPost (IngestRequest ingestRequest, String state)
         throws TException
     {
 	try {
-	    JobState jobState = ingestManager.submit(ingestRequest);
-	    return jobState;
+	    BatchState batchState = batchManager.submit(ingestRequest, state);
+	    return batchState;
 	} catch (TException te) {
 	    te.printStackTrace();
 	    throw te;
@@ -91,24 +87,7 @@ public class IngestService
     }
 
     @Override
-    public IdentifierState requestIdentifier(IngestRequest ingestRequest)
-        throws TException
-    {
-	try {
-	    IdentifierState identifierState = ingestManager.requestIdentifier(ingestRequest);
-	    return identifierState;
-
-	} catch (TException te) {
-	    te.printStackTrace();
-	    throw te;
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
-	}
-    }
-
-    @Override
-    public BatchState submitPost (IngestRequest ingestRequest)
+    public BatchState submitBatch (IngestRequest ingestRequest)
         throws TException
     {
 	try {
@@ -124,6 +103,58 @@ public class IngestService
     }
 
     @Override
+    public JobState submitProcess (IngestRequest ingestRequest, String state)
+        throws TException
+    {
+	try {
+	    JobState jobState = processManager.submit(ingestRequest, state);
+	    return jobState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+/*
+    @Override
+    public JobState submit (IngestRequest ingestRequest)
+        throws TException
+    {
+	try {
+	    JobState jobState = ingestManager.submit(ingestRequest);
+	    return jobState;
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+*/
+
+    @Override
+    public IdentifierState requestIdentifier(IngestRequest ingestRequest)
+        throws TException
+    {
+	try {
+	    IdentifierState identifierState = processManager.requestIdentifier(ingestRequest);
+	    return identifierState;
+
+	} catch (TException te) {
+	    te.printStackTrace();
+	    throw te;
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
+	}
+    }
+
+/*
+    @Override
     public BatchState updatePost (IngestRequest ingestRequest)
         throws TException
     {
@@ -138,12 +169,13 @@ public class IngestService
 	    throw new TException.GENERAL_EXCEPTION(NAME + ": " + e.getMessage());
 	}
     }
+*/
 
     @Override
     public IngestServiceState getServiceState()
         throws TException
     {
-        return ingestManager.getServiceState();
+        return processManager.getServiceState();
     }
 
     @Override
@@ -154,53 +186,11 @@ public class IngestService
     }
 
     @Override
-    public QueueEntryState postRequeue(String queue, String id, String fromState)
-        throws TException
-    {
-        return queueManager.postRequeue(queue, id, fromState);
-    }
-
-    @Override
-    public QueueEntryState postHoldRelease(String action, String queue, String id)
-        throws TException
-    {
-        return queueManager.postHoldRelease(action, queue, id);
-    }
-
-    @Override
-    public QueueEntryState postDeleteq(String queue, String id, String fromState)
-        throws TException
-    {
-        return queueManager.postDeleteq(queue, id, fromState);
-    }
-
-    @Override
-    public QueueState postCleanupq(String queue)
-        throws TException
-    {
-        return queueManager.postCleanupq(queue);
-    }
-
-    @Override
-    public QueueState postReleaseAll(String queue, String profile)
-        throws TException
-    {
-        return queueManager.postReleaseAll(queue, profile);
-    }
-
-    @Override
     public GenericState postProfileAction(String type, String environment, String notification, 
 	Map<String, String> profileParms)
         throws TException
     {
         return adminManager.postProfileAction(type, environment, notification, profileParms);
-    }
-
-    @Override
-    public JobsState getStatus(String type)
-        throws TException
-    {
-        return ingestManager.getStatus(type);
     }
 
     @Override
@@ -267,71 +257,15 @@ public class IngestService
     }
 
     @Override
-    public IngestLockNameState getIngestLockState()
-        throws TException
-    {
-        return queueManager.getIngestLockState();
-    }
-
-    @Override
-    public IngestQueueNameState getIngestQueueState()
-        throws TException
-    {
-        return queueManager.getIngestQueueState();
-    }
-
-    @Override
-    public IngestQueueNameState getAccessQueueState()
-        throws TException
-    {
-        return queueManager.getAccessQueueState();
-    }
-
-    @Override
-    public IngestQueueNameState getInventoryQueueState()
-        throws TException
-    {
-        return queueManager.getInventoryQueueState();
-    }
-
-    @Override
-    public QueueState getQueueState(String queue)
-        throws TException
-    {
-        return queueManager.getQueueState(queue);
-    }
-
-    @Override
-    public QueueState getAccessQueueState(String queue)
-        throws TException
-    {
-        return queueManager.getAccessQueueState(queue);
-    }
-
-    @Override
-    public QueueState getInventoryQueueState(String queue)
-        throws TException
-    {
-        return queueManager.getInventoryQueueState(queue);
-    }
-
-    @Override
-    public LockState getIngestLockState(String lock)
-        throws TException
-    {
-        return queueManager.getIngestLockState(lock);
-    }
-
-    @Override
     public String getIngestServiceProp()
     {
-        return ingestManager.getIngestServiceProp();
+        return processManager.getIngestServiceProp();
     }
 
     @Override
     public JSONObject getIngestServiceConf()
     {
-        return ingestManager.getIngestServiceConf();
+        return processManager.getIngestServiceConf();
     }
 
     @Override

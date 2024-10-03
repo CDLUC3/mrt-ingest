@@ -16,6 +16,7 @@ ingest:
     purl: "http://n2t.net/"
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
     ingestQueuePath: "{!SSM: ingest/config/ingestQueuePath !DEFAULT: /apps/ingest-stg-shared/ingest_home/queue}"
+    ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
     ingestLock: "{!SSM: ingest/zoo/lockName !DEFAULT: /mrt.lock}"
     NumDownloadThreads: "{!SSM: ingest/config/numDownloadThreads !DEFAULT: 4}"
 
@@ -26,9 +27,8 @@ ingest:
 
   queue-info:
     QueueService: "{!SSM: inventory/zoo/queueService}"
-    QueueName: "/ingest"
-    InventoryName: "{!SSM: inventory/zoo/queueName}"
-    QueueHoldFile: "{!SSM: ingest/config/QueueHoldFile}"
+    #QueueName: "/ingest"
+    #InventoryName: "{!SSM: inventory/zoo/queueName}"
     PollingInterval: "{!SSM: ingest/config/PollingInterval !DEFAULT: 10}"
     NumThreads: "{!SSM: ingest/config/numThreads !DEFAULT: 5}"
     PollingIntervalHighPriority: "{!SSM: ingest/config/PollingIntervalHighPriority !DEFAULT: 15}"
@@ -64,6 +64,7 @@ ingest-docker:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
+    ingestZfsThreshold: "80"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "2"
 
@@ -74,9 +75,10 @@ ingest-docker:
 
   queue-info:
     QueueService: "zoo:2181"
-    QueueName: "/ingest"
-    InventoryName: "/mrt.inventory.full"
-    QueueHoldFile: "/tdr/ingest/queue/HOLD"
+    # QueueName: "/ingest"
+    # InventoryName: "/mrt.inventory.full"
+    BatchPollingInterval: "12"
+    BatchNumThreads: "3"
     PollingInterval: "10"
     NumThreads: "3"
     PollingIntervalHighPriority: "15"

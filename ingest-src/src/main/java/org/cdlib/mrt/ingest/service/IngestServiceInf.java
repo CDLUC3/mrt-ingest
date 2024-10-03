@@ -39,14 +39,10 @@ import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobFileState;
 import org.cdlib.mrt.ingest.JobState;
-import org.cdlib.mrt.ingest.JobsState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
-import org.cdlib.mrt.ingest.IngestQueueNameState;
 import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.LockState;
-import org.cdlib.mrt.ingest.QueueState;
-import org.cdlib.mrt.ingest.QueueEntryState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
@@ -67,8 +63,8 @@ public interface IngestServiceInf
      * @return JobState job state information 
      * @throws TException Exception condition during storage service procssing
      */
-    public JobState submit (IngestRequest ingestRequest)
-    throws TException;
+    //public JobState submit (IngestRequest ingestRequest)
+    //throws TException;
 
     /**
      * Add an object to this queue service
@@ -76,7 +72,25 @@ public interface IngestServiceInf
      * @return BatchState batch state information 
      * @throws TException Exception condition during storage service procssing
      */
-    public BatchState submitPost (IngestRequest ingestRequest)
+    public BatchState submitPost (IngestRequest ingestRequest, String string)
+    throws TException;
+
+    /**
+     * Add an object to this Batch queue service
+     * @param ingestRequest request
+     * @return BatchState batch state information 
+     * @throws TException Exception condition during storage service procssing
+     */
+    public BatchState submitBatch (IngestRequest ingestRequest)
+    throws TException;
+
+    /**
+     * Process process state queue data
+     * @param ingestRequest request
+     * @return JobState job state information 
+     * @throws TException Exception condition during storage service procssing
+     */
+    public JobState submitProcess (IngestRequest ingestRequest, String state)
     throws TException;
 
     /**
@@ -85,8 +99,8 @@ public interface IngestServiceInf
      * @return BatchState batch state information 
      * @throws TException Exception condition during storage service procssing
      */
-    public BatchState updatePost (IngestRequest ingestRequest)
-    throws TException;
+    //public BatchState updatePost (IngestRequest ingestRequest)
+    //throws TException;
 
     /**
      * Request identifier
@@ -114,46 +128,6 @@ public interface IngestServiceInf
         throws TException;
 
     /**
-     * Requeue queue entry
-     * @return QueueEntryState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueEntryState postRequeue(String queue, String id, String fromState)
-        throws TException;
-
-    /**
-     * Release queue entry
-     * @return QueueEntryState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueEntryState postHoldRelease(String action, String queue, String id)
-        throws TException;
-
-    /**
-     * Delete queue entry
-     * @return QueueEntryState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueEntryState postDeleteq(String queue, String id, String fromState)
-        throws TException;
-
-    /**
-     * Clean up queue 
-     * @return QueueState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueState postCleanupq(String queue)
-        throws TException;
-
-    /**
-     * Release queue entries at a collection level
-     * @return QueueState queue state information
-     * @throws TException Exception condition 
-     */
-    public QueueState postReleaseAll(String queue, String profile)
-        throws TException;
-
-    /**
      * Profile creation
      * @return GenericState service state information
      * @throws TException Exception condition 
@@ -162,80 +136,6 @@ public interface IngestServiceInf
 	 Map<String, String> profileParms)
         throws TException;
 
-    /**
-     * Get jobs state information about processed jobs
-     * @param type status type
-     * @return batchesState batches state information
-     * @throws TException Exception condition during storage service procssing
-     */
-    public JobsState getStatus(String type)
-        throws TException;
-
-    /**
-     * Get ingest lock state information 
-     * @return LockState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestLockNameState getIngestLockState()
-        throws TException;
-
-    /**
-     * Get ingest queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestQueueNameState getIngestQueueState()
-        throws TException;
-
-    /**
-     * Get access queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestQueueNameState getAccessQueueState()
-        throws TException;
-
-    /**
-     * Get inventory queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public IngestQueueNameState getInventoryQueueState()
-        throws TException;
-
-    /**
-     * Get queue state information 
-     * @param queue Queue to examine
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public QueueState getQueueState(String queue)
-        throws TException;
-
-    /**
-     * Get access queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public QueueState getAccessQueueState(String queue)
-        throws TException;
-
-    /**
-     * Get inventory queue state information 
-     * @return QueueState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public QueueState getInventoryQueueState(String queue)
-        throws TException;
-
-    /**
-     * Get lock state information 
-     * @param lock Lock to examine
-     * @return LockState state information
-     * @throws TException Exception condition during lock service processing
-     */
-    public LockState getIngestLockState(String lock)
-        throws TException;
 
     /**
      * Get profile state information 

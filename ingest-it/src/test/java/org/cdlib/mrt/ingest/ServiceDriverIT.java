@@ -29,6 +29,18 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathFactory;
 //https://stackoverflow.com/a/22939742/3846548
 import org.apache.xpath.jaxp.XPathFactoryImpl;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
+import org.cdlib.mrt.zk.Access;
+import org.cdlib.mrt.zk.Batch;
+import org.cdlib.mrt.zk.BatchState;
+import org.cdlib.mrt.zk.IngestState;
+import org.cdlib.mrt.zk.Job;
+import org.cdlib.mrt.zk.MerrittLocks;
+import org.cdlib.mrt.zk.MerrittStateError;
+import org.cdlib.mrt.zk.MerrittZKNodeInvalid;
+import org.cdlib.mrt.zk.QueueItemHelper;
+import org.cdlib.mrt.zk.QueueItem.ZkPaths;
 
 import java.io.IOException;
 
@@ -65,23 +77,35 @@ import static org.junit.Assert.*;
 public class ServiceDriverIT {
         private int port = 8080;
         private int mockport = 8096;
+        private int zkport = 8084;
         private String cp = "mrtingest";
         private DocumentBuilder db;
         private XPathFactory xpathfactory;
         private String profile = "merritt_test_content";
+        private ZooKeeper zk;
 
+        public static final int SLEEP_SUBMIT = 15000;
+        public static final int SLEEP_RETRY = 3000;
+        public static final int SLEEP_CLEANUP = 500;
         /*
          * Initialize the test class
          */
-        public ServiceDriverIT() throws ParserConfigurationException {
+        public ServiceDriverIT() throws ParserConfigurationException, IOException, KeeperException, InterruptedException {
                 try {
                         port = Integer.parseInt(System.getenv("it-server.port"));
                         mockport = Integer.parseInt(System.getenv("mock-merritt-it.port"));
+                        zkport = Integer.parseInt(System.getenv("mrt-zk.port"));
                 } catch (NumberFormatException e) {
                         //use default ports
                 }
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
+                zk = new ZooKeeper(String.format("localhost:%s", zkport), 100, null);
+		try {
+                	clearQueue();
+		} catch (Exception e) {
+                	clearQueue();
+		}
         }
 
         /**
@@ -186,127 +210,19 @@ public class ServiceDriverIT {
 
         /**
          * Identify all entries of a queue that are not in a Deleted state.  Call clearQueueEntry to set the queue entry state to deleted.
-         * @param endpoint queue, queue-inv, or queue-acc
-         * @param queue name of the specific queue. For integration test purposes, only 1 ingest queue will exist
+         * @throws KeeperException 
+         * @throws InterruptedException 
          */
-        public void clearQueue(String endpoint, String queue) throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
-                JSONObject json = getJsonContent(url, 200);
-
-                JSONObject j = getJsonObject(json,"que:queueState"); 
-                j = getJsonObject(j, "que:queueEntries");
-                JSONArray ja = getJsonArray(j, "que:queueEntryState");
-                for (int i=0; i < ja.length(); i++) {
-                        JSONObject jo = ja.getJSONObject(i);
-                        String status = getJsonString(jo, "que:status", "").toLowerCase();
-                        if (status.equals("deleted")) {
-                                continue;
-                        }
-                        String id = getJsonString(jo, "que:iD", "");
-                        clearQueueEntry(queue, id, status);
-                }
+        public void clearQueue() throws IOException, JSONException, InterruptedException, KeeperException {
+                QueueItemHelper.deleteAll(zk, ZkPaths.Batch.path);
+                QueueItemHelper.deleteAll(zk, ZkPaths.BatchUuids.path);
+                QueueItemHelper.deleteAll(zk, ZkPaths.Job.path);
+                QueueItemHelper.deleteAll(zk, ZkPaths.Locks.path);
+                Job.initNodes(zk);
+                Access.initNodes(zk);
+                MerrittLocks.initLocks(zk);
         }
 
-        /**
-         * Change the status of a specific queue entry to "Deleted".  Note that this does not delete the actual entry from the queue.
-         * Queue entries will remain present until the docker stack is deleted and restarted.
-         * @param queue name of the queue
-         * @param id id of the queue entry
-         * @param status current status of the queue entry
-         * @throws IOException
-         * @throws JSONException
-         */
-        public void clearQueueEntry(String queue, String id, String status) throws IOException, JSONException {
-                if (status.equals("held")) {
-                        String url = String.format("http://localhost:%d/%s/admin/release/%s/%s", port, cp, queue, id);
-                        try (CloseableHttpClient client = HttpClients.createDefault()) {
-                                JSONObject json = getJsonContent(new HttpPost(url), 200);
-                                json = getJsonObject(json, "ques:queueEntryState");
-                                status = getJsonString(json, "ques:status", "NA").toLowerCase();
-                        }        
-                }
-
-                String url = String.format("http://localhost:%d/%s/admin/deleteq/%s/%s/%s", port, cp, queue, id, status);
-                try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        getJsonContent(new HttpPost(url), 200);
-                }
-
-        }
-
-        /**
-         * Find an ingest queue entry by batch id and job id
-         * @param endpoint should always be "queue"
-         * @param queue should always be "ingest"
-         * @param bid batch id to locate
-         * @param jid job id to locate
-         * @return a JSON representation of the queue entry
-         */
-        public JSONObject findQueueEntry(String endpoint, String queue, String bid, String jid) throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
-                JSONObject json = getJsonContent(url, 200);
-
-                JSONObject j = getJsonObject(json,"que:queueState"); 
-                j = getJsonObject(j, "que:queueEntries");
-                JSONArray ja = getJsonArray(j, "que:queueEntryState");
-                for (int i=0; i < ja.length(); i++) {
-                        JSONObject jo = ja.getJSONObject(i);
-                        if (getJsonString(jo, "que:batchID", "").equals(bid)) {
-                                if (getJsonString(jo, "que:jobID", "").equals(jid)) {
-                                        return jo;
-                                }         
-                        } 
-                }
-                return new JSONObject(); 
-        }
-
-        /**
-         * Count the number of items in a queue that are not in a deleted status
-         * @param tries Number of times to repeat the test before quitting - there will be a sleep delay between tries
-         * @param expected Expected count to find
-         * @param endpoint queue endpoint to query
-         * @param queue queue name to query
-         * @return the count of items found
-          */
-        public int countQueue(int tries, int expected, String endpoint, String queue) throws IOException, JSONException, InterruptedException {
-                return countQueue(tries, expected, endpoint, queue, "");
-        }
-
-        /**
-         * 
-        * Count the number of items in a queue that have a specific status
-         * @param tries Number of times to repeat the test before quitting - there will be a sleep delay between tries
-         * @param expected Expected count to find
-         * @param endpoint queue endpoint to query
-         * @param queue queue name to query
-         * @param teststatus Status value to verify.  If blank, count the number of items that are not in a deleted status
-         * @return the count of items found
-         */
-        public int countQueue(int tries, int expected, String endpoint, String queue, String teststatus) throws IOException, JSONException, InterruptedException {
-                int count = 0;
-                for(int ii = 0; ii < tries && count != expected; ii++) {
-                        Thread.sleep(1000);
-                        count = 0;
-                        String url = String.format("http://localhost:%d/%s/admin/%s/%s", port, cp, endpoint, queue);
-                        JSONObject json = getJsonContent(url, 200);
-        
-                        JSONObject j = getJsonObject(json,"que:queueState"); 
-                        j = getJsonObject(j, "que:queueEntries");
-                        JSONArray ja = getJsonArray(j, "que:queueEntryState");
-                        for (int i=0; i < ja.length(); i++) {
-                                JSONObject jo = ja.getJSONObject(i);
-                                String status = getJsonString(jo, "que:status", "").toLowerCase();
-                                if (teststatus.isEmpty()) {
-                                        if (!status.equals("deleted")) {
-                                                count++;
-                                        }        
-                                } else if (teststatus.equals(status)){
-                                        count++;                                        
-                                }
-                        }        
-                }
-                assertEquals(expected, count);
-                return count;
-        }
 
         /**
          * Reset that status of the test stack before each rest case.
@@ -315,18 +231,14 @@ public class ServiceDriverIT {
          * - Thaw submission processing (in case it had been frozen)
          * - Thaw submission processing for the test collection (in case it had been frozen)
          * - Tell the mock test service to serve data (in case it had been set to not return data)
+         * @throws KeeperException 
+         * @throws InterruptedException 
          */
         @Before
-        public void clearQueueDirectory() throws IOException, JSONException {
-                clearQueue("queue", "ingest");
-                clearQueue("queue-inv", "mrt.inventory.full");
-                String url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
-                freezeThaw(url, "ing:submissionState", "thawed");
-                url = String.format("http://localhost:%d/%s/admin/submission/thaw/%s", port, cp, profile);
-                freezeThaw(url, "ing:collectionSubmissionState", "");
-                url = String.format("http://localhost:%d/status/start", mockport, cp);
-                getJsonContent(new HttpPost(url), 200);
-        }
+        public void clearQueueDirectory() throws InterruptedException, KeeperException  {
+                MerrittLocks.unlockIngestQueue(zk);
+                MerrittLocks.unlockCollection(zk, profile);
+         }
 
         /**
          * Test the Ingest state endpoint
@@ -344,11 +256,10 @@ public class ServiceDriverIT {
          * Formulate a POST request to trigger an ingest submission
          * @param url to the submission endpoint
          * @param file file to be ingested
-         * @param batch set to true if the endpoint will queue jobs (sync vs async)
-         * @return Json object conveying submission status
+         * @return batch id
          */
-        public JSONObject ingestFile(String url, File file, boolean batch) throws IOException, JSONException {
-                return ingestFile(url, file, "", "", batch);
+        public String ingestFile(String url, File file) throws IOException, JSONException {
+                return ingestFile(url, file, "", "");
         }
 
         /**
@@ -356,11 +267,10 @@ public class ServiceDriverIT {
          * @param url to the submission endpoint
          * @param file file to be ingested
          * @param localId if not empty, set a localid for the submission
-         * @param batch set to true if the endpoint will queue jobs (sync vs async)
-         * @return Json object conveying submission status
+         * @return batch id
          */
-        public JSONObject ingestFile(String url, File file, String localId, boolean batch) throws IOException, JSONException {
-                return ingestFile(url, file, localId, "", batch);
+        public String ingestFile(String url, File file, String localId) throws IOException, JSONException {
+                return ingestFile(url, file, localId, "");
         }
 
         /**
@@ -369,10 +279,9 @@ public class ServiceDriverIT {
          * @param file file to be ingested
          * @param localId if not empty, set a localid for the submission
          * @param primaryId if not empty, set a primary id for the submission
-         * @param batch set to true if the endpoint will queue jobs (sync vs async)
-         * @return Json object conveying submission status
+         * @return batch id
          */
-        public JSONObject ingestFile(String url, File file, String localId, String primaryId, boolean batch) throws IOException, JSONException {
+        public String ingestFile(String url, File file, String localId, String primaryId) throws IOException, JSONException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
                         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -390,8 +299,11 @@ public class ServiceDriverIT {
                                         builder.addTextBody("primaryIdentifier", primaryId);
                                 }
                         }
-                        if (file.getName().endsWith(".checkm")){
+                        if (file.getName().endsWith("object.checkm")){
                                 builder.addTextBody("type", "manifest");
+                        }
+                        if (file.getName().endsWith("batch.checkm")){
+                                builder.addTextBody("type", "batchManifestContainer");
                         }
                         builder.addTextBody("submitter", "integration-tests");
                         builder.addTextBody("responseForm", "json");
@@ -399,7 +311,7 @@ public class ServiceDriverIT {
                         post.setEntity(multipart);
                         
                         HttpResponse response = client.execute(post);
-                        return submitResponse(response, batch);
+                        return submitResponse(response);
                 }
 
         }
@@ -408,9 +320,9 @@ public class ServiceDriverIT {
          * Verify the response status from an ingest submission.  The response will vary for async vs sync requests.
          * @param response HttpResponse object from the submission request
          * @param batch If true, handle the response as a batch request that will be queued.  If not, handle the response as a single job.
-         * @return the json response object
+         * @return submitted batch id
          */
-        public JSONObject submitResponse(HttpResponse response, boolean batch) throws IOException, JSONException {
+        public String submitResponse(HttpResponse response) throws IOException, JSONException {
                 assertEquals(200, response.getStatusLine().getStatusCode());
 
 
@@ -419,15 +331,15 @@ public class ServiceDriverIT {
 
                 JSONObject json =  new JSONObject(s);
                 assertNotNull(json);
-                if (batch) {
-                        assertTrue(json.has("bat:batchState"));
-                        assertEquals("QUEUED", json.getJSONObject("bat:batchState").getString("bat:batchStatus"));
-
-                } else {
-                        assertTrue(json.has("job:jobState"));
-                        assertEquals("COMPLETED", json.getJSONObject("job:jobState").getString("job:jobStatus"));
+                assertTrue(json.has("bat:batchState"));
+                assertEquals("QUEUED", json.getJSONObject("bat:batchState").getString("bat:batchStatus"));
+                JSONObject j = json.getJSONObject("bat:batchState");
+                String bid = "";
+                if (j.has("bat:batchID")) {
+                        bid = j.getString("bat:batchID");
                 }
-                return json;
+                assertFalse(bid.isEmpty());
+                return bid;
 
         }
 
@@ -438,9 +350,9 @@ public class ServiceDriverIT {
          * @param filename filename to use for the submitted content
          * @param type submission type to assign to the submission
          * @param batch set to true if the endpoint will queue jobs (sync vs async)
-         * @return Json object conveying submission status
+         * @return batch id of the submitted batch
          */
-        public JSONObject ingestFromUrl(String url, String contenturl, String filename, String type, boolean batch) throws IOException, JSONException {
+        public String ingestFromUrl(String url, String contenturl, String filename, String type) throws IOException, JSONException {
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);
                         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -456,7 +368,7 @@ public class ServiceDriverIT {
                         post.setEntity(multipart);
                         
                         HttpResponse response = client.execute(post);
-                        return submitResponse(response, batch);
+                        return submitResponse(response);
                 }
 
         }
@@ -465,35 +377,97 @@ public class ServiceDriverIT {
          * Test the submission of a manifest by URL.
          * 
          * Note: this test downloads data from github.  An internet connection is needed to run the test.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
+         * @throws MerrittStateError 
          */
         @Test
-        public void FileManifestIngest() throws IOException, JSONException, InterruptedException {
+        public void FileManifestIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
                 String filename = "4blocks.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                JSONObject json = ingestFromUrl(url, contenturl, filename, "manifest", false);
-                               
-                // due to async processing, no jobs should exist in the ingest queue
-                countQueue(3, 0, "queue", "ingest");
-                // one object should be reside on the inventory queue 
-                countQueue(3, 1,"queue-inv", "mrt.inventory.full");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+                String bid = ingestFromUrl(url, contenturl, filename, "manifest");
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                cleanup(batch);
+        }
+
+        public void cleanup(Batch batch) {
+                try {
+                        if (batch.status() == BatchState.Processing) {
+                                batch.setStatus(zk, batch.status().success());
+                        }
+                        if (batch.status() == BatchState.Reporting) {
+                                batch.setStatus(zk, batch.status().success());        
+                        }
+                        //Thread.sleep(SLEEP_CLEANUP);
+                        batch.delete(zk);
+                } catch(Exception e) {
+                        System.out.println(e);
+                }
+        }
+
+        public Batch getZkBatch(String bid) throws KeeperException, InterruptedException, MerrittZKNodeInvalid {
+                Batch batch = Batch.findByUuid(zk, bid);
+                batch.load(zk);
+                return batch;
+        }
+
+        public void assertJobCounts(Batch batch, int tries, int total, int completed) throws MerrittZKNodeInvalid, KeeperException, InterruptedException {
+
+                Thread.sleep(SLEEP_SUBMIT);
+                assertEquals(total, batch.getProcessingJobs(zk).size() + batch.getCompletedJobs(zk).size());
+                for(int i=0; i <= tries; i++) {
+                        if (batch.getCompletedJobs(zk).size() == completed) {
+                                break;
+                        }
+                        for (Job j: batch.getProcessingJobs(zk)) {
+                                j.load(zk);
+				// System.out.println(i + " ---- " + j.status() + " ---- " + j.id());
+                                if (j.status() == org.cdlib.mrt.zk.JobState.Recording) {
+                                        try {
+                                                j.setStatus(zk, j.status().success());
+                                        } catch (MerrittStateError e) {
+                                                e.printStackTrace();
+                                        }
+                                }
+                        }
+                        Thread.sleep(SLEEP_RETRY);
+                }
+                assertEquals(completed, batch.getCompletedJobs(zk).size());
+        }
+
+        public void assertFailedJobCounts(Batch batch, int tries, int total, int failed) throws MerrittZKNodeInvalid, KeeperException, InterruptedException {
+
+                Thread.sleep(SLEEP_SUBMIT);
+                assertEquals(total, batch.getProcessingJobs(zk).size() + batch.getFailedJobs(zk).size());
+                for(int i=0; i <= tries; i++) {
+                        if (batch.getFailedJobs(zk).size() == failed) {
+                                break;
+                        }
+                        Thread.sleep(SLEEP_RETRY);
+                }
+                assertEquals(failed, batch.getFailedJobs(zk).size());
         }
 
         /**
          * Test the submission of a manifest file.
          * 
          * Note: this test retrieves test content from the mock-merritt-it container.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
+         * @throws MerrittStateError 
          */
         @Test
-        public void TestManifest() throws IOException, JSONException, InterruptedException {
+        public void TestManifest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
+		System.out.println("[ServiceDriverIT] TestManifest - Test manifest.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                JSONObject json = ingestFile(url, new File("src/test/resources/data/mock.checkm"), true);
+                String bid = ingestFile(url, new File("src/test/resources/data/mock_object.checkm"));
                             
-                // once complete, no jobs should remain in the ingest queue
-                // TODO should teh tries be increased?
-                countQueue(3, 0, "queue", "ingest");
-                // once complete, one object should reside in the inventory queue
-                countQueue(30, 1,"queue-inv", "mrt.inventory.full");
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                cleanup(batch);
         }
 
         /**
@@ -510,105 +484,102 @@ public class ServiceDriverIT {
          * Next, the mock-merritt-it service will be instructed to resume content delivery.
          * 
          * The job will be re-queued and will succeed.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException {
+        public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
+		System.out.println("[ServiceDriverIT] TestManifestWithRequeue - Test manifest while forcing failure.");
                 // tell the mock-merritt-it service to temporarily suspend content delivery
                 String url = String.format("http://localhost:%d/status/stop", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
+                Thread.sleep(2000);
 
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                JSONObject json = ingestFile(url, new File("src/test/resources/data/mock.checkm"), true);
-                
-                BidJid bidjid = new BidJid(json);
-                verifyJid(bidjid);
-                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
-
-                String qid = getJsonString(json, "que:iD", "");
-
-                // expect one failed job on the ingest queue
-                countQueue(30, 1, "queue", "ingest", "failed");
+                String bid = ingestFile(url, new File("src/test/resources/data/mock_object.checkm"));
+                Batch batch = getZkBatch(bid);
+                assertFailedJobCounts(batch, 15, 1, 1);
 
                 // tell the mock-merritt-it service to resume content delivery
                 url = String.format("http://localhost:%d/status/start", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
-
-                // requeue the failed job
-                url = String.format("http://localhost:%d/%s/admin/requeue/ingest/%s/failed", port, cp, qid);
-                json = getJsonContent(new HttpPost(url), 200);
-
-                // once processing is complete, no jobs shoudl remain on the ingest queue
-                countQueue(30, 0, "queue", "ingest");
-                // one object should exist in the inventory queue
-                countQueue(30, 1, "queue-inv", "mrt.inventory.full");
+                Thread.sleep(2000);
+                
+                for(Job j: batch.getFailedJobs(zk)) {
+                        j.load(zk);
+                        j.setStatus(zk, org.cdlib.mrt.zk.JobState.Estimating);
+                }
+                assertJobCounts(batch, 15, 1, 1);
+                cleanup(batch);
         }
 
         @Test
-        public void BatchManifestIngest() throws IOException, JSONException, InterruptedException {
+        public void BatchManifestIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] BatchManifestIngest - Submit batch manifest.");
                 String filename = "sampleBatchOfManifests.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                JSONObject json = ingestFromUrl(url, contenturl, filename, "batch-manifest", true);
-                                
-                // exepect to see 3 queued jobs 
-                countQueue(3, 3, "queue", "ingest");
-                // once processing is complete, expect to see 3 objects in the inventory queue
-                countQueue(90, 3, "queue-inv", "mrt.inventory.full");
+                String bid = ingestFromUrl(url, contenturl, filename, "batch-manifest");
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 30, 3, 3);
+                cleanup(batch);
         }
 
         /**
          * Test the submission of a batch-manifest by URL.
          * 
          * Note: this test downloads data from github.  An internet connection is needed to run the test.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void BatchFilesIngest() throws IOException, JSONException, InterruptedException {
+        public void BatchFilesIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] BatchFilesIngest - Submit batch manifest by URL.");
                 String filename = "sampleBatchOfFiles.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest", true);
-
-                // exepect to see 3 queued jobs 
-                countQueue(3, 3, "queue", "ingest");
-                // once processing is complete, expect to see 3 objects in the inventory queue
-                countQueue(60, 3, "queue-inv", "mrt.inventory.full");
+                String bid = ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest");
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 30, 3, 3);
+                cleanup(batch);
         }
 
         /**
          * Test the submission of a single file.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void SimpleFileIngest() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
-
-                // exepect to see 0 queued jobs 
-                countQueue(3, 0, "queue", "ingest");
-                // once processing is complete, expect to see 1 objectin the inventory queue
-                countQueue(3, 1, "queue-inv", "mrt.inventory.full");
+        public void SimpleFileIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleFileIngest - Submit single file.");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 30, 1, 1);
+                cleanup(batch);
         }
 
         /**
          * Test the submission of a single file.  Test the endpoints to view job-related data.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
         */
         @Test
-        public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
-                json = getJsonObject(json, "job:jobState");
-                String bid = "JOB_ONLY";
-                String jid = getJsonString(json, "job:jobID", "");
-                String ark = getJsonString(json, "job:primaryID", "");
-
-                // exepect to see 0 queued jobs 
-                countQueue(3, 0, "queue", "ingest");
-                // once processing is complete, expect to see 1 objectin the inventory queue
-                countQueue(3, 1, "queue-inv", "mrt.inventory.full");
+        public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestCheckJob - Submit single file. Test Job endpoints");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 30, 1, 1);
+                Job job = getJob(batch);
+                String jid = job.jid();
+                String ark = job.primaryId();
 
                 url = String.format("http://localhost:%d/%s/admin/jid-erc/%s/%s", port, cp, bid, jid);
-                json = getJsonContent(url, 200);
+                JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "fil:jobFileState");
                 json = getJsonObject(json, "fil:jobFile");
+                //fyi, the ark is currently written as objectID on the data object, but it should be written to the primaryID
                 assertEquals(ark, getJsonString(json, "fil:where-primary", ""));
 
                 url = String.format("http://localhost:%d/%s/admin/jid-file/%s/%s", port, cp, bid, jid);
@@ -620,6 +591,24 @@ public class ServiceDriverIT {
                 json = getJsonContent(url, 200);
                 json = getJsonObject(json, "ingmans:manifestsState");
                 assertEquals("", getJsonString(json, "ingmans:manifests", "N/A"));
+                cleanup(batch);
+        }
+
+
+        public Job getJob(Batch batch) throws KeeperException, InterruptedException, MerrittZKNodeInvalid {
+                List<Job> jobs = batch.getCompletedJobs(zk);
+                assertEquals(1, jobs.size());
+                Job job = jobs.get(0);
+                job.load(zk);
+                return job;
+        }
+
+        public Job getProcessingJob(Batch batch) throws KeeperException, InterruptedException, MerrittZKNodeInvalid {
+                List<Job> jobs = batch.getProcessingJobs(zk);
+                assertEquals(1, jobs.size());
+                Job job = jobs.get(0);
+                job.load(zk);
+                return job;
         }
 
         /**
@@ -657,63 +646,53 @@ public class ServiceDriverIT {
 
         /**
          * Queue the submission of a single file
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void QueueFileIngest() throws IOException, JSONException, InterruptedException {
+        public void QueueFileIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] QueueFileIngest - Submit single file.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
-                json = getJsonObject(json, "bat:batchState");
-                String bat = getJsonString(json, "bat:batchID", "");
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
 
-                // expect 1 queued job
-                countQueue(3, 1, "queue", "ingest");
-                // expect 1 object in the inventory queue
-                countQueue(30, 1, "queue-inv", "mrt.inventory.full");
-
-                assertTrue(getBids().contains(bat));
-                assertEquals(1, getJobs(bat).size());
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                assertTrue(getBids().contains(bid));
+                assertEquals(1, getJobs(bid).size());
+                cleanup(batch);
         }
 
         /**
          * Queue the submission of a single file.  Detect the zookeeper lock in place as the submission processes.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void QueueFileIngestCatchLock() throws IOException, JSONException, InterruptedException {
+        public void QueueFileIngestCatchLock() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] QueueFileIngestCatchLock - Submit and dectect lock.");
                 //This ark has a time delay in mock-merritt-it to allow the catch of a lock
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/9999/2222", port, cp);
-                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
-                json = getJsonObject(json, "bat:batchState");
-                String bat = getJsonString(json, "bat:batchID", "");
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
 
                 // look for the presence of a zookeeper lock
                 // the lock name should be derived from the submission's primary id (ark)
                 boolean found = false;
-                for(int ii=0; ii<10 && !found; ii++) {
-                        Thread.sleep(1000);
-                        url = String.format("http://localhost:%d/%s/admin/lock/mrt.lock", port, cp);
-                        json = getJsonContent(url, 200);
-        
-                        json = getJsonObject(json, "loc:lockState");
-                        json = getJsonObject(json, "loc:lockEntries");
-                        JSONArray jarr = getJsonArray(json, "loc:lockEntryState");
-                        if (jarr.length() > 0) {
-                                ArrayList<String> ids = new ArrayList<>();
-                                for(int i = 0; i < jarr.length(); i++) {
-                                        ids.add(getJsonString(jarr.getJSONObject(i), "loc:iD", ""));
-                                }
-                                assertTrue(ids.contains("ark-9999-2222"));  
-                                found = true;      
+                for(int ii=0; ii<20 && !found; ii++) {
+                        if (MerrittLocks.checkLockObjectStorage(zk, "ark:/9999/2222")) {
+                                found = true;
+                                break;
                         }
+                        Thread.sleep(5000);
                 }
                 assertTrue(found);
 
+                Batch batch = getZkBatch(bid);
                 // expect 1 queue job
-                countQueue(3, 1, "queue", "ingest");
-                // expect 1 object in the inventory queue
-                countQueue(30, 1, "queue-inv", "mrt.inventory.full");
+                assertJobCounts(batch, 15, 1, 1);
 
-                assertTrue(getBids().contains(bat));
-                assertEquals(1, getJobs(bat).size());
+                assertTrue(getBids().contains(bid));
+                assertEquals(1, getJobs(bid).size());
+                cleanup(batch);
         }
 
         /**
@@ -743,205 +722,231 @@ public class ServiceDriverIT {
         }
 
         /**
-         * Helper class to extract a bid and jid from a submission response.
-         */
-        class BidJid {
-                private String bid = "";
-                private String jid = "";
-
-                BidJid(JSONObject json) throws JSONException {
-                        JSONObject jsonbs = getJsonObject(
-                                json,
-                                "bat:batchState"
-                        );
-        
-                        bid = getJsonString(
-                                jsonbs,
-                                "bat:batchID",
-                                ""
-                        );
-        
-                        JSONObject jsonjs = getJsonObject(
-                                getJsonObject(
-                                        jsonbs,
-                                        "bat:jobStates"
-                                ),
-                                "bat:jobState"
-                        );
-        
-                        jid = getJsonString(
-                                jsonjs,
-                                "bat:jobID",
-                                ""
-                        );
-        
-                } 
-
-                public String bid() {
-                        return this.bid;
-                }
-
-                public String jid() {
-                        return this.jid;
-                }
-
-                public void setJid(String s) {
-                        this.jid = s;
-                }
-        }
-
-        /**
-         * If a bid / jid cannot be extracted from a submission response, perform a lookup to locate the jid.
-         * TODO: ask Mark why this is not always available.
-         * @throws InterruptedException
-         */
-        public void verifyJid(BidJid bidjid) throws HttpResponseException, IOException, JSONException, InterruptedException {
-                if (bidjid.jid().isEmpty()) {
-                        Thread.sleep(3000);
-                        String url = String.format("http://localhost:%d/%s/admin/bid/%s", port, cp, bidjid.bid());
-                        JSONObject json = getJsonContent(url, 200);
-                        json = getJsonObject(json, "fil:batchFileState");
-                        json = getJsonObject(json, "fil:jobFile");
-                        json = getJsonObject(json, "fil:batchFile");
-                        String jid = getJsonString(json, "fil:file", "");
-                        bidjid.setJid(jid);
-                }
-
-        }
-
-        /**
          * Queue a file ingest while submissions are frozen.  Thaw submsissions and resume processing.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void QueueFileIngestPauseSubmissions() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/admin/submissions/freeze", port, cp);
-                JSONObject json = freezeThaw(url, "ing:submissionState", "frozen");
+        public void QueueFileIngestPauseSubmissions() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] QueueFileIngestPauseSubmissions - Submit while Ingest frozen, then thaw");
+                MerrittLocks.lockIngestQueue(zk);
+                assertTrue(MerrittLocks.checkLockIngestQueue(zk));
 
-                Thread.sleep(5000);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertEquals(0, batch.getProcessingJobs(zk).size() + batch.getCompletedJobs(zk).size());
 
-                url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
-
-                BidJid bidjid = new BidJid(json);
-                verifyJid(bidjid);
-
-                boolean found = false;
-                for(int ii=0; ii<20 && !found; ii++) {
-                        Thread.sleep(3000);
-
-                        json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
-
-                        found = getJsonString(json, "que:status", "").equals("Pending");
-                }
-                assertTrue(found);
-
-                url = String.format("http://localhost:%d/%s/admin/submissions/thaw", port, cp);
-                json = freezeThaw(url, "ing:submissionState", "thawed");
-
-                found = false;
-                for(int ii=0; ii<20 && !found; ii++) {
-                        Thread.sleep(3000);
-
-                        json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
-
-                        found = getJsonString(json, "que:status", "").equals("Completed");
-                }
-                assertTrue(found);
+                MerrittLocks.unlockIngestQueue(zk);
+                Thread.sleep(SLEEP_SUBMIT);
+                assertJobCounts(batch, 15, 1, 1);
+                cleanup(batch);
         }
 
         /**
          * Que a file ingest while a specific collection is frozen.  Thaw the collection and resume processing.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/admin/submission/freeze/%s", port, cp, profile);
-                JSONObject json = freezeThaw(url, "ing:collectionSubmissionState", profile);
+        public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
+		System.out.println("[ServiceDriverIT] QueueFileIngestPauseCollection - Submit to a frozen collection, then thaw");
+                MerrittLocks.lockCollection(zk, profile);
 
-                url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
-                json = ingestFile(url, new File("src/test/resources/data/foo.txt"), true);
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
 
-                BidJid bidjid = new BidJid(json);
-                verifyJid(bidjid);
+                Thread.sleep(SLEEP_SUBMIT);
 
-                Thread.sleep(3000);
+                Batch batch = getZkBatch(bid);
+                Job job = getProcessingJob(batch);
+                assertEquals(org.cdlib.mrt.zk.JobState.Held, job.status());
 
-                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
-                assertEquals("Held", getJsonString(json, "que:status", ""));
+                MerrittLocks.unlockCollection(zk, profile);
 
-                url = String.format("http://localhost:%d/%s/admin/submission/thaw/%s", port, cp, profile);
-                json = freezeThaw(url, "ing:collectionSubmissionState", "");
+                Thread.sleep(2000);
 
-                Thread.sleep(3000);
+                job.setStatus(zk, org.cdlib.mrt.zk.JobState.Pending);
+                job.unlock(zk);
 
-                json = findQueueEntry("queue", "ingest", bidjid.bid(), bidjid.jid());
-                assertEquals("Held", getJsonString(json, "que:status", ""));
+                Thread.sleep(2000);
 
-                String qid = getJsonString(json, "que:iD", "");
-                assertNotEquals("", qid);
-
-                // expect 1 job to be in a held state
-                assertEquals(
-                        1, 
-                        countQueue(3, 1, "queue", "ingest", "held")
-                );
-
-                // release all held jobs for the profile
-                try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        url = String.format("http://localhost:%d/%s/admin/release-all/ingest/%s", port, cp, profile);
-                        json = getJsonContent(new HttpPost(url), 200);
-                }
-
-                // expect to see 1 completed job
-                assertEquals(
-                        1, 
-                        countQueue(30, 1, "queue", "ingest", "completed")
-                );
-
+                assertJobCounts(batch, 30, 1, 1);
+                cleanup(batch);
         }
 
         /**
          * Submit a single file with a local id.
+         * @throws MerrittZKNodeInvalid 
+         * @throws InterruptedException 
+         * @throws KeeperException 
          */
         @Test
-        public void SimpleFileIngestWithLocalid() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid", false);
+        public void SimpleFileIngestWithLocalid() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestWithLocalid - single localID (form parm)");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid");
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                assertEquals("localid", job.localId());
+                cleanup(batch);
+        }
+
+        /**
+         * Submit a single file with duplicate local ids.
+         * @throws MerrittZKNodeInvalid 
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         */
+        @Test
+        public void SimpleFileIngestWithLocalids() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestWithLocalids - multiple localIDs with duplicates (form parm)");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid;localid;localid;localidtwo;localidtwo");
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                assertEquals("localid;localidtwo", job.localId());
+                cleanup(batch);
+        }
+
+        /**
+         * Submit container with ERC data (mrt-erc.txt) Form parameter
+         * @throws MerrittZKNodeInvalid 
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         */
+        @Test
+        public void SimpleContainerLocalIDWithForm() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleContainerLocalIDWithForm - Form parameter localIDs and ERC file (mrt-erc.txt)");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+                String bid = ingestFile(url, new File("src/test/resources/data/test_erc.zip"), "localidfour; localidfive");
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+		// Form parameter localIDs 4/5 are appended with ERC file localIDs 1/2/3
+                assertEquals("localidfour;localidfive;localid;localidtwo;localidthree", job.localId());
+                assertEquals("ark:/99999/dummy", job.primaryId());
+                cleanup(batch);
+        }
+
+        /**
+         * Submit Batch manifest with ERC data along with ERC data file (mrt-erc.txt)
+         * @throws MerrittZKNodeInvalid 
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         */
+        @Test
+        public void SimpleBatchManifestLocalIDWithERCFile() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestLocalIDWithERCForm - Batch manifest with localIDs and ERC file (mrt-erc.txt)");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+                String bid = ingestFile(url, new File("src/test/resources/data/localid_batch.checkm"), "");
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+		// Manifest localIDs 4/5/6 are appended with ERC file localIDs 1/2/3
+                assertEquals("localidfour;localidfive;localidsix;localid;localidtwo;localidthree", job.localId());
+                assertEquals("ark:/99999/dummy", job.primaryId());
+                cleanup(batch);
+        }
+
+        /**
+         * Submit Batch manifest and Form parameter localID
+         * @throws MerrittZKNodeInvalid 
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         */
+        @Test
+        public void SimpleBatchManifestLocalIDWithForm() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleBatchManifestLocalIDWithForm - Batch manifest with localIDs and Form parameters");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+                String bid = ingestFile(url, new File("src/test/resources/data/localid2_batch.checkm"), "localidten");
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+		// Form localID 10 is overwritten with Manifest localIDs 7/8/9
+		// LocalID Form parameter can not be applied to Batch manifest
+                assertEquals("localidseven;localideight;localidnine", job.localId());
+                cleanup(batch);
         }
 
         /**
          * Submit a single file with a primary id specified.
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         * @throws MerrittZKNodeInvalid 
          */
         @Test
-        public void SimpleFileIngestWithArk() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
+        public void SimpleFileIngestWithArk() throws IOException, JSONException, MerrittZKNodeInvalid, KeeperException, InterruptedException {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with primaryID (form parm)");
+                String url = String.format("http://localhost:%d/%s/poster/submit/ark/1111/2222", port, cp);
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                assertEquals("ark/1111/2222", job.primaryId());
+                cleanup(batch);
         }
 
         /**
          * Submit a single file with a primary id specified.  Perform an update on that object.
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         * @throws MerrittZKNodeInvalid 
          */
         @Test
-        public void SimpleFileIngestWithArkAndUpdate() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object/ark/1111/2222", port, cp);
-                ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
-                url = String.format("http://localhost:%d/%s/update-object/ark/1111/2222", port, cp);
-                ingestFile(url, new File("src/test/resources/data/test.txt"), false);
+        public void SimpleFileIngestWithArkAndUpdate() throws IOException, JSONException, MerrittZKNodeInvalid, KeeperException, InterruptedException {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Update with primaryID (form parm)");
+                String url = String.format("http://localhost:%d/%s/poster/submit/ark/1111/2222", port, cp);
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                cleanup(batch);
+                url = String.format("http://localhost:%d/%s/poster/update/ark/1111/2222", port, cp);
+                bid = ingestFile(url, new File("src/test/resources/data/test.txt"));
+                batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                assertEquals("ark/1111/2222", job.primaryId());
+                cleanup(batch);
         }
-
+        
         /**
          * Submit a single file.  Locate the primary id and perform an update on that object.
+         * @throws MerrittZKNodeInvalid 
+         * @throws KeeperException 
          */
         @Test
-        public void SimpleFileIngestWithUpdate() throws IOException, JSONException, InterruptedException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                JSONObject json = ingestFile(url, new File("src/test/resources/data/foo.txt"), false);
-                String prim = json.getJSONObject("job:jobState").getString("job:primaryID");
+        public void SimpleFileIngestWithUpdate() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Update");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
-                // expect to see 1 object present in the inventory queue
-                countQueue(20, 1, "queue-inv", "mrt.inventory.full");
+                String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                String prim = job.primaryId();
+                cleanup(batch);
 
-                url = String.format("http://localhost:%d/%s/update-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/test.txt"), "", prim, false);
+                url = String.format("http://localhost:%d/%s/poster/update", port, cp);
+                bid = ingestFile(url, new File("src/test/resources/data/test.txt"), "", prim);
+                Thread.sleep(SLEEP_SUBMIT);
+                batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                cleanup(batch);
         }
 
         /**
@@ -949,75 +954,10 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleZipIngest() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/submit-object", port, cp);
-                ingestFile(url, new File("src/test/resources/data/test.zip"), false);
-        }
+		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with Zip payload");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
-        /**
-         * Obtain the queue names associted with a queue endpoint
-         * @param endpoint queue, queue-inv, queue-acc
-         * @return List of queue names
-         */
-        public List<String> getQueueNames(String endpoint) throws HttpResponseException, IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/admin/%s", port, cp, endpoint);
-                JSONObject json = getJsonContent(url, 200);
-                json = getJsonObject(json, "ingq:ingestQueueNameState");
-                json = getJsonObject(json, "ingq:ingestQueueName");
-                JSONArray jarr = getJsonArray(json, "ingq:ingestQueue");
-
-                ArrayList<String> arr = new ArrayList<>();
-                for(int i = 0; i < jarr.length(); i++) {
-                        String s = getJsonString(jarr.getJSONObject(i), "ingq:node", "");
-                        if (s.isEmpty()) {
-                                continue;
-                        }
-                        arr.add(s);
-                }
-                return arr;
-        }
-
-        /**
-         * Compare a list of queue names to a comma separated string
-         * @param endpoint endpoint to query for queue names
-         * @param list list of queue names to expect in the list
-         */
-        public void testQueueValues(String endpoint, String list) throws HttpResponseException, IOException, JSONException {
-                List<String> queues = getQueueNames(endpoint);
-                String[] vals = list.split(",");
-                assertEquals(vals.length, queues.size());
-                for(String s: vals) {
-                        assertTrue(queues.contains(s));
-                }
-        }
-
-        /**
-         * Test that each queue endpoint returns the expected set of queue names
-         */
-        @Test
-        public void TestQueueNames() throws IOException, JSONException {
-                testQueueValues("queues", "/ingest");
-                testQueueValues("queues-inv", "/mrt.inventory.full");
-                testQueueValues("queues-acc", "/accessSmall.1,/accessLarge.1");
-        }
-
-
-        /**
-         * Test the lock endpoints.  Assume no locks are present.
-         */
-        @Test
-        public void TestLocks() throws IOException, JSONException {
-                String url = String.format("http://localhost:%d/%s/admin/locks", port, cp);
-                JSONObject json = getJsonContent(url, 200);
-                json = getJsonObject(json, "ingl:ingestLockNameState");
-                json = getJsonObject(json, "ingl:ingestLockName");
-                json = getJsonObject(json, "ingl:ingestLock");
-                assertEquals("/mrt.lock", getJsonString(json, "ingl:node", ""));
-
-                url = String.format("http://localhost:%d/%s/admin/lock/mrt.lock", port, cp);
-                json = getJsonContent(url, 200);
-                json = getJsonObject(json, "loc:lockState");
-                assertTrue(json.has("loc:lockEntries"));
-                assertEquals("", getJsonString(json, "loc:lockEntries", "N/A"));
+                ingestFile(url, new File("src/test/resources/data/test.zip"));
         }
 
         /**
@@ -1025,6 +965,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void TestProfileNames() throws IOException, JSONException {
+                System.out.println("[ServiceDriverIT] TestProfileNames - Test the profiles endpoint.");
                 String url = String.format("http://localhost:%d/%s/admin/profiles", port, cp);
                 JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "pros:profilesState");
@@ -1042,6 +983,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void TestAdminProfileNames() throws IOException, JSONException {
+                System.out.println("[ServiceDriverIT] TestAdminProfileNames - Test the admin/profiles endpoint.");
                 String url = String.format("http://localhost:%d/%s/admin/profiles/admin", port, cp);
                 JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "pros:profilesState");
@@ -1051,10 +993,11 @@ public class ServiceDriverIT {
         }
 
         /**
-         * Test the admin/profiles-full endpoint returns the expected profile
+         * Test the admin/profiles-full endpoint 
          */
         @Test
         public void TestProfileFull() throws IOException, JSONException {
+                System.out.println("[ServiceDriverIT] TestProfileFull - Test the profiles full state.");
                 String url = String.format("http://localhost:%d/%s/admin/profiles-full", port, cp);
                 JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "prosf:profilesFullState");
@@ -1072,6 +1015,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void TestProfileByName() throws IOException, JSONException {
+                System.out.println("[ServiceDriverIT] TestProfileByName - Test the profiles by name.");
                 String url = String.format("http://localhost:%d/%s/admin/profile/merritt_test_content", port, cp);
                 JSONObject json = getJsonContent(url, 200);
                 json = getJsonObject(json, "pro:profileState");
