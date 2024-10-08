@@ -364,9 +364,9 @@ public class ProcessManager {
 				jobState.setRetainTargetURL(ingestRequest.getRetainTargetURL());
 			}
 
-			if (ingestRequest.getUpdateFlag()) {
-				System.out.println("[info] Update flag set: " + ingestRequest.getUpdateFlag());
-				jobState.setUpdateFlag(ingestRequest.getUpdateFlag());
+			if (ingestRequest.getJob().grabUpdateFlag()) {
+				System.out.println("[info] Update flag set: " + ingestRequest.getJob().grabUpdateFlag());
+				jobState.setUpdateFlag(ingestRequest.getJob().grabUpdateFlag());
 			}
 
 			// assign profile

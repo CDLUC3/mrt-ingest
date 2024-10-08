@@ -241,7 +241,7 @@ public class HandlerSubmit extends Handler<BatchState>
 		    }
 		} catch (Exception e) { }
 		try {
-	    	    jproperties.put("update", new Boolean (jobState.grabUpdateFlag()));
+	    	    jproperties.put("update", batchState.grabUpdateFlag());
 		} catch (Exception e) {
 		    // default
 	    	    jproperties.put("update", new Boolean(false));

@@ -209,7 +209,7 @@ public class QueueManager {
 			batchState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 			batchState.setBatchStatus(BatchStatusEnum.QUEUED);
 			batchState.setBatchID(ingestRequest.getJob().grabBatchID());
-			batchState.setUpdateFlag(ingestRequest.getUpdateFlag());
+			batchState.setUpdateFlag(ingestRequest.getJob().grabUpdateFlag());
 
 			// assign profile
 			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
