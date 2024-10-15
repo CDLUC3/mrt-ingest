@@ -145,7 +145,8 @@ public class HandlerNotification extends Handler<BatchState>
    	    JSONObject jctemp = new JSONObject();
 	    for (Job jobCompleted: jobs) {
    	        jobCompleted.load(zooKeeper);
-   	        jac.put(jobCompleted.data());
+		// overwrite localID
+   	        jac.put(jobCompleted.data().put("localID", jobCompleted.localId()));
 	    }
 	    System.out.println("------ JOBS COMPLETED ------");
 	    JSONObject jcomplete = new JSONObject();
@@ -162,6 +163,8 @@ public class HandlerNotification extends Handler<BatchState>
 		// Add error status
  		jftemp.put("status", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Status.key()));
  		jftemp.put("message", jobFailed.jsonProperty(zooKeeper, ZKKey.STATUS).getString(MerrittJsonKey.Message.key()));
+		// overwrite localID
+		jftemp.put("localID", jobFailed.localId());
 
    	        jaf.put(jftemp);
 	    }
@@ -287,7 +290,7 @@ public class HandlerNotification extends Handler<BatchState>
 
 		if (! verbose) {
 		    email.setMsg(batchDump(batch, ""));
-System.out.println(batchDump(batch, ""));
+		    System.out.println(batchDump(batch, ""));
 		} else {
   	            email.setMsg(getVerboseMsg(jobState));
 		}

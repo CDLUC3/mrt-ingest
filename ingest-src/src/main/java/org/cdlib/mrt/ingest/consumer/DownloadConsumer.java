@@ -468,8 +468,10 @@ class DownloadConsumeData implements Runnable
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+            jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: DownloadConsume Daemon - COMPLETED job message:" + jp.toString());
+                if (DEBUG) System.out.println("[item]: DownloadConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString());
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");
 		} catch (MerrittStateError mse) {
