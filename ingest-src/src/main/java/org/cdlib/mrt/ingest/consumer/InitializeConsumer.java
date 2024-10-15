@@ -548,8 +548,10 @@ class InitializeConsumeData implements Runnable
 	    String process = "Initialize";
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+            jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+            ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString());
+                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString());
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: InitializeConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
