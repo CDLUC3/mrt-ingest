@@ -651,6 +651,7 @@ class BatchReportCleanupDaemon implements Runnable
                     }
 
 		    // DELETED JOBS that are orphaned
+/*
                     while (true) {
                         System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString);
                         List<String> jobs = null;
@@ -676,6 +677,7 @@ class BatchReportCleanupDaemon implements Runnable
                         //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
                         break;
                     }
+*/
 
                 } catch (RejectedExecutionException ree) {
                     System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
