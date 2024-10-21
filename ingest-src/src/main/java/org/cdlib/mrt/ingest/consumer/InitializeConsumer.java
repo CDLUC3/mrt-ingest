@@ -365,10 +365,16 @@ class InitializeConsumerDaemon implements Runnable
                                    Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
                                 } catch (IOException ioe){}
-                            } catch (Exception e) {}
+                            } catch (Exception e) {
+                                System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
+                                try {
+                                   job.unlock(zooKeeper);
+                                } catch (Exception e2) {}
+                            }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found initialize job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
 
 			        JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
 			        String profile = JSONUtil.getValue(jp,"profile");
@@ -555,7 +561,7 @@ class InitializeConsumeData implements Runnable
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: InitializeConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
+                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
 	    } else {
 		System.out.println("InitializeConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

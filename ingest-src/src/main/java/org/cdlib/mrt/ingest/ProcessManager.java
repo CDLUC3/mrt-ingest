@@ -334,6 +334,8 @@ public class ProcessManager {
 	public JobState submit(IngestRequest ingestRequest, String state) throws Exception {
 		ProfileState profileState = null;
 		JobState jobState = null;
+    		ZooKeeper zooKeeper = null;
+		String localIDLock = null;
 		try {
 			// add ingest queue path and threshold to request
 	                try {
@@ -446,7 +448,28 @@ public class ProcessManager {
 			if (state.matches("Estimate")) sortedMap = profileState.getEstimateHandlers();
 			if (state.matches("Provision")) sortedMap = profileState.getProvisionHandlers();
 			if (state.matches("Download")) sortedMap = profileState.getDownloadHandlers();
-			if (state.matches("Process")) sortedMap = profileState.getProcessHandlers();
+			if (state.matches("Process")) {
+				boolean skipLock = false;
+				sortedMap = profileState.getProcessHandlers();
+
+				// Lock on localID and Owner, if necessary
+				if (jobState.getPrimaryID() != null && StringUtil.isNotEmpty(jobState.getPrimaryID().getValue())) {
+                                   System.out.println("[localID Check] Primary ID exists.  No LocalID locking needed.");
+				   skipLock = true;
+				}
+				if (jobState.getLocalID() == null || StringUtil.isEmpty(jobState.getLocalID().getValue())) {
+                                   System.out.println("[localID Check] Local ID does not exist.  No LocalID locking needed.");
+				   skipLock = true;
+				}
+				if (! skipLock) {
+                                    System.out.println("[localID Check] LocalID locking starting.");
+            			    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+    				    localIDLock = getLocalIDLock(zooKeeper, jobState.getLocalID().getValue(), jobState.grabObjectProfile().getOwner());
+				} else {
+                                    System.out.println("[localID Check] No LocalID locking needed");
+				}
+			}
+
 			if (state.matches("Record")) sortedMap = profileState.getRecordHandlers();
 			if (state.matches("Notify")) sortedMap = profileState.getNotifyHandlers();
 			for (Object key : sortedMap.keySet()) {
@@ -553,6 +576,12 @@ public class ProcessManager {
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 			profileState = null;
+			if (state.matches("Process")) {
+            		   System.out.println("[debug] " + MESSAGE + " Releasing Local ID lock");
+			   try {
+                               releaseLocalIDLock(zooKeeper, localIDLock);
+			   } catch (Exception e) {}
+			}
 		}
 	}
 
@@ -788,6 +817,62 @@ public class ProcessManager {
 		}
 		return object;
 	}
+
+    /**
+     * Lock on local identifier.  Will loop until lock obtained.
+     *
+     * @param String Zookeeper client
+     * @param String local ID 
+     * @param String owner ark
+     * @return result of obtaining lock
+     */
+    private String getLocalIDLock(ZooKeeper zooKeeper, String localID, String owner) {
+    try {
+
+        boolean locked = false;
+        while (! locked) {
+            try {
+               System.out.println("[info] " + MESSAGE + " Attempting to gain localID lock: " + localID + "_" + owner);
+               locked = MerrittLocks.lockObjectLocalID(zooKeeper, localID + "_" + owner);
+            } catch (Exception e) {
+              if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining localID lock: " + localID);
+            }
+            if (locked) break;
+            System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for localID: " + localID + " Waiting 15 seconds before retry");
+            Thread.currentThread().sleep(15 * 1000);    // Wait 15 seconds before attempting to gain lock for localID
+        }
+        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for localID: " + localID + " -- " + owner);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+            } catch (Exception ze) {}
+        }
+        return localID + "_" + owner;
+    }
+
+    /**
+     * Unlock on local identifier.
+     *
+     * @param String Zookeeper client
+     * @param String local ID string
+     * @return void
+     */
+    private void releaseLocalIDLock(ZooKeeper zooKeeper, String localID) {
+        try {
+               System.out.println("[info] " + MESSAGE + " Attempting to release localID lock: " + localID);
+               MerrittLocks.unlockObjectLocalID(zooKeeper, localID); 
+        } catch (Exception e) {
+            // e.printStackTrace();
+        } finally {
+            try {
+            } catch (Exception ze) {}
+        }
+
+    }
+
 
         public static class Ignorer implements Watcher {
                 public void process(WatchedEvent event) {

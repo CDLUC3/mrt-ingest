@@ -366,7 +366,12 @@ class BatchConsumerDaemon implements Runnable
                                    Thread.currentThread().sleep(2 * 1000);
                                    batch = Batch.acquirePendingBatch(zooKeeper);
                                 } catch (IOException ioe){}
-                            } catch (Exception e) {}
+                            } catch (Exception e) {
+                                System.out.println(MESSAGE + "[WARN] error acquiring batch.  Unlocking batch.");
+				try {
+				   batch.unlock(zooKeeper);
+				} catch (Exception e2) {}
+			    }
 
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
