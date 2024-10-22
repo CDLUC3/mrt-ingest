@@ -57,6 +57,7 @@ public class Notification
         return this.contactEmail;
     }
 
+
     /**
      * Set email
      * @param String email
