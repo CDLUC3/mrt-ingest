@@ -335,6 +335,7 @@ public class ProcessManager {
 		ProfileState profileState = null;
 		JobState jobState = null;
     		ZooKeeper zooKeeper = null;
+		boolean skipLock = false;
 		String localIDLock = null;
 		try {
 			// add ingest queue path and threshold to request
@@ -449,7 +450,6 @@ public class ProcessManager {
 			if (state.matches("Provision")) sortedMap = profileState.getProvisionHandlers();
 			if (state.matches("Download")) sortedMap = profileState.getDownloadHandlers();
 			if (state.matches("Process")) {
-				boolean skipLock = false;
 				sortedMap = profileState.getProcessHandlers();
 
 				// Lock on localID and Owner, if necessary
@@ -576,7 +576,7 @@ public class ProcessManager {
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 			profileState = null;
-			if (state.matches("Process")) {
+			if (state.matches("Process") && (! skipLock)) {
             		   System.out.println("[debug] " + MESSAGE + " Releasing Local ID lock");
 			   try {
                                releaseLocalIDLock(zooKeeper, localIDLock);
