@@ -366,7 +366,12 @@ class EstimateConsumerDaemon implements Runnable
                                    Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                                 } catch (IOException ioe){}
-                            } catch (Exception e) {}
+                            } catch (Exception e) {
+                                System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
+                                try {
+                                   job.unlock(zooKeeper);
+                                } catch (Exception e2) {}
+                            }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
@@ -550,7 +555,7 @@ class EstimateConsumeData implements Runnable
             if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), process + "_FAIL")) {
                 System.out.println("[item]: ProcessConsume Daemon - FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + process + "_FAIL");
                 System.out.println("[item]: ProcessConsume Daemon - Forcing a failure.");
-                job.setStatus(zooKeeper, job.status().fail(), "FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile() + "/" + process + "_FAIL  -  Forcing a failure.");
+                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, "FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile() + "/" + process + "_FAIL  -  Forcing a failure.");
                 job.unlock(zooKeeper);
                 return;
             }
@@ -564,7 +569,7 @@ class EstimateConsumeData implements Runnable
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Provisioning);
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, job.status().fail(), jobState.getJobStatusMessage());
+                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
 	    } else {
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

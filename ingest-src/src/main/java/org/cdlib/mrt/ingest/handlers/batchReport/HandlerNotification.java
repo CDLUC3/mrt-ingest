@@ -223,9 +223,9 @@ public class HandlerNotification extends Handler<BatchState>
 
 
 	    if (batchComplete) {
-		// send summary in body and report as attachment
+		// Error in batch?
 		try {
- 	            if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+ 	            if (! jaf.isEmpty()) {
 		        status = "FAIL";
 		    }
 		} catch (Exception e) {}
