@@ -259,7 +259,7 @@ class EstimateConsumerDaemon implements Runnable
     private int keepAliveTime = 60;     // when poolSize is exceeded
 
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 300000;  //5 minutes
+    public static int sessionTimeout = 3600000;  // 1 hour
 
     // session data
     private long sessionID;
@@ -504,8 +504,7 @@ class EstimateConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    // public static int sessionTimeout = 40000;
-    public static int sessionTimeout = 360000;         // hour^M
+    public static int sessionTimeout = 3600000;         // 1 hour
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -620,7 +619,7 @@ class EstimateCleanupDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
-    public static int sessionTimeout = 360000;
+    public static int sessionTimeout = 3600000;	// 1 hour
 
 
     // Constructor

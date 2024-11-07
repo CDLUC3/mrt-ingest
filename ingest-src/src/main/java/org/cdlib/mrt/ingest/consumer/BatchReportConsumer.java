@@ -262,7 +262,7 @@ class BatchReportConsumerDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
-    public static int sessionTimeout = 300000;  //5 minutes
+    public static int sessionTimeout = 3600000;  // 1 hour
 
 
     // Constructor
@@ -463,7 +463,7 @@ class BatchReportConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 360000;
+    public static int sessionTimeout = 3600000;	// 1 hour
 
     private IngestServiceInf ingestService = null;
     private BatchState batchState = null;
@@ -548,7 +548,7 @@ class BatchReportCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 360000;         // hour^M
+    public static int sessionTimeout = 3600000;         // 1 hour
 
     private ZooKeeper zooKeeper = null;
 

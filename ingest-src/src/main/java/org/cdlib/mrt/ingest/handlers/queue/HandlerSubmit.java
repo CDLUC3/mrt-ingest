@@ -72,7 +72,7 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 3600000;	// 1 hour
 
     /**
      * Submit batch manifest jobs to queing service

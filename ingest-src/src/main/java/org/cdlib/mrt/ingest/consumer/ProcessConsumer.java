@@ -89,7 +89,7 @@ public class ProcessConsumer extends HttpServlet
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
-    public static int sessionTimeout = 300000;  //5 minutes
+    public static int sessionTimeout = 3600000;  // 1 hour
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -221,7 +221,7 @@ class ProcessConsumerDaemon implements Runnable
     private Integer pollingInterval = null;
     private Integer poolSize = null;
     private int keepAliveTime = 60;     // when poolSize is exceeded
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 3600000;	// 1 hour
 
     private ZooKeeper zooKeeper = null;
     private Job job = null;
@@ -424,7 +424,7 @@ class ProcessConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 3600000; 	// 1 hour
 
     private Job job = null;
     private IngestServiceInf ingestService = null;

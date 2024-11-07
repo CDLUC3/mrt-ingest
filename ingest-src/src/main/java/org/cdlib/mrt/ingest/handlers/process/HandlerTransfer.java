@@ -45,6 +45,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
+import org.apache.zookeeper.KeeperException.SessionExpiredException;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -98,7 +99,7 @@ public class HandlerTransfer extends Handler<JobState>
     private static final String NAME = "HandlerTransfer";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
-    private static int sessionTimeout = 300000;  //5 minutes
+    private static int sessionTimeout = 3600000;  // 1 hour
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
@@ -437,9 +438,13 @@ public class HandlerTransfer extends Handler<JobState>
      */
     private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
     	try {
-
-		MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
-	
+	    MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
+        } catch (KeeperException ke) {
+            ke.printStackTrace();
+	    try {
+               zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
+	       MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
+	    } catch (Exception ee) {}
 	} catch (Exception e) {
 	    e.printStackTrace();
         } finally {
