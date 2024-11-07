@@ -254,8 +254,7 @@ class NotifyConsumerDaemon implements Runnable
     private Integer pollingInterval = 15;	// seconds
     private Integer poolSize = null;
     private int keepAliveTime = 60;     // when poolSize is exceeded
-    // public static int sessionTimeout = 40000;
-    public static int sessionTimeout = 360000;         // hour^M
+    public static int sessionTimeout = 3600000;         // 1 hour
 
     private ZooKeeper zooKeeper = null;
 
@@ -448,7 +447,7 @@ class NotifyConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 360000;
+    public static int sessionTimeout = 3600000;	// 1 hour
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -482,7 +481,10 @@ class NotifyConsumeData implements Runnable
 
 	    IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
 
-	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
+	    if (job.status() == org.cdlib.mrt.zk.JobState.Failed) 
+	        ingestRequest.getJob().setJobStatus(JobStatusEnum.FAILED);
+	    else
+	        ingestRequest.getJob().setJobStatus(JobStatusEnum.COMPLETED);
 	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
@@ -564,7 +566,7 @@ class NotifyCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 300000;  //5 minutes
+    public static int sessionTimeout = 3600000;  // 1 hour
 
     private ZooKeeper zooKeeper = null;
 

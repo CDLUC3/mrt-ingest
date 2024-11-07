@@ -78,7 +78,7 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final String NAME = "HandlerSubmit";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
-    private static int sessionTimeout = 300000;  //5 minutes
+    private static int sessionTimeout = 3600000;  // 1 hour
     protected LoggerInf logger = null;
     protected Properties conf = null;
     ZooKeeper zooKeeper = null;

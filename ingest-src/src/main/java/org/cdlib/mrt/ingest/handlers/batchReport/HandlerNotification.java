@@ -82,7 +82,7 @@ public class HandlerNotification extends Handler<BatchState>
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
     private LoggerInf logger = null;
-    public static int sessionTimeout = 40000;
+    public static int sessionTimeout = 3600000;	// 1 hour
     private ZooKeeper zooKeeper = null;
 
     /**

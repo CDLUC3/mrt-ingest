@@ -88,7 +88,7 @@ public class ProcessManager {
 	private Integer defaultStorage = null;
 	private URL ingestLink = null;
 	private boolean debugDump = false;
-        private static int sessionTimeout = 300000;  //5 minutes
+        private static int sessionTimeout = 3600000;  // 1 hour
 	private Hashtable<Integer, URL> m_store = new Hashtable<Integer, URL>(20);
 	private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
 	private ArrayList<String> m_admin = new ArrayList<String>(20);

@@ -256,7 +256,7 @@ class BatchConsumerDaemon implements Runnable
     private Integer pollingInterval = null;
     private Integer poolSize = null;
     private int keepAliveTime = 60;     // when poolSize is exceeded
-    public static int sessionTimeout = 300000;	//5 minutes
+    public static int sessionTimeout = 3600000;	// 1 hour
 
     private ZooKeeper zooKeeper = null;
 
@@ -466,7 +466,7 @@ class BatchConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 360000;
+    public static int sessionTimeout = 3600000;	// 1 hour
 
     private IngestServiceInf ingestService = null;
     private BatchState batchState = null;
@@ -548,7 +548,7 @@ class BatchCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 360000;
+    public static int sessionTimeout = 3600000; // 1 hour
 
     private ZooKeeper zooKeeper = null;
 

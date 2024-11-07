@@ -77,7 +77,7 @@ public class BatchManager {
 	private static final String NAME = "BatchManager";
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
-    	private static int sessionTimeout = 300000;  //5 minutes
+    	private static int sessionTimeout = 3600000;  // 1 hour
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
