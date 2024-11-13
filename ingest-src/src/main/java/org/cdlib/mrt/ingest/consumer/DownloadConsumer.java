@@ -508,6 +508,9 @@ class DownloadConsumeData implements Runnable
 	   try {
                 job.unlock(zooKeeper);
 	   } catch(Exception ze) {}
+	   try {
+                zooKeeper.close();
+	   } catch(Exception ze) {}
         }
     }
 

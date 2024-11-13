@@ -425,6 +425,7 @@ class BatchConsumerDaemon implements Runnable
 	    executorService.shutdown();
         } finally {
            try {
+	     zooKeeper.close();
            } catch(Exception ze) {}
         }
     }
@@ -526,6 +527,7 @@ class BatchConsumeData implements Runnable
             System.out.println("[error] Consuming queue data");
         } finally {
            try {
+	      zooKeeper.close();
            } catch(Exception ze) {}
         }
 

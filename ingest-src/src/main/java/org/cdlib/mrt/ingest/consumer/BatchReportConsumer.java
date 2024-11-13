@@ -425,6 +425,9 @@ class BatchReportConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
+	    try {
+		zooKeeper.close();
+	    } catch (Exception ze) {}
 	}
     }
 
@@ -527,6 +530,7 @@ class BatchReportConsumeData implements Runnable
             System.out.println("[error] Consuming queue data");
         } finally {
 	    try {
+		zooKeeper.close();
 	    } catch(Exception ze) {}
 	} 
     }

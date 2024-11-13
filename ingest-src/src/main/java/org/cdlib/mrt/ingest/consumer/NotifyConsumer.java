@@ -410,6 +410,10 @@ class NotifyConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
+
+	   try {
+	     zooKeeper.close();
+	   } catch (Exception ze) {}
 	}
     }
 
@@ -545,6 +549,9 @@ class NotifyConsumeData implements Runnable
            try {
              job.unlock(zooKeeper);
            } catch(Exception ze) {}
+           try {
+             zooKeeper.close();
+           } catch(Exception ze) {}
         }
 
     }
@@ -586,7 +593,6 @@ class NotifyCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
            try {
-                zooKeeper.close();
            } catch(Exception ze) {}
         }
 

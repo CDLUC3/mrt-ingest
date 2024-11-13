@@ -453,6 +453,9 @@ class InitializeConsumerDaemon implements Runnable
 	    e.printStackTrace(System.err);
 	    executorService.shutdown();
         } finally {
+	   try {
+		zooKeeper.close();
+	   } catch (Exception ze) {}
 	}
     }
 
@@ -582,6 +585,9 @@ class InitializeConsumeData implements Runnable
         } finally {
 	   try {
               job.unlock(zooKeeper);
+	   } catch(Exception ze) {}
+	   try {
+              zooKeeper.close();
 	   } catch(Exception ze) {}
 	} 
     }
