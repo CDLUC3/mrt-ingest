@@ -529,8 +529,15 @@ class ProcessConsumeData implements Runnable
 	    // Write data change
 	    job.setData(zooKeeper, ZKKey.JOB_CONFIGURATION, jp);
 
-            jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
-            ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+            try {
+               jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+            } catch (SessionExpiredException see) {
+               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+            }
+
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString());
 		try {

@@ -476,9 +476,15 @@ class ProvisionConsumeData implements Runnable
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+            try {
+               jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+            } catch (SessionExpiredException see) {
+               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
+               ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+            }
 
-            jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
-            ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProvisionConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString());
 
