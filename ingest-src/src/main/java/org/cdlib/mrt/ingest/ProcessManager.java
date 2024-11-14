@@ -582,7 +582,10 @@ public class ProcessManager {
                                releaseLocalIDLock(zooKeeper, localIDLock);
 			   } catch (Exception e) {}
 			}
-		}
+                        try {
+                          zooKeeper.close();
+                        } catch(Exception ze) {}
+			}
 	}
 
 	private boolean override(IngestRequest ingestRequest) throws Exception {
@@ -714,7 +717,6 @@ public class ProcessManager {
 		try {
 		   zooKeeper.close();
 		} catch(Exception ze) {}
-
 	    }
 	}
 

@@ -260,8 +260,9 @@ public class QueueManager {
 	}
 
         public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
+                ZooKeeper zooKeeper = null;
                 try {
-                        ZooKeeper zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
                         IngestServiceState ingestState = new IngestServiceState();
 			if (StringUtil.isNotEmpty(collection)) {
@@ -302,7 +303,12 @@ public class QueueManager {
                         System.out.println(StringUtil.stackTrace(ex));
                         logger.logError(MESSAGE + "Exception:" + ex, 0);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-                }
+                } finally {
+			try {
+			    zooKeeper.close();
+			} catch (Exception e) {}
+		}
+		
         }
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {
