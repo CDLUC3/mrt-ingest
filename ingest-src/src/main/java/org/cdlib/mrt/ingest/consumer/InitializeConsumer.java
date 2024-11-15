@@ -402,7 +402,7 @@ class InitializeConsumerDaemon implements Runnable
             			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
 				//}
 
-                                executorService.execute(new InitializeConsumeData(ingestService, job, zooKeeper, queueConnectionString));
+                                executorService.execute(new InitializeConsumeData(ingestService, job, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
                             } else {
                                 break;
@@ -514,7 +514,7 @@ class InitializeConsumeData implements Runnable
     private JobState jobState = null;
 
     // Constructor
-    public InitializeConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
+    public InitializeConsumeData(IngestServiceInf ingestService, Job job, String queueConnectionString)
     {
         this.zooKeeper = zooKeeper;
 	this.job = job;
@@ -529,6 +529,8 @@ class InitializeConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
+            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+
 	    try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);

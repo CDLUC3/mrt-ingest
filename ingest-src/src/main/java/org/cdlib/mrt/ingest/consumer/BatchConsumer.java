@@ -375,7 +375,7 @@ class BatchConsumerDaemon implements Runnable
 
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found pending batch data: " + batch.id());
-                                executorService.execute(new BatchConsumeData(ingestService, batch, zooKeeper, queueConnectionString));
+                                executorService.execute(new BatchConsumeData(ingestService, batch, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
 			    } else {
 				break;
@@ -474,7 +474,7 @@ class BatchConsumeData implements Runnable
     private Batch batch = null;
 
     // Constructor
-    public BatchConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString)
+    public BatchConsumeData(IngestServiceInf ingestService, Batch batch, String queueConnectionString)
     {
 	this.zooKeeper = zooKeeper;
 	this.batch = batch;
@@ -490,6 +490,7 @@ class BatchConsumeData implements Runnable
 	    // UTF-8 ??
             JSONObject jp = null;
             JSONObject ji = null;
+            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (SessionExpiredException see) {
