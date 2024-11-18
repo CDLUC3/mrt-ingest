@@ -376,7 +376,7 @@ class BatchReportConsumerDaemon implements Runnable
 
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
-                                executorService.execute(new BatchReportConsumeData(ingestService, batch, zooKeeper, queueConnectionString));
+                                executorService.execute(new BatchReportConsumeData(ingestService, batch, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
 			    } else {
 				break;
@@ -473,7 +473,7 @@ class BatchReportConsumeData implements Runnable
     private Batch batch = null;
 
     // Constructor
-    public BatchReportConsumeData(IngestServiceInf ingestService, Batch batch, ZooKeeper zooKeeper, String queueConnectionString)
+    public BatchReportConsumeData(IngestServiceInf ingestService, Batch batch, String queueConnectionString)
     {
 	this.zooKeeper = zooKeeper;
 	this.batch = batch;
@@ -489,6 +489,7 @@ class BatchReportConsumeData implements Runnable
 	    // UTF-8 ??
             JSONObject jp = null;
             JSONObject ji = null;
+            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (SessionExpiredException see) {

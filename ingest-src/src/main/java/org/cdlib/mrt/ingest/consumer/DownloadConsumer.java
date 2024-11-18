@@ -325,7 +325,7 @@ class DownloadConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found downloading job data: " + job.id());
-                                executorService.execute(new DownloadConsumeData(ingestService, job, zooKeeper, queueConnectionString));
+                                executorService.execute(new DownloadConsumeData(ingestService, job, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
                             } else {
                                 break;
@@ -423,7 +423,7 @@ class DownloadConsumeData implements Runnable
     private JobState jobState = null;
 
     // Constructor
-    public DownloadConsumeData(IngestServiceInf ingestService, Job job, ZooKeeper zooKeeper, String queueConnectionString)
+    public DownloadConsumeData(IngestServiceInf ingestService, Job job, String queueConnectionString)
     {
         this.zooKeeper = zooKeeper;
 	this.job = job;
@@ -438,6 +438,7 @@ class DownloadConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
+            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
