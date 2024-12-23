@@ -368,7 +368,8 @@ class BatchReportConsumerDaemon implements Runnable
 			           batch = Batch.acquireBatchForReporting(zooKeeper);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring batch.  Unlocking batch.");
+                                System.out.println(MESSAGE + "[WARN] error acquiring batch.  Unlocking batch. " + e.getMessage());
+                                e.printStackTrace();
                                 try {
                                    batch.unlock(zooKeeper);
                                 } catch (Exception e2) {}
