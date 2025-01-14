@@ -324,6 +324,7 @@ class BatchConsumerDaemon implements Runnable
                 // Let's check to see if we are on hold
                 if (onHold()) {
                     System.out.println(MESSAGE + "detected 'on hold' condition");
+		    // Go into a polling state until HOLD is released
                     continue;
                 }
 
