@@ -74,14 +74,14 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Consume Batch queue data and create Jobs 
+ * Consume Update Batch Report
  * - zookeeper is the defined queueing service
  * 
  */
-public class BatchReportConsumer extends HttpServlet
+public class UpdateBatchReportConsumer extends HttpServlet
 {
 
-    private static final String NAME = "BatchReportConsumer";
+    private static final String NAME = "UpdateBatchReportConsumer";
     private static final String MESSAGE = NAME + ": ";
     private volatile Thread consumerThread = null;
     private volatile Thread cleanupThread = null;
@@ -155,7 +155,7 @@ public class BatchReportConsumer extends HttpServlet
             // Start the Consumer thread
             if (consumerThread == null) {
 	    	System.out.println("[info] " + MESSAGE + "starting consumer daemon");
-		startBatchReportConsumerThread(servletConfig);
+		startUpdateBatchReportConsumerThread(servletConfig);
 	    }
         } catch (Exception e) {
 	    throw new ServletException("[error] " + MESSAGE + "could not start consumer daemon");
@@ -164,7 +164,7 @@ public class BatchReportConsumer extends HttpServlet
         try {
             // Start the Queue cleanup thread
             if (cleanupThread == null) {
-	    	System.out.println("[info] " + MESSAGE + "starting Batch cleanup daemon");
+	    	System.out.println("[info] " + MESSAGE + "starting Update Batch Report cleanup daemon");
 		startCleanupThread(servletConfig);
 	    }
         } catch (Exception e) {
@@ -176,7 +176,7 @@ public class BatchReportConsumer extends HttpServlet
     /**
      * Start consumer thread
      */
-    private synchronized void startBatchReportConsumerThread(ServletConfig servletConfig)
+    private synchronized void startUpdateBatchReportConsumerThread(ServletConfig servletConfig)
         throws Exception
     {
         try {
@@ -185,7 +185,7 @@ public class BatchReportConsumer extends HttpServlet
                 return;
             }
 
-            BatchReportConsumerDaemon consumerDaemon = new BatchReportConsumerDaemon(queueConnectionString,
+            UpdateBatchReportConsumerDaemon consumerDaemon = new UpdateBatchReportConsumerDaemon(queueConnectionString,
 		servletConfig, pollingInterval, numThreads);
 
             consumerThread =  new Thread(consumerDaemon);
@@ -209,11 +209,11 @@ public class BatchReportConsumer extends HttpServlet
     {
         try {
             if (cleanupThread != null) {
-                System.out.println("[info] " + MESSAGE + "Batch Queue cleanup daemon already started");
+                System.out.println("[info] " + MESSAGE + "Update Batch Queue cleanup daemon already started");
                 return;
             }
 
-            BatchReportCleanupDaemon cleanupDaemon = new BatchReportCleanupDaemon(queueConnectionString, servletConfig);
+            UpdateBatchReportCleanupDaemon cleanupDaemon = new UpdateBatchReportCleanupDaemon(queueConnectionString, servletConfig);
 
             cleanupThread =  new Thread(cleanupDaemon);
             cleanupThread.setDaemon(true);                // Kill thread when servlet dies
@@ -243,10 +243,10 @@ public class BatchReportConsumer extends HttpServlet
 
 }
 
-class BatchReportConsumerDaemon implements Runnable
+class UpdateBatchReportConsumerDaemon implements Runnable
 {
    
-    private static final String NAME = "BatchReportConsumerDaemon";
+    private static final String NAME = "UpdateBatchReportConsumerDaemon";
     private static final String MESSAGE = NAME + ": ";
 
     private IngestServiceInit ingestServiceInit = null;
@@ -266,7 +266,7 @@ class BatchReportConsumerDaemon implements Runnable
 
 
     // Constructor
-    public BatchReportConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
+    public UpdateBatchReportConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
 		Integer pollingInterval, Integer poolSize)
     {
         this.queueConnectionString = queueConnectionString;
@@ -288,7 +288,7 @@ class BatchReportConsumerDaemon implements Runnable
     {
         boolean init = true;
         String status = null;
-        ArrayBlockingQueue<BatchReportConsumeData> workQueue = new ArrayBlockingQueue<BatchReportConsumeData>(poolSize);
+        ArrayBlockingQueue<UpdateBatchReportConsumeData> workQueue = new ArrayBlockingQueue<UpdateBatchReportConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
 	// Refresh connection. if necessary
@@ -358,14 +358,14 @@ class BatchReportConsumerDaemon implements Runnable
 
 			    Batch batch = null;
 			    try {
-			        batch = Batch.acquireBatchForReporting(zooKeeper);
+			        batch = Batch.acquireUpdateBatchForReporting(zooKeeper);
                             } catch (KeeperException ke) {
                                 ke.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                                 try {
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                                    Thread.currentThread().sleep(2 * 1000);
-			           batch = Batch.acquireBatchForReporting(zooKeeper);
+			           batch = Batch.acquireUpdateBatchForReporting(zooKeeper);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
                                 System.out.println(MESSAGE + "[WARN] error acquiring batch.  Unlocking batch. " + e.getMessage());
@@ -377,7 +377,7 @@ class BatchReportConsumerDaemon implements Runnable
 
 			    if ( batch != null) { 
 			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
-                                executorService.execute(new BatchReportConsumeData(ingestService, batch, queueConnectionString));
+                                executorService.execute(new UpdateBatchReportConsumeData(ingestService, batch, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
 			    } else {
 				break;
@@ -457,10 +457,10 @@ class BatchReportConsumerDaemon implements Runnable
 }
 
 
-class BatchReportConsumeData implements Runnable
+class UpdateBatchReportConsumeData implements Runnable
 {
    
-    private static final String NAME = "BatchReportConsumeData";
+    private static final String NAME = "UpdateBatchReportConsumeData";
     private static final String MESSAGE = NAME + ":";
     private static final boolean DEBUG = true;
     protected static final String FS = System.getProperty("file.separator");
@@ -474,7 +474,7 @@ class BatchReportConsumeData implements Runnable
     private Batch batch = null;
 
     // Constructor
-    public BatchReportConsumeData(IngestServiceInf ingestService, Batch batch, String queueConnectionString)
+    public UpdateBatchReportConsumeData(IngestServiceInf ingestService, Batch batch, String queueConnectionString)
     {
 	this.zooKeeper = zooKeeper;
 	this.batch = batch;
@@ -546,10 +546,10 @@ class BatchReportConsumeData implements Runnable
 }
 
 
-class BatchReportCleanupDaemon implements Runnable
+class UpdateBatchReportCleanupDaemon implements Runnable
 {
 
-    private static final String NAME = "BatchReportCleanupDaemon";
+    private static final String NAME = "UpdateBatchReportCleanupDaemon";
     private static final String MESSAGE = NAME + ": ";
 
     private String queueConnectionString = null;
@@ -564,7 +564,7 @@ class BatchReportCleanupDaemon implements Runnable
 
 
     // Constructor
-    public BatchReportCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
+    public UpdateBatchReportCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
     {
         this.queueConnectionString = queueConnectionString;
 

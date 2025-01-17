@@ -45,6 +45,8 @@ HandlerProcess.7: org.cdlib.mrt.ingest.handlers.process.HandlerTransfer
 HandlerNotify.2: org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup
 # Batch Notify
 HandlerBatchReport.1: org.cdlib.mrt.ingest.handlers.batchReport.HandlerNotification
+# Batch UpdateNotify
+HandlerUpdateBatchReport.1: org.cdlib.mrt.ingest.handlers.batchReport.HandlerNotification
 # === END Handlers ===
 StorageService: http://store:8080/store
 StorageNode: 7777
