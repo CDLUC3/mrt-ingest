@@ -255,6 +255,7 @@ class NotifyConsumerDaemon implements Runnable
     private Integer poolSize = null;
     private int keepAliveTime = 60;     // when poolSize is exceeded
     public static int sessionTimeout = 3600000;         // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private ZooKeeper zooKeeper = null;
 
@@ -347,8 +348,8 @@ class NotifyConsumerDaemon implements Runnable
                                 ke.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                                 try {
+               			   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Notify);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
@@ -452,6 +453,7 @@ class NotifyConsumeData implements Runnable
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 3600000;	// 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -478,6 +480,7 @@ class NotifyConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -516,6 +519,7 @@ class NotifyConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -582,6 +586,7 @@ class NotifyCleanupDaemon implements Runnable
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
     public static int sessionTimeout = 3600000;  // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private ZooKeeper zooKeeper = null;
 

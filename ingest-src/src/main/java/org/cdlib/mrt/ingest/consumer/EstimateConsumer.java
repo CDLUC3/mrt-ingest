@@ -260,6 +260,7 @@ class EstimateConsumerDaemon implements Runnable
 
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 3600000;  // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     // session data
     private long sessionID;
@@ -354,16 +355,16 @@ class EstimateConsumerDaemon implements Runnable
                                 cle.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Connection loss.  Reconnecting...");
                                 try {
+               			   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                                 } catch (IOException ioe){}
                             } catch (SessionExpiredException see) {
                                 see.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session Expired.  Reconnecting...");
                                 try {
+               			   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
@@ -508,6 +509,7 @@ class EstimateConsumeData implements Runnable
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 3600000;         // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -534,6 +536,7 @@ class EstimateConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(2 * 1000);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -569,6 +572,7 @@ class EstimateConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -576,7 +580,11 @@ class EstimateConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Provisioning);
+                try {
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+                } catch (MerrittStateError mse) {
+                   mse.printStackTrace();
+                }
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());

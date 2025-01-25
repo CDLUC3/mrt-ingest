@@ -259,6 +259,7 @@ class InitializeConsumerDaemon implements Runnable
 
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 3600000;  // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     // session data
     private long sessionID;
@@ -353,16 +354,16 @@ class InitializeConsumerDaemon implements Runnable
                                 cle.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Connection loss.  Reconnecting...");
                                 try {
+               			   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
                                 } catch (IOException ioe){}
                             } catch (SessionExpiredException see) {
                                 see.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session Expired.  Reconnecting...");
                                 try {
+               			   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
@@ -508,6 +509,7 @@ class InitializeConsumeData implements Runnable
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 3600000;         // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -535,6 +537,7 @@ class InitializeConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -562,6 +565,7 @@ class InitializeConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -627,6 +631,7 @@ class InitializeCleanupDaemon implements Runnable
     private long sessionID;
     private byte[] sessionAuth;
     public static int sessionTimeout = 3600000;		// 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
 
     // Constructor

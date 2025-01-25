@@ -263,6 +263,7 @@ class BatchReportConsumerDaemon implements Runnable
     private long sessionID;
     private byte[] sessionAuth;
     public static int sessionTimeout = 3600000;  // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
 
     // Constructor
@@ -344,8 +345,8 @@ class BatchReportConsumerDaemon implements Runnable
                        ke.printStackTrace();
                        System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                        try {
+               		   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                           Thread.currentThread().sleep(2 * 1000);
                            Job.initNodes(zooKeeper);
                        } catch (IOException ioe){}
                     } catch (Exception e) {}
@@ -363,8 +364,8 @@ class BatchReportConsumerDaemon implements Runnable
                                 ke.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                                 try {
+                           	   Thread.currentThread().sleep(2 * 1000);
                                    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
 			           batch = Batch.acquireBatchForReporting(zooKeeper);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
@@ -468,6 +469,7 @@ class BatchReportConsumeData implements Runnable
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
     public static int sessionTimeout = 3600000;	// 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private IngestServiceInf ingestService = null;
     private BatchState batchState = null;
@@ -494,6 +496,7 @@ class BatchReportConsumeData implements Runnable
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (SessionExpiredException see) {
+               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             }
@@ -555,6 +558,7 @@ class BatchReportCleanupDaemon implements Runnable
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
     public static int sessionTimeout = 3600000;         // 1 hour
+    public static final int SLEEP_ZK_RETRY = 15000;
 
     private ZooKeeper zooKeeper = null;
 
@@ -642,6 +646,7 @@ class BatchReportCleanupDaemon implements Runnable
 			   try {
                               batches = Batch.deleteCompletedBatches(zooKeeper);
 			   } catch (SessionExpiredException see) {
+               		      Thread.currentThread().sleep(SLEEP_ZK_RETRY);
                		      zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
                               System.out.println(MESSAGE + "Error removing completed batches, retrying: " + see.getMessage());
                               batches = Batch.deleteCompletedBatches(zooKeeper);
