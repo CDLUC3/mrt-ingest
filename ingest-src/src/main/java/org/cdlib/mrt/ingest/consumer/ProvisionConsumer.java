@@ -47,6 +47,7 @@ import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
@@ -88,8 +89,6 @@ public class ProvisionConsumer extends HttpServlet
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
-    public static int sessionTimeout = 3600000;  // 1 hour
-    public static final int SLEEP_ZK_RETRY = 15000;
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -222,8 +221,6 @@ class ProvisionConsumerDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
-    public static int sessionTimeout = 3600000;         // 1 hour
-    public static final int SLEEP_ZK_RETRY = 15000;
 
 
     // Constructor
@@ -238,7 +235,7 @@ class ProvisionConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
         } finally {
@@ -263,7 +260,7 @@ class ProvisionConsumerDaemon implements Runnable
             ke.printStackTrace();
             System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
             try {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             } catch (IOException ioe){}
         } catch (Exception e) {}
 
@@ -314,8 +311,8 @@ class ProvisionConsumerDaemon implements Runnable
                                 ke.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                                 try {
-               			   Thread.currentThread().sleep(SLEEP_ZK_RETRY);
-                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                             	   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Provisioning);
                                 } catch (IOException ioe){}
                             } catch (Exception e) {
@@ -422,8 +419,6 @@ class ProvisionConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 3600000;
-    public static final int SLEEP_ZK_RETRY = 15000;
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -444,13 +439,13 @@ class ProvisionConsumeData implements Runnable
         try {
             JSONObject jp = null;
             JSONObject ji = null;
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
-               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             }
@@ -485,8 +480,8 @@ class ProvisionConsumeData implements Runnable
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (SessionExpiredException see) {
-               Thread.currentThread().sleep(SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             }
