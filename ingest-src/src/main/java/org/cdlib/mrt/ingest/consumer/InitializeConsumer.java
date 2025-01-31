@@ -356,7 +356,11 @@ class InitializeConsumerDaemon implements Runnable
                			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-                                } catch (IOException ioe){}
+                                } catch (IOException ioe) { 
+                                   try {
+                                      job.unlock(zooKeeper);
+                                   } catch (Exception e2) {}
+				}
                             } catch (SessionExpiredException see) {
                                 see.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session Expired.  Reconnecting...");
@@ -364,12 +368,16 @@ class InitializeConsumerDaemon implements Runnable
                			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-                                } catch (IOException ioe){}
+                                } catch (IOException ioe){
+                                   try {
+                                      job.unlock(zooKeeper);
+                                   } catch (Exception e3) {}
+				}
                             } catch (Exception e) {
                                 System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
                                 try {
                                    job.unlock(zooKeeper);
-                                } catch (Exception e2) {}
+                                } catch (Exception e4) {}
                             }
 
                             if ( job != null) {
