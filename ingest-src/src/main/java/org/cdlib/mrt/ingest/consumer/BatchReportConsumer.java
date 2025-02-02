@@ -373,6 +373,8 @@ class BatchReportConsumerDaemon implements Runnable
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 // e.printStackTrace();
                                 try {
+               			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                    batch.unlock(zooKeeper);
 				   break;
                                 } catch (Exception e2) {}
