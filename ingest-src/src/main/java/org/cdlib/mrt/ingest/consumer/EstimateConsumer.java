@@ -347,6 +347,7 @@ class EstimateConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
+/*
 			    } catch (NodeExistsException nee) {
 				nee.printStackTrace();
 				break;
@@ -366,10 +367,12 @@ class EstimateConsumerDaemon implements Runnable
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                    job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                                 } catch (IOException ioe){}
+*/
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
+                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
                                    job.unlock(zooKeeper);
+				   break;
                                 } catch (Exception e2) {}
                             }
 

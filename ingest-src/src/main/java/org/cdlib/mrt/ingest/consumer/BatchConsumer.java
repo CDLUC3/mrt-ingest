@@ -359,6 +359,7 @@ class BatchConsumerDaemon implements Runnable
 			    Batch batch = null;
 			    try {
                                 batch = Batch.acquirePendingBatch(zooKeeper);
+/*
                             } catch (KeeperException ke) {
                                 ke.printStackTrace();
                                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
@@ -367,10 +368,12 @@ class BatchConsumerDaemon implements Runnable
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                    batch = Batch.acquirePendingBatch(zooKeeper);
                                 } catch (IOException ioe){}
+*/
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring batch.  Unlocking batch.");
+                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
 				try {
 				   batch.unlock(zooKeeper);
+				   break;
 				} catch (Exception e2) {}
 			    }
 

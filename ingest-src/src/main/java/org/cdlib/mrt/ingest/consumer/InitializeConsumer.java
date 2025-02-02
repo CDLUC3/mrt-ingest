@@ -346,6 +346,7 @@ class InitializeConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
+/*
                             } catch (NodeExistsException nee) {
                                 nee.printStackTrace();
                                 break;
@@ -373,10 +374,12 @@ class InitializeConsumerDaemon implements Runnable
                                       job.unlock(zooKeeper);
                                    } catch (Exception e3) {}
 				}
+*/
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
+                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
                                    job.unlock(zooKeeper);
+				   break;
                                 } catch (Exception e4) {}
                             }
 
