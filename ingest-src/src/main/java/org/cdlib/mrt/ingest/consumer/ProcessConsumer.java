@@ -549,12 +549,22 @@ class ProcessConsumeData implements Runnable
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");
 		} catch (MerrittStateError mse) {
-		   mse.printStackTrace();
-                   // job.setStatus(zooKeeper, job.status().success(), "Success");
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
 		}
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
 		System.out.println("[item]: ProcessConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		try {
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                } catch (Exception see) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + see.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                }
+
 	    } else {
 		System.out.println("ProcessConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

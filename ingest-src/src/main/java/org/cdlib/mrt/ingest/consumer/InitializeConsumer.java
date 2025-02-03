@@ -583,10 +583,25 @@ class InitializeConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
+		try {
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
+                } catch (Exception mse) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
+		}
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: InitializeConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		try {
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                } catch (Exception see) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + see.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                }
+
 	    } else {
 		System.out.println("InitializeConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }

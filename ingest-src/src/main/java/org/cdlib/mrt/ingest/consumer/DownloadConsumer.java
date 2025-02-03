@@ -480,7 +480,7 @@ class DownloadConsumeData implements Runnable
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-            } catch (SessionExpiredException see) {
+            } catch (Exception see) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
@@ -491,13 +491,22 @@ class DownloadConsumeData implements Runnable
                 if (DEBUG) System.out.println("[item]: DownloadConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString());
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");
-		} catch (MerrittStateError mse) {
-		   mse.printStackTrace();
-                   //job.setStatus(zooKeeper, job.status().success(), "Success");
+		} catch (Exception mse) {
+		   System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
+		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+		   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
 		}
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-                System.out.println("[item]: DownloadConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		try {
+                   System.out.println("[item]: DownloadConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		} catch (Exception see) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + see.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		}
 	    } else {
 		System.out.println("DownloadConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
@@ -518,10 +527,10 @@ class DownloadConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
 	   try {
-                job.unlock(zooKeeper);
+	     job.unlock(zooKeeper);
 	   } catch(Exception ze) {}
 	   try {
-                zooKeeper.close();
+             zooKeeper.close();
 	   } catch(Exception ze) {}
         }
     }
