@@ -373,7 +373,7 @@ class EstimateConsumerDaemon implements Runnable
                                 try {
         	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
                			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                   job.unlock(zooKeeper);
+                                   if (job != null) job.unlock(zooKeeper);
 				   break;
                                 } catch (Exception e2) {}
                             }
