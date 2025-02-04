@@ -42,6 +42,7 @@ public class ZookeeperUtil
     private static final boolean DEBUG = true;
 
     public static final int SLEEP_ZK_RETRY = (30 * 1000);		// 15 seconds wait timeout
-    public static final int ZK_SESSION_TIMEOUT = (2 * 60 * 60 * 1000); 	// 2 hour client timeout
+    // public static final int ZK_SESSION_TIMEOUT = (2 * 60 * 60 * 1000); 	// 2 hour client timeout
+    public static final int ZK_SESSION_TIMEOUT = (1 * 30 * 60 * 1000); 	// 2 hour client timeout
 
 }

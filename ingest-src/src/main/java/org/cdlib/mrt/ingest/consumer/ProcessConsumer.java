@@ -501,7 +501,14 @@ class ProcessConsumeData implements Runnable
 	    } else {
 	       // Populate Manifest URL if necessary
 	       if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
-		   job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+		   try {
+		      job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+		   } catch (Exception e) {
+		      System.err.println(MESSAGE + "[WARN] error setting INV: " + e.getMessage());
+		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+		      job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+		   }
 	    }
 
 	    // Populate metadata if necessary
@@ -528,7 +535,14 @@ class ProcessConsumeData implements Runnable
 		pid = jobState.getPrimaryID().getValue();
 	    }
 	    if (lid != null || pid != null) {
-	        job.setIdentifiers(zooKeeper, Job.createJobIdentifiers(pid, lid));
+		try {
+	           job.setIdentifiers(zooKeeper, Job.createJobIdentifiers(pid, lid));
+		} catch (Exception e) {
+		   System.err.println(MESSAGE + "[WARN] error setting Identifier: " + e.getMessage());
+		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+		   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	           job.setIdentifiers(zooKeeper, Job.createJobIdentifiers(pid, lid));
+		}
 	    }
 
 	    // Write data change
