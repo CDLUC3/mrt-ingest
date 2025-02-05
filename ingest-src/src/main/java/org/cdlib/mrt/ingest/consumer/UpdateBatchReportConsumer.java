@@ -359,16 +359,6 @@ class UpdateBatchReportConsumerDaemon implements Runnable
 			    Batch batch = null;
 			    try {
 			        batch = Batch.acquireUpdateBatchForReporting(zooKeeper);
-/*
-                            } catch (KeeperException ke) {
-                                ke.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
-                                try {
-               			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-			           batch = Batch.acquireUpdateBatchForReporting(zooKeeper);
-                                } catch (IOException ioe){}
-*/
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 //e.printStackTrace();

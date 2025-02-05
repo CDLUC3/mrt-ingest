@@ -346,35 +346,6 @@ class InitializeConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-/*
-                            } catch (NodeExistsException nee) {
-                                nee.printStackTrace();
-                                break;
-                            } catch (ConnectionLossException cle) {
-                                cle.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Connection loss.  Reconnecting...");
-                                try {
-               			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-                                } catch (IOException ioe) { 
-                                   try {
-                                      job.unlock(zooKeeper);
-                                   } catch (Exception e2) {}
-				}
-                            } catch (SessionExpiredException see) {
-                                see.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Session Expired.  Reconnecting...");
-                                try {
-               			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Pending);
-                                } catch (IOException ioe){
-                                   try {
-                                      job.unlock(zooKeeper);
-                                   } catch (Exception e3) {}
-				}
-*/
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
@@ -406,14 +377,6 @@ class InitializeConsumerDaemon implements Runnable
 			           } finally {
 			           }
 			        } 
-
-				//try {
-            			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Iniitialize, job.priority());
-            			   //job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Initializeing);
-				//} catch (MerrittStateError mse) {
-				   //mse.printStackTrace();
-            			   // job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, job.priority());
-				//}
 
                                 executorService.execute(new InitializeConsumeData(ingestService, job, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
@@ -703,48 +666,6 @@ class InitializeCleanupDaemon implements Runnable
                     long numActiveTasks = 0;
 		    Job job = null;
 		    Batch batch = null;
-
-		    // COMPLETED JOBS
-/*
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning JOB queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Completed);
-			   if (job != null) {
-			       System.out.println(NAME + " Found completed job.  Removing: " + job.id() + " - " + job.primaryId());
-			       job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
-
-                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
-                    }
-
-		   
-		    // DELETED JOBS
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Deleted);
-                           if (job != null) {
-                               System.out.println(NAME + " Found deleted job.  Removing: " + job.id() + " - " + job.primaryId());
-                               job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-
-                        Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
-                    }
-*/
 
 		    // COMPLETED BATCHES
                     while (true) {

@@ -307,16 +307,6 @@ class DownloadConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Downloading);
-/*
-        		    } catch (KeeperException ke) {
-            			ke.printStackTrace();
-            			System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
-            		        try {
-        	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
-               			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Downloading);
-            			} catch (IOException ioe){}
-*/
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
