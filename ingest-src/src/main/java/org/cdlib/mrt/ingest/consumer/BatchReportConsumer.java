@@ -34,7 +34,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
-import org.apache.zookeeper.KeeperException.SessionExpiredException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
@@ -487,7 +486,7 @@ class BatchReportConsumeData implements Runnable
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
-            } catch (SessionExpiredException see) {
+            } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
@@ -635,10 +634,10 @@ class BatchReportCleanupDaemon implements Runnable
                         try {
 			   try {
                               batches = Batch.deleteCompletedBatches(zooKeeper);
-			   } catch (SessionExpiredException see) {
+			   } catch (Exception e) {
                		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                              System.out.println(MESSAGE + "Error removing completed batches, retrying: " + see.getMessage());
+                              System.out.println(MESSAGE + "Error removing completed batches, retrying: " + e.getMessage());
                               batches = Batch.deleteCompletedBatches(zooKeeper);
 			   }
 
@@ -655,35 +654,6 @@ class BatchReportCleanupDaemon implements Runnable
                         //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
 			break;
                     }
-
-		    // DELETED JOBS that are orphaned
-/*
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString);
-                        List<String> jobs = null;
-                        try {
-                           try {
-                              jobs = Batch.deleteDeletedJobs(zooKeeper);
-                           } catch (SessionExpiredException see) {
-                              zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                              System.out.println(MESSAGE + "Error removing deleted Jobs, retrying: " + see.getMessage());
-                              jobs = Batch.deleteDeletedJobs(zooKeeper);
-                           }
-
-                           for (String jobName: jobs) {
-                               System.out.println(NAME + " Found deleted job.  Removing: " + jobName);
-                           }
-                        } catch (MerrittStateError mse) {
-                           System.out.println(MESSAGE + "Found items but in failed/processing state: " + mse.getMessage());
-                        } catch (Exception e) {
-                           e.printStackTrace();
-                           System.out.println(MESSAGE + "Error removing deleted jobs: " + e.getMessage());
-                        }
-
-                        //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
-                        break;
-                    }
-*/
 
                 } catch (RejectedExecutionException ree) {
                     System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
