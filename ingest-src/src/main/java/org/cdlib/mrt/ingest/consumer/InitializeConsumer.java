@@ -35,7 +35,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
