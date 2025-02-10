@@ -74,6 +74,7 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
@@ -440,8 +441,8 @@ public class HandlerTransfer extends Handler<JobState>
     	try {
 	    MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
         } catch (KeeperException ke) {
-            ke.printStackTrace();
 	    try {
+		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
 	       MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
 	    } catch (Exception ee) {}

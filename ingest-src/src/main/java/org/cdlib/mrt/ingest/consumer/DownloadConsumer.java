@@ -257,11 +257,11 @@ class DownloadConsumerDaemon implements Runnable
             // Test connection
             zooKeeper.exists("/",false);
         } catch (KeeperException ke) {
-            ke.printStackTrace();
             System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
             try {
+		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-            } catch (IOException ioe){}
+            } catch (Exception ioe){}
         } catch (Exception e) {}
 
 	sessionID = zooKeeper.getSessionId();

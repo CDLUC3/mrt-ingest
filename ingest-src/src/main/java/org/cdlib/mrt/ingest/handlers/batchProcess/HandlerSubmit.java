@@ -44,7 +44,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -53,6 +52,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.utility.LoggerInf;
@@ -191,11 +191,10 @@ public class HandlerSubmit extends Handler<BatchState>
             try {
                 Job.initNodes(zooKeeper);
             } catch (KeeperException ke) {
-                ke.printStackTrace();
                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                 try {
+		    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
             	    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
-                    Thread.currentThread().sleep(2 * 1000);
                     Job.initNodes(zooKeeper);
                 } catch (IOException ioe){}
             } catch (Exception e) {}

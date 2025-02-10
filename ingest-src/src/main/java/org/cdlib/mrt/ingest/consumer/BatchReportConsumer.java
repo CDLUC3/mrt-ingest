@@ -294,11 +294,11 @@ class BatchReportConsumerDaemon implements Runnable
 	    // Test connection
 	    zooKeeper.exists("/",false);
 	} catch (KeeperException ke) {
-	    ke.printStackTrace();
 	    System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
 	    try {
+		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-	    } catch (IOException ioe){}
+	    } catch (Exception ioe){}
 	} catch (Exception e) {}
 
 	sessionID = zooKeeper.getSessionId();
@@ -339,13 +339,12 @@ class BatchReportConsumerDaemon implements Runnable
 		    try {
                        Job.initNodes(zooKeeper);
                     } catch (KeeperException ke) {
-                       ke.printStackTrace();
                        System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                        try {
                		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                            Job.initNodes(zooKeeper);
-                       } catch (IOException ioe){}
+                       } catch (Exception ioe){}
                     } catch (Exception e) {}
 
 		    // To prevent long shutdown, no more than poolsize tasks queued.

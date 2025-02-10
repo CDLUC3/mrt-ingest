@@ -42,7 +42,6 @@ import org.apache.commons.mail.ByteArrayDataSource;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
@@ -56,6 +55,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
