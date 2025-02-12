@@ -312,9 +312,12 @@ class DownloadConsumerDaemon implements Runnable
                                 try {
         	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
                			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                                } catch (Exception e4) {
+                                } finally {
                                    if (job != null) job.unlock(zooKeeper);
-				   break;
-                                } catch (Exception e2) {}
+                                   break;
+                                }
+
                             }
 
                             if ( job != null) {
