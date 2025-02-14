@@ -361,6 +361,11 @@ class EstimateConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
+                                if (job.status() != org.cdlib.mrt.zk.JobState.Estimating) {
+                                   System.err.println(MESSAGE + "Job already processed by Estimate Consumer: " + job.id());
+                                   break;
+                                }
 
 			        JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
 			        String profile = JSONUtil.getValue(jp,"profile");

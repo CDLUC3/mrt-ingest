@@ -321,6 +321,11 @@ class ProvisionConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found provisioning job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
+                                if (job.status() != org.cdlib.mrt.zk.JobState.Provisioning) {
+                                   System.err.println(MESSAGE + "Job already processed by Provision Consumer: " + job.id());
+                                   break;
+                                }
                                 executorService.execute(new ProvisionConsumeData(ingestService, job, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
                             } else {

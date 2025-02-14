@@ -357,6 +357,11 @@ class NotifyConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found notifying job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
+                                if (job.status() != org.cdlib.mrt.zk.JobState.Notify) {
+                                   System.err.println(MESSAGE + "Job already processed by Notify Consumer: " + job.id());
+                                   break;
+                                }
                                 executorService.execute(new NotifyConsumeData(ingestService, job, queueConnectionString));
                     		Thread.currentThread().sleep(5 * 1000);
                             } else {

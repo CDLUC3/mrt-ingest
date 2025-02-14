@@ -328,6 +328,11 @@ class ProcessConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found processing job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
+                                if (job.status() != org.cdlib.mrt.zk.JobState.Processing) {
+                                   System.err.println(MESSAGE + "Job already processed by Process Consumer: " + job.id());
+                                   break;
+                                }
                                 executorService.execute(new ProcessConsumeData(ingestService, job, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
                             } else {
