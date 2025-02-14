@@ -331,6 +331,9 @@ class ProcessConsumerDaemon implements Runnable
                                 System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Processing) {
                                    System.err.println(MESSAGE + "Job already processed by Process Consumer: " + job.id());
+                                   try {
+                                     job.unlock(zooKeeper);
+                                   } catch (Exception el) {}
                                    break;
                                 }
                                 executorService.execute(new ProcessConsumeData(ingestService, job, queueConnectionString));

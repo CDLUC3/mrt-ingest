@@ -364,6 +364,9 @@ class EstimateConsumerDaemon implements Runnable
                                 System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Estimating) {
                                    System.err.println(MESSAGE + "Job already processed by Estimate Consumer: " + job.id());
+                                   try {
+                                     job.unlock(zooKeeper);
+                                   } catch (Exception el) {}
                                    break;
                                 }
 

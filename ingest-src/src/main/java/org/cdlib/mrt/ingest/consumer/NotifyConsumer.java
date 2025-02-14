@@ -360,6 +360,9 @@ class NotifyConsumerDaemon implements Runnable
                                 System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Notify) {
                                    System.err.println(MESSAGE + "Job already processed by Notify Consumer: " + job.id());
+                                   try {
+                                     job.unlock(zooKeeper);
+                                   } catch (Exception el) {}
                                    break;
                                 }
                                 executorService.execute(new NotifyConsumeData(ingestService, job, queueConnectionString));

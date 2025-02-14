@@ -362,6 +362,9 @@ class InitializeConsumerDaemon implements Runnable
                                 System.out.println("========> Job Status: " + job.status());
 				if (job.status() != org.cdlib.mrt.zk.JobState.Pending) {
                                    System.err.println(MESSAGE + "Job already processed by Initialize Consumer: " + job.id());
+				   try { 
+		                     job.unlock(zooKeeper);
+				   } catch (Exception el) {} 
 				   break;
 				}
 

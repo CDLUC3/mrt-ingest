@@ -324,6 +324,9 @@ class ProvisionConsumerDaemon implements Runnable
                                 System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Provisioning) {
                                    System.err.println(MESSAGE + "Job already processed by Provision Consumer: " + job.id());
+                                   try {
+                                     job.unlock(zooKeeper);
+                                   } catch (Exception el) {}
                                    break;
                                 }
                                 executorService.execute(new ProvisionConsumeData(ingestService, job, queueConnectionString));
