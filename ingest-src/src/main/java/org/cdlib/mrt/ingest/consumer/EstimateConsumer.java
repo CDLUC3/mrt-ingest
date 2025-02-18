@@ -35,7 +35,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
@@ -46,6 +45,7 @@ import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.zk.Job;
@@ -259,7 +259,6 @@ class EstimateConsumerDaemon implements Runnable
     private int keepAliveTime = 60;     // when poolSize is exceeded
 
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 3600000;  // 1 hour
 
     // session data
     private long sessionID;
@@ -278,7 +277,7 @@ class EstimateConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -297,11 +296,11 @@ class EstimateConsumerDaemon implements Runnable
             // Test connection
             zooKeeper.exists("/",false);
         } catch (KeeperException ke) {
-            ke.printStackTrace();
             System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
             try {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-            } catch (IOException ioe){}
+	       Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch (Exception ioe){}
         } catch (Exception e) {}
 
 	sessionID = zooKeeper.getSessionId();
@@ -347,34 +346,29 @@ class EstimateConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
-			    } catch (NodeExistsException nee) {
-				nee.printStackTrace();
-				break;
-                            } catch (ConnectionLossException cle) {
-                                cle.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Connection loss.  Reconnecting...");
-                                try {
-                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
-                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
-                                } catch (IOException ioe){}
-                            } catch (SessionExpiredException see) {
-                                see.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Session Expired.  Reconnecting...");
-                                try {
-                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
-                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
-                                } catch (IOException ioe){}
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
+                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
-                                   job.unlock(zooKeeper);
-                                } catch (Exception e2) {}
+        	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
+               			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                                } catch (Exception e4) {
+                                } finally {
+                                   if (job != null) job.unlock(zooKeeper);
+                                   break;
+                                }
+
                             }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
+                                if (job.status() != org.cdlib.mrt.zk.JobState.Estimating) {
+                                   System.err.println(MESSAGE + "Job already processed by Estimate Consumer: " + job.id());
+                                   try {
+                                     job.unlock(zooKeeper);
+                                   } catch (Exception el) {}
+                                   break;
+                                }
 
 			        JSONObject jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
 			        String profile = JSONUtil.getValue(jp,"profile");
@@ -507,7 +501,6 @@ class EstimateConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 3600000;         // 1 hour
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -529,12 +522,13 @@ class EstimateConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	    try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-	    } catch (SessionExpiredException see) {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+	    } catch (Exception e) {
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    }
@@ -568,18 +562,34 @@ class EstimateConsumeData implements Runnable
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-            } catch (SessionExpiredException see) {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            } catch (Exception e) {
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             }
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: EstimateConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Provisioning);
+                try {
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+                } catch (MerrittStateError mse) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
+                }
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-                System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		try {
+                   System.out.println("[item]: EstimateConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                } catch (Exception see) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + see.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                }
+
 	    } else {
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
@@ -633,8 +643,6 @@ class EstimateCleanupDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
-    public static int sessionTimeout = 3600000;	// 1 hour
-
 
     // Constructor
     public EstimateCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
@@ -642,7 +650,7 @@ class EstimateCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
@@ -682,48 +690,6 @@ class EstimateCleanupDaemon implements Runnable
                     long numActiveTasks = 0;
 		    Job job = null;
 		    Batch batch = null;
-
-		    // COMPLETED JOBS
-/*
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning JOB queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Completed);
-			   if (job != null) {
-			       System.out.println(NAME + " Found completed job.  Removing: " + job.id() + " - " + job.primaryId());
-			       job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
-
-                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
-                    }
-
-		   
-		    // DELETED JOBS
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Deleted);
-                           if (job != null) {
-                               System.out.println(NAME + " Found deleted job.  Removing: " + job.id() + " - " + job.primaryId());
-                               job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-
-                        Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
-                    }
-*/
 
 		    // COMPLETED BATCHES
                     while (true) {

@@ -47,6 +47,7 @@ import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.ZKKey;
 import org.cdlib.mrt.zk.MerrittJsonKey;
@@ -254,7 +255,6 @@ class NotifyConsumerDaemon implements Runnable
     private Integer pollingInterval = 15;	// seconds
     private Integer poolSize = null;
     private int keepAliveTime = 60;     // when poolSize is exceeded
-    public static int sessionTimeout = 3600000;         // 1 hour
 
     private ZooKeeper zooKeeper = null;
 
@@ -275,7 +275,7 @@ class NotifyConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
 	}
@@ -293,11 +293,11 @@ class NotifyConsumerDaemon implements Runnable
             // Test connection
             zooKeeper.exists("/",false);
         } catch (KeeperException ke) {
-            ke.printStackTrace();
             System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
             try {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-            } catch (IOException ioe){}
+		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch (Exception ioe){}
         } catch (Exception e) {}
 
 	sessionID = zooKeeper.getSessionId();
@@ -343,23 +343,28 @@ class NotifyConsumerDaemon implements Runnable
                             Job job = null;
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Notify);
-                            } catch (KeeperException ke) {
-                                ke.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
-                                try {
-                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
-                                   job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Notify);
-                                } catch (IOException ioe){}
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring job.  Unlocking job.");
+                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
-                                   job.unlock(zooKeeper);
-                                } catch (Exception e2) {}
+        	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
+               			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                                } catch (Exception e4) {
+                                } finally {
+                                   if (job != null) job.unlock(zooKeeper);
+                                   break;
+                                }
                             }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found notifying job data: " + job.id());
+                                System.out.println("========> Job Status: " + job.status());
+                                if (job.status() != org.cdlib.mrt.zk.JobState.Notify) {
+                                   System.err.println(MESSAGE + "Job already processed by Notify Consumer: " + job.id());
+                                   try {
+                                     job.unlock(zooKeeper);
+                                   } catch (Exception el) {}
+                                   break;
+                                }
                                 executorService.execute(new NotifyConsumeData(ingestService, job, queueConnectionString));
                     		Thread.currentThread().sleep(5 * 1000);
                             } else {
@@ -451,7 +456,6 @@ class NotifyConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 3600000;	// 1 hour
 
     private Job job = null;
     private IngestServiceInf ingestService = null;
@@ -473,12 +477,13 @@ class NotifyConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-            } catch (SessionExpiredException see) {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            } catch (Exception e) {
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             }
@@ -515,8 +520,9 @@ class NotifyConsumeData implements Runnable
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-            } catch (SessionExpiredException see) {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            } catch (Exception e) {
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             }
@@ -527,14 +533,24 @@ class NotifyConsumeData implements Runnable
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");
 		} catch (MerrittStateError mse) {
-		   mse.printStackTrace();
-                   // job.setStatus(zooKeeper, job.status().success(), "Success");
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, job.status().success(), "Success");
 		} catch (Exception e) {
 		   e.printStackTrace();
 		}
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
                 System.out.println("[item]: NotifyConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
-                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+		try {
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                } catch (Exception see) {
+                   System.err.println(MESSAGE + "[WARN] error changing job status: " + see.getMessage());
+                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                   job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
+                }
+
 	    } else {
 		System.out.println("NotifyConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
@@ -581,7 +597,6 @@ class NotifyCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 3600000;  // 1 hour
 
     private ZooKeeper zooKeeper = null;
 
@@ -596,7 +611,7 @@ class NotifyCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
         } catch (Exception e) {
             e.printStackTrace(System.err);
         } finally {

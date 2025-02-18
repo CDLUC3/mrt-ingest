@@ -33,8 +33,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
-import org.apache.zookeeper.KeeperException.SessionExpiredException;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
@@ -45,6 +43,7 @@ import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.Job;
 import org.cdlib.mrt.zk.ZKKey;
@@ -262,7 +261,6 @@ class BatchReportConsumerDaemon implements Runnable
     // session data
     private long sessionID;
     private byte[] sessionAuth;
-    public static int sessionTimeout = 3600000;  // 1 hour
 
 
     // Constructor
@@ -277,7 +275,7 @@ class BatchReportConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -296,11 +294,11 @@ class BatchReportConsumerDaemon implements Runnable
 	    // Test connection
 	    zooKeeper.exists("/",false);
 	} catch (KeeperException ke) {
-	    ke.printStackTrace();
 	    System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
 	    try {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-	    } catch (IOException ioe){}
+		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	    } catch (Exception ioe){}
 	} catch (Exception e) {}
 
 	sessionID = zooKeeper.getSessionId();
@@ -341,13 +339,12 @@ class BatchReportConsumerDaemon implements Runnable
 		    try {
                        Job.initNodes(zooKeeper);
                     } catch (KeeperException ke) {
-                       ke.printStackTrace();
                        System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                        try {
-                           zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                           Thread.currentThread().sleep(2 * 1000);
+               		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                           zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                            Job.initNodes(zooKeeper);
-                       } catch (IOException ioe){}
+                       } catch (Exception ioe){}
                     } catch (Exception e) {}
 
 		    // To prevent long shutdown, no more than poolsize tasks queued.
@@ -359,20 +356,17 @@ class BatchReportConsumerDaemon implements Runnable
 			    Batch batch = null;
 			    try {
 			        batch = Batch.acquireBatchForReporting(zooKeeper);
-                            } catch (KeeperException ke) {
-                                ke.printStackTrace();
-                                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
-                                try {
-                                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                                   Thread.currentThread().sleep(2 * 1000);
-			           batch = Batch.acquireBatchForReporting(zooKeeper);
-                                } catch (IOException ioe){}
                             } catch (Exception e) {
-                                System.out.println(MESSAGE + "[WARN] error acquiring batch.  Unlocking batch. " + e.getMessage());
-                                e.printStackTrace();
+                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
+                                // e.printStackTrace();
                                 try {
-                                   batch.unlock(zooKeeper);
-                                } catch (Exception e2) {}
+               			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                                } catch (Exception e4) {
+                                } finally {
+                                   if (batch != null) batch.unlock(zooKeeper);
+                                   break;
+                                }
                             }
 
 			    if ( batch != null) { 
@@ -467,7 +461,6 @@ class BatchReportConsumeData implements Runnable
 
     private String queueConnectionString = null;
     private ZooKeeper zooKeeper = null;
-    public static int sessionTimeout = 3600000;	// 1 hour
 
     private IngestServiceInf ingestService = null;
     private BatchState batchState = null;
@@ -490,11 +483,12 @@ class BatchReportConsumeData implements Runnable
 	    // UTF-8 ??
             JSONObject jp = null;
             JSONObject ji = null;
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
-            } catch (SessionExpiredException see) {
-               zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            } catch (Exception e) {
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             }
             ji = Job.createJobIdentifiers(JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"localID"));
@@ -554,7 +548,6 @@ class BatchReportCleanupDaemon implements Runnable
 
     private String queueConnectionString = null;
     private Integer pollingInterval = 3600;	// seconds
-    public static int sessionTimeout = 3600000;         // 1 hour
 
     private ZooKeeper zooKeeper = null;
 
@@ -569,7 +562,7 @@ class BatchReportCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
@@ -641,9 +634,10 @@ class BatchReportCleanupDaemon implements Runnable
                         try {
 			   try {
                               batches = Batch.deleteCompletedBatches(zooKeeper);
-			   } catch (SessionExpiredException see) {
-               		      zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                              System.out.println(MESSAGE + "Error removing completed batches, retrying: " + see.getMessage());
+			   } catch (Exception e) {
+               		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                              System.out.println(MESSAGE + "Error removing completed batches, retrying: " + e.getMessage());
                               batches = Batch.deleteCompletedBatches(zooKeeper);
 			   }
 
@@ -660,35 +654,6 @@ class BatchReportCleanupDaemon implements Runnable
                         //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
 			break;
                     }
-
-		    // DELETED JOBS that are orphaned
-/*
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning Job queue (DELETED states): " + queueConnectionString);
-                        List<String> jobs = null;
-                        try {
-                           try {
-                              jobs = Batch.deleteDeletedJobs(zooKeeper);
-                           } catch (SessionExpiredException see) {
-                              zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
-                              System.out.println(MESSAGE + "Error removing deleted Jobs, retrying: " + see.getMessage());
-                              jobs = Batch.deleteDeletedJobs(zooKeeper);
-                           }
-
-                           for (String jobName: jobs) {
-                               System.out.println(NAME + " Found deleted job.  Removing: " + jobName);
-                           }
-                        } catch (MerrittStateError mse) {
-                           System.out.println(MESSAGE + "Found items but in failed/processing state: " + mse.getMessage());
-                        } catch (Exception e) {
-                           e.printStackTrace();
-                           System.out.println(MESSAGE + "Error removing deleted jobs: " + e.getMessage());
-                        }
-
-                        //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
-                        break;
-                    }
-*/
 
                 } catch (RejectedExecutionException ree) {
                     System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
