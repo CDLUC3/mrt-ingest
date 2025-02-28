@@ -144,7 +144,7 @@ public class HandlerNotification extends Handler<BatchState>
 	    JSONArray jac = new JSONArray();
    	    JSONObject jctemp = new JSONObject();
 	    for (Job jobCompleted: jobs) {
-   	        jobCompleted.load(zooKeeper);
+   	        jobCompleted.load(zooKeeper, false);
 		// overwrite localID
    	        jac.put(jobCompleted.data().put("localID", jobCompleted.localId()));
 	    }
@@ -157,7 +157,7 @@ public class HandlerNotification extends Handler<BatchState>
 	    JSONArray jaf = new JSONArray();
    	    JSONObject jftemp = new JSONObject();
 	    for (Job jobFailed: jobs) {
-   	        jobFailed.load(zooKeeper);
+   	        jobFailed.load(zooKeeper, false);
    	        jftemp = jobFailed.data();
 
 		// Add error status
@@ -172,7 +172,7 @@ public class HandlerNotification extends Handler<BatchState>
 	    JSONObject jfail = new JSONObject();
 	    jfail.put("failedJobs", jaf);
 
-	    batch.loadProperties(zooKeeper);
+	    batch.loadProperties(zooKeeper, false);
   	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled
 	    if (jobState.grabAltNotification() == null) {
 	        for (Notification recipient : profileState.getContactsEmail()) {
