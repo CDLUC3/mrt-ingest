@@ -516,7 +516,7 @@ class ProvisionConsumeData implements Runnable
 	    } else {
 		System.out.println("ProvisionConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
-            job.unlock(zooKeeper);
+            // job.unlock(zooKeeper);
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);

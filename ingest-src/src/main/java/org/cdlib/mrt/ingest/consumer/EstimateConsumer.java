@@ -593,7 +593,7 @@ class EstimateConsumeData implements Runnable
 	    } else {
 		System.out.println("EstimateConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
-	    boolean stat = job.unlock(zooKeeper);
+	    // boolean stat = job.unlock(zooKeeper);
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
@@ -610,10 +610,10 @@ class EstimateConsumeData implements Runnable
            System.out.println("Exception [error] Consuming queue data");
         } finally {
 	   try {
-                job.unlock(zooKeeper);
+		job.unlock(zooKeeper);
 	   } catch(Exception ze) {}
 	   try {
-                zooKeeper.close();
+	       zooKeeper.close();
 	   } catch(Exception ze) {}
 	} 
     }
