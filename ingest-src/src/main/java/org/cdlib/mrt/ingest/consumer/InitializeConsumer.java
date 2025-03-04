@@ -576,7 +576,7 @@ class InitializeConsumeData implements Runnable
 	    } else {
 		System.out.println("InitializeConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
-	    boolean stat = job.unlock(zooKeeper);
+	    // boolean stat = job.unlock(zooKeeper);
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);

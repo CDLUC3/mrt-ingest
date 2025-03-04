@@ -554,7 +554,7 @@ class NotifyConsumeData implements Runnable
 	    } else {
 		System.out.println("NotifyConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
-            job.unlock(zooKeeper);
+            // job.unlock(zooKeeper);
 
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
