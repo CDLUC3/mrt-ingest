@@ -139,6 +139,9 @@ public class HandlerCallback extends Handler<JobState> {
 	    }
 
             String jobStateString = formatterUtil.doStateFormatting(jobState, formatType);
+System.out.println("================================ CALLBACK ");
+System.out.println(jobStateString);
+System.out.println("================================ CALLBACK ");
             HttpPost httppost = new HttpPost(requestURL.toString());
             HttpResponse clientResponse = null;
             long startTime = DateUtil.getEpochUTCDate();

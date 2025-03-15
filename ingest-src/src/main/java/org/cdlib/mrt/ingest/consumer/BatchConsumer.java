@@ -357,7 +357,7 @@ class BatchConsumerDaemon implements Runnable
 			    try {
                                 batch = Batch.acquirePendingBatch(zooKeeper);
                             } catch (Exception e) {
-                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
+                                System.err.println(MESSAGE + "[WARN] error acquiring batch: " + e.getMessage());
 				try {
                			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
@@ -485,6 +485,7 @@ class BatchConsumeData implements Runnable
 	    // UTF-8 ??
             JSONObject jp = null;
             JSONObject ji = null;
+            // JSONObject jpr = new JSONObject();
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
@@ -494,13 +495,16 @@ class BatchConsumeData implements Runnable
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             }
 	    ji = Job.createJobIdentifiers(JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"localID"));
+	    // jpr = jpr.put(ZKKey.JOB_PRIORITY.key(), 0);	// Not defined at batch level
 
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming batch queue " + batch.id() + " - " + jp.toString() + " - " + ji.toString());
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming batch queue " + batch.id() + " - " 
+		+ jp.toString() + " - " + ji.toString());
+		// + jp.toString() + " - " + ji.toString() + " - " + jpr.toString());
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji, 0, 0L);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+	    // ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +

@@ -449,23 +449,29 @@ class ProcessConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
+            long spaceNeeded = 0L;
+            int priority = 0;
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority = job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             }
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString() + 
+		" - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
 
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString());
-
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji, priority, spaceNeeded);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+            ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
 
 	    // Populate Ids
 	    // if (! job.localId().isEmpty()) ingestRequest.getJob().setLocalID(job.localId());
@@ -550,15 +556,21 @@ class ProcessConsumeData implements Runnable
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority = job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority = job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             }
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString());
+                if (DEBUG) System.out.println("[item]: ProcessConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString()
+		    + " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
+
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");
 		} catch (MerrittStateError mse) {

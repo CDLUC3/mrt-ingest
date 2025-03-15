@@ -412,7 +412,8 @@ class RetrieveData implements Callable<String>
 	    new File(f.getParent()).mkdirs();
 	    if (! f.exists()) {
 	        if (! f.createNewFile()) {
-		    throw new Exception("Error creating target file: " + f.getAbsolutePath());
+	            System.out.println("[error] creating target file. Already created: " + f.getAbsolutePath());
+		    throw new IOException("Error file already exists: " + f.getAbsolutePath());
 	        }
 	    } else {
 	        System.out.println("[error] file already exists: " + f.getAbsolutePath());

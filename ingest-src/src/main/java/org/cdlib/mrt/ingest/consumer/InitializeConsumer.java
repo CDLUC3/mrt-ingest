@@ -512,23 +512,32 @@ class InitializeConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
+            JSONObject js = null;
+            JSONObject jpr = null;
+            long spaceNeeded = 0L;
+            int priority = 0;
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
-	    try {
+            try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-	    } catch (Exception e) {
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
+            } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-	    }
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString());
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
+            }
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString() 
+		+ " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji, priority, spaceNeeded);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+            ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
@@ -545,15 +554,21 @@ class InitializeConsumeData implements Runnable
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             }
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString());
+                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString()
+		    + " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
+
 		try {
                    job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                 } catch (Exception mse) {
