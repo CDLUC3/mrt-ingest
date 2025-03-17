@@ -541,7 +541,7 @@ class NotifyConsumeData implements Runnable
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: NotifyConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString()
-		    + jp.toString() + " - " + ji.toString() + " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
+		    + " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
 
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");

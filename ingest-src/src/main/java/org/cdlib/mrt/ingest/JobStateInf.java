@@ -153,5 +153,5 @@ public interface JobStateInf
      * Get job queue priority (00-99, 00=highest)
      * @return String priority
      */
-    public String grabQueuePriority();
+    public String getQueuePriority();
 }

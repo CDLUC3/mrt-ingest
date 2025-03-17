@@ -581,18 +581,17 @@ class EstimateConsumeData implements Runnable
 
 	    // Alter priority if no content-length provided
 	    int newPriority = 0;
-	    // if (submissionSize  <= 0) {
-	    if (submissionSize  >  0) {
+	    if (submissionSize  <= 0) {
                 try {
 	    	   priority = job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
 		   newPriority = priority + penalizeForNoContentLength;
                    if (DEBUG) System.out.println(NAME + " [info] Penalizing for no Content-Length: " + job.id() + " - " + newPriority);
-		   job.setData(zooKeeper, ZKKey.JOB_PRIORITY, newPriority);
+		   job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, newPriority);
                    ingestRequest.getJob().setQueuePriority(Integer.toString(newPriority));
                 } catch (Exception e) {
                    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                   job.setData(zooKeeper, ZKKey.JOB_PRIORITY, submissionSize);
+		   job.setStatusWithPriority(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating, newPriority);
                    ingestRequest.getJob().setQueuePriority(Integer.toString(newPriority));
                 }
 	    }

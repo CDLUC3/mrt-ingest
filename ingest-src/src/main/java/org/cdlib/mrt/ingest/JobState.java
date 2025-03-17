@@ -565,7 +565,7 @@ public class JobState
      * Get job queue priority
      * @return String job queue priority
      */
-    public String grabQueuePriority() {		// non-displayable
+    public String getQueuePriority() {		// non-displayable
         return queuePriority;
     }
 
