@@ -581,7 +581,7 @@ class EstimateConsumeData implements Runnable
 
 	    // Alter priority if no content-length provided
 	    int newPriority = 0;
-	    if (submissionSize  <= 0) {
+	    if (submissionSize  < 0) {
                 try {
 	    	   priority = job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
 		   newPriority = priority + penalizeForNoContentLength;

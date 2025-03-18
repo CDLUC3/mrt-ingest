@@ -234,7 +234,8 @@ public class HandlerEstimate extends Handler<JobState>
 				submissionSize += s;
                             }
                         }
-
+			// Differeniiate from a zero length file
+			if (submissionSize == 0) submissionSize = -1;
                     } catch (Exception e) {
                         e.printStackTrace(System.err);
                         System.err.println("Error in calculating Manifest size");
@@ -244,30 +245,6 @@ public class HandlerEstimate extends Handler<JobState>
 
                     if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest size calculation successful: " + jobState.getPackageName() + ": " + submissionSize);
 		    jobState.setSubmissionSize(submissionSize);
-
-/*
-		    // Populate Zookeeper znodes with Estimate size
-		    String queueConnectionString = jobState.grabMisc();
-		    try {
-			zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-			job.setData(zooKeeper, ZKKey.JOB_SPACE_NEEDED, submissionSize);
-		    } catch (KeeperException ke) {
-			try {
-			    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-			    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-			    job.setData(zooKeeper, ZKKey.JOB_SPACE_NEEDED, submissionSize);
-		    	} catch (Exception ee) {}
-		    }
-
-		    // Do we alter priority 
-		    if (submissionSize == 0L) {
-                        if (DEBUG) System.out.println("[info] " + MESSAGE + "No Content-Length provided: " + jobState.getPackageName());
-
-			
-		    }
-
-*/
-
 
                 }
 
