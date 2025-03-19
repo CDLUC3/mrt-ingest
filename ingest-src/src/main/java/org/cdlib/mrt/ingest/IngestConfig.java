@@ -194,7 +194,7 @@ public class IngestConfig
         if (ingInfoConfig == null) {
             ingInfoConfig = "ingest-info";
         }
-        System.out.println("TBTB "+ingInfoConfig)
+        System.out.println("TBTB "+ingInfoConfig);
         return ingInfoConfig;
     }
 
