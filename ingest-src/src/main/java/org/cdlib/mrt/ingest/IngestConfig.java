@@ -170,7 +170,6 @@ public class IngestConfig
             }
             yamlParser.loadConfigMap(lmap);
             yamlParser.resolveValues();
-            System.out.println("TBTB "+yamlParser.getJson());
             return yamlParser.getJson();
 
         } catch (TException tex) {
@@ -195,7 +194,6 @@ public class IngestConfig
         if (ingInfoConfig == null) {
             ingInfoConfig = "ingest-info";
         }
-        System.out.println("TBTB "+ingInfoConfig);
         return ingInfoConfig;
     }
 
