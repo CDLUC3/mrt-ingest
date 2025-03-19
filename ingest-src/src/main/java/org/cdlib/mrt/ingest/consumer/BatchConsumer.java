@@ -272,11 +272,12 @@ class BatchConsumerDaemon implements Runnable
 	this.poolSize = poolSize;
 
 	try {
-        System.out.println("TBTB1.");
+        System.out.println("TBTB1. "+queueConnectionString);
         ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            System.out.println("TBTB1. "+zooKeeper);
 
             System.out.println("TBTB1 "+zooKeeper.getChildren("/", false));
 
@@ -300,6 +301,7 @@ class BatchConsumerDaemon implements Runnable
             System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
             try {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               System.out.println("TBTB2. "+queueConnectionString);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             } catch (Exception ioe){}
         } catch (Exception e) {}
@@ -345,7 +347,8 @@ class BatchConsumerDaemon implements Runnable
                        System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                        try {
                		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-                           zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                          System.out.println("TBTB3. "+queueConnectionString);
+                          zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                            Job.initNodes(zooKeeper);
                        } catch (Exception ioe){}
                    } catch (Exception e) {}
@@ -363,7 +366,8 @@ class BatchConsumerDaemon implements Runnable
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
 				try {
                			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                              System.out.println("TBTB4. "+queueConnectionString);
+                              zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                 } catch (Exception e4) {
                                 } finally {
                                    if (batch != null) batch.unlock(zooKeeper);
@@ -488,11 +492,13 @@ class BatchConsumeData implements Runnable
 	    // UTF-8 ??
             JSONObject jp = null;
             JSONObject ji = null;
+            System.out.println("TBTB5. "+queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               System.out.println("TBTB6. "+queueConnectionString);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             }
@@ -564,6 +570,7 @@ class BatchCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
+            System.out.println("TBTB7. "+queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
         } catch (Exception e) {
