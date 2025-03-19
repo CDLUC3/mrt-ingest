@@ -170,6 +170,7 @@ public class IngestConfig
             }
             yamlParser.loadConfigMap(lmap);
             yamlParser.resolveValues();
+            System.out.println("TBTB "+yamlParser.getJson());
             return yamlParser.getJson();
 
         } catch (TException tex) {
