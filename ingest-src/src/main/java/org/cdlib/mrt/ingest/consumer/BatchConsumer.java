@@ -272,10 +272,13 @@ class BatchConsumerDaemon implements Runnable
 	this.poolSize = poolSize;
 
 	try {
-            ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
+        System.out.println("TBTB1.");
+        ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+
+            System.out.println("TBTB1 "+zooKeeper.getChildren("/", false));
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
