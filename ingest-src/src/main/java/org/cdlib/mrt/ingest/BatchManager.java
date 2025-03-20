@@ -365,8 +365,9 @@ public class BatchManager {
                 } else {
                    onHold = "thawed";
                 }
-                ingestState.setSubmissionState(onHold);
 								System.out.println("TBTBA13: ");
+                ingestState.setSubmissionState(onHold);
+								System.out.println("TBTBA14: ");
 
                 // Collection submission state
                 // String heldCollections = MerrittLocks.getHeldCollections(zooKeeper);
