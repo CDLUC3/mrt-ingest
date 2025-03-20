@@ -106,6 +106,7 @@ public class HandlerSubmit extends Handler<BatchState>
 
 
             // open a single connection to zookeeper for all queue posting
+						System.out.println("TBTBF1: "+ batchState.grabTargetQueue());
             zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
 
 	    // common across all jobs in batch
@@ -194,7 +195,8 @@ public class HandlerSubmit extends Handler<BatchState>
                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                 try {
 		    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-            	    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+				System.out.println("TBTBF2: "+ batchState.grabTargetQueue());
+				zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
                     Job.initNodes(zooKeeper);
                 } catch (IOException ioe){}
             } catch (Exception e) {}

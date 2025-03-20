@@ -125,7 +125,8 @@ public class HandlerNotification extends Handler<BatchState>
                 }
 	    } catch (Exception e) {}
 
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+			System.out.println("TBTBG1: "+ batchState.grabTargetQueue());
+			zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
 
 	    String batchID = batchState.getBatchID().getValue();
 	    Batch batch = Batch.findByUuid(zooKeeper, batchID);

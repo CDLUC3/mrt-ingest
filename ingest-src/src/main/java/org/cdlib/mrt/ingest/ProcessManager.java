@@ -463,7 +463,8 @@ public class ProcessManager {
 				}
 				if (! skipLock) {
                                     System.out.println("[localID Check] LocalID locking starting.");
-            			    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+																		System.out.println("TBTBC1: "+ queueConnectionString);
+																		zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
     				    localIDLock = getLocalIDLock(zooKeeper, jobState.getLocalID().getValue(), jobState.grabObjectProfile().getOwner());
 				} else {
                                     System.out.println("[localID Check] No LocalID locking needed");
@@ -615,7 +616,8 @@ public class ProcessManager {
            boolean unitTest = false;
            try {
 		try {
-                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+			System.out.println("TBTBC2: "+ queueConnectionString);
+			zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 		} catch (Exception e) {
 		   // Unit test catch
 		   unitTest = true;

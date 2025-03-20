@@ -276,6 +276,7 @@ class BatchConsumerDaemon implements Runnable
         ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
+            System.out.println("TBTB1: "+ queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             System.out.println("TBTB1. "+zooKeeper);
 

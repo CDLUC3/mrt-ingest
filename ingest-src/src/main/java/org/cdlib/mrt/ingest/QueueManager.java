@@ -262,7 +262,8 @@ public class QueueManager {
         public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
                 ZooKeeper zooKeeper = null;
                 try {
-                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+									System.out.println("TBTBD1: "+ queueConnectionString);
+									zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
                         IngestServiceState ingestState = new IngestServiceState();
 			if (StringUtil.isNotEmpty(collection)) {
@@ -324,7 +325,7 @@ public class QueueManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-		System.out.println("TBTBB2: "+ queueConnectionString);
+		System.out.println("TBTBD2: "+ queueConnectionString);
                 zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name
