@@ -324,6 +324,7 @@ public class QueueManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
+		System.out.println("TBTBB2: "+ queueConnectionString);
                 zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name

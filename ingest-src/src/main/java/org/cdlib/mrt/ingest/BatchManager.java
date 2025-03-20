@@ -293,6 +293,7 @@ public class BatchManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
+		System.out.println("TBTBB1: "+ queueConnectionString);
                 zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
 
 		// name
@@ -343,6 +344,8 @@ public class BatchManager {
 			throw new TException.INVALID_CONFIGURATION("[error] " + MESSAGE + SUPPORTURI + " parameter is not available");
 		}
 
+		System.out.println("TBTBA11: ");
+
 		// mail-host
 		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
@@ -352,6 +355,7 @@ public class BatchManager {
 			if (DEBUG)
 				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
+		System.out.println("TBTBA12: ");
 		ingestState.setMailHost(mailHost);
 
                 String onHold = null;
@@ -362,6 +366,7 @@ public class BatchManager {
                    onHold = "thawed";
                 }
                 ingestState.setSubmissionState(onHold);
+								System.out.println("TBTBA13: ");
 
                 // Collection submission state
                 // String heldCollections = MerrittLocks.getHeldCollections(zooKeeper);
