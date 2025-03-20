@@ -642,7 +642,7 @@ class InitializeCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
-            System.out.println("TBTBA10: " + queueConnectionString);
+            System.out.println("TBTBA10:  " + queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
         } catch (Exception e) {
             e.printStackTrace(System.err);
