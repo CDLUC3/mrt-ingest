@@ -85,7 +85,7 @@ public class UpdateBatchReportConsumer extends HttpServlet
     private volatile Thread consumerThread = null;
     private volatile Thread cleanupThread = null;
 
-    private String queueConnectionString = "localhost:2181";	// default single server connection
+    private String queueConnectionString = "localhost:2182";	// default single server connection
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
