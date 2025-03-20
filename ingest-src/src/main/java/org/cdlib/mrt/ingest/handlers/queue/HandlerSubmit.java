@@ -102,6 +102,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	try {
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
+						System.out.println("TBTBH1: "+batchState.grabTargetQueue());
             zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
 	    priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
 	    if (profileState.getPriority() != null) {

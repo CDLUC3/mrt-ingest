@@ -138,7 +138,8 @@ public class HandlerTransfer extends Handler<JobState>
 	zooLockNode = jobState.grabExtra();
 
 	try {
-            zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
+        System.out.println("TBTBG1: "+zooConnectString);
+        zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
 	    boolean lock = getLock(zooKeeper, jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
 	    originalStoreNode = profileState.getTargetStorage();
@@ -443,6 +444,7 @@ public class HandlerTransfer extends Handler<JobState>
         } catch (KeeperException ke) {
 	    try {
 		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+        System.out.println("TBTBG2: "+zooConnectString);
                zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
 	       MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
 	    } catch (Exception ee) {}
