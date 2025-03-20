@@ -276,6 +276,7 @@ class InitializeConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
+            System.out.println("TBTBA1: " + queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	} catch (Exception e) {
@@ -298,7 +299,8 @@ class InitializeConsumerDaemon implements Runnable
             System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
             try {
 		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+        System.out.println("TBTBA2: " + queueConnectionString);
+        zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             } catch (Exception ioe){}
         } catch (Exception e) {}
 
@@ -349,7 +351,8 @@ class InitializeConsumerDaemon implements Runnable
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
         	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
-               			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                           System.out.println("TBTBA3: " + queueConnectionString);
+                           zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                 } catch (Exception e4) {
 				} finally {
                                    if (job != null) job.unlock(zooKeeper);
@@ -512,6 +515,7 @@ class InitializeConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
+            System.out.println("TBTBA4: " + queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	    try {
@@ -519,6 +523,7 @@ class InitializeConsumeData implements Runnable
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
 	    } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               System.out.println("TBTBA5: " + queueConnectionString);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -547,6 +552,7 @@ class InitializeConsumeData implements Runnable
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
             } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               System.out.println("TBTBA6 " + queueConnectionString);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -559,6 +565,7 @@ class InitializeConsumeData implements Runnable
                 } catch (Exception mse) {
                    System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
                    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   System.out.println("TBTBA7: " + queueConnectionString);
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                    job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
 		}
@@ -569,6 +576,7 @@ class InitializeConsumeData implements Runnable
                 } catch (Exception see) {
                    System.err.println(MESSAGE + "[WARN] error changing job status: " + see.getMessage());
                    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                   System.out.println("TBTBA8: " + queueConnectionString);
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                    job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
                 }
@@ -634,6 +642,7 @@ class InitializeCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
+            System.out.println("TBTBA10: " + queueConnectionString);
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
         } catch (Exception e) {
             e.printStackTrace(System.err);
