@@ -469,6 +469,7 @@ class ProvisionConsumeData implements Runnable
             ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
+	    ingestRequest.getJob().setSubmissionSize(spaceNeeded);
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
@@ -501,6 +502,7 @@ class ProvisionConsumeData implements Runnable
                spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
                priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             }
+
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
                 if (DEBUG) System.out.println("[item]: ProvisionConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString()

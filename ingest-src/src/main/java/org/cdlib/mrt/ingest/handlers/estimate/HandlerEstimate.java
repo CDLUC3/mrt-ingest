@@ -58,13 +58,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.http.HttpEntity;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
-import org.apache.zookeeper.KeeperException.SessionExpiredException;
-
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -84,7 +77,6 @@ import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
 import org.cdlib.mrt.core.ManifestRowInf;
 import org.cdlib.mrt.core.ManifestRowIngest;
-import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.TRuntimeException;
@@ -111,7 +103,6 @@ public class HandlerEstimate extends Handler<JobState>
     private Properties conf = null;
     private int thread_pool_size = 4;   // Default
     protected static final Logger log4j2 = LogManager.getLogger();
-    private ZooKeeper zooKeeper = null;
     private String zooConnectString = null;
 
 
@@ -193,6 +184,7 @@ public class HandlerEstimate extends Handler<JobState>
                         String objectName = fileComponent.getIdentifier();
                         if (objectNames.contains(objectName)) {
                             System.err.println("[error] Duplicate manifest entry detected: " + objectName);
+			    ThreadContext.put("Duplicate manifest entry detected: ", objectName + " - " + jobState.getPackageName() + " - " + jobState.grabObjectProfile().getCollectionName());
             		    return new HandlerResult(false, "Error: " + NAME + " Duplicate manifest entry detected: " + objectName, 0);
                         } else {
 			    objectNames.add(objectName);
@@ -267,11 +259,6 @@ public class HandlerEstimate extends Handler<JobState>
 
     }
 
-
-    public static class Ignorer implements Watcher {
-	public void process(WatchedEvent event) {	
-	}
-    }
 
 
     // Calculate size of data in producer directory
