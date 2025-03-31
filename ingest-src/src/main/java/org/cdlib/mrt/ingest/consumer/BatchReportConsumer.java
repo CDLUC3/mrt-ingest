@@ -607,35 +607,13 @@ class BatchReportCleanupDaemon implements Runnable
 		    Job job = null;
 		    Batch batch = null;
 
-		    // COMPLETED JOBS
-/*
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning JOB queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Completed);
-			   if (job != null) {
-			       System.out.println(NAME + " Found completed job.  Removing: " + job.id() + " - " + job.primaryId());
-			       job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
-
-                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
-                    }
-		   
-*/
-
 		    // COMPLETED BATCHES
                     while (true) {
                         System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
                         List<String> batches = null;
                         try {
 			   try {
+               		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                               batches = Batch.deleteCompletedBatches(zooKeeper);
 			   } catch (Exception e) {
                		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
