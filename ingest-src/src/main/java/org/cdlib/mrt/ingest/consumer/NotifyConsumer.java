@@ -159,16 +159,6 @@ public class NotifyConsumer extends HttpServlet
         } catch (Exception e) {
 	    throw new ServletException("[error] " + MESSAGE + "could not start consumer daemon");
         }
-
-        try {
-            // Start the Queue cleanup thread
-            if (cleanupThread == null) {
-	    	//System.out.println("[info] " + MESSAGE + "starting Queue cleanup daemon");
-		//startNotifyCleanupThread(servletConfig);
-	    }
-        } catch (Exception e) {
-	    throw new ServletException("[error] " + MESSAGE + "could not queue cleanup daemon");
-        }
     }
 
 
@@ -192,33 +182,6 @@ public class NotifyConsumer extends HttpServlet
             consumerThread.start();
 
 	    System.out.println("[info] " + MESSAGE + "consumer daemon started");
-
-            return;
-
-        } catch (Exception ex) {
-            throw new Exception(ex);
-        }
-    }
-
-    /**
-     * Start Queue cleanup thread
-     */
-    private synchronized void startNotifyCleanupThread(ServletConfig servletConfig)
-        throws Exception
-    {
-        try {
-            if (cleanupThread != null) {
-                System.out.println("[info] " + MESSAGE + "Queue cleanup daemon already started");
-                return;
-            }
-
-            NotifyCleanupDaemon cleanupDaemon = new NotifyCleanupDaemon(queueConnectionString, servletConfig);
-
-            cleanupThread =  new Thread(cleanupDaemon);
-            cleanupThread.setDaemon(true);                // Kill thread when servlet dies
-            cleanupThread.start();
-
-	    System.out.println("[info] " + MESSAGE + "cleanup daemon started");
 
             return;
 
@@ -600,113 +563,4 @@ class NotifyConsumeData implements Runnable
                System.out.println("Disconnected: " + event.toString());
        }
    }
-}
-
-
-class NotifyCleanupDaemon implements Runnable
-{
-
-    private static final String NAME = "NotifyCleanupDaemon";
-    private static final String MESSAGE = NAME + ": ";
-
-    private String queueConnectionString = null;
-    private Integer pollingInterval = 3600;	// seconds
-
-    private ZooKeeper zooKeeper = null;
-
-    // session data
-    private long sessionID;
-    private byte[] sessionAuth;
-
-
-    // Constructor
-    public NotifyCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
-    {
-        this.queueConnectionString = queueConnectionString;
-
-        try {
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-        } finally {
-           try {
-           } catch(Exception ze) {}
-        }
-
-    }
-
-    public void run()
-    {
-        boolean init = true;
-        String status = null;
-
-        sessionID = zooKeeper.getSessionId();
-        System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-        sessionAuth = zooKeeper.getSessionPasswd();
-
-        try {
-            while (true) {      // Until service is shutdown
-
-                // Wait for next interval.
-                if (! init) {
-                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
-                    Thread.yield();
-                    Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
-                } else {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
-                    init = false;
-                }
-
-                // have we shutdown?
-                if (Thread.currentThread().isInterrupted()) {
-                    System.out.println(MESSAGE + "interruption detected.");
-                    throw new InterruptedException();
-                }
-
-                // Perform some work
-                try {
-                    long numActiveTasks = 0;
-
-                    // To prevent long shutdown, no more than poolsize tasks queued.
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning queue (COMPLETED states): " + queueConnectionString);
-                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
-                    }
-
-                } catch (RejectedExecutionException ree) {
-                    System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
-                } catch (NoSuchElementException nsee) {
-                    // no data in queue
-                    System.out.println("[info] " + MESSAGE + "No data in queue to clean");
-                } catch (IllegalArgumentException iae) {
-                    // no queue exists
-                } catch (Exception e) {
-                    System.err.println("[warn] " + MESSAGE + "General exception.");
-                    e.printStackTrace();
-                }
-            }
-        } catch (InterruptedException ie) {
-            try {
-                // zooKeeper.close();
-            } catch (Exception e) {
-                e.printStackTrace(System.err);
-            }
-        } catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");
-            e.printStackTrace(System.err);
-        } finally {
-	    sessionAuth = null;
-           try {
-                zooKeeper.close();
-           } catch(Exception ze) {}
-        }
-    }
-
-   public class Ignorer implements Watcher {
-       public void process(WatchedEvent event){
-           if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
-       }
-   }
-
 }
