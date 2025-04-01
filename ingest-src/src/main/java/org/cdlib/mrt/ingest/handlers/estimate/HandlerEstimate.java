@@ -139,6 +139,7 @@ public class HandlerEstimate extends Handler<JobState>
             if (packageType == PackageTypeEnum.container || packageType == PackageTypeEnum.file) {
                 submissionSize = calulateDirSize(targetDir);
                 System.out.println("[info] " + MESSAGE + "Container or File submission.  Size: " + submissionSize);
+                jobState.setSubmissionSize(submissionSize);
                 return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
             } else if (packageType == PackageTypeEnum.manifest) {
                 LoggerInf logger = LoggerAbs.getTFileLogger("testFormatter", 10, 10);   // stdout logger
