@@ -32,6 +32,7 @@ package org.cdlib.mrt.ingest.handlers.provision;
 import java.io.File;
 import java.util.Properties;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -53,6 +54,7 @@ public class HandlerProvision extends Handler<JobState>
     private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
+    private static long SLEEP = (5L * 60L * 1000L);
 
     /**
      * provision resources for request
@@ -76,28 +78,35 @@ public class HandlerProvision extends Handler<JobState>
 	    String ingestQueuePath = ingestRequest.getIngestQueuePath();
 	    File queueFile = new File(ingestQueuePath);
 	    Long capacitySpace = queueFile.getTotalSpace();
-	    Long freeSpace = queueFile.getFreeSpace();
+	    if (DEBUG) System.out.println("[INFO] " + MESSAGE + "Found estimate size of: " + jobState.grabSubmissionSize());
 
-	    Double usage = 100D - ((freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D);
-	    while (usage.intValue() > zfsThreshold ) {
-		// Loop until resolved
-	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS usage exceeds Threshold.  Looping (60s) until resolved.");
-	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
-		Thread.sleep(60000);
-	    	queueFile = new File(ingestQueuePath);
-	    	capacitySpace = queueFile.getTotalSpace();
-	    	freeSpace = queueFile.getFreeSpace();
-	    	usage = (freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D;
-	    } 
+	    Long freeSpace = queueFile.getFreeSpace() - jobState.grabSubmissionSize();
+            Double usage = 100D - ((freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D);
+	    if (usage.intValue() > zfsThreshold ) {
+                ThreadContext.put("Provisioning threshold exceeded ", jobState.grabBatchID().getValue());
 
-	    if (DEBUG) System.out.println("[INFO] " + MESSAGE + "ZFS usage within threshold boundary.");
-	    if (DEBUG) System.out.println("[INFO] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
+		while (usage.intValue() > zfsThreshold) {
+	            if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS usage exceeds Threshold.  Looping until resolved.");
+	            if (DEBUG) System.out.println("[WARN] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
+
+                    Thread.sleep(SLEEP);
+                    queueFile = new File(ingestQueuePath);
+	            capacitySpace = queueFile.getTotalSpace();
+	            freeSpace = queueFile.getFreeSpace() - jobState.grabSubmissionSize();
+                    usage = 100D - ((freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D);
+		}
+	    } else { 
+	        if (DEBUG) System.out.println("[INFO] " + MESSAGE + "ZFS usage within threshold boundary.");
+	        if (DEBUG) System.out.println("[INFO] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
+	    }
+
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning complete", 0);
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "provisioning failure: " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {
+            ThreadContext.clearMap();
 	    // cleanup?
 	}
     }

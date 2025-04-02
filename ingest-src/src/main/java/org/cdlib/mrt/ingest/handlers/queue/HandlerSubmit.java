@@ -120,7 +120,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    jproperties.put("type", ingestRequest.getPackageType().getValue());
 	    if (StringUtil.isNotEmpty(ingestRequest.getJob().grabUserAgent()))
 	        jproperties.put("submitter", ingestRequest.getJob().grabUserAgent());
-	    jproperties.put("queuePriority", priority);
+	    // jproperties.put("queuePriority", priority);
 	    // optional input parameters
 	    if (StringUtil.isNotEmpty(ingestRequest.getResponseForm()))
 	    	jproperties.put("responseForm", ingestRequest.getResponseForm());

@@ -109,6 +109,7 @@ public class JobState
 	private boolean cleanup = true;
 	private boolean retainTargetURL = false;	// EZID, do not update target URL
 	private VersionMap versionMap = null;		// storage manifest 
+	private long submissionSize = 0L;		// Size of Job submission
 
 
 	// constructors
@@ -564,7 +565,7 @@ public class JobState
      * Get job queue priority
      * @return String job queue priority
      */
-    public String grabQueuePriority() {		// non-displayable
+    public String getQueuePriority() {		// non-displayable
         return queuePriority;
     }
 
@@ -698,6 +699,23 @@ public class JobState
     }
 
     /**
+     * Set submission size
+     * @param URL
+     */
+    public void setSubmissionSize(long submissionSize) {
+        this.submissionSize = submissionSize;
+    }
+
+    /**
+     * Get submission size
+     * @return long size
+     */
+    public long grabSubmissionSize() {
+        return submissionSize;
+    }
+
+
+    /**
      * Get DC elements
      * @return DC element
      */
@@ -784,6 +802,7 @@ public class JobState
             String metacatStatusS = (metacatStatus != null) ? metacatStatus : "";
             String persistentURLS = (persistentURL != null) ? persistentURL : "";
             String objectAggregateS = "";
+	    String submissionSizeS = new Long(submissionSize).toString();
 	    try {
                 objectAggregateS = objectProfile.getAggregateType();
 	    } catch (NullPointerException npe) {}
@@ -815,6 +834,7 @@ public class JobState
                 if (StringUtil.isNotEmpty(DCsubject)) header += indent + "DC subject: " + DCsubject + delimiter;
                 if (StringUtil.isNotEmpty(DCtitle)) header += indent + "DC title: " + DCtitle + delimiter;
                 if (StringUtil.isNotEmpty(DCtype)) header += indent + "DC type: " + DCtype + delimiter;
+                if (StringUtil.isNotEmpty(submissionSizeS)) header += indent + "Submission Size: " + submissionSizeS + delimiter;
 
                 //if (StringUtil.isNotEmpty(objectProfileS)) header += indent + "object profile: " + objectProfileS + delimiter;
 	        // show URL if a) demo mode b) system object (for debugging)

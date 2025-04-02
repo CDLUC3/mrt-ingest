@@ -483,6 +483,7 @@ class BatchReportConsumeData implements Runnable
 	    // UTF-8 ??
             JSONObject jp = null;
             JSONObject ji = null;
+            // JSONObject jpr = new JSONObject();
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
@@ -493,12 +494,14 @@ class BatchReportConsumeData implements Runnable
             }
             ji = Job.createJobIdentifiers(JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"localID"));
 
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming batch report queue " + batch.id() + " - " + jp.toString() + " - " + ji.toString());
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming batch queue " + batch.id() + " - "
+                + jp.toString() + " - " + ji.toString());
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
+
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji, 0, 0L);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+	    // ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
@@ -604,35 +607,13 @@ class BatchReportCleanupDaemon implements Runnable
 		    Job job = null;
 		    Batch batch = null;
 
-		    // COMPLETED JOBS
-/*
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning JOB queue (COMPLETED states): " + queueConnectionString + " " + queueNode);
-                        job = null;
-                        try {
-                           job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Completed);
-			   if (job != null) {
-			       System.out.println(NAME + " Found completed job.  Removing: " + job.id() + " - " + job.primaryId());
-			       job.delete(zooKeeper);
-			   } else {
-			       break;
-			   }
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Lock exists, someone already acquired data");
-                        }
-                        System.out.println(MESSAGE + "Cleaning queue (DELETED states): " + queueConnectionString + " " + queueNode);
-
-                        Thread.currentThread().sleep(5 * 1000);		// wait a short amount of time
-                    }
-		   
-*/
-
 		    // COMPLETED BATCHES
                     while (true) {
                         System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
                         List<String> batches = null;
                         try {
 			   try {
+               		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                               batches = Batch.deleteCompletedBatches(zooKeeper);
 			   } catch (Exception e) {
                		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);

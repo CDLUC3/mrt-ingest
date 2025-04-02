@@ -384,7 +384,7 @@ public class BatchState
 		if (jobState.getJobStatus() == JobStatusEnum.FAILED) failed++;
 		if (jobState.getJobStatus() == JobStatusEnum.PENDING) pending++;
 	    }
-	    queuePriorityS = jobState.grabQueuePriority();
+	    queuePriorityS = jobState.getQueuePriority();
 	}
 	if (! full)  {
 	    jobStateS = jobStateS + "\n";

@@ -374,7 +374,7 @@ public class HandlerNotification extends Handler<BatchState>
 	}
 
 
-        String queuePriorityS = "00";	// default
+        // String queuePriorityS = "00";	// default
 
 	int completed = 0;
 	int failed = 0;
@@ -399,7 +399,7 @@ public class HandlerNotification extends Handler<BatchState>
         if (StringUtil.isNotEmpty(batchIDS)) header += "\n" + "Submission ID: " + batchIDS + "\n";
         if (StringUtil.isNotEmpty(jobStateS)) header += "Job(s): " + jobStateS + "\n";
         if (StringUtil.isNotEmpty(userAgentS)) header += "User agent: " + userAgentS + "\n";
-        if (StringUtil.isNotEmpty(queuePriorityS)) header += "Queue Priority: " + queuePriorityS + "\n";
+        // if (StringUtil.isNotEmpty(queuePriorityS)) header += "Queue Priority: " + queuePriorityS + "\n";
         if (StringUtil.isNotEmpty(submissionDateS)) header += "Submission date: " + submissionDateS + "\n";
         if (StringUtil.isNotEmpty(completionDateS)) header += "Completion date: " + completionDateS + "\n";
         if (StringUtil.isNotEmpty(batchStatusS)) header += "Status: " + batchStatusS + "\n";

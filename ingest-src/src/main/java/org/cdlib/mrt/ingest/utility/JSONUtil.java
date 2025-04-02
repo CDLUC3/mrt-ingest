@@ -120,7 +120,7 @@ public class JSONUtil
 	try {
            return jo.getString(key);
 	} catch (Exception e) {
-	   System.err.println("[warn] Could not find value in JSONObject: " + key);
+	   System.err.println("[WARN] Could not find value in JSONObject: " + key);
 	   return null;
 	}
     }
@@ -142,7 +142,7 @@ public class JSONUtil
 	return jobStateString;
     }
 
-    public static IngestRequest populateIngestRequest(JSONObject jp, JSONObject ji) {
+    public static IngestRequest populateIngestRequest(JSONObject jp, JSONObject ji, int priority, long spaceNeeded) {
 
         IngestRequest ingestRequest = new IngestRequest(JSONUtil.getValue(jp,"submitter"), JSONUtil.getValue(jp,"profile"),
 		JSONUtil.getValue(jp,"filename"), JSONUtil.getValue(jp,"type"), JSONUtil.getValue(jp,"size"),
@@ -161,13 +161,18 @@ public class JSONUtil
 
 	try {
 	   ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
-	} catch (Exception e) { System.out.println("[WARN] Could not set JOB ID for Ingest Request"); }
+	} catch (Exception e) { 
+	   // ignore if called from batch - no JOB ID
+	   if (priority != 0) System.out.println("[WARN] Could not set JOB ID for Ingest Request"); 
+	}
 	try {
 	   ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
-	} catch (Exception e) { System.out.println("[ERROR] Could not set BATCH ID for Ingest Request"); }
+	} catch (Exception e) { 
+	   System.out.println("[ERROR] Could not set BATCH ID for Ingest Request"); 
+	}
 	Boolean update = new Boolean(jp.getBoolean("update"));
 	ingestRequest.getJob().setUpdateFlag(update.booleanValue());
-	ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+	ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
 	try {
 	   ingestRequest.getJob().setAltNotification(JSONUtil.getValue(jp,"notification"));
 	} catch (Exception e) { }

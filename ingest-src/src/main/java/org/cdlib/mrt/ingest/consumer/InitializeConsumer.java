@@ -161,15 +161,6 @@ public class InitializeConsumer extends HttpServlet
 	    throw new ServletException("[error] " + MESSAGE + "could not start consumer daemon");
         }
 
-        try {
-            // Start the Queue cleanup thread
-            if (cleanupThread == null) {
-	    	//System.out.println("[info] " + MESSAGE + "starting Batch/Job cleanup daemon");
-		//startInitializeCleanupThread(servletConfig);
-	    }
-        } catch (Exception e) {
-	    throw new ServletException("[error] " + MESSAGE + "could not Batch/Job cleanup daemon");
-        }
     }
 
 
@@ -193,33 +184,6 @@ public class InitializeConsumer extends HttpServlet
             consumerThread.start();
 
 	    System.out.println("[info] " + MESSAGE + "consumer daemon started");
-
-            return;
-
-        } catch (Exception ex) {
-            throw new Exception(ex);
-        }
-    }
-
-    /**
-     * Start Queue cleanup thread
-     */
-    private synchronized void startInitializeCleanupThread(ServletConfig servletConfig)
-        throws Exception
-    {
-        try {
-            if (cleanupThread != null) {
-                System.out.println("[info] " + MESSAGE + "Queue cleanup daemon already started");
-                return;
-            }
-
-            InitializeCleanupDaemon cleanupDaemon = new InitializeCleanupDaemon(queueConnectionString, servletConfig);
-
-            cleanupThread =  new Thread(cleanupDaemon);
-            cleanupThread.setDaemon(true);                // Kill thread when servlet dies
-            cleanupThread.start();
-
-	    System.out.println("[info] " + MESSAGE + "cleanup daemon started");
 
             return;
 
@@ -512,25 +476,35 @@ class InitializeConsumeData implements Runnable
 
             JSONObject jp = null;
             JSONObject ji = null;
+            JSONObject js = null;
+            JSONObject jpr = null;
+            long spaceNeeded = 0L;
+            int priority = 0;
             zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
-	    try {
+            try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-	    } catch (Exception e) {
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
+            } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
-	    }
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString());
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
+            }
+            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString() 
+		+ " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
 
-            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji);
+            IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji, priority, spaceNeeded);
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
-	    ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
+            ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
 	    Boolean update = new Boolean(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
+            ingestRequest.getJob().setSubmissionSize(spaceNeeded);
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue() + FS + 
 		        ingestRequest.getJob().getJobID().getValue()));
@@ -545,15 +519,21 @@ class InitializeConsumeData implements Runnable
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             } catch (Exception e) {
                Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
+               spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
+               priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             }
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString());
+                if (DEBUG) System.out.println("[item]: InitializeConsumer Daemon COMPLETED queue data:" + jp.toString() + " --- " + ji.toString()
+		    + " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
+
 		try {
                    job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                 } catch (Exception mse) {
@@ -609,117 +589,3 @@ class InitializeConsumeData implements Runnable
    }
 }
 
-
-
-
-class InitializeCleanupDaemon implements Runnable
-{
-
-    private static final String NAME = "InitializeCleanupDaemon";
-    private static final String MESSAGE = NAME + ": ";
-
-    private String queueConnectionString = null;
-    private Integer pollingInterval = 15;	// seconds
-
-    private ZooKeeper zooKeeper = null;
-
-    // session data
-    private long sessionID;
-    private byte[] sessionAuth;
-
-
-    // Constructor
-    public InitializeCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
-    {
-        this.queueConnectionString = queueConnectionString;
-
-        try {
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-        }
-    }
-
-    public void run()
-    {
-        boolean init = true;
-        String status = null;
-
-        sessionID = zooKeeper.getSessionId();
-        System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-        sessionAuth = zooKeeper.getSessionPasswd();
-
-        try {
-            while (true) {      // Until service is shutdown
-
-                // Wait for next interval.
-                if (! init) {
-                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
-                    Thread.yield();
-                    //Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
-                    Thread.currentThread().sleep(60 * 1000);
-                } else {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
-                    init = false;
-                }
-
-                // have we shutdown?
-                if (Thread.currentThread().isInterrupted()) {
-                    System.out.println(MESSAGE + "interruption detected.");
-                    throw new InterruptedException();
-                }
-
-                // Perform some work
-                try {
-                    long numActiveTasks = 0;
-		    Job job = null;
-		    Batch batch = null;
-
-		    // COMPLETED BATCHES
-                    while (true) {
-                        System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
-                        List<String> batches = null;
-                        try {
-                           batches = Batch.deleteCompletedBatches(zooKeeper);
-			   for (String batchName: batches) {
-                               System.out.println(NAME + " Found completed batch.  Removing: " + batchName);
-			   } 
-                        } catch (org.apache.zookeeper.KeeperException ke) {
-                           System.out.println(MESSAGE + "Error removing completed batches: " + ke.toString());
-                        }
-
-                        //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
-			break;
-                    }
-
-                } catch (RejectedExecutionException ree) {
-                    System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
-                } catch (NoSuchElementException nsee) {
-                    // no data in queue
-                    System.out.println("[info] " + MESSAGE + "No data in queue to clean");
-                } catch (IllegalArgumentException iae) {
-                    // no queue exists
-                } catch (Exception e) {
-                    System.err.println("[warn] " + MESSAGE + "General exception.");
-                    e.printStackTrace();
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");
-            e.printStackTrace(System.err);
-        } finally {
-	    sessionAuth = null;
-	    try {
-		zooKeeper.close();
-	    } catch(Exception ze) {}
-        }
-    }
-
-   public class Ignorer implements Watcher {
-       public void process(WatchedEvent event){
-           if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
-       }
-   }
-
-}
