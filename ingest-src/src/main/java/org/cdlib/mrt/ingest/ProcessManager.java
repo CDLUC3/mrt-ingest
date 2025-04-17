@@ -351,6 +351,12 @@ public class ProcessManager {
                 	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ingestZfsThreshold not set.  Can not provision accurately");
                 	    ingestRequest.setIngestZfsThreshold(null);
             	        }
+	                try {
+                	    ingestRequest.setMetadataDisplaySize(ingestConf.getInt("metadataDisplaySize"));
+            	        } catch (org.json.JSONException je) {
+                	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "metadataDisplaySize not set.  Can not truncate large Metadata");
+                	    ingestRequest.setIngestZfsThreshold(null);
+            	        }
 
 			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());

@@ -17,6 +17,7 @@ ingest-info:
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
     ingestZfsThreshold: "80"
+    metadataDisplaySize: "3500"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "3"
 
