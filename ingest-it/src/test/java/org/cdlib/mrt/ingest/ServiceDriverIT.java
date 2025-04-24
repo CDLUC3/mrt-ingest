@@ -31,6 +31,7 @@ import javax.xml.xpath.XPathFactory;
 import org.apache.xpath.jaxp.XPathFactoryImpl;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.zk.Access;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.BatchState;
@@ -104,6 +105,7 @@ public class ServiceDriverIT {
 		try {
                 	clearQueue();
 		} catch (Exception e) {
+			Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                 	clearQueue();
 		}
         }
