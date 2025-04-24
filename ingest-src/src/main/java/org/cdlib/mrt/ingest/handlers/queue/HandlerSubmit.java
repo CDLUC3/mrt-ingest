@@ -86,8 +86,6 @@ public class HandlerSubmit extends Handler<BatchState>
 	throws TException 
     {
 
-	//boolean isHighPriority = false;
-	//String priorityBoolean = "0";
 	String priority = null;
 	File file = null;
         FormatType formatType = null;
@@ -109,9 +107,6 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	System.out.println("[info] Overwriting calculated queue priority: " + priority);
 	    }
 	    System.out.println("[info] queue priority: " + priority);
-	    // isHighPriority = (Integer.parseInt(priority) <= Integer.parseInt(profileState.grabPriorityThreshold()));
-	    // if (isHighPriority) priorityBoolean = "1";
-	    // System.out.println("[info] Priority Job status: " + isHighPriority);
 
 	    // common across all jobs in batch
 	    jproperties.put("submissionDate", batchState.getSubmissionDate().toString());

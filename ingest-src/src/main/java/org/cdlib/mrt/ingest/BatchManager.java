@@ -86,7 +86,6 @@ public class BatchManager {
 	private String ingestLName = null;
 	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
 	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
-	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
         private String emailReplyTo = null;
@@ -146,7 +145,6 @@ public class BatchManager {
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
 			String matchIngestLName = "ingestLock";
-			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
                         String matchEmailReplyTo = "mail-replyto";
@@ -157,8 +155,6 @@ public class BatchManager {
 
 			// QueueService - host1:2181,host2:2181
 			this.queueConnectionString = queueConf.getString(matchQueueService);
-			// Priority Threshold
-			this.highPriorityThreshold = queueConf.getString(matchHighPriorityThreshold);
 			// All Ingest Lock Names - "zkLock,..."
 			this.ingestLName = ingestConf.getString(matchIngestLName);
 
@@ -238,8 +234,6 @@ public class BatchManager {
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
-			if (highPriorityThreshold != null)
-				profileState.setPriorityThreshold(highPriorityThreshold);
 			if (emailContact != null)
 				profileState.setEmailContact(emailContact);
                         if (emailReplyTo != null)

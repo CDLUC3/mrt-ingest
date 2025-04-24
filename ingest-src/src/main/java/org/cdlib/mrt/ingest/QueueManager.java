@@ -82,7 +82,6 @@ public class QueueManager {
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
 	private String queueConnectionString = null;
-	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
         private String emailReplyTo = null;
@@ -140,7 +139,6 @@ public class QueueManager {
 			String value = null;
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
-			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
                         String matchEmailReplyTo = "mail-replyto";
@@ -217,8 +215,6 @@ public class QueueManager {
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
-			if (highPriorityThreshold != null)
-				profileState.setPriorityThreshold(highPriorityThreshold);
 			if (emailContact != null)
 				profileState.setEmailContact(emailContact);
                         if (emailReplyTo != null)

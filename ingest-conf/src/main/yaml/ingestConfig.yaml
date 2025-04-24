@@ -32,9 +32,8 @@ ingest:
     #InventoryName: "{!SSM: inventory/zoo/queueName}"
     PollingInterval: "{!SSM: ingest/config/PollingInterval !DEFAULT: 10}"
     NumThreads: "{!SSM: ingest/config/numThreads !DEFAULT: 5}"
-    PollingIntervalHighPriority: "{!SSM: ingest/config/PollingIntervalHighPriority !DEFAULT: 15}"
-    NumThreadsHighPriority: "{!SSM: ingest/config/numThreadsHighPriority !DEFAULT: 2}"
-    HighPriorityThreshold: "{!SSM: ingest/config/HighPriorityThreshold !DEFAULT: 4}"
+    BatchPollingInterval: "{!SSM: ingest/config/BatchPollingInterval !DEFAULT: 15}"
+    BatchNumThreads: "{!SSM: ingest/config/BatchNumThreads !DEFAULT: 5}"
 
 
   logger-info:
@@ -79,13 +78,10 @@ ingest-docker:
     QueueService: "zoo:2181"
     # QueueName: "/ingest"
     # InventoryName: "/mrt.inventory.full"
-    BatchPollingInterval: "12"
-    BatchNumThreads: "3"
     PollingInterval: "10"
     NumThreads: "3"
-    PollingIntervalHighPriority: "15"
-    NumThreadsHighPriority: "2"
-    HighPriorityThreshold: "5"
+    BatchPollingInterval: "12"
+    BatchNumThreads: "3"
 
   logger-info:
     messageMaximumLevel: 5
