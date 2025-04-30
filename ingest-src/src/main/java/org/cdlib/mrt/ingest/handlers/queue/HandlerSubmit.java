@@ -50,6 +50,7 @@ import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
@@ -72,7 +73,6 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
-    public static int sessionTimeout = 3600000;	// 1 hour
 
     /**
      * Submit batch manifest jobs to queing service
@@ -100,7 +100,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	try {
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	    priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
 	    if (profileState.getPriority() != null) {
 		priority = profileState.getPriority();

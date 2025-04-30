@@ -56,6 +56,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StateInf;
@@ -77,7 +78,6 @@ public class BatchManager {
 	private static final String NAME = "BatchManager";
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
-    	private static int sessionTimeout = 3600000;  // 1 hour
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
@@ -172,7 +172,7 @@ public class BatchManager {
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
 			// Initialize ZK locks
-			zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+			zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                         System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
 			MerrittLocks.initLocks(zooKeeper);
 
@@ -287,7 +287,7 @@ public class BatchManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);

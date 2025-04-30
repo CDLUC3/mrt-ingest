@@ -100,7 +100,6 @@ public class HandlerTransfer extends Handler<JobState>
     private static final String NAME = "HandlerTransfer";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
-    private static int sessionTimeout = 3600000;  // 1 hour
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
@@ -138,7 +137,7 @@ public class HandlerTransfer extends Handler<JobState>
 	zooLockNode = jobState.grabExtra();
 
 	try {
-            zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	    boolean lock = getLock(zooKeeper, jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
 	    originalStoreNode = profileState.getTargetStorage();
@@ -443,7 +442,7 @@ public class HandlerTransfer extends Handler<JobState>
         } catch (KeeperException ke) {
 	    try {
 		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(zooConnectString, sessionTimeout, new Ignorer());
+               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	       MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
 	    } catch (Exception ee) {}
 	} catch (Exception e) {

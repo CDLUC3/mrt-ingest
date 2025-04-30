@@ -82,7 +82,6 @@ public class HandlerNotification extends Handler<BatchState>
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
     private LoggerInf logger = null;
-    public static int sessionTimeout = 3600000;	// 1 hour
     private ZooKeeper zooKeeper = null;
 
     /**
@@ -125,7 +124,7 @@ public class HandlerNotification extends Handler<BatchState>
                 }
 	    } catch (Exception e) {}
 
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	    String batchID = batchState.getBatchID().getValue();
 	    Batch batch = Batch.findByUuid(zooKeeper, batchID);

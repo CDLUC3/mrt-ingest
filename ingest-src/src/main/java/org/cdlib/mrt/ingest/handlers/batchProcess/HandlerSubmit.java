@@ -55,6 +55,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.StringUtil;
@@ -78,7 +79,6 @@ public class HandlerSubmit extends Handler<BatchState>
     protected static final String NAME = "HandlerSubmit";
     protected static final String MESSAGE = NAME + ": ";
     protected static final boolean DEBUG = true;
-    private static int sessionTimeout = 3600000;  // 1 hour
     protected LoggerInf logger = null;
     protected Properties conf = null;
     ZooKeeper zooKeeper = null;
@@ -106,7 +106,7 @@ public class HandlerSubmit extends Handler<BatchState>
 
 
             // open a single connection to zookeeper for all queue posting
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	    // common across all jobs in batch
 	    jproperties.put("batchID", batchState.getBatchID().getValue());
@@ -194,7 +194,7 @@ public class HandlerSubmit extends Handler<BatchState>
                 System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                 try {
 		    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-            	    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), sessionTimeout, new Ignorer());
+            	    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                     Job.initNodes(zooKeeper);
                 } catch (IOException ioe){}
             } catch (Exception e) {}

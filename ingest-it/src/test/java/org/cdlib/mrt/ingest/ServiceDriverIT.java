@@ -88,6 +88,7 @@ public class ServiceDriverIT {
         public static final int SLEEP_SUBMIT = 15000;
         public static final int SLEEP_RETRY = 3000;
         public static final int SLEEP_CLEANUP = 500;
+        public static final int ZK_SESSION_TIMEOUT = 600000;
         /*
          * Initialize the test class
          */
@@ -101,7 +102,7 @@ public class ServiceDriverIT {
                 }
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
-                zk = new ZooKeeper(String.format("localhost:%s", zkport), 100, null);
+                zk = new ZooKeeper(String.format("localhost:%s", zkport), ZK_SESSION_TIMEOUT, null);
 		try {
                 	clearQueue();
 		} catch (Exception e) {
