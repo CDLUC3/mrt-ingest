@@ -43,9 +43,9 @@ HandlerProcess.5: org.cdlib.mrt.ingest.handlers.process.HandlerDocument
 HandlerProcess.6: org.cdlib.mrt.ingest.handlers.process.HandlerDigest
 HandlerProcess.7: org.cdlib.mrt.ingest.handlers.process.HandlerTransfer
 # Process Recording
-HandlerRecord.1: org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue
+# HandlerRecord.1: org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue
 # Process Notify
-# HandlerNotify.1: org.cdlib.mrt.ingest.handlers.notify.HandlerCallback
+HandlerNotify.1: org.cdlib.mrt.ingest.handlers.notify.HandlerCallback
 HandlerNotify.2: org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup
 # Batch Notify
 HandlerBatchReport.1: org.cdlib.mrt.ingest.handlers.batchReport.HandlerNotification
