@@ -530,7 +530,9 @@ public class ProcessManager {
 					}
 				}
 
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class || 
+					handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup.class) {
+
 					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
 						+ jobState.grabTargetStorage().getNodeID() + "/"
 						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));

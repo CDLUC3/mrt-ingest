@@ -32,14 +32,24 @@ package org.cdlib.mrt.ingest.handlers.notify;
 import java.io.File;
 import java.util.Properties;
 
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
+import org.apache.zookeeper.KeeperException.SessionExpiredException;
+
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.FileUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
+ 
+import org.cdlib.mrt.zk.MerrittLocks;
 
 /**
  * remove staging directory
@@ -51,6 +61,8 @@ public class HandlerCleanup extends Handler<JobState>
     private static final String NAME = "HandlerCleanup";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
+    private ZooKeeper zooKeeper = null;
+    private String zooConnectString = null;
     private LoggerInf logger = null;
     private Properties conf = null;
 
@@ -66,7 +78,10 @@ public class HandlerCleanup extends Handler<JobState>
 	throws TException 
     {
 
+        zooConnectString = jobState.grabMisc();
 	try {
+
+            zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	    File stageDir = new File(ingestRequest.getQueuePath(), "producer");
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
@@ -84,12 +99,46 @@ public class HandlerCleanup extends Handler<JobState>
             String msg = "[error] " + MESSAGE + "removing staging directory: " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {
-	    // cleanup?
+	    // Initiated with Storage Handler.  Keep lock until object completes
+            releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
 	}
     }
    
     public String getName() {
 	return NAME;
     }
+
+    /**
+     * Release lock
+     *
+     * @param none needed inputs are global
+     * @return void
+     */
+    private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
+
+        // Refresh ZK connection
+        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+
+        try {
+            MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
+        } catch (KeeperException ke) {
+            try {
+               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
+            } catch (Exception ee) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+            } catch (Exception ze) {}
+        }
+
+    }
+
+   public static class Ignorer implements Watcher {
+        public void process(WatchedEvent event){}
+   }
+
 
 }

@@ -29,6 +29,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.utility;
 
+import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.logging.log4j.ThreadContext;
+
 
 /**
  * Zookeeper static definitions
@@ -43,5 +47,36 @@ public class ZookeeperUtil
 
     public static final int SLEEP_ZK_RETRY = (30 * 1000);			// 30 sec retry timeout
     public static final int ZK_SESSION_TIMEOUT = (6 * 60 * 60 * 1000); 		// 6 hour session timeout
+
+
+    public static ZooKeeper refreshZK(ZooKeeper zk, String queueConnectionString)
+    {
+	Stat stat = null;
+	String caller = Thread.currentThread().getStackTrace()[2].getClassName() + "." + 
+			Thread.currentThread().getStackTrace()[2].getMethodName() + "() : " +
+			Thread.currentThread().getStackTrace()[2].getLineNumber();
+	while (stat == null) {
+	    // if (DEBUG) System.out.println("===========> Checking ZK connection -- " + caller);
+            try {
+	        stat = zk.exists("/zookeeper", null);
+	    } catch (Exception e) {
+		try { 
+		    if (! caller.contains("ConsumeData")) {
+		        if (DEBUG) System.err.println("===========> REFRESHING ZK Connection " + caller);
+		        ThreadContext.put("Zookeeper Connection needs refresh", caller);
+		    }
+
+		    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+ 		    zk = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, null);
+	            stat = zk.exists("/zookeeper", null);
+		} catch (Exception e2) {}
+	    } finally {
+                 ThreadContext.clearMap();
+            }
+
+	}
+
+        return zk;
+    }
 
 }

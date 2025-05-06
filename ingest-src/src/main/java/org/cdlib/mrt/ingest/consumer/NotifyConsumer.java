@@ -238,7 +238,10 @@ class NotifyConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            // Refresh ZK connection
+            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
 	}
@@ -251,24 +254,10 @@ class NotifyConsumerDaemon implements Runnable
         ArrayBlockingQueue<NotifyConsumeData> workQueue = new ArrayBlockingQueue<NotifyConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
-        // Refresh connection. if necessary
         try {
-            // Test connection
-            zooKeeper.exists("/",false);
-        } catch (KeeperException ke) {
-            System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
-            try {
-		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-            } catch (Exception ioe){}
-        } catch (Exception e) {}
+            // Refresh ZK connection
+            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
-	sessionID = zooKeeper.getSessionId();
-	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-	sessionAuth = zooKeeper.getSessionPasswd();
-        //Item item = null;
-
-        try {
             long queueSize = workQueue.size();
             while (true) {      // Until service is shutdown
 
@@ -304,6 +293,10 @@ class NotifyConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
+
+	                    // Refresh ZK connection
+			    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Notify);
                             } catch (Exception e) {
@@ -388,6 +381,9 @@ class NotifyConsumerDaemon implements Runnable
     // to do: make this a service call
     private boolean onHold()
     {
+        // Refresh ZK connection
+        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
                 System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
@@ -442,7 +438,9 @@ class NotifyConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            // Refresh ZK connection
+            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
 
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
@@ -488,6 +486,10 @@ class NotifyConsumeData implements Runnable
             }
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
+
+            // Refresh ZK connection
+            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
 
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);

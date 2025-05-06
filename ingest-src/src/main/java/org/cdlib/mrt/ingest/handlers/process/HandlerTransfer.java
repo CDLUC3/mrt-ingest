@@ -224,6 +224,9 @@ public class HandlerTransfer extends Handler<JobState>
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response message: " + responseMessage);
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " URL: " + url);
 
+            // Refresh ZK connection
+            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+
             // Log POST
             long endTime = DateUtil.getEpochUTCDate();
             ThreadContext.put("Method", "StoragePost");
@@ -405,6 +408,9 @@ public class HandlerTransfer extends Handler<JobState>
     try {
 
        boolean locked = false;
+       // Refresh ZK connection
+       zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+
 
 	while (! locked) {
 	    try {
@@ -437,6 +443,10 @@ public class HandlerTransfer extends Handler<JobState>
      * @return void
      */
     private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
+
+        // Refresh ZK connection
+        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+
     	try {
 	    MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
         } catch (KeeperException ke) {

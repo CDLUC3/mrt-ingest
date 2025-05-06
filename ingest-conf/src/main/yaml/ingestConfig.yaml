@@ -78,9 +78,9 @@ ingest-docker:
     QueueService: "zoo:2181"
     # QueueName: "/ingest"
     # InventoryName: "/mrt.inventory.full"
-    PollingInterval: "10"
+    PollingInterval: "30"
     NumThreads: "3"
-    BatchPollingInterval: "12"
+    BatchPollingInterval: "15"
     BatchNumThreads: "3"
 
   logger-info:
