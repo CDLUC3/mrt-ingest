@@ -575,14 +575,15 @@ class BatchReportCleanupDaemon implements Runnable
         boolean init = true;
         String status = null;
 
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
-
-        sessionID = zooKeeper.getSessionId();
-        System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-        sessionAuth = zooKeeper.getSessionPasswd();
-
         try {
+	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            // Refresh ZK connection
+            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+            sessionID = zooKeeper.getSessionId();
+            System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
+            sessionAuth = zooKeeper.getSessionPasswd();
+
             while (true) {      // Until service is shutdown
 
                 // Wait for next interval.
@@ -614,6 +615,7 @@ class BatchReportCleanupDaemon implements Runnable
                         try {
 			   try {
 	                      // Refresh ZK connection
+               		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                	              zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
                               batches = Batch.deleteCompletedBatches(zooKeeper);

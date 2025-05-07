@@ -65,6 +65,7 @@ public class HandlerCleanup extends Handler<JobState>
     private String zooConnectString = null;
     private LoggerInf logger = null;
     private Properties conf = null;
+    private boolean unitTest = false;
 
     /**
      * remove staging area
@@ -79,9 +80,10 @@ public class HandlerCleanup extends Handler<JobState>
     {
 
         zooConnectString = jobState.grabMisc();
+	if (zooConnectString == null) unitTest = true;
 	try {
 
-            zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            if ( ! unitTest) zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 	    File stageDir = new File(ingestRequest.getQueuePath(), "producer");
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
@@ -100,7 +102,7 @@ public class HandlerCleanup extends Handler<JobState>
             return new HandlerResult(false, msg);
 	} finally {
 	    // Initiated with Storage Handler.  Keep lock until object completes
-            releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+            if ( ! unitTest) releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
 	}
     }
    
