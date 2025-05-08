@@ -15,7 +15,7 @@
     <propertyDir>test</propertyDir>
     <docker.skip>${env.SKIP_DOCKER_TEST}</docker.skip>
     <skipTests>${env.SKIP_DOCKER_TEST}</skipTests>
-    <merritt-core.version>3.0-SNAPSHOT</merritt-core.version>
+    <merritt-core.version>3.1-SNAPSHOT</merritt-core.version>
     <merritt-zk.version>3.0-SNAPSHOT</merritt-zk.version>
     <merritt-bom.version>3.0-SNAPSHOT</merritt-bom.version>
   </properties>
@@ -69,6 +69,11 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>${maven.war.plugin.version}</version>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
