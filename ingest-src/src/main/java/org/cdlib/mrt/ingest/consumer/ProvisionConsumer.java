@@ -235,7 +235,6 @@ class ProvisionConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
@@ -313,7 +312,6 @@ class ProvisionConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found provisioning job data: " + job.id());
-                                System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Provisioning) {
                                    System.err.println(MESSAGE + "Job already processed by Provision Consumer: " + job.id());
                                    try {
@@ -441,7 +439,6 @@ class ProvisionConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 

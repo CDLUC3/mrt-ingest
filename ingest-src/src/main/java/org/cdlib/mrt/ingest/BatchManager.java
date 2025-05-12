@@ -172,7 +172,7 @@ public class BatchManager {
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
 			// Initialize ZK locks
-			zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+			zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
                         System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
 			MerrittLocks.initLocks(zooKeeper);
 
@@ -287,7 +287,13 @@ public class BatchManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+		boolean unitTest = false;
+                try {
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+		} catch (Exception e) { 
+		   // Unit test catch 
+		   unitTest = true;
+                }
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -350,11 +356,16 @@ public class BatchManager {
 
                 String onHold = null;
                 // submission state
-                if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
-                   onHold = "frozen";
-                } else {
+                if (! unitTest) {
+                   if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
+                      onHold = "frozen";
+                   } else {
+                      onHold = "thawed";
+                   }
+		} else {
+		   // unit test
                    onHold = "thawed";
-                }
+		}
                 ingestState.setSubmissionState(onHold);
 
                 // Collection submission state

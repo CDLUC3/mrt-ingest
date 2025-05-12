@@ -275,7 +275,6 @@ class BatchConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
@@ -482,7 +481,6 @@ class BatchConsumeData implements Runnable
             JSONObject ji = null;
             // JSONObject jpr = new JSONObject();
 
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
             try {
@@ -563,7 +561,7 @@ class BatchCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
         } catch (Exception e) {
             e.printStackTrace(System.err);

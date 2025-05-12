@@ -258,7 +258,7 @@ public class QueueManager {
         public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
                 ZooKeeper zooKeeper = null;
                 try {
-                        zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+			zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
                         IngestServiceState ingestState = new IngestServiceState();
 			if (StringUtil.isNotEmpty(collection)) {

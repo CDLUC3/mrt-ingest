@@ -242,7 +242,6 @@ class ProcessConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	    // Refresh ZK
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 	} catch (Exception e) {
@@ -319,7 +318,6 @@ class ProcessConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found processing job data: " + job.id());
-                                System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Processing) {
                                    System.err.println(MESSAGE + "Job already processed by Process Consumer: " + job.id());
                                    try {
@@ -442,7 +440,6 @@ class ProcessConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 

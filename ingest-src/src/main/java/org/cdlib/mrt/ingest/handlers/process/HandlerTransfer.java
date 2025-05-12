@@ -137,7 +137,7 @@ public class HandlerTransfer extends Handler<JobState>
 	zooLockNode = jobState.grabExtra();
 
 	try {
-            zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
 	    boolean lock = getLock(zooKeeper, jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
 	    originalStoreNode = profileState.getTargetStorage();

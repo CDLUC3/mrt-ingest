@@ -239,7 +239,6 @@ class DownloadConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	    // Refresh ZK connection
 	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 	} catch (Exception e) {
@@ -313,7 +312,6 @@ class DownloadConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found downloading job data: " + job.id());
-                                System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Downloading) {
                                    System.err.println(MESSAGE + "Job already processed by Download Consumer: " + job.id());
                                    try {

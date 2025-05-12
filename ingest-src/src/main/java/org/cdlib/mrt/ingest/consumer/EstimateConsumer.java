@@ -250,7 +250,6 @@ class EstimateConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	                            
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
@@ -326,7 +325,6 @@ class EstimateConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
-                                System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Estimating) {
                                    System.err.println(MESSAGE + "Job already processed by Estimate Consumer: " + job.id());
                                    try {
@@ -543,7 +541,6 @@ class EstimateConsumeData implements Runnable
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
 
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 

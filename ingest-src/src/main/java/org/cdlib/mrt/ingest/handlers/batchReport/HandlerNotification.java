@@ -124,7 +124,7 @@ public class HandlerNotification extends Handler<BatchState>
                 }
 	    } catch (Exception e) {}
 
-            zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, batchState.grabTargetQueue());
 
 	    String batchID = batchState.getBatchID().getValue();
 	    Batch batch = Batch.findByUuid(zooKeeper, batchID);

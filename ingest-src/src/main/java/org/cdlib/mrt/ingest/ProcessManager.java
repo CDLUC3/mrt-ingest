@@ -530,8 +530,7 @@ public class ProcessManager {
 					}
 				}
 
-				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class || 
-					handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup.class) {
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {
 
 					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
 						+ jobState.grabTargetStorage().getNodeID() + "/"
@@ -540,6 +539,10 @@ public class ProcessManager {
 					System.out.println("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(ingestConf.getString("ingestLock"));
+				}
+
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup.class) {
+					jobState.setMisc(queueConf.getString("QueueService"));
 				}
 
 				try {

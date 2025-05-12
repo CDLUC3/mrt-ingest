@@ -102,7 +102,9 @@ public class HandlerCleanup extends Handler<JobState>
             return new HandlerResult(false, msg);
 	} finally {
 	    // Initiated with Storage Handler.  Keep lock until object completes
-            if ( ! unitTest) releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+	    try {
+                if ( ! unitTest) releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+	    } catch (Exception e) {}
 	}
     }
    

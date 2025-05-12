@@ -275,7 +275,6 @@ class BatchReportConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
@@ -562,7 +561,7 @@ class BatchReportCleanupDaemon implements Runnable
         this.queueConnectionString = queueConnectionString;
 
         try {
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
@@ -576,7 +575,6 @@ class BatchReportCleanupDaemon implements Runnable
         String status = null;
 
         try {
-	    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
             // Refresh ZK connection
             zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
@@ -615,7 +613,6 @@ class BatchReportCleanupDaemon implements Runnable
                         try {
 			   try {
 	                      // Refresh ZK connection
-               		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                	              zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
                               batches = Batch.deleteCompletedBatches(zooKeeper);

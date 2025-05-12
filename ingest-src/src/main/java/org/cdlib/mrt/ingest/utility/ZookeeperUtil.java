@@ -55,18 +55,22 @@ public class ZookeeperUtil
 	String caller = Thread.currentThread().getStackTrace()[2].getClassName() + "." + 
 			Thread.currentThread().getStackTrace()[2].getMethodName() + "() : " +
 			Thread.currentThread().getStackTrace()[2].getLineNumber();
+	boolean init = true;
 	while (stat == null) {
-	    // if (DEBUG) System.out.println("===========> Checking ZK connection -- " + caller);
             try {
 	        stat = zk.exists("/zookeeper", null);
 	    } catch (Exception e) {
 		try { 
-		    if (! caller.contains("ConsumeData")) {
-		        if (DEBUG) System.err.println("===========> REFRESHING ZK Connection " + caller);
+		    // Sleep if looping
+		    if (! init) Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+		    init = false;
+
+		    // Log
+		    if (! init) {
+		        if (DEBUG) System.err.println("===========> ESTABLISH/REFRESH ZK Connection " + caller);
 		        ThreadContext.put("Zookeeper Connection needs refresh", caller);
 		    }
 
-		    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
  		    zk = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, null);
 	            stat = zk.exists("/zookeeper", null);
 		} catch (Exception e2) {}
