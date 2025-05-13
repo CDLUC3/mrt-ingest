@@ -63,7 +63,6 @@ public class ZookeeperUtil
 		try { 
 		    // Sleep if looping
 		    if (! init) Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-		    init = false;
 
 		    // Log
 		    if (! init) {
@@ -73,6 +72,7 @@ public class ZookeeperUtil
 
  		    zk = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, null);
 	            stat = zk.exists("/zookeeper", null);
+		    init = false;
 		} catch (Exception e2) {}
 	    } finally {
                  ThreadContext.clearMap();
