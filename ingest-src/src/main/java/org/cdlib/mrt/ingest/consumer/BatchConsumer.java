@@ -275,8 +275,14 @@ class BatchConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -290,10 +296,17 @@ class BatchConsumerDaemon implements Runnable
         ArrayBlockingQueue<BatchConsumeData> workQueue = new ArrayBlockingQueue<BatchConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
         try {
+
             long queueSize = workQueue.size();
             while (true) {      // Until service is shutdown
 
@@ -342,8 +355,15 @@ class BatchConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
 
 			    Batch batch = null;
-	                    // Refresh ZK connection
-               	            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+        		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            		        try {
+               		            // Refresh ZK connection
+               		            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           		        } catch  (Exception e ) {
+             		            e.printStackTrace(System.err);
+           		        }
+        		    }
 
 			    try {
                                 batch = Batch.acquirePendingBatch(zooKeeper);
@@ -419,8 +439,15 @@ class BatchConsumerDaemon implements Runnable
 
     private boolean onHold()
     {
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
@@ -481,8 +508,15 @@ class BatchConsumeData implements Runnable
             JSONObject ji = null;
             // JSONObject jpr = new JSONObject();
 
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (Exception e) {
@@ -560,12 +594,15 @@ class BatchCleanupDaemon implements Runnable
     {
         this.queueConnectionString = queueConnectionString;
 
-        try {
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
-
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
         }
+
     }
 
     public void run()
@@ -574,8 +611,15 @@ class BatchCleanupDaemon implements Runnable
         String status = null;
 
         try {
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             sessionID = zooKeeper.getSessionId();
             System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));

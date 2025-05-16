@@ -103,7 +103,10 @@ public class HandlerCleanup extends Handler<JobState>
 	} finally {
 	    // Initiated with Storage Handler.  Keep lock until object completes
 	    try {
-                if ( ! unitTest) releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+                if ( ! unitTest) {
+		    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+		    zooKeeper.close();
+		}
 	    } catch (Exception e) {}
 	}
     }
@@ -120,8 +123,14 @@ public class HandlerCleanup extends Handler<JobState>
      */
     private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
 
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch  (Exception e ) {
+               e.printStackTrace(System.err);
+            }
+        }
 
         try {
             MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);

@@ -49,38 +49,30 @@ public class ZookeeperUtil
     public static final int ZK_SESSION_TIMEOUT = (6 * 60 * 60 * 1000); 		// 6 hour session timeout
 
 
-    public static ZooKeeper refreshZK(ZooKeeper zk, String queueConnectionString)
+    public static boolean validateZK(ZooKeeper zk)
     {
+
 	Stat stat = null;
 	String caller = Thread.currentThread().getStackTrace()[2].getClassName() + "." + 
 			Thread.currentThread().getStackTrace()[2].getMethodName() + "() : " +
 			Thread.currentThread().getStackTrace()[2].getLineNumber();
-	boolean init = true;
-	while (stat == null) {
-            try {
-	        stat = zk.exists("/zookeeper", null);
-	    } catch (Exception e) {
-		try { 
-		    // Sleep if looping
-		    if (! init) Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-
-		    // Log
-		    if (! init) {
-		        if (DEBUG) System.err.println("===========> ESTABLISH/REFRESH ZK Connection " + caller);
-		        ThreadContext.put("Zookeeper Connection needs refresh", caller);
-		    }
-
- 		    zk = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, null);
-	            stat = zk.exists("/zookeeper", null);
-		    init = false;
-		} catch (Exception e2) {}
-	    } finally {
-                 ThreadContext.clearMap();
-            }
+        try {
+	    zk.exists("/zookeeper", null);
+	    return true;
+	} catch (Exception e) {
+	    // Log
+	    if (DEBUG) System.err.println("[INFO] ZookeeperUtil: Need to ESTABLISH/REFRESH ZK Connection " + caller);
+	    ThreadContext.put("Zookeeper Connection needs refresh", caller);
+	    try {
+		// Close expired connection.
+		zk.close();
+		zk = null;
+	    } catch (Exception e2) {
+	    }
+	    return false;
+	} finally {
 
 	}
-
-        return zk;
     }
 
 }

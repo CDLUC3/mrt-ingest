@@ -238,8 +238,14 @@ class NotifyConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -254,8 +260,15 @@ class NotifyConsumerDaemon implements Runnable
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
         try {
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             long queueSize = workQueue.size();
             while (true) {      // Until service is shutdown
@@ -293,8 +306,14 @@ class NotifyConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
 
-	                    // Refresh ZK connection
-			    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                		try {
+                   		    // Refresh ZK connection
+                   		    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               		        } catch  (Exception e ) {
+                 		    e.printStackTrace(System.err);
+               		        }
+            		    }
 
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Notify);
@@ -379,8 +398,15 @@ class NotifyConsumerDaemon implements Runnable
     // to do: make this a service call
     private boolean onHold()
     {
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch  (Exception e ) {
+               e.printStackTrace(System.err);
+            }
+        }
 
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
@@ -436,9 +462,15 @@ class NotifyConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
 
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
@@ -485,9 +517,14 @@ class NotifyConsumeData implements Runnable
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
-
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);

@@ -242,8 +242,15 @@ class ProcessConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-	    // Refresh ZK
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
         } finally {
@@ -261,8 +268,15 @@ class ProcessConsumerDaemon implements Runnable
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
         try {
-	    // Refresh connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             long queueSize = workQueue.size();
             while (true) {      // Until service is shutdown
@@ -299,8 +313,16 @@ class ProcessConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             job = null;
-	                    // Refresh ZK connection
-               	            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+
+            		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                		try {
+                   		    // Refresh ZK connection
+                   		    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               		        } catch  (Exception e ) {
+                 		    e.printStackTrace(System.err);
+               		        }
+            		    }
 
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Processing);
@@ -440,8 +462,15 @@ class ProcessConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
@@ -490,8 +519,14 @@ class ProcessConsumeData implements Runnable
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	    // Force an Inventory failure
 	    if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), "Record_FAIL")) {

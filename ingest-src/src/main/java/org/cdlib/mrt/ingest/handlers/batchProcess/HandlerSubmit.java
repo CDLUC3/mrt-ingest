@@ -104,9 +104,14 @@ public class HandlerSubmit extends Handler<BatchState>
 
 	try {
 
-
-            // open a single connection to zookeeper for all queue posting
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, batchState.grabTargetQueue());
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	    // common across all jobs in batch
 	    jproperties.put("batchID", batchState.getBatchID().getValue());

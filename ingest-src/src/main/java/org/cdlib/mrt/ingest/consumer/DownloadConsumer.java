@@ -239,8 +239,15 @@ class DownloadConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-	    // Refresh ZK connection
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
 	}
@@ -255,8 +262,14 @@ class DownloadConsumerDaemon implements Runnable
 
         try {
             long queueSize = workQueue.size();
-            // Refresh connection. if necessary
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             while (true) {      // Until service is shutdown
 
@@ -293,8 +306,15 @@ class DownloadConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
 
-                            // Refresh ZK connection
-                            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+        		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            		        try {
+               		            // Refresh ZK connection
+               		            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           		        } catch  (Exception e ) {
+             		            e.printStackTrace(System.err);
+           		        }
+        		    }
+
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Downloading);
                             } catch (Exception e) {
@@ -381,8 +401,16 @@ class DownloadConsumerDaemon implements Runnable
     private boolean onHold()
     {
         try {
-	    // Refresh ZK connection
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
                 System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
                 return true;
@@ -435,8 +463,16 @@ class DownloadConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-	    // Refresh ZK connection
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -482,8 +518,15 @@ class DownloadConsumeData implements Runnable
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
             try {
-	       // Refresh ZK connection
-	       zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+               if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                  try {
+                      // Refresh ZK connection
+                      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                  } catch  (Exception e ) {
+                      e.printStackTrace(System.err);
+                  }
+               }
  
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);

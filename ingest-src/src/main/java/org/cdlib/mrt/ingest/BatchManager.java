@@ -171,8 +171,15 @@ public class BatchManager {
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
-			// Initialize ZK locks
-			zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            	        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+               	            try {
+                   	        // Refresh ZK connection
+                   	        zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               	            } catch  (Exception e ) {
+                 	        e.printStackTrace(System.err);
+               	            }
+            	        }
+
                         System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
 			MerrittLocks.initLocks(zooKeeper);
 

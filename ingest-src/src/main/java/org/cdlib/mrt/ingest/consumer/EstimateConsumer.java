@@ -250,8 +250,14 @@ class EstimateConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	                            
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -265,8 +271,14 @@ class EstimateConsumerDaemon implements Runnable
         ArrayBlockingQueue<EstimateConsumeData> workQueue = new ArrayBlockingQueue<EstimateConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
         try {
             long queueSize = workQueue.size();
@@ -305,8 +317,14 @@ class EstimateConsumerDaemon implements Runnable
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
 
-	                    // Refresh ZK connection
-               		    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+        		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            		        try {
+               		            // Refresh ZK connection
+               		            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           		        } catch  (Exception e ) {
+             		            e.printStackTrace(System.err);
+           		        }
+        		    }
 
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
@@ -418,8 +436,15 @@ class EstimateConsumerDaemon implements Runnable
 
     private boolean onHold()
     {
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+        
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
@@ -435,8 +460,15 @@ class EstimateConsumerDaemon implements Runnable
     // Support collection level hold
     private boolean onHold(String collection)
     {
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
         try {
             if (StringUtil.isEmpty(collection)) {
@@ -495,8 +527,14 @@ class EstimateConsumeData implements Runnable
             long spaceNeeded = 0L;
             int priority = 0;
 
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	    try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
@@ -541,8 +579,14 @@ class EstimateConsumeData implements Runnable
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
 
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, queueConnectionString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	    // Set submission size
 	    long submissionSize = jobState.grabSubmissionSize();

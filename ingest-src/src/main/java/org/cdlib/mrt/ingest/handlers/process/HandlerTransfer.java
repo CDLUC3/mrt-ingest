@@ -136,8 +136,16 @@ public class HandlerTransfer extends Handler<JobState>
 	zooConnectString = jobState.grabMisc();
 	zooLockNode = jobState.grabExtra();
 
-	try {
-	    zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+        try {
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                } catch  (Exception e ) {
+                   e.printStackTrace(System.err);
+                }
+            }
+
 	    boolean lock = getLock(zooKeeper, jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
 
 	    originalStoreNode = profileState.getTargetStorage();
@@ -224,8 +232,14 @@ public class HandlerTransfer extends Handler<JobState>
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response message: " + responseMessage);
 	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " URL: " + url);
 
-            // Refresh ZK connection
-            zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
             // Log POST
             long endTime = DateUtil.getEpochUTCDate();
@@ -407,10 +421,16 @@ public class HandlerTransfer extends Handler<JobState>
     private boolean getLock(ZooKeeper zooKeeper, String primaryID, String payload) {
     try {
 
-       boolean locked = false;
-       // Refresh ZK connection
-       zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+        boolean locked = false;
 
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
 	while (! locked) {
 	    try {
@@ -444,8 +464,14 @@ public class HandlerTransfer extends Handler<JobState>
      */
     private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
 
-        // Refresh ZK connection
-        zooKeeper = ZookeeperUtil.refreshZK(zooKeeper, zooConnectString);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+	}
 
     	try {
 	    MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
