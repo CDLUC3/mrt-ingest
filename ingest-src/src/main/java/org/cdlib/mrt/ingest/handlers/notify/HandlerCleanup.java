@@ -104,6 +104,7 @@ public class HandlerCleanup extends Handler<JobState>
 	    // Initiated with Storage Handler.  Keep lock until object completes
 	    try {
                 if ( ! unitTest) {
+            	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper Storage lock: " + this.zooKeeper.toString());
 		    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
 		    zooKeeper.close();
 		}

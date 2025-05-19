@@ -285,8 +285,6 @@ public class HandlerTransfer extends Handler<JobState>
 
             return new HandlerResult(false, msg);
 	} finally {
-	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper lock: " + this.zooKeeper.toString());
-	    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
             ThreadContext.clearMap();
             msgMap.clear();
             msgMap = null;
