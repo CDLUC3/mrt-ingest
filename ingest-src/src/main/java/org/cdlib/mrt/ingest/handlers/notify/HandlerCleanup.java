@@ -66,6 +66,8 @@ public class HandlerCleanup extends Handler<JobState>
     private LoggerInf logger = null;
     private Properties conf = null;
     private boolean unitTest = false;
+    private String recycleBinName = "RecycleBin";
+    private boolean deletePayload = false;
 
     /**
      * remove staging area
@@ -84,18 +86,33 @@ public class HandlerCleanup extends Handler<JobState>
 	try {
 
             if ( ! unitTest) zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-
 	    File stageDir = new File(ingestRequest.getQueuePath(), "producer");
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
 
-	    boolean deleteDir = FileUtil.deleteDir(stageDir);
-	    if (! deleteDir) {
-		// NFS open files are renamed (See section D2. of http://nfs.sourceforge.net)
-                if (DEBUG) System.out.println("[error] " + MESSAGE + "Failure in removing: " 
-		    + stageDir.getAbsolutePath() + "   Continuing.");
+	    if (! deletePayload) {
+	        File recycleBin = new File(ingestRequest.getQueuePath().getParentFile().getParentFile(), recycleBinName);
+	        if (! recycleBin.exists()) {
+	           if (DEBUG) System.out.println("[debug] " + MESSAGE + "Creating recycle bin directory: " + recycleBin.getAbsolutePath());
+	           try {
+	              recycleBin.mkdir();
+	           } catch (Exception e) {}
+	        }
+
+
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "moving staging directory: " + stageDir.getAbsolutePath());
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "target directory: " + recycleBin.getAbsolutePath() + "/" + jobState.getJobID().getValue());
+	        stageDir.renameTo(new File(recycleBin.getAbsolutePath(), jobState.getJobID().getValue()));
+	        return new HandlerResult(true, "SUCCESS: " + NAME + " moving of staging directory", 0);
+	    } else {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
+
+	        boolean deleteDir = FileUtil.deleteDir(stageDir);
+	        if (! deleteDir) {
+		    // NFS open files are renamed (See section D2. of http://nfs.sourceforge.net)
+                    if (DEBUG) System.out.println("[error] " + MESSAGE + "Failure in removing: " 
+		        + stageDir.getAbsolutePath() + "   Continuing.");
+	        }
+	        return new HandlerResult(true, "SUCCESS: " + NAME + " deletion of staging directory", 0);
 	    }
-
-	    return new HandlerResult(true, "SUCCESS: " + NAME + " deletion of staging directory", 0);
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "removing staging directory: " + e.getMessage();
