@@ -171,14 +171,16 @@ public class HandlerRetrieve extends Handler<JobState>
                     FileComponent fileComponent = null;
 
 		    // Dryrun process of manifest 
-                    System.out.println("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
-                    if (validateManifestIntegrity(manifestFile, logger)) {
-                        status = "valid";
-                        if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
-                    } else {
-                        status = "not-valid";
-                        throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "manifest integrity check fails: " + packageType);
-                    }
+                    status = "valid";
+                    System.out.println("[info] " + MESSAGE + "NOT validating manifest integrity.  Already competed in Estimatioin: " + jobState.getPackageName());
+                    //System.out.println("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
+                    //if (validateManifestIntegrity(manifestFile, logger)) {
+                        //status = "valid";
+                        //if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
+                    //} else {
+                        //status = "not-valid";
+                        //throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "manifest integrity check fails: " + packageType);
+                    //}
 
 		    if (ingestRequest.getNumDownloadThreads() != 0) {
 			thread_pool_size = ingestRequest.getNumDownloadThreads();

@@ -52,6 +52,7 @@ public class IngestRequest
     private Identifier profile = null;
     private int packageSize;
     private int numDownloadThreads = 0;
+    private int metadataDisplaySize = 3500;
     private String note = null;
     private String link = null;	// used to expose data to storage service via manifest
 
@@ -336,6 +337,14 @@ public class IngestRequest
     }
 
     /**
+     * Get metadata size threshold
+     * @return int metadata display size
+     */
+    public int getMetadataDisplaySize() {
+        return metadataDisplaySize;
+    }
+
+    /**
      * Set queue path
      * @param File submission queuing directory
      */
@@ -357,6 +366,14 @@ public class IngestRequest
      */
     public void setIngestZfsThreshold(String ingestZfsThreshold) {
         this.ingestZfsThreshold = ingestZfsThreshold;
+    }
+
+    /**
+     * Set metadata display size
+     * @param int metadata size threshold
+     */
+    public void setMetadataDisplaySize(int metadataDisplaySize) {
+        this.metadataDisplaySize = metadataDisplaySize;
     }
 
     /**

@@ -56,6 +56,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StateInf;
@@ -77,12 +78,10 @@ public class QueueManager {
 	private static final String NAME = "QueueManager";
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
-	private static int sessionTimeout = 300000;  //5 minutes
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
 	private String queueConnectionString = null;
-	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
         private String emailReplyTo = null;
@@ -140,7 +139,6 @@ public class QueueManager {
 			String value = null;
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
-			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
                         String matchEmailReplyTo = "mail-replyto";
@@ -217,8 +215,6 @@ public class QueueManager {
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
-			if (highPriorityThreshold != null)
-				profileState.setPriorityThreshold(highPriorityThreshold);
 			if (emailContact != null)
 				profileState.setEmailContact(emailContact);
                         if (emailReplyTo != null)
@@ -262,7 +258,15 @@ public class QueueManager {
         public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
                 ZooKeeper zooKeeper = null;
                 try {
-                        zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+
+            	        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                	    try {
+                   	        // Refresh ZK connection
+                   	        zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               	            } catch  (Exception e ) {
+                 	        e.printStackTrace(System.err);
+               	            }
+            	        }
 
                         IngestServiceState ingestState = new IngestServiceState();
 			if (StringUtil.isNotEmpty(collection)) {
@@ -324,7 +328,7 @@ public class QueueManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);

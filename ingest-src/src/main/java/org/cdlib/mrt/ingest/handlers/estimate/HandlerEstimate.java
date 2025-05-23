@@ -35,7 +35,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.lang.Long;
 import java.net.URL;
-import java.net.URLConnection;
+import java.net.HttpURLConnection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -194,7 +194,7 @@ public class HandlerEstimate extends Handler<JobState>
                     }
 
                     executorService = Executors.newFixedThreadPool(thread_pool_size);
-                    List<Future<Long>> tasks = new ArrayList<Future<Long>>();
+                    List<Future<String>> tasks = new ArrayList<Future<String>>();
 
                     // process all rows in each manifest file
                     enumRow = manifest.getRows(new FileInputStream(manifestFile));
@@ -206,7 +206,7 @@ public class HandlerEstimate extends Handler<JobState>
                         }
 
                         // launch download
-                        Future<Long> future = executorService.submit(new CalculateSize(fileComponent.getURL(), fileComponent.getIdentifier(), jobState));
+                        Future<String> future = executorService.submit(new CalculateSize(fileComponent.getURL(), fileComponent.getIdentifier(), jobState));
                         tasks.add(future);
                     }
 
@@ -221,10 +221,17 @@ public class HandlerEstimate extends Handler<JobState>
 
                     // Sum manifest size
                     try {
-                        for (Future<Long> future : tasks) {
-                            Long s = future.get();    // blocked, but should be complete
+                        for (Future<String> future : tasks) {
+                            String s = future.get();    // blocked, but should be complete
+
+			    // If URL, then it is a retrieval error
+                            if (s.contains("://")) {
+            			return new HandlerResult(false, "ERROR: " + NAME + "Manifest error (URL retrieval error: " + s, 0);
+                            }
+
+			    // Convert string to long
                             if (s != null) {
-				submissionSize += s;
+				submissionSize += Long.parseLong(s);
                             }
                         }
 			// Differeniiate from a zero length file
@@ -328,7 +335,7 @@ public class HandlerEstimate extends Handler<JobState>
 
 }
 
-class CalculateSize implements Callable<Long>
+class CalculateSize implements Callable<String>
 {
 
     private static final boolean DEBUG = true;
@@ -343,7 +350,7 @@ class CalculateSize implements Callable<Long>
         this.jobState = jobState;
     }
 
-    public Long call()
+    public String call()
         throws Exception
     {
         HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
@@ -354,8 +361,13 @@ class CalculateSize implements Callable<Long>
             System.out.println("Retrieving remote data size: " + url.toString() + " ---- " + fileName);
             for (int i=0; i < 2; i++) {
                 try {
-		    URLConnection uc = url.openConnection();
+		    HttpURLConnection uc = (HttpURLConnection) url.openConnection();
             	    bytes = uc.getContentLengthLong();
+
+		    if (uc.getResponseCode() == 404) {
+                        if (DEBUG) System.out.println("Estimate [error]: " + " URL not retrievable: " + url.toString());
+            		return url.toString();
+		    }
 
 		    if (bytes == -1 ) {
 			ThreadContext.put("Content Length not provided: ", url.toString() + " - " + jobState.grabObjectProfile().getCollectionName());
@@ -371,13 +383,13 @@ class CalculateSize implements Callable<Long>
                 if (i==1) break;        // log error
             }
 
-            return bytes;
+            return String.valueOf(bytes);
 
         } catch (Exception e) {
             e.printStackTrace();
             LogManager.getLogger().error(e);
             System.out.println("[error] In retrieval of URL: " + url.toString());
-            return 0L;
+            return "0";
         } finally {
             ThreadContext.clearMap();
         }

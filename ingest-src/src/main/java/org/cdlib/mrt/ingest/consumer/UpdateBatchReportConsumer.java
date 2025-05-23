@@ -275,7 +275,14 @@ class UpdateBatchReportConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -289,21 +296,14 @@ class UpdateBatchReportConsumerDaemon implements Runnable
         ArrayBlockingQueue<UpdateBatchReportConsumeData> workQueue = new ArrayBlockingQueue<UpdateBatchReportConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
-	// Refresh connection. if necessary
-	try {
-	    // Test connection
-	    zooKeeper.exists("/",false);
-	} catch (KeeperException ke) {
-	    System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
-	    try {
-		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-	    } catch (Exception ioe){}
-	} catch (Exception e) {}
-
-	sessionID = zooKeeper.getSessionId();
-	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-	sessionAuth = zooKeeper.getSessionPasswd();
+            } catch  (Exception e ) {
+               e.printStackTrace(System.err);
+            }
+        }
 
         try {
             long queueSize = workQueue.size();
@@ -343,7 +343,16 @@ class UpdateBatchReportConsumerDaemon implements Runnable
                        System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                        try {
                		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-                           zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+
+            		   if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                	       try {
+                   		   // Refresh ZK connection
+                   		   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               		       } catch  (Exception e ) {
+                 		   e.printStackTrace(System.err);
+               		       }
+            		   }
+
                            Job.initNodes(zooKeeper);
                        } catch (Exception ioe){}
                     } catch (Exception e) {}
@@ -353,6 +362,15 @@ class UpdateBatchReportConsumerDaemon implements Runnable
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+
+            		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                	        try {
+                   		    // Refresh ZK connection
+                   		    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               		        } catch  (Exception e ) {
+                 		    e.printStackTrace(System.err);
+               		        }
+            		    }
 
 			    Batch batch = null;
 			    try {
@@ -430,6 +448,16 @@ class UpdateBatchReportConsumerDaemon implements Runnable
     // to do: make this a service call
     private boolean onHold()
     {
+        
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch  (Exception e ) {
+               e.printStackTrace(System.err);
+            }
+        }
+
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
                 System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
@@ -485,7 +513,16 @@ class UpdateBatchReportConsumeData implements Runnable
             JSONObject jp = null;
             JSONObject ji = null;
             // JSONObject jpr = new JSONObject();
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
             try {
 	       jp = batch.jsonProperty(zooKeeper, ZKKey.BATCH_SUBMISSION);
             } catch (Exception e) {
@@ -567,11 +604,15 @@ class UpdateBatchReportCleanupDaemon implements Runnable
     {
         this.queueConnectionString = queueConnectionString;
 
-        try {
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch  (Exception e ) {
+               e.printStackTrace(System.err);
+            }
         }
+
     }
 
 
@@ -580,6 +621,16 @@ class UpdateBatchReportCleanupDaemon implements Runnable
     {
         boolean init = true;
         String status = null;
+
+
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            } catch  (Exception e ) {
+               e.printStackTrace(System.err);
+            }
+        }
 
         sessionID = zooKeeper.getSessionId();
         System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
@@ -637,6 +688,16 @@ class UpdateBatchReportCleanupDaemon implements Runnable
                     while (true) {
                         System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
                         List<String> batches = null;
+
+            		if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                	    try {
+                   		// Refresh ZK connection
+                   		zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               		    } catch  (Exception e ) {
+                 		e.printStackTrace(System.err);
+               		    }
+            		}
+
                         try {
 			   try {
                               batches = Batch.deleteCompletedBatches(zooKeeper);

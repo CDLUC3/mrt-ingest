@@ -156,7 +156,7 @@ public class MetadataUtil
      * @param ingestFile source file (usually "mrt-ingest.txt")
      * @return properties map of properties
      */
-    public static Map<String, String> readMetadataANVL(File ingestFile)
+    public static Map<String, String> readMetadataANVL(File ingestFile, int metadataDisplaySize)
         throws TException
     {
 	
@@ -183,7 +183,12 @@ public class MetadataUtil
                         } else tokens[0] = "where-local";
                     }
 		    if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
-		        linkedHashMap.put(tokens[0], tokens[1]);
+			if (tokens[1].length() > metadataDisplaySize) {
+		    	   System.out.println("[info] " + NAME + " Truncating metadata: " + tokens[0] + " to size: " + metadataDisplaySize + " ---- " + tokens[1].substring(0, metadataDisplaySize));
+		           linkedHashMap.put(tokens[0], tokens[1].substring(0, metadataDisplaySize));
+			} else {
+		           linkedHashMap.put(tokens[0], tokens[1]);
+			}
 		    }
 		} else {
 		    System.out.println("[warn] " + NAME + "No match: " + line);

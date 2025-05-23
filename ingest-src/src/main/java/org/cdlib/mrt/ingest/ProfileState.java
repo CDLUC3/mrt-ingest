@@ -272,9 +272,6 @@ public class ProfileState
 	// Left pad with zeros if less than 2 digits
         this.priority = String.format("%2s", priority).replace(" " , "0");
     }
-    public void setPriorityThreshold(String priorityThreshold) {
-        this.priorityThreshold = String.format("%2s", priorityThreshold).replace(" " , "0");
-    }
 
     /**
      * Set status URL
@@ -354,9 +351,6 @@ public class ProfileState
      */
     public String getPriority() {
         return this.priority;
-    }
-    public String grabPriorityThreshold() {
-        return this.priorityThreshold;
     }
 
     /**

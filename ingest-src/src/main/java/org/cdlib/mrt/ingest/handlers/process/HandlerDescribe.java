@@ -68,6 +68,7 @@ public class HandlerDescribe extends Handler<JobState>
     private Properties conf = null;
     private Integer defaultStorage = null;
     private File systemTargetDir = null;
+    private int metadataDisplaySize;
 
     /**
      * process metadata
@@ -93,6 +94,8 @@ public class HandlerDescribe extends Handler<JobState>
             File producerEmbargoFile = new File(producerTargetDir, "mrt-embargo.txt");
             File systemDCFile = new File(systemTargetDir, "mrt-dc.xml");
 
+            metadataDisplaySize = ingestRequest.getMetadataDisplaySize();
+
             // save deletion file
             if (jobState.grabUpdateFlag()) {
                 // process deletions
@@ -107,7 +110,7 @@ public class HandlerDescribe extends Handler<JobState>
             }
 
 	    if (producerErcFile.exists()) {
-	        producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
+	        producerERC = MetadataUtil.readMetadataANVL(producerErcFile, metadataDisplaySize);
 	    }
 
             // erc file in ANVL format
@@ -221,7 +224,7 @@ public class HandlerDescribe extends Handler<JobState>
 	// read existing ERC if applicable
         Map<String, String> systemERC = new LinkedHashMap();	// maintains insertion order
         if (systemErcFile.exists()) {
-            systemERC = MetadataUtil.readMetadataANVL(systemErcFile);
+            systemERC = MetadataUtil.readMetadataANVL(systemErcFile, metadataDisplaySize);
         }
 
         if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating/updating erc: " + systemErcFile.getAbsolutePath());
@@ -267,191 +270,7 @@ public class HandlerDescribe extends Handler<JobState>
 	    arrayWhere.add("(:unas)");
 
 	// update jobState/citation file with producer supplied values
-/*
-Now done in HandlerMinter
-	if (producerERC != null) {
-	    Iterator producerERCitr = producerERC.keySet().iterator();
-	    while (producerERCitr.hasNext()) {
-	        String key = (String) producerERCitr.next();
-	        String value = (String) producerERC.get(key);
-
-	        if (key.matches("who") && ! value.contains("(:unas)")) {
-		    append = "";
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Creator producer data found: " + value);
-		    if (! objectCreator.contains("(:unas)")) {
-		        if (! value.contains(objectCreator)) {
-		            append = DELIMITER + objectCreator;
-		            jobState.setObjectCreator(value + append);
-		            ercProperties.put(key, value + append);
-			    objectCreator = value + append;
-			}
-		    } else {
-			ercProperties.put(key, objectCreator);
-		    }
-		}
-	        if (key.matches("what") && ! value.contains("(:unas)")) {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Title producer data found: " + value);
-		    if (! objectTitle.contains("(:unas)")) {
-		        if (! value.contains(objectTitle)) {
-		            append = DELIMITER + objectTitle; 
-		            jobState.setObjectTitle(value + append);
-		            ercProperties.put(key, value + append);
-			    objectTitle = value + append;
-			}
-		    } else {
-			ercProperties.put(key, objectTitle);
-		    }
-		}
-	        if (key.matches("when") && ! value.contains("(:unas)")) {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Date producer data found: " + value);
-		    if (! objectDate.contains("(:unas)")) {
-		        if (! value.contains(objectDate)) {
-		            append = DELIMITER + objectDate;
-		            jobState.setObjectDate(value + append);
-		            ercProperties.put(key, value + append);
-			    objectDate = value + append;
-			}
-		    } else {
-			ercProperties.put(key, objectDate);
-		    }
-
-		}
-		// local ID in ERC file?
-	        if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
-		    try {
-                        append = "";
-			value = trimLeft(trimRight(value));
-                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
-                            jobState.setLocalID(value);
-	    		    if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
-                        } else if (! localIdentifier.contains(value)) {
-                            append = DELIMITER + localIdentifier;
-                            jobState.setLocalID(value + append);
-	    		    if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
-			} 
-
-                        try {
-                            int i = arrayWhere.indexOf("(:unas)");
-                            if (i >= 0) arrayWhere.remove(i);
-			    // check if already exists
-                            if (arrayWhere.indexOf(value) < 0 ) arrayWhere.add(value + append);
-                        } catch (Exception ee) {}
-		    } catch (Exception e) {}
-		} 
-		// primary ID in ERC file?
-	        if (key.matches("where") && value.contains("ark:") && ! value.contains("(:unas)")) {
-		    try {
-			// Only update if empty
-                        if (primaryIdentifier == null || primaryIdentifier.contains("(:unas)")) { 
-                            jobState.setPrimaryID(value);
-	    		    if (DEBUG) System.out.println(MESSAGE + " Found primary ID in mrt-erc.txt: " + value);
-		        }
-		    } catch (Exception e) {}
-		} 
-	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
-		    // let other ERC data through 
-		    ercProperties.put(key, value);
-		}
-	    }
-	} else {
-	    if (DEBUG) System.out.println("No additional producer ERC metadata found");
-	}
-
-	// update jobState/citation file with existing system values
-	// -- obsolete -- this file should not exist with new update() logic
-	// -- keep for refernce only
-	if (systemERC != null) {
-	    Iterator systemERCitr = systemERC.keySet().iterator();
-	    while (systemERCitr.hasNext()) {
-	        String key = ((String) systemERCitr.next()).replaceAll("^\\s+", "").replaceAll("\\s+$", "");
-	        String value = ((String) systemERC.get(key)).replaceAll("^\\s+", "").replaceAll("\\s+$", "");
-
-		// append
-	        if (key.matches("who") && ! value.contains("(:unas)")) {
-		    if (! objectCreator.contains("(:unas)")) {		// any existing producer data?
-		        if (value.contains(objectCreator)) {
-        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Creator data (system) already exists: " + objectCreator);
-			    ercProperties.put(key, value);
-		            jobState.setObjectCreator(value);
-		        } else {
-        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Appending additional Creator data (system): " + value);
-		            append = DELIMITER + objectCreator; 
-		            jobState.setObjectCreator(value + append);
-			    ercProperties.put(key, value + append);
-			}
-		    } else {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Populating Creator with existing data (system): " + value);
-			ercProperties.put(key, value);
-		        jobState.setObjectCreator(value);
-		    }
-		}
-	        if (key.matches("what")&& ! value.contains("(:unas)")) {
-		    if (! objectTitle.contains("(:unas)")) {
-		        if (value.contains(objectTitle)) {
-        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Title data (system) already exists: " + objectTitle);
-			    ercProperties.put(key, value);
-		            jobState.setObjectTitle(value);
-		        } else {
-        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Appending additional Title data (system): " + value);
-		            append = DELIMITER + objectTitle; 
-		            jobState.setObjectTitle(value + append);
-			    ercProperties.put(key, value + append);
-			}
-		    } else {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Populating Title with existing data (system): " + value);
-			ercProperties.put(key, value);
-		        jobState.setObjectTitle(value);
-		    }
-		}
-	        if (key.matches("when") && ! value.contains("(:unas)")) {
-		    if (! objectDate.contains("(:unas)")) {
-		        if (value.contains(objectDate)) {
-        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Additional Date data (system) already exists: " + objectDate);
-			    ercProperties.put(key, value);
-		            jobState.setObjectDate(value);
-		        } else {
-        		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Found additional Date data (system): " + value);
-		            append = DELIMITER + objectDate; 
-		            jobState.setObjectDate(value + append);
-			    ercProperties.put(key, value + append);
-			}
-		    } else {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Populating Date with existing data (system): " + value);
-			ercProperties.put(key, value);
-		        jobState.setObjectDate(value);
-		    }
-		}
-                // local ID in ERC file?
-                if (key.matches("where") && ! value.contains("ark:") && ! value.contains("(:unas)")) {
-                    try {
-                        append = "";
-                        value = trimLeft(trimRight(value));
-                        if (localIdentifier == null || localIdentifier.contains("(:unas)")) {
-                            jobState.setLocalID(value);
-                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
-                        } else if (! localIdentifier.contains(value)) {
-                            append = DELIMITER + localIdentifier;
-                            jobState.setLocalID(value + append);
-                            if (DEBUG) System.out.println(MESSAGE + " Found local ID in mrt-erc.txt: " + value);
-                        }
-
-                        try {
-                            int i = arrayWhere.indexOf("(:unas)");
-                            if (i >= 0) arrayWhere.remove(i);
-                            // check if already exists
-                            if (arrayWhere.indexOf(value) < 0 ) arrayWhere.add(value + append);
-                        } catch (Exception ee) {}
-                    } catch (Exception e) {}
-                }
-	        if (key.matches("note") || key.matches("how") || key.startsWith("who/") || key.startsWith("what/") || key.startsWith("when/")) {
-		    // let other ERC data through 
-		    ercProperties.put(key, value);
-		}
-	    }
-	} else {
-	    if (DEBUG) System.out.println("No additional system ERC metadata found");
-	}
-*/
+	// Now done in HandlerMinter
 
         ercProperties.put("where", arrayWhere);
         return MetadataUtil.writeMetadataANVL(systemErcFile, ercProperties, " ", false);

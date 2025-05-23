@@ -56,6 +56,7 @@ import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StateInf;
@@ -77,7 +78,6 @@ public class BatchManager {
 	private static final String NAME = "BatchManager";
 	private static final String MESSAGE = NAME + ": ";
 	private static final boolean DEBUG = true;
-    	private static int sessionTimeout = 3600000;  // 1 hour
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
@@ -86,7 +86,6 @@ public class BatchManager {
 	private String ingestLName = null;
 	private String accessSmallNode = "/accessSmall.1"; // hard-coded.  Keep in synv with access code
 	private String accessLargeNode = "/accessLarge.1"; // hard-coded.  Keep in synv with access code
-	private String highPriorityThreshold = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
         private String emailReplyTo = null;
@@ -146,7 +145,6 @@ public class BatchManager {
 			String matchIngest = "ingestServicePath";
 			String matchQueueService = "QueueService";
 			String matchIngestLName = "ingestLock";
-			String matchHighPriorityThreshold = "HighPriorityThreshold";
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
                         String matchEmailReplyTo = "mail-replyto";
@@ -157,8 +155,6 @@ public class BatchManager {
 
 			// QueueService - host1:2181,host2:2181
 			this.queueConnectionString = queueConf.getString(matchQueueService);
-			// Priority Threshold
-			this.highPriorityThreshold = queueConf.getString(matchHighPriorityThreshold);
 			// All Ingest Lock Names - "zkLock,..."
 			this.ingestLName = ingestConf.getString(matchIngestLName);
 
@@ -175,8 +171,15 @@ public class BatchManager {
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
-			// Initialize ZK locks
-			zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            	        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+               	            try {
+                   	        // Refresh ZK connection
+                   	        zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               	            } catch  (Exception e ) {
+                 	        e.printStackTrace(System.err);
+               	            }
+            	        }
+
                         System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
 			MerrittLocks.initLocks(zooKeeper);
 
@@ -238,8 +241,6 @@ public class BatchManager {
 																								// home
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
-			if (highPriorityThreshold != null)
-				profileState.setPriorityThreshold(highPriorityThreshold);
 			if (emailContact != null)
 				profileState.setEmailContact(emailContact);
                         if (emailReplyTo != null)
@@ -293,7 +294,13 @@ public class BatchManager {
 		String SUPPORTURI = "support-uri";
 		String MAILHOST = "mail-host";
 
-                zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+		boolean unitTest = false;
+                try {
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+		} catch (Exception e) { 
+		   // Unit test catch 
+		   unitTest = true;
+                }
 
 		// name
 		String serviceNameS = ingestConf.getString(SERVICENAME);
@@ -356,11 +363,16 @@ public class BatchManager {
 
                 String onHold = null;
                 // submission state
-                if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
-                   onHold = "frozen";
-                } else {
+                if (! unitTest) {
+                   if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
+                      onHold = "frozen";
+                   } else {
+                      onHold = "thawed";
+                   }
+		} else {
+		   // unit test
                    onHold = "thawed";
-                }
+		}
                 ingestState.setSubmissionState(onHold);
 
                 // Collection submission state
