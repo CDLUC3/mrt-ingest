@@ -242,7 +242,15 @@ class ProcessConsumerDaemon implements Runnable
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
         } finally {
@@ -259,24 +267,17 @@ class ProcessConsumerDaemon implements Runnable
         ArrayBlockingQueue<ProcessConsumeData> workQueue = new ArrayBlockingQueue<ProcessConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
-        // Refresh connection. if necessary
         try {
-            // Test connection
-            zooKeeper.exists("/",false);
-        } catch (KeeperException ke) {
-            System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
-            try {
-		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-            } catch (Exception ioe){}
-        } catch (Exception e) {}
 
-	sessionID = zooKeeper.getSessionId();
-	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-	sessionAuth = zooKeeper.getSessionPasswd();
-        //Item item = null;
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
-        try {
             long queueSize = workQueue.size();
             while (true) {      // Until service is shutdown
 
@@ -312,6 +313,17 @@ class ProcessConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             job = null;
+
+
+            		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                		try {
+                   		    // Refresh ZK connection
+                   		    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               		        } catch  (Exception e ) {
+                 		    e.printStackTrace(System.err);
+               		        }
+            		    }
+
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Processing);
                             } catch (Exception e) {
@@ -328,7 +340,6 @@ class ProcessConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found processing job data: " + job.id());
-                                System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Processing) {
                                    System.err.println(MESSAGE + "Job already processed by Process Consumer: " + job.id());
                                    try {
@@ -451,7 +462,16 @@ class ProcessConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
             try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -498,6 +518,15 @@ class ProcessConsumeData implements Runnable
 	    } 
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	    // Force an Inventory failure
 	    if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), "Record_FAIL")) {

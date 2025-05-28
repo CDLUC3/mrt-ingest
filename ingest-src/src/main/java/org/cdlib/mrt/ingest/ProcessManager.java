@@ -58,6 +58,7 @@ import org.cdlib.mrt.ingest.utility.JobStatusEnum;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
@@ -88,7 +89,6 @@ public class ProcessManager {
 	private Integer defaultStorage = null;
 	private URL ingestLink = null;
 	private boolean debugDump = false;
-        private static int sessionTimeout = 3600000;  // 1 hour
 	private Hashtable<Integer, URL> m_store = new Hashtable<Integer, URL>(20);
 	private Hashtable<Integer, URL> m_access = new Hashtable<Integer, URL>(20);
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
@@ -351,6 +351,12 @@ public class ProcessManager {
                 	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ingestZfsThreshold not set.  Can not provision accurately");
                 	    ingestRequest.setIngestZfsThreshold(null);
             	        }
+	                try {
+                	    ingestRequest.setMetadataDisplaySize(ingestConf.getInt("metadataDisplaySize"));
+            	        } catch (org.json.JSONException je) {
+                	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "metadataDisplaySize not set.  Can not truncate large Metadata");
+                	    ingestRequest.setIngestZfsThreshold(null);
+            	        }
 
 			// add service state properties to ingest request
 			ingestRequest.setServiceState(getServiceState());
@@ -463,7 +469,7 @@ public class ProcessManager {
 				}
 				if (! skipLock) {
                                     System.out.println("[localID Check] LocalID locking starting.");
-            			    zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+            			    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
     				    localIDLock = getLocalIDLock(zooKeeper, jobState.getLocalID().getValue(), jobState.grabObjectProfile().getOwner());
 				} else {
                                     System.out.println("[localID Check] No LocalID locking needed");
@@ -525,6 +531,7 @@ public class ProcessManager {
 				}
 
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.process.HandlerTransfer.class) {
+
 					jobState.setObjectState(jobState.grabTargetStorage().getStorageLink().toString() + "/state/"
 						+ jobState.grabTargetStorage().getNodeID() + "/"
 						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
@@ -532,6 +539,10 @@ public class ProcessManager {
 					System.out.println("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(ingestConf.getString("ingestLock"));
+				}
+
+				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerCleanup.class) {
+					jobState.setMisc(queueConf.getString("QueueService"));
 				}
 
 				try {
@@ -615,7 +626,7 @@ public class ProcessManager {
            boolean unitTest = false;
            try {
 		try {
-                   zooKeeper = new ZooKeeper(queueConnectionString, sessionTimeout, new Ignorer());
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 		} catch (Exception e) {
 		   // Unit test catch
 		   unitTest = true;

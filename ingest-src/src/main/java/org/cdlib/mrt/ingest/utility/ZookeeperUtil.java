@@ -29,6 +29,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.utility;
 
+import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.logging.log4j.ThreadContext;
+
 
 /**
  * Zookeeper static definitions
@@ -42,6 +46,33 @@ public class ZookeeperUtil
     private static final boolean DEBUG = true;
 
     public static final int SLEEP_ZK_RETRY = (30 * 1000);			// 30 sec retry timeout
-    public static final int ZK_SESSION_TIMEOUT = (2 * 60 * 60 * 1000); 		// 2 hour session timeout
+    public static final int ZK_SESSION_TIMEOUT = (6 * 60 * 60 * 1000); 		// 6 hour session timeout
+
+
+    public static boolean validateZK(ZooKeeper zk)
+    {
+
+	Stat stat = null;
+	String caller = Thread.currentThread().getStackTrace()[2].getClassName() + "." + 
+			Thread.currentThread().getStackTrace()[2].getMethodName() + "() : " +
+			Thread.currentThread().getStackTrace()[2].getLineNumber();
+        try {
+	    zk.exists("/zookeeper", null);
+	    return true;
+	} catch (Exception e) {
+	    // Log
+	    if (DEBUG) System.err.println("[INFO] ZookeeperUtil: Need to ESTABLISH/REFRESH ZK Connection " + caller);
+	    ThreadContext.put("Zookeeper Connection needs refresh", caller);
+	    try {
+		// Close expired connection.
+		zk.close();
+		zk = null;
+	    } catch (Exception e2) {
+	    }
+	    return false;
+	} finally {
+
+	}
+    }
 
 }

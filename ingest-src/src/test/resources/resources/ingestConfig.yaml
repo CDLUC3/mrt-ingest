@@ -19,6 +19,7 @@ ingest-info:
     ingestServicePath: "/tmp/ingest"
     ingestQueuePath: "/tmp/ingest/queue"
     ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
+    metadataDisplaySize: "{!SSM: ingest/config/metadataDisplaySize !DEFAULT: 3500}"
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "3"
 

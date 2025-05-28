@@ -69,6 +69,7 @@ public class HandlerMinter extends Handler<JobState>
     private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
+    private int metadataDisplaySize;
 
     /**
      * mint object ID
@@ -98,6 +99,7 @@ public class HandlerMinter extends Handler<JobState>
 	    String retrievedLocalID = null;
 	    boolean mint = true;
 	    boolean haveMetadata = false;
+            metadataDisplaySize = ingestRequest.getMetadataDisplaySize();
 
 	    // Need to read mrt-dc.xml data if available.
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results?
@@ -124,7 +126,7 @@ public class HandlerMinter extends Handler<JobState>
 	    // This is also done in HandlerDescribe, but needs to also be done here for ID binding.  Cache results? 
 	    File producerErcFile = new File(ingestRequest.getQueuePath(), "producer/mrt-erc.txt");
 	    if (producerErcFile.exists()) {
-                producerERC = MetadataUtil.readMetadataANVL(producerErcFile);
+                producerERC = MetadataUtil.readMetadataANVL(producerErcFile, metadataDisplaySize);
 		// overwrite Form or Manifest parameters or DC data
            	haveMetadata = updateMetadata(jobState, producerERC, true);
             }
@@ -188,7 +190,7 @@ public class HandlerMinter extends Handler<JobState>
 		    System.out.println("[debug] " + MESSAGE + "Update specified, let's update primary/local IDs'");
 		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
 	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
-                	previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile);
+                	previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile, metadataDisplaySize);
            		// erc file in ANVL format
            		updateMetadata(jobState, previousSystemERC, true, false);	// update IDs only
             	    } else {

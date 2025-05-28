@@ -31,6 +31,7 @@ import javax.xml.xpath.XPathFactory;
 import org.apache.xpath.jaxp.XPathFactoryImpl;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.zk.Access;
 import org.cdlib.mrt.zk.Batch;
 import org.cdlib.mrt.zk.BatchState;
@@ -87,6 +88,7 @@ public class ServiceDriverIT {
         public static final int SLEEP_SUBMIT = 15000;
         public static final int SLEEP_RETRY = 3000;
         public static final int SLEEP_CLEANUP = 500;
+        public static final int ZK_SESSION_TIMEOUT = 6000000;
         /*
          * Initialize the test class
          */
@@ -100,11 +102,12 @@ public class ServiceDriverIT {
                 }
                 db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 xpathfactory = new XPathFactoryImpl();
-                zk = new ZooKeeper(String.format("localhost:%s", zkport), 100, null);
+                zk = new ZooKeeper(String.format("localhost:%s", zkport), ZK_SESSION_TIMEOUT, null);
 		try {
-                	clearQueue();
+                	clearQueue(zk);
 		} catch (Exception e) {
-                	clearQueue();
+			Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                	clearQueue(zk);
 		}
         }
 
@@ -213,7 +216,7 @@ public class ServiceDriverIT {
          * @throws KeeperException 
          * @throws InterruptedException 
          */
-        public void clearQueue() throws IOException, JSONException, InterruptedException, KeeperException {
+        public void clearQueue(ZooKeeper zk) throws IOException, JSONException, InterruptedException, KeeperException {
                 QueueItemHelper.deleteAll(zk, ZkPaths.Batch.path);
                 QueueItemHelper.deleteAll(zk, ZkPaths.BatchUuids.path);
                 QueueItemHelper.deleteAll(zk, ZkPaths.Job.path);

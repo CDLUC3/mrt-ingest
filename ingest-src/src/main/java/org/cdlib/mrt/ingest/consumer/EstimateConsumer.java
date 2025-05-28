@@ -249,8 +249,15 @@ class EstimateConsumerDaemon implements Runnable
 	try {
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
-	
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+	                            
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -264,22 +271,14 @@ class EstimateConsumerDaemon implements Runnable
         ArrayBlockingQueue<EstimateConsumeData> workQueue = new ArrayBlockingQueue<EstimateConsumeData>(poolSize);
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(poolSize, poolSize, (long) keepAliveTime, TimeUnit.SECONDS, (BlockingQueue) workQueue);
 
-        // Refresh connection. if necessary
-        try {
-            // Test connection
-            zooKeeper.exists("/",false);
-        } catch (KeeperException ke) {
-            System.out.println(MESSAGE + "[WARN] Session expired.  Reconnecting...");
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
             try {
-	       Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+               // Refresh ZK connection
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-            } catch (Exception ioe){}
-        } catch (Exception e) {}
-
-	sessionID = zooKeeper.getSessionId();
-	System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
-	sessionAuth = zooKeeper.getSessionPasswd();
-        //Item item = null;
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
 
         try {
             long queueSize = workQueue.size();
@@ -317,6 +316,16 @@ class EstimateConsumerDaemon implements Runnable
 			if (numActiveTasks < poolSize) {
 			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
+
+        		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            		        try {
+               		            // Refresh ZK connection
+               		            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           		        } catch  (Exception e ) {
+             		            e.printStackTrace(System.err);
+           		        }
+        		    }
+
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Estimating);
                             } catch (Exception e) {
@@ -334,7 +343,6 @@ class EstimateConsumerDaemon implements Runnable
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found estimating job data: " + job.id());
-                                System.out.println("========> Job Status: " + job.status());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Estimating) {
                                    System.err.println(MESSAGE + "Job already processed by Estimate Consumer: " + job.id());
                                    try {
@@ -428,6 +436,16 @@ class EstimateConsumerDaemon implements Runnable
 
     private boolean onHold()
     {
+        
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
+
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
                 System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
@@ -442,6 +460,16 @@ class EstimateConsumerDaemon implements Runnable
     // Support collection level hold
     private boolean onHold(String collection)
     {
+
+        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+            try {
+               // Refresh ZK connection
+               zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+           } catch  (Exception e ) {
+             e.printStackTrace(System.err);
+           }
+        }
+
         try {
             if (StringUtil.isEmpty(collection)) {
                 System.out.println("[warn]" + NAME + ": Collection hold check not valid: " + collection);
@@ -498,7 +526,16 @@ class EstimateConsumeData implements Runnable
             JSONObject ji = null;
             long spaceNeeded = 0L;
             int priority = 0;
-            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
+
 	    try {
                jp = job.jsonProperty(zooKeeper, ZKKey.JOB_CONFIGURATION);
                ji = job.jsonProperty(zooKeeper, ZKKey.JOB_IDENTIFIERS);
@@ -541,6 +578,15 @@ class EstimateConsumeData implements Runnable
 
 	    jobState = ingestService.submitProcess(ingestRequest, process);
 
+
+            if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                try {
+                   // Refresh ZK connection
+                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               } catch  (Exception e ) {
+                 e.printStackTrace(System.err);
+               }
+            }
 
 	    // Set submission size
 	    long submissionSize = jobState.grabSubmissionSize();
