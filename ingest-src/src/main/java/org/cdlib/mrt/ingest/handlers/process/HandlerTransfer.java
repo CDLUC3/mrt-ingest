@@ -277,11 +277,24 @@ public class HandlerTransfer extends Handler<JobState>
 	} catch (TException te) {
 	    te.printStackTrace();
 	    LogManager.getLogger().error(te);
+
+            try {
+                System.out.println("[error] " + MESSAGE + " Error encountered.  Releasing Zookeeper Storage lock: " + this.zooKeeper.toString());
+                releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+                zooKeeper.close();
+            } catch (Exception e) {}
+
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             LogManager.getLogger().error(e);
             String msg = "[error] " + MESSAGE + "processing transfer: " + e.getMessage();
+
+            try {
+                System.out.println("[error] " + MESSAGE + " Error encountered.  Releasing Zookeeper Storage lock: " + this.zooKeeper.toString());
+                releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
+                zooKeeper.close();
+            } catch (Exception e2) {}
 
             return new HandlerResult(false, msg);
 	} finally {
