@@ -246,33 +246,47 @@ public class HandlerSubmit extends Handler<BatchState>
 	        Job job = null;
 		while (true) {
 		    try {
+
+	                if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                	    try {
+                   	        // Refresh ZK connection
+                   	        zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+               	            } catch  (Exception e ) {
+                 	        e.printStackTrace(System.err);
+               	            }
+            	        }
+
 			// Create Job 
 			System.out.println("[info] queue submission: " + jproperties.toString() 
 				+ "  --- Priority: " + priority 
 				+ " --- Identifiers: " + jidentifiers.toString());
 			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), Integer.parseInt(priority), jproperties, jidentifiers);
 
-
 			break;
 		    } catch (Exception e) {
 			e.printStackTrace();
+			String msg = "Failed to create Job queue submission: " + jproperties.toString();
+			System.err.println("[error] " + msg);
 
 			// Batch failure
-			Batch batch = new Batch(job.bid());
-            		batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, "Failed");
-
-			return new HandlerResult(false, "FAIL: " + NAME + " Submission failed: " + e.getMessage(), 0);
+			if (job != null) {
+			    try {
+			        Batch batch = new Batch(job.bid());
+            		        batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed);
+			    } catch (Exception e2) {}
+			}
+			return new HandlerResult(false, "FAIL: " + NAME + " Submission failed: " + msg, 0);
 		    }
 		}
 
 		jobState.setJobStatus(JobStatusEnum.PENDING);
-		job.unlock(zooKeeper);
+		if (job != null) job.unlock(zooKeeper);
 	    }
 
 	    // global
 	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
-
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
+
 	} catch (Exception e) {
 	    e.printStackTrace();
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();
