@@ -40,6 +40,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.service.IngestServiceInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.utility.JobStatusEnum;
+import org.cdlib.mrt.ingest.utility.BatchStatusEnum;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
@@ -550,7 +551,11 @@ class BatchConsumeData implements Runnable
 	    ingestRequest.setBatch(batch);
 	    batchState = ingestService.submitBatch(ingestRequest);
 
-	    batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Reporting);
+	    if (batchState.getBatchStatus() == BatchStatusEnum.FAILED) {
+	       batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed,batchState.getBatchStatusMessage());
+	    } else {
+	       batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Reporting);
+	    }
 	    batch.unlock(zooKeeper);
 
         } catch (Exception e) {

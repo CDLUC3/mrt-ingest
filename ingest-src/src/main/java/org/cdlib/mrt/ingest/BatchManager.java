@@ -419,7 +419,7 @@ public class BatchManager {
 // Need to post (post to queueing service asyncrhonously due to UI timeout)
 	class Post implements Runnable {
 
-		private static final String NAME = "Post";
+		private static final String NAME = "PostBatch";
 		private static final String MESSAGE = NAME + ": ";
 		private BatchState batchState = null;
 		private IngestRequest ingestRequest = null;
@@ -487,7 +487,7 @@ public class BatchManager {
 
 				// ready for consumer to start processing
 				//BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
-				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue());
+				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue() + " Status: " + batchState.getBatchStatus().toString());
 
 			} catch (Exception e) {
 				System.out.println(MESSAGE + "Exception detected while posting data to queue.");
