@@ -443,7 +443,7 @@ public class QueueManager {
 // Need to post (post to queueing service asyncrhonously due to UI timeout)
 	class Post implements Runnable {
 
-		private static final String NAME = "Post";
+		private static final String NAME = "PostQueue";
 		private static final String MESSAGE = NAME + ": ";
 		private BatchState batchState = null;
 		private IngestRequest ingestRequest = null;
@@ -476,8 +476,7 @@ public class QueueManager {
 					}
 					StateInf stateClass = batchState;
 					if (isError && (!handler.getName().equals("HandlerNotification"))) {
-						System.out
-								.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
+						System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 						continue;
 					}
 
@@ -491,10 +490,9 @@ public class QueueManager {
 
 					// Abort if failure
 					if (DEBUG)
-						System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
+						System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription() + " - status: " + handlerResult.getSuccess() );
 					if (handlerResult.getSuccess()) {
-						batchState.setBatchStatus(BatchStatusEnum.QUEUED);
-
+						if (! isError) batchState.setBatchStatus(BatchStatusEnum.QUEUED);
 					} else {
 						batchState.setBatchStatus(BatchStatusEnum.FAILED);
 						batchState.setBatchStatusMessage(handlerResult.getDescription());
@@ -503,7 +501,7 @@ public class QueueManager {
 				}
 
 				// ready for consumer to start processing
-				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue());
+				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue() + " Status: " + batchState.getBatchStatus().toString());
 
 			} catch (Exception e) {
 				System.out.println(MESSAGE + "Exception detected while posting data to queue.");
