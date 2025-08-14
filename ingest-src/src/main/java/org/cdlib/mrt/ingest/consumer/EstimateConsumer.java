@@ -569,8 +569,8 @@ class EstimateConsumeData implements Runnable
 
 	    String process = "Estimate";
             if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), process + "_FAIL")) {
-                System.out.println("[item]: ProcessConsume Daemon - FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + process + "_FAIL");
-                System.out.println("[item]: ProcessConsume Daemon - Forcing a failure.");
+                System.out.println("[item]: EstimateConsume Daemon - FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + process + "_FAIL");
+                System.out.println("[item]: EstimateConsume Daemon - Forcing a failure.");
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, "FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile() + "/" + process + "_FAIL  -  Forcing a failure.");
                 job.unlock(zooKeeper);
                 return;
