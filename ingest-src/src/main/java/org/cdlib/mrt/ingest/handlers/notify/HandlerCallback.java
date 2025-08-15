@@ -102,6 +102,10 @@ public class HandlerCallback extends Handler<JobState> {
                requestURL = new URL(profileState.getCallbackURL().toString() + "/mc/" + jobState.getJobID().getValue());
 	    } catch (Exception e) {
                 System.err.println("[error] " + MESSAGE + " Callback URL not defined or not valid: " + profileState.getCallbackURL());
+
+		// Callback not supported by profile.  Exit gracefully
+		if (profileState.getCallbackURL() == null) return new HandlerResult(true, "Callback not supported", 0);
+
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + profileState.getCallbackURL());
 	    }
 	    String credentials = requestURL.getUserInfo();

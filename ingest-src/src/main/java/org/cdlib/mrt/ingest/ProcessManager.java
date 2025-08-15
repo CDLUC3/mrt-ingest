@@ -568,6 +568,11 @@ public class ProcessManager {
 					jobState.setJobStatus(JobStatusEnum.FAILED);
 					jobState.setJobStatusMessage(handlerResult.getDescription());
 					isError = true;
+
+					// Hard-code Callback for failed jobs
+					if (DEBUG) System.out.println("[debug] " + "Forcing Callback for Failed Job: " + jobState.toString());
+					Handler callbackHandler = (Handler) createObject("org.cdlib.mrt.ingest.handlers.notify.HandlerCallback");
+					callbackHandler.handle(profileState, ingestRequest, jobState);
 				}
 			} // end for
 
