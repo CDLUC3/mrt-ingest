@@ -29,8 +29,22 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.utility;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.ClientConfiguration;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
@@ -57,6 +71,10 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+
+import org.cdlib.mrt.s3v2.aws.AWSS3V2Cloud;
+import org.cdlib.mrt.s3.service.CloudResponse;
+
 
 /**
  * Profile tool
@@ -114,9 +132,71 @@ public class ProfileUtil
     private static final String matchNotificationType = "NotificationType";
     private static final String matchNotificationSuppression = "NotificationSuppression";
     private static final String matchSuppressDublinCoreLocalID = "SuppressDublinCoreLocalID";
-    
 
-    // Process active profile
+    // Process active profile (S3)
+    // public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir, String profileNode, String profilePath, boolean delete)
+    public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir, String s3endpoint, String accessKey, String secretKey, String profileNode, String profilePath, boolean delete)
+        throws TException
+    {
+	ProfileState profileState;
+	try {
+
+	    S3Object s3Object = null;
+	    S3ObjectInputStream s3InputStream = null;
+	    InputStream inputStream = null;
+
+
+	     String batchID = ingestDir.substring(ingestDir.indexOf("bid-"));
+	     File profileFile = createTempFile(batchID + "_" + profileName.getValue());
+	     CloudResponse cloudResponse = new CloudResponse();
+
+	    if (! profileFile.exists()) {
+
+                System.out.println("[info] Cached S3 profile file does not exist: " + profileFile.getAbsolutePath());
+                System.out.println("[info] Downloading S3 profile: " + profileName.getValue() + " From S3: " + profileNode + "/" + profilePath );
+		String s3Path = profilePath + "/" + profileName.getValue();
+		AWSS3V2Cloud s3Client = null;
+
+		if (s3endpoint != null) {
+                    System.out.println("[info] Detected Minio style S3 environment");
+		    s3Client = AWSS3V2Cloud.getMinio(accessKey, secretKey, s3endpoint, null);
+		} else {
+                    System.out.println("[info] Detected AWS style S3 environment");
+		    s3Client = AWSS3V2Cloud.getAWS(null);
+		}
+
+
+                try {
+                    inputStream = s3Client.getObject(profileNode, s3Path, cloudResponse);
+		    if (cloudResponse.getException() != null) throw new Exception(cloudResponse.getException().getMessage());
+		    copyInputStreamToFile(inputStream, profileFile);
+	        } catch (Exception e2) {
+		    e2.printStackTrace();
+		    throw new Exception(e2.getMessage());
+	        } finally {
+		}
+	    } else {
+                System.out.println("[info] Cached S3 profile exists: " + profileNode + " - " + profilePath + " - " + profileName.toString());
+	    }
+
+	    profileState = getProfile(profileName, profileFile);
+	    if (delete) deleteTempFile(batchID + "_" + profileName.getValue());
+
+	    return profileState;
+
+	} catch (TException tex) {
+	    throw tex;
+	} catch (Exception ex) {
+            String err = MESSAGE + "error in creating profile ID - Exception:" + ex;
+
+            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            throw new TException.GENERAL_EXCEPTION(err);
+	} finally {
+	    profileState = null;
+	}
+    }
+
+    // Process active profile (Local file)
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir)
         throws TException
     {
@@ -141,7 +221,6 @@ public class ProfileUtil
 	}
     }
 
-
     // Process any profile
     public static synchronized ProfileState getProfile(Identifier profileName, File profileTxt)
         throws TException
@@ -164,13 +243,10 @@ public class ProfileUtil
                     throw new TException.INVALID_OR_MISSING_PARM(MESSAGE + "IngestService: profile not found: " + profileTxt.getAbsolutePath());
                 }
                 Properties profileProperties = PropertiesUtil.loadFileProperties(profileTxt);
-                // Properties profileProperties = PropertiesUtil.loadProperties(profileTxt.getAbsolutePath());
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 profileProperties.store(out, null);
                 ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
 
-	    // clear old data if necessary
-	    // if (notification.getContactEmail() != null) notification.getContactEmail().clear();
 	
             Enumeration<?> e = (Enumeration<?>) profileProperties.propertyNames();
             while( e.hasMoreElements() ) {
@@ -628,5 +704,49 @@ public class ProfileUtil
         }
 	return true;	// default
    }
+
+
+/*
+    public static void copyInputStreamToFile(InputStream input, File file) {  
+        try {
+	    Path path = Paths.get(file.getAbsoultePath());
+	    Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
+	    OutputStream output = new FileOutputStream(file) {
+            input.transferTo(output);
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
+    }
+*/
+
+	private static void copyInputStreamToFile(InputStream inputStream, File file)
+            throws Exception {
+
+	FileOutputStream outputStream = null;
+        // append = false
+        try {
+	    outputStream = new FileOutputStream(file, false);
+            int read;
+            byte[] bytes = new byte[1024];
+            while ((read = inputStream.read(bytes)) != -1) {
+                outputStream.write(bytes, 0, read);
+            }
+	    outputStream.close();
+        } catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+    }
+
+	private static File createTempFile(String fileName) throws Exception {
+            String dir = System.getProperty("java.io.tmpdir");
+            return new File(dir + "/" + fileName);
+        }
+
+	private static void deleteTempFile(String fileName) throws Exception {
+            String dir = System.getProperty("java.io.tmpdir");
+            System.out.println("[info] Deleting cached profile: " + fileName);
+            new File(dir + "/" + fileName).delete();
+        }
 
 }

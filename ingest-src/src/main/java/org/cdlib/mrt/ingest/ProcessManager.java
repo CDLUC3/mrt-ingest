@@ -101,6 +101,11 @@ public class ProcessManager {
         private String sNumDownloadThreads = null; 
         private int numDownloadThreads = 4;    // default download thread pool
         private Long jvmStartTime = null;
+        private String profileNode = null;
+        private String profilePath = null;
+        private String s3endpoint = null;
+        private String s3accesskey = null;
+        private String s3secretkey = null;
 
 	public String getIngestServiceProp() {
 		return this.ingestFileS;
@@ -167,6 +172,7 @@ public class ProcessManager {
 			String value = null;
 			String matchStorage = "store.";
 			String matchAccess = "access.";
+                        String matchIngest = "ingestServicePath";
 			String matchLocalID = "localID";
                         String matchQueueService = "QueueService";
 			String matchEmailContact = "mail-contact";
@@ -175,8 +181,16 @@ public class ProcessManager {
 			String matchEZID = "ezid";
 			String matchPURL = "purl";
 			String matchNumDownloadThreads = "NumDownloadThreads";
+    			String matchProfileNode = "s3config_bucket";
+    			String matchProfilePath = "s3config_prefix";
+    			String matchS3endpoint = "s3endpoint";
+    			String matchS3accesskey = "s3accesskey";
+    			String matchS3secretkey = "s3secretkey";
+
 			String defaultIDKey = "IDDefault";
 			Integer id = null;
+
+                        this.ingestFileS = ingestConf.getString(matchIngest);
 
                         // QueueService - host1:2181,host2:2181
                         this.queueConnectionString = queueConf.getString(matchQueueService);
@@ -243,6 +257,26 @@ public class ProcessManager {
 			// email reply-to
 			m_emailReplyTo = ingestConf.getString(matchEmailReplyTo);
                 	System.out.println("[info] " + MESSAGE + "Repy To email: " + m_emailReplyTo);
+
+                        // Profile Node
+                        profileNode = ingestConf.getString(matchProfileNode);
+                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+
+                        // Profile Path
+                        profilePath = ingestConf.getString(matchProfilePath);
+                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+
+                        // Profile Endpoint
+                        s3endpoint = ingestConf.getString(matchS3endpoint);
+                        System.out.println("[info] " + MESSAGE + "S3 Endpoint: " + s3endpoint);
+
+                        // Profile Access Key
+                        s3accesskey = ingestConf.getString(matchS3accesskey);
+                        System.out.println("[info] " + MESSAGE + "S3 Access Key: " + s3accesskey);
+
+                        // Profile Secret Key
+                        s3secretkey = ingestConf.getString(matchS3secretkey);
+                        System.out.println("[info] " + MESSAGE + "S3 Secret Key: " + s3secretkey);
 
 			// ingestServicePath
 			this.ingestFileS = ingestConf.getString("ingestServicePath");
@@ -378,13 +412,17 @@ public class ProcessManager {
 				jobState.setUpdateFlag(ingestRequest.getJob().grabUpdateFlag());
 			}
 
-			// assign profile
-			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
-					ingestRequest.getQueuePath().getParentFile().getParentFile().getParent() + "/profiles"); // three
-																												// levels
-																												// down
-																												// from
-																												// home
+                        // S3 profile
+                        String batchDir = ingestFileS + "/queue/" + ingestRequest.getJob().grabBatchID().getValue();
+                        // profileState = ProfileUtil.getProfile(ingestRequest.getProfile(), batchDir, profileNode, profilePath, false);
+                        profileState = ProfileUtil.getProfile(ingestRequest.getProfile(), batchDir, 
+                                s3endpoint, s3accesskey, s3secretkey, profileNode, profilePath, false);
+
+
+
+			// Local profile
+			// profileState = ProfileUtil.getProfile(ingestRequest.getProfile(), batchDir); 
+			// ingestRequest.getQueuePath().getParentFile().getParentFile().getParent() + "/profiles"); 
 
 			String profileStorageURL = profileState.getTargetStorage().getStorageLink().toString();
 			// valid profile storage URL?

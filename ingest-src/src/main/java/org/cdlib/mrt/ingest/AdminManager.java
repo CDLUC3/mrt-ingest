@@ -154,7 +154,10 @@ public class AdminManager {
 		try {
 			ProfileState profileState = new ProfileState();
 			Identifier profileID = new Identifier(profile, Identifier.Namespace.Local);
-			profileState = ProfileUtil.getProfile(profileID, ingestFileS + "/profiles");
+
+			// Local profile
+			// profileState = ProfileUtil.getProfile(profileID, ingestFileS + "/profiles");
+
 
 			return profileState;
 
