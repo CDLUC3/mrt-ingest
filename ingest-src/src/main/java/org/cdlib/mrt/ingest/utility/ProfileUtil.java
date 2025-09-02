@@ -154,7 +154,7 @@ public class ProfileUtil
 
                 System.out.println("[info] Cached S3 profile file does not exist: " + profileFile.getAbsolutePath());
                 System.out.println("[info] Downloading S3 profile: " + profileName.getValue() + " From S3: " + profileNode + "/" + profilePath );
-		String s3Path = profilePath + "/" + profileName.getValue();
+		 String s3Path = profilePath + "/" + profileName.getValue();
 		AWSS3V2Cloud s3Client = null;
 
 		if (s3endpoint != null) {
@@ -168,6 +168,7 @@ public class ProfileUtil
 
                 try {
                     inputStream = s3Client.getObject(profileNode, s3Path, cloudResponse);
+System.out.println("==========> " + cloudResponse.dump("----------------------------------"));
 		    if (cloudResponse.getException() != null) throw new Exception(cloudResponse.getException().getMessage());
 		    copyInputStreamToFile(inputStream, profileFile);
 	        } catch (Exception e2) {

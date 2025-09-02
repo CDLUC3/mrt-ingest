@@ -267,16 +267,31 @@ public class ProcessManager {
                         System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
 
                         // Profile Endpoint
-                        s3endpoint = ingestConf.getString(matchS3endpoint);
-                        System.out.println("[info] " + MESSAGE + "S3 Endpoint: " + s3endpoint);
+			try {
+                            s3endpoint = ingestConf.getString(matchS3endpoint);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+			} catch (Exception e) {
+                            s3endpoint = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined");
+			}
 
                         // Profile Access Key
-                        s3accesskey = ingestConf.getString(matchS3accesskey);
-                        System.out.println("[info] " + MESSAGE + "S3 Access Key: " + s3accesskey);
+			try {
+                            s3accesskey = ingestConf.getString(matchS3accesskey);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+			} catch (Exception e) {
+                            s3accesskey = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+			}
 
                         // Profile Secret Key
-                        s3secretkey = ingestConf.getString(matchS3secretkey);
-                        System.out.println("[info] " + MESSAGE + "S3 Secret Key: " + s3secretkey);
+			try {
+                            s3secretkey = ingestConf.getString(matchS3secretkey);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+			} catch (Exception e) {
+                            s3secretkey = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+			}
 
 			// ingestServicePath
 			this.ingestFileS = ingestConf.getString("ingestServicePath");
