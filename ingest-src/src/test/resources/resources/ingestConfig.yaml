@@ -18,6 +18,10 @@ ingest-info:
     mail-replyto: "{!SSM: ingest/config/mail-replyto !DEFAULT: uc3@ucop.edu}"
     ingestServicePath: "/tmp/ingest"
     ingestQueuePath: "/tmp/ingest/queue"
+    # Profiles to S3
+    s3config_bucket: "{!SSM: ingest/config/s3-config-bucket !DEFAULT: test.bucket}"
+    s3config_prefix: "{!SSM: ingest/config/s3-config-prefix !DEFAULT: uc3/mrt/mrt-ingest-profiles}"
+
     ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
     metadataDisplaySize: "{!SSM: ingest/config/metadataDisplaySize !DEFAULT: 3500}"
     ingestLock: "/mrt.lock"
