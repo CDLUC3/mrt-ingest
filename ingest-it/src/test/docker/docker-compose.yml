@@ -55,3 +55,9 @@ services:
     networks:
       merrittnet:
     restart: unless-stopped
+  minio:
+    container_name: minio
+    image: ${ECR_REGISTRY}/mrt-minio-it:dev
+    networks:
+      merrittnet:
+    restart: unless-stopped
