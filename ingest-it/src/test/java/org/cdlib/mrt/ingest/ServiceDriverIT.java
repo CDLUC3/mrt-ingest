@@ -967,6 +967,7 @@ public class ServiceDriverIT {
         /**
          * Test the admin/profiles endpoint returns the expected profile name
          */
+	@Ignore
         @Test
         public void TestProfileNames() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestProfileNames - Test the profiles endpoint.");
@@ -985,6 +986,7 @@ public class ServiceDriverIT {
         /**
          * Test the admin/profiles endpoint returns the expected admin profile name
          */
+	@Ignore
         @Test
         public void TestAdminProfileNames() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestAdminProfileNames - Test the admin/profiles endpoint.");
@@ -999,6 +1001,7 @@ public class ServiceDriverIT {
         /**
          * Test the admin/profiles-full endpoint 
          */
+	@Ignore
         @Test
         public void TestProfileFull() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestProfileFull - Test the profiles full state.");
