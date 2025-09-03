@@ -190,7 +190,6 @@ public class BatchManager {
                         profilePath = ingestConf.getString(matchProfilePath);
                         System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
 
-
                         // Profile Endpoint
 			try {
                             s3endpoint = ingestConf.getString(matchS3endpoint);
@@ -206,7 +205,7 @@ public class BatchManager {
                             System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
 			} catch (Exception e) {
                             s3accesskey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined"); 
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
 			}
 
                         // Profile Secret Key

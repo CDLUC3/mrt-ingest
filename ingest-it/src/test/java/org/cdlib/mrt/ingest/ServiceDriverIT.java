@@ -2,6 +2,7 @@ package org.cdlib.mrt.ingest;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
@@ -1030,6 +1031,7 @@ public class ServiceDriverIT {
          */
         @Test 
         public void TestProfileSubmit() throws IOException, JSONException {
+                System.out.println("[ServiceDriverIT] TestProfileSubmit - Test the profiles by submission.");
                 String url = String.format("http://localhost:%d/%s/admin/profile/profile", port, cp);
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);

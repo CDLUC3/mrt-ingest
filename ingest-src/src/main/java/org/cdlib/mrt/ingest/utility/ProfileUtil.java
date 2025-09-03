@@ -85,6 +85,7 @@ public class ProfileUtil
 
     private static final String NAME = "ProfileUtil";
     private static final String MESSAGE = NAME + ": ";
+    // private static final boolean DEBUG = false;
     private static final boolean DEBUG = false;
     private static final int MAX_HANDLERS = 20;
     public static final String DEFAULT_BATCH_ID = "JOB_ONLY";
@@ -134,7 +135,6 @@ public class ProfileUtil
     private static final String matchSuppressDublinCoreLocalID = "SuppressDublinCoreLocalID";
 
     // Process active profile (S3)
-    // public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir, String profileNode, String profilePath, boolean delete)
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir, String s3endpoint, String accessKey, String secretKey, String profileNode, String profilePath, boolean delete)
         throws TException
     {
@@ -168,7 +168,7 @@ public class ProfileUtil
 
                 try {
                     inputStream = s3Client.getObject(profileNode, s3Path, cloudResponse);
-System.out.println("==========> " + cloudResponse.dump("----------------------------------"));
+		    System.out.println("S3 Response: " + cloudResponse.dump("- S3 Response - "));
 		    if (cloudResponse.getException() != null) throw new Exception(cloudResponse.getException().getMessage());
 		    copyInputStreamToFile(inputStream, profileFile);
 	        } catch (Exception e2) {

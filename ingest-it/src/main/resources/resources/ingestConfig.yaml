@@ -16,11 +16,11 @@ ingest-info:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
-    s3endpoint: "http://minio:9000"
+    s3endpoint: "http://mrt-minio-it:9000"
     s3accesskey: "minioadmin"
     s3secretkey: "minioadmin"
     s3config_bucket: "mrt-config"
-    s3config_prefix: "mrt-ingest-profiles"
+    s3config_prefix: "uc3/mrt/mrt-ingest-profiles"
 
     ingestZfsThreshold: "80"
     metadataDisplaySize: "3500"
