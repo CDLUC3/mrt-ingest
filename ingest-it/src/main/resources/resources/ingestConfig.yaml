@@ -16,7 +16,7 @@ ingest-info:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
-    s3endpoint: "http://minio:8088"
+    s3endpoint: "http://minio:9000"
     s3accesskey: "minioadmin"
     s3secretkey: "minioadmin"
     s3config_bucket: "mrt-config"
