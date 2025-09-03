@@ -193,7 +193,6 @@
                           ${project.basedir}/target/mrt-ingest-it-${project.version}.war:/usr/local/tomcat/webapps/mrtingest.war</volume>
                         <volume>ingest:/tdr/ingest</volume>
                         <volume>queue:/tdr/ingest/queue</volume>
-                        <volume>${project.basedir}/src/test/resources/profiles:/tdr/ingest/profiles</volume>
                       </bind>
                     </volumes>
                     <env>
