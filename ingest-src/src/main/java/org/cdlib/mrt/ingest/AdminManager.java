@@ -198,11 +198,11 @@ public class AdminManager {
 	public ProfileState getProfileState(String profile) throws TException {
 		try {
 			ProfileState profileState = new ProfileState();
-			// Identifier profileID = new Identifier(profile, Identifier.Namespace.Local);
-			Identifier profileID = new Identifier("merritt_test_content", Identifier.Namespace.Local);
+			 Identifier profileID = new Identifier(profile, Identifier.Namespace.Local);
+			// Identifier profileID = new Identifier("merritt_test_content", Identifier.Namespace.Local);
 
 			// Local profile
-			profileState = ProfileUtil.getProfile(profileID, ingestFileS + "/profiles");
+			// profileState = ProfileUtil.getProfile(profileID, ingestFileS + "/profiles");
 
 		       // S3 profile
                        profileState = ProfileUtil.getProfile(profileID,"bid-integration_test_batch_directory",

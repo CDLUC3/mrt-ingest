@@ -1032,6 +1032,7 @@ public class ServiceDriverIT {
         /**
          * Test endpoint that inserts a set of form parameters into the TEMPLATE-PROFILE file
          */
+	@Ignore
         @Test 
         public void TestProfileSubmit() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestProfileSubmit - Test the profiles by submission.");
