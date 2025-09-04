@@ -198,7 +198,7 @@ public class AdminManager {
 	public ProfileState getProfileState(String profile) throws TException {
 		try {
 			ProfileState profileState = new ProfileState();
-			 Identifier profileID = new Identifier(profile, Identifier.Namespace.Local);
+			Identifier profileID = new Identifier(profile, Identifier.Namespace.Local);
 			// Identifier profileID = new Identifier("merritt_test_content", Identifier.Namespace.Local);
 
 			// Local profile

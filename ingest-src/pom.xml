@@ -13,7 +13,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <merritt-zk.version>3.0-SNAPSHOT</merritt-zk.version>
         <merritt-core.version>3.1-SNAPSHOT</merritt-core.version>
-        <merritt-cloud.version>3.1-SNAPSHOT</merritt-cloud.version>
         <merritt-bom.version>3.0-SNAPSHOT</merritt-bom.version>
     </properties>
 
@@ -130,10 +129,26 @@
             <artifactId>aws-java-sdk-ssm</artifactId>
             <scope>runtime</scope>
         </dependency>
+<!-- 
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
+-->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
+       <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>aws-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>regions</artifactId>
+        </dependency>
+
+
 <!--
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -181,12 +196,6 @@
             <artifactId>MerrittZK</artifactId>
             <version>${merritt-zk.version}</version>
         </dependency>
-	<dependency>
-            <groupId>org.cdlib.mrt</groupId>
-            <artifactId>mrt-s3srcpub</artifactId>
-            <version>${merritt-cloud.version}</version>
-        </dependency>
-
 
 	<!-- Glassfish Jersey -->
         <dependency>

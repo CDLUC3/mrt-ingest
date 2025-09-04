@@ -29,17 +29,22 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.utility;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.ClientConfiguration;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.MultipartUpload;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.S3Response;
+import software.amazon.awssdk.services.s3.model.S3ResponseMetadata;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -66,14 +71,12 @@ import org.cdlib.mrt.ingest.HandlerState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
 import org.cdlib.mrt.ingest.ProfilesFullState;
-import org.cdlib.mrt.ingest.StoreNode;
+import org.cdlib.mrt.ingest.utility.S3Util;
 import org.cdlib.mrt.utility.LoggerInf;
+import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
-
-import org.cdlib.mrt.s3v2.aws.AWSS3V2Cloud;
-import org.cdlib.mrt.s3.service.CloudResponse;
 
 
 /**
@@ -141,35 +144,30 @@ public class ProfileUtil
 	ProfileState profileState;
 	try {
 
-	    S3Object s3Object = null;
-	    S3ObjectInputStream s3InputStream = null;
 	    InputStream inputStream = null;
+            Region region = Region.US_WEST_2;
 
-
-	     String batchID = ingestDir.substring(ingestDir.indexOf("bid-"));
-	     File profileFile = createTempFile(batchID + "_" + profileName.getValue());
-	     CloudResponse cloudResponse = new CloudResponse();
+	    String batchID = ingestDir.substring(ingestDir.indexOf("bid-"));
+	    File profileFile = createTempFile(batchID + "_" + profileName.getValue());
 
 	    if (! profileFile.exists()) {
 
                 System.out.println("[info] Cached S3 profile file does not exist: " + profileFile.getAbsolutePath());
                 System.out.println("[info] Downloading S3 profile: " + profileName.getValue() + " From S3: " + profileNode + "/" + profilePath );
-		 String s3Path = profilePath + "/" + profileName.getValue();
-		AWSS3V2Cloud s3Client = null;
+		String s3Path = profilePath + "/" + profileName.getValue();
+		S3Client s3Client = null;
 
 		if (s3endpoint != null) {
                     System.out.println("[info] Detected Minio style S3 environment");
-		    s3Client = AWSS3V2Cloud.getMinio(accessKey, secretKey, s3endpoint, null);
+		    s3Client = S3Util.getMinioClient(region, accessKey, secretKey, s3endpoint);
 		} else {
                     System.out.println("[info] Detected AWS style S3 environment");
-		    s3Client = AWSS3V2Cloud.getAWS(null);
+		    s3Client = S3Util.getAWSClient(region);
 		}
 
 
                 try {
-                    inputStream = s3Client.getObject(profileNode, s3Path, cloudResponse);
-		    System.out.println("S3 Response: " + cloudResponse.dump("- S3 Response - "));
-		    if (cloudResponse.getException() != null) throw new Exception(cloudResponse.getException().getMessage());
+                    inputStream = S3Util.getObjectSyncInputStream(s3Client, profileNode, s3Path);
 		    copyInputStreamToFile(inputStream, profileFile);
 	        } catch (Exception e2) {
 		    e2.printStackTrace();
