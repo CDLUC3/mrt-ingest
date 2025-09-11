@@ -20,7 +20,6 @@ services:
     volumes:
     - "ingest:/tdr/ingest"
     - "queue:/tdr/ingest/queue"
-    - "${MDIR}/ingest-it/src/test/resources/profiles:/tdr/ingest/profiles"
     - "${MDIR}/ingest-it/target/mrt-ingest-it-3.0-SNAPSHOT.war:/usr/local/tomcat/webapps/mrtingest.war"
     ports:
     - published: 8080
@@ -52,6 +51,13 @@ services:
   smtp:
     container_name: smtp 
     image: ${ECR_REGISTRY}/docker-hub/ghusta/fakesmtp
+    networks:
+      merrittnet:
+    restart: unless-stopped
+  minio:
+    container_name: minio
+    image: ${ECR_REGISTRY}/mrt-minio-it:dev
+    # command: server /buckets --address :9000 --console-address ":9001"
     networks:
       merrittnet:
     restart: unless-stopped

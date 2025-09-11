@@ -61,6 +61,11 @@ public class IngestConfig
     protected JSONObject storeConf = null;
     protected String ingestServicePath = null;
     protected String ingestQueuePath = null;
+    protected String ingestProfileEndpoint = null;
+    protected String ingestProfileAccessKey = null;
+    protected String ingestProfileSecretKey = null;
+    protected String ingestProfileNode = null;
+    protected String ingestProfilePath = null;
 
     // ingest-info
     protected String ingestName = null;
@@ -114,15 +119,52 @@ public class IngestConfig
 	    // Ingest config object (ingest-info)
             JSONObject ingestConf = jIngInfo.getJSONObject("ingest-info");
             ingestConfig.setIngestConf(ingestConf);
-	    // ingestServicePath var
+	    // ingestServicePath
 	    ingestConfig.setServicePath(ingestConf.getString("ingestServicePath"));
-	    // ingestQueuePath var
+	    // ingestQueuePath
 	    try {
 	        ingestConfig.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
 	    } catch (org.json.JSONException je) {
 	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
 	        ingestConfig.setIngestQueuePath(null);
 	    }
+
+	    // Profile S3 bucket
+	    try {
+	        ingestConfig.setIngestProfileNode(ingestConf.getString("s3config_bucket"));
+	    } catch (org.json.JSONException je) {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3config_bucket not set. No S3 profiles.");
+	        ingestConfig.setIngestProfileNode(null);
+	    }
+	    // Profile S3 prefix
+	    try {
+	        ingestConfig.setIngestProfilePath(ingestConf.getString("s3config_prefix"));
+	    } catch (org.json.JSONException je) {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3config_prefix not set. No S3 profiles.");
+	        ingestConfig.setIngestProfilePath(null);
+	    }
+	    // Profile S3 endpoint
+	    try {
+	        ingestConfig.setIngestProfileEndpoint(ingestConf.getString("s3endpoint"));
+	    } catch (org.json.JSONException je) {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3endpoint not set. Assume host has default S3 access.");
+	        ingestConfig.setIngestProfileEndpoint(null);
+	    }
+	    // Profile S3 Access Key
+	    try {
+	        ingestConfig.setIngestProfileAccessKey(ingestConf.getString("s3accesskey"));
+	    } catch (org.json.JSONException je) {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3accesskey not set. Assume host has default S3 access.");
+	        ingestConfig.setIngestProfileAccessKey(null);
+	    }
+	    // Profile S3 Secret Key
+	    try {
+	        ingestConfig.setIngestProfileSecretKey(ingestConf.getString("s3secretkey"));
+	    } catch (org.json.JSONException je) {
+	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3secretkey not set. Assume host has default S3 access.");
+	        ingestConfig.setIngestProfileSecretKey(null);
+	    }
+	    
 
 	    // Store config object (store-info)
             JSONObject storeConf = jIngInfo.getJSONObject("store-info");
@@ -248,6 +290,26 @@ public class IngestConfig
         return ingestQueuePath;
     }
 
+    public String getProfileNode() {
+        return ingestProfileNode;
+    }
+
+    public String getIngestProfilePath() {
+        return ingestProfilePath;
+    }
+
+    public String getIngestProfileEndpoint() {
+        return ingestProfileEndpoint;
+    }
+
+    public String getIngestProfileAccessKey() {
+        return ingestProfileAccessKey;
+    }
+
+    public String getIngestProfileSecretKey() {
+        return ingestProfileSecretKey;
+    }
+
     public JSONObject getIngestConf() {
         return ingestConf;
     }
@@ -273,6 +335,26 @@ public class IngestConfig
         this.servicePath = servicePath;
     }
     
+    public void setIngestProfileNode(String ingestProfileNode) {
+        this.ingestProfileNode = ingestProfileNode;
+    }
+
+    public void setIngestProfilePath(String ingestProfilePath) {
+        this.ingestProfilePath = ingestProfilePath;
+    }
+
+    public void setIngestProfileEndpoint(String ingestProfileEndpoint) {
+        this.ingestProfileEndpoint = ingestProfileEndpoint;
+    }
+
+    public void setIngestProfileAccessKey(String ingestProfileAccessKey) {
+        this.ingestProfileAccessKey = ingestProfileAccessKey;
+    }
+
+    public void setIngestProfileSecretKey(String ingestProfileSecretKey) {
+        this.ingestProfileSecretKey = ingestProfileSecretKey;
+    }
+
     public void setIngestQueuePath(String ingestQueuePath) {
         this.ingestQueuePath = ingestQueuePath;
     }

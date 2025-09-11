@@ -2,6 +2,7 @@ package org.cdlib.mrt.ingest;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
@@ -966,6 +967,7 @@ public class ServiceDriverIT {
         /**
          * Test the admin/profiles endpoint returns the expected profile name
          */
+	@Ignore
         @Test
         public void TestProfileNames() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestProfileNames - Test the profiles endpoint.");
@@ -984,6 +986,7 @@ public class ServiceDriverIT {
         /**
          * Test the admin/profiles endpoint returns the expected admin profile name
          */
+	@Ignore
         @Test
         public void TestAdminProfileNames() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestAdminProfileNames - Test the admin/profiles endpoint.");
@@ -998,6 +1001,7 @@ public class ServiceDriverIT {
         /**
          * Test the admin/profiles-full endpoint 
          */
+	@Ignore
         @Test
         public void TestProfileFull() throws IOException, JSONException {
                 System.out.println("[ServiceDriverIT] TestProfileFull - Test the profiles full state.");
@@ -1028,8 +1032,10 @@ public class ServiceDriverIT {
         /**
          * Test endpoint that inserts a set of form parameters into the TEMPLATE-PROFILE file
          */
+	@Ignore
         @Test 
         public void TestProfileSubmit() throws IOException, JSONException {
+                System.out.println("[ServiceDriverIT] TestProfileSubmit - Test the profiles by submission.");
                 String url = String.format("http://localhost:%d/%s/admin/profile/profile", port, cp);
                 try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url);

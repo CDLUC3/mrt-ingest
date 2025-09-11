@@ -16,6 +16,10 @@ ingest:
     purl: "http://n2t.net/"
     ingestServicePath: "{!SSM: ingest/config/ingestServicePath !DEFAULT: /dpr2/ingest_home}"
     ingestQueuePath: "{!SSM: ingest/config/ingestQueuePath !DEFAULT: /apps/ingest-stg-shared/ingest_home/queue}"
+    # Profiles to S3
+    s3config_bucket: "{!SSM: ingest/config/s3-config-bucket !DEFAULT: test.bucket}"
+    s3config_prefix: "{!SSM: ingest/config/s3-config-prefix !DEFAULT: uc3/mrt/mrt-ingest-profiles}"
+
     ingestZfsThreshold: "{!SSM: ingest/config/ingestZfsThreshold !DEFAULT: 80}"
     metadataDisplaySize: "{!SSM: ingest/config/metadataDisplaySize !DEFAULT: 3500}"
     ingestLock: "{!SSM: ingest/zoo/lockName !DEFAULT: /mrt.lock}"
@@ -64,6 +68,11 @@ ingest-docker:
     purl: "http://n2t.net/"
     ingestServicePath: "/tdr/ingest"
     ingestQueuePath: "/tdr/ingest/queue"
+    s3endpoint: "http://minio:8088"
+    s3accesskey: "minioadmin"
+    s3secretkey: "minioadmin"
+    s3config_bucket: "mrt-config"
+    s3config_prefix: "mrt-ingest-profiles"
     ingestZfsThreshold: "80"
     metadataDisplaySize: "350"
     ingestLock: "/mrt.lock"

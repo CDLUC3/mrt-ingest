@@ -85,6 +85,11 @@ public class QueueManager {
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
         private String emailReplyTo = null;
+	private String profileNode = null;
+	private String profilePath = null;
+        private String s3endpoint = null;
+        private String s3accesskey = null;
+        private String s3secretkey = null;
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
@@ -142,6 +147,12 @@ public class QueueManager {
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
                         String matchEmailReplyTo = "mail-replyto";
+                        String matchProfileNode = "s3config_bucket";
+                        String matchProfilePath = "s3config_prefix";
+                        String matchS3endpoint = "s3endpoint";
+                        String matchS3accesskey = "s3accesskey";
+                        String matchS3secretkey = "s3secretkey";
+
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
 
@@ -162,6 +173,42 @@ public class QueueManager {
                         // email reply-to
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
+
+                        // Profile Node
+                        profileNode = ingestConf.getString(matchProfileNode);
+                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+
+                        // Profile Path
+                        profilePath = ingestConf.getString(matchProfilePath);
+                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+
+
+                        // Profile Endpoint
+			try {
+                            s3endpoint = ingestConf.getString(matchS3endpoint);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+			} catch (Exception e) {
+                            s3endpoint = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined");
+			}
+
+                        // Profile Access Key
+			try {
+                            s3accesskey = ingestConf.getString(matchS3accesskey);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+			} catch (Exception e) {
+                            s3accesskey = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+			}
+
+                        // Profile Secret Key
+			try {
+                            s3secretkey = ingestConf.getString(matchS3secretkey);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+			} catch (Exception e) {
+                            s3secretkey = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+			}
 
 		} catch (TException tex) {
 			throw tex;
@@ -209,10 +256,11 @@ public class QueueManager {
 			batchState.setBatchID(ingestRequest.getJob().grabBatchID());
 			batchState.setUpdateFlag(ingestRequest.getJob().grabUpdateFlag());
 
-			// assign profile
-			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
-					ingestFileS + "/profiles"); // two levels down from
-																								// home
+			// S3 profile
+			String batchDir = ingestFileS + "/queue/" + batchState.getBatchID().getValue();
+			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(), batchDir, 
+				s3endpoint, s3accesskey, s3secretkey, profileNode, profilePath, false);
+
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
 			if (emailContact != null)

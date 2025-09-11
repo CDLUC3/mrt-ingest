@@ -89,6 +89,11 @@ public class BatchManager {
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
         private String emailContact = null;
         private String emailReplyTo = null;
+        private String profileNode = null;
+        private String profilePath = null;
+        private String s3endpoint = null;
+        private String s3accesskey = null;
+        private String s3secretkey = null;
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
@@ -148,6 +153,12 @@ public class BatchManager {
 			String matchAdmin = "admin";
                         String matchEmailContact = "mail-contact";
                         String matchEmailReplyTo = "mail-replyto";
+                        String matchProfileNode = "s3config_bucket";
+                        String matchProfilePath = "s3config_prefix";
+                        String matchS3endpoint = "s3endpoint";
+                        String matchS3accesskey = "s3accesskey";
+                        String matchS3secretkey = "s3secretkey";
+
 			String defaultIDKey = "IDDefault";
 			Integer storageID = null;
 
@@ -170,6 +181,41 @@ public class BatchManager {
                         // email reply-to
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
                         System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
+
+                        // Profile Node
+                        profileNode = ingestConf.getString(matchProfileNode);
+                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+
+                        // Profile Path
+                        profilePath = ingestConf.getString(matchProfilePath);
+                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+
+                        // Profile Endpoint
+			try {
+                            s3endpoint = ingestConf.getString(matchS3endpoint);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+			} catch (Exception e) {
+                            s3endpoint = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined.");
+			}
+
+                        // Profile Access Key
+			try {
+                            s3accesskey = ingestConf.getString(matchS3accesskey);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+			} catch (Exception e) {
+                            s3accesskey = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+			}
+
+                        // Profile Secret Key
+			try {
+                            s3secretkey = ingestConf.getString(matchS3secretkey);
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+			} catch (Exception e) {
+                            s3secretkey = null;
+                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+			}
 
             	        if (! ZookeeperUtil.validateZK(zooKeeper)) {
                	            try {
@@ -235,10 +281,16 @@ public class BatchManager {
 			batchState.setBatchID(ingestRequest.getJob().grabBatchID());
 			batchState.setUpdateFlag(ingestRequest.getUpdateFlag());
 
-			// assign profile
-			profileState = ProfileUtil.getProfile(ingestRequest.getProfile(),
-					ingestFileS + "/profiles"); // two levels down from
-																								// home
+			// Remove cached profile after final processing
+			boolean deleteProfile = false;
+			if (state.equals("Report")) deleteProfile = true;
+
+			// assign profile (S3)
+                        String batchDir = ingestFileS + "/queue/" + batchState.getBatchID().getValue();
+
+                        profileState = ProfileUtil.getProfile(ingestRequest.getProfile(), batchDir, 
+                                s3endpoint, s3accesskey, s3secretkey, profileNode, profilePath, deleteProfile);
+
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
 			if (emailContact != null)

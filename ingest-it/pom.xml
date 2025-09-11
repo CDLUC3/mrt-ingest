@@ -142,6 +142,22 @@
                   </run>
                 </image>
                 <image>
+                  <name>${itDockerRegistry}/mrt-minio-it:dev</name>
+                  <alias>mrt-minio-it</alias>
+                  <run>
+                    <network>
+                      <name>network</name>
+                      <alias>mrt-minio-it</alias>
+                    </network>
+                    <ports>
+                      <port>mrt-minio-it.port:8088</port>
+                    </ports>
+                    <wait>
+                      <time>1000</time>
+                    </wait>
+                  </run>
+                </image>
+                <image>
                   <name>public.ecr.aws/docker/library/zookeeper:3.9.3</name>
                   <alias>zoo-it</alias>
                   <run>
@@ -177,7 +193,6 @@
                           ${project.basedir}/target/mrt-ingest-it-${project.version}.war:/usr/local/tomcat/webapps/mrtingest.war</volume>
                         <volume>ingest:/tdr/ingest</volume>
                         <volume>queue:/tdr/ingest/queue</volume>
-                        <volume>${project.basedir}/src/test/resources/profiles:/tdr/ingest/profiles</volume>
                       </bind>
                     </volumes>
                     <env>
