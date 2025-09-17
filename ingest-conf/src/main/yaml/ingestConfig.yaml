@@ -72,7 +72,7 @@ ingest-docker:
     s3accesskey: "minioadmin"
     s3secretkey: "minioadmin"
     s3config_bucket: "mrt-config"
-    s3config_prefix: "mrt-ingest-profiles"
+    s3config_prefix: "uc3/mrt/mrt-ingest-profiles"
     ingestZfsThreshold: "80"
     metadataDisplaySize: "350"
     ingestLock: "/mrt.lock"
