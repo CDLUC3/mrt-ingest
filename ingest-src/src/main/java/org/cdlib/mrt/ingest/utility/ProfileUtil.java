@@ -157,7 +157,7 @@ public class ProfileUtil
 		String s3Path = profilePath + "/" + profileName.getValue();
 		S3Client s3Client = null;
 
-		if (s3endpoint != null) {
+		if (! StringUtil.isEmpty(s3endpoint)) {
                     System.out.println("[info] Detected Minio style S3 environment");
 		    s3Client = S3Util.getMinioClient(region, accessKey, secretKey, s3endpoint);
 		} else {
