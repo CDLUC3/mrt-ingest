@@ -33,20 +33,19 @@ package org.cdlib.mrt.ingest.service;
 import java.util.Map;
 
 import org.cdlib.mrt.ingest.BatchState;
-import org.cdlib.mrt.ingest.BatchFileState;
 import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.IngestConfig;
-import org.cdlib.mrt.ingest.JobFileState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
-import org.cdlib.mrt.ingest.ProfilesFullState;
+import org.cdlib.mrt.ingest.JobFileState;
+import org.cdlib.mrt.ingest.BatchFileState;
+import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.ingest.LockState;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.GenericState;
-import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.utility.TException;
 
 import org.json.JSONObject;
@@ -179,39 +178,28 @@ public class IngestService
     }
 
     @Override
-    public IngestServiceState postSubmissionAction(String action, String collection)
-        throws TException
+    public String getIngestServiceProp()
     {
-        return queueManager.postSubmissionAction(action, collection);
+        return processManager.getIngestServiceProp();
     }
 
     @Override
-    public GenericState postProfileAction(String type, String environment, String notification, 
-	Map<String, String> profileParms)
-        throws TException
+    public JSONObject getIngestServiceConf()
     {
-        return adminManager.postProfileAction(type, environment, notification, profileParms);
+        return processManager.getIngestServiceConf();
     }
 
     @Override
-    public ProfileState getProfileState(String profile)
-        throws TException
+    public JSONObject getQueueServiceConf()
     {
-        return adminManager.getProfileState(profile);
+        return queueManager.getQueueServiceConf();
     }
 
     @Override
-    public ProfilesState getProfilesState(String profilePath, boolean recurse)
+    public JobFileState getJobFileState(String batchID, String jobID)
         throws TException
     {
-        return adminManager.getProfilesState(profilePath, recurse);
-    }
-
-    @Override
-    public ProfilesFullState getProfilesFullState()
-        throws TException
-    {
-        return adminManager.getProfilesFullState();
+        return adminManager.getJobFileState(batchID, jobID);
     }
 
     @Override
@@ -236,13 +224,6 @@ public class IngestService
     }
 
     @Override
-    public JobFileState getJobFileState(String batchID, String jobID)
-        throws TException
-    {
-        return adminManager.getJobFileState(batchID, jobID);
-    }
-
-    @Override
     public BatchFileState getJobViewState(String batchID, String jobID)
         throws TException
     {
@@ -256,21 +237,6 @@ public class IngestService
         return adminManager.getJobManifestState(batchID, jobID);
     }
 
-    @Override
-    public String getIngestServiceProp()
-    {
-        return processManager.getIngestServiceProp();
-    }
 
-    @Override
-    public JSONObject getIngestServiceConf()
-    {
-        return processManager.getIngestServiceConf();
-    }
 
-    @Override
-    public JSONObject getQueueServiceConf()
-    {
-        return queueManager.getQueueServiceConf();
-    }
 }

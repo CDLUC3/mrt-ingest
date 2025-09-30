@@ -70,7 +70,6 @@ import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.HandlerState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
-import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.ingest.utility.S3Util;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.ingest.StoreNode;
@@ -519,39 +518,6 @@ public class ProfileUtil
 	    processHandlers = null;
 	    recordHandlers = null;
 	    notifyHandlers = null;
-	}
-    }
-
-
-    public static synchronized ProfilesFullState getProfilesFull(String profileDir)
-        throws TException
-    {
-	ProfilesFullState profilesFullState = new ProfilesFullState();
-	Vector<ProfileState> profiles = new Vector<ProfileState>();
-
-	try {
- 
-		File profileDirectory = new File(profileDir);
-                File[] files = profileDirectory.listFiles();
-                for (File profile: files) {
-		   if (profile.isDirectory()) continue;
-		   if (! isValidProfile(profile.getName()) && ! isTemplate(profile.getName())) continue; 
-                   ProfileState profileState = new ProfileState();
-                   Identifier profileID = new Identifier(profile.getName(), Identifier.Namespace.Local);
-                   profileState = ProfileUtil.getProfile(profileID, profileDir);
-
-                   profilesFullState.addProfileInstance(profileState);
-		}
-
-		return profilesFullState;
-
-	} catch (TException tex) {
-	    throw tex;
-	} catch (Exception ex) {
-            String err = MESSAGE + "error getting profiles - Exception:" + ex;
-
-            System.out.println(err + " : " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(err);
 	}
     }
 
