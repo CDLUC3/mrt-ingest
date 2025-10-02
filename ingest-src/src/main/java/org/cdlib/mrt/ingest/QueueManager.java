@@ -240,6 +240,67 @@ public class QueueManager {
 	}
 
 
+        public IngestServiceState postSubmissionAction(String action, String collection) throws TException {
+                ZooKeeper zooKeeper = null;
+                try {
+
+                        if (! ZookeeperUtil.validateZK(zooKeeper)) {
+                            try {
+                                // Refresh ZK connection
+                                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                            } catch  (Exception e ) {
+                                e.printStackTrace(System.err);
+                            }
+                        }
+
+                        IngestServiceState ingestState = new IngestServiceState();
+                        if (StringUtil.isNotEmpty(collection)) {
+                            // Collection
+                           if (action.matches("freeze")) {
+                              MerrittLocks.lockCollection(zooKeeper, collection);
+                              ingestState.setSubmissionState(action);
+                           } else if (action.matches("thaw")) {
+                              MerrittLocks.unlockCollection(zooKeeper, collection);
+                              ingestState.setSubmissionState(action);
+                           } else {
+                              System.err.println("Exception: Ingest collection action not valid: " + action );
+                              throw new TException.REQUEST_INVALID(MESSAGE + "Exception: Ingest collection action not valid: " + action );
+                           }
+                        } else {
+                           // Ingest queue
+                           if (action.matches("freeze")) {
+                              MerrittLocks.lockIngestQueue(zooKeeper);
+                              ingestState.setSubmissionState(action);
+                           } else if (action.matches("thaw")) {
+                              MerrittLocks.unlockIngestQueue(zooKeeper);
+                              ingestState.setSubmissionState(action);
+                           } else {
+                              System.err.println("Exception: Ingest queue action not valid: " + action );
+                              throw new TException.REQUEST_INVALID(MESSAGE + "Exception: Ingest queue action not valid: " + action );
+                           }
+                        }
+                        URL storageInstance = null;
+                        ingestState.addQueueInstance(queueConnectionString);
+
+                        setIngestStateProperties(ingestState);
+                        return ingestState;
+                } catch (TException me) {
+                        throw me;
+
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        try {
+                            zooKeeper.close();
+                        } catch (Exception e) {}
+                }
+ 
+        }
+
+
+
 	public BatchState submit(IngestRequest ingestRequest) throws Exception {
 		ProfileState profileState = null;
 		try {

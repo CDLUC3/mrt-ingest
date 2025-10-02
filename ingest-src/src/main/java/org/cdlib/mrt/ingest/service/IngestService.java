@@ -237,6 +237,12 @@ public class IngestService
         return adminManager.getJobManifestState(batchID, jobID);
     }
 
+    @Override
+    public IngestServiceState postSubmissionAction(String action, String collection)
+        throws TException
+    {
+        return queueManager.postSubmissionAction(action, collection);
+    }
 
 
 }

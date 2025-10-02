@@ -192,6 +192,13 @@ public interface IngestServiceInf
     public ManifestsState getJobManifestState(String batchID, String jobID)
         throws TException;
 
+    /**
+     * Alter the state of submissions freeze|thaw
+     * @return IngestServiceState service state information
+     * @throws TException Exception condition 
+     */
+    public IngestServiceState postSubmissionAction(String action, String collection)
+        throws TException;
 
     /**
      * get logger used for this Ingest Service
