@@ -326,7 +326,7 @@ public class MintUtil
                         statusCode = httpResponse.getStatusLine().getStatusCode();
                         statusPhrase = httpResponse.getStatusLine().getReasonPhrase();
 
-                        if (statusCode < 500) break;
+                        if (statusCode < 400) break;
 		        System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
                         System.err.println(MESSAGE + "Wait 15 seconds and retry attempt: " + retryCount);
 		    }
