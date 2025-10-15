@@ -151,16 +151,4 @@ public class S3Util
         }
     }
 
-
-	private static File createTempFile(String fileName) throws Exception {
-            String dir = System.getProperty("java.io.tmpdir");
-            return new File(dir + "/" + fileName);
-        }
-
-	private static void deleteTempFile(String fileName) throws Exception {
-            String dir = System.getProperty("java.io.tmpdir");
-            System.out.println("[info] Deleting cached profile: " + fileName);
-            new File(dir + "/" + fileName).delete();
-        }
-
 }
