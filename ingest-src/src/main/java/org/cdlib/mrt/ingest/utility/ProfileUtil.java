@@ -148,6 +148,8 @@ public class ProfileUtil
 
 	    String batchID = ingestDir.substring(ingestDir.indexOf("bid-"));
 	    File profileFile = createTempFile(batchID + "_" + profileName.getValue());
+	    // Ensure that profiles are removed after JVM restart
+	    profileFile.deleteOnExit();
 
 	    if (! profileFile.exists()) {
 
@@ -178,7 +180,9 @@ public class ProfileUtil
 	    }
 
 	    profileState = getProfile(profileName, profileFile);
-	    if (delete) deleteTempFile(batchID + "_" + profileName.getValue());
+	    if (delete) {
+		deleteTempFile(batchID + "_" + profileName.getValue());
+	    }
 
 	    return profileState;
 
@@ -711,7 +715,7 @@ public class ProfileUtil
 	private static void deleteTempFile(String fileName) throws Exception {
             String dir = System.getProperty("java.io.tmpdir");
             System.out.println("[info] Deleting cached profile: " + fileName);
-            new File(dir + "/" + fileName).delete();
+	    new File(dir + "/" + fileName).delete();
         }
 
 }
