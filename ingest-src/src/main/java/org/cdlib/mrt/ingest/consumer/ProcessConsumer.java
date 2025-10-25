@@ -533,16 +533,39 @@ class ProcessConsumeData implements Runnable
                 System.out.println("[item]: ProcessConsume Daemon - Record FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + "Record_FAIL");
                 System.out.println("[item]: ProcessConsume Daemon - Mangling Inventory data which will force a failure.");
 		job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest-phantom/"), "");
+	    // Populate Inventory Manifest URL, if necessary
 	    } else {
-	       // Populate Manifest URL if necessary
 	       if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
 		   try {
 		      job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
 		   } catch (Exception e) {
-		      System.err.println(MESSAGE + "[WARN] error setting INV: " + e.getMessage());
+		      System.err.println(MESSAGE + "[WARN] error setting Inv ZK data: " + e.getMessage());
 		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
 		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 		      job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+		   }
+	    }
+
+	    // Grab ZK Storage data
+	    String storeManifestURL = jobState.grabStoreManifestURL();
+	    String storeMode = jobState.grabStoreMode();
+	    String storeDelete = jobState.grabStoreDelete();
+
+	    // Force a Storage failure
+	    if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), "Store_FAIL")) {
+                System.out.println("[item]: ProcessConsume Daemon - Store FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + "Store_FAIL");
+                System.out.println("[item]: ProcessConsume Daemon - Mangling Storage data which will force a failure.");
+		job.setStore(zooKeeper, storeManifestURL.replace("/state/", "/manifest-phantom/"), storeMode, storeDelete);
+	    // Populate Inventory Manifest URL, if necessary
+	    } else {
+	       if (StringUtil.isEmpty(job.storeManifestUrl()) && storeManifestURL != null) 
+		   try {
+		      job.setStore(zooKeeper, storeManifestURL, storeMode, storeDelete);
+		   } catch (Exception e) {
+		      System.err.println(MESSAGE + "[WARN] error setting Store ZK data: " + e.getMessage());
+		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+		      job.setStore(zooKeeper, storeManifestURL, storeMode, storeDelete);
 		   }
 	    }
 

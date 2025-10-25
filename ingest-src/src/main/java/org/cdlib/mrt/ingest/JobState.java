@@ -110,6 +110,9 @@ public class JobState
 	private boolean retainTargetURL = false;	// EZID, do not update target URL
 	private VersionMap versionMap = null;		// storage manifest 
 	private long submissionSize = 0L;		// Size of Job submission
+	private String storeManifestURL = "";		// ZK Store manifest
+	private String storeMode = "";			// ZK Store mode
+	private String storeDelete = "";		// ZK Store delete
 
 
 	// constructors
@@ -714,6 +717,22 @@ public class JobState
         return submissionSize;
     }
 
+    /**
+     * Get Store ZK data
+     * @return String data
+     */
+    public String grabStoreManifestURL() { return storeManifestURL; }
+    public String grabStoreMode() { return storeMode; }
+    public String grabStoreDelete() { return storeDelete; }
+
+    /**
+     * Set Store ZK data
+     * @param String Store data
+     * @return void
+     */
+    public void setStoreManifestURL(String manifest) { this.storeManifestURL = manifest; }
+    public void setStoreMode(String mode) { this.storeMode = mode; }
+    public void setStoreDelete(String delete) { this.storeDelete = delete; }
 
     /**
      * Get DC elements

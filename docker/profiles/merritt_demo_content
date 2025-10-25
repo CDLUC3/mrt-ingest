@@ -41,7 +41,10 @@ HandlerProcess.3: org.cdlib.mrt.ingest.handlers.process.HandlerMinter
 HandlerProcess.4: org.cdlib.mrt.ingest.handlers.process.HandlerDescribe
 HandlerProcess.5: org.cdlib.mrt.ingest.handlers.process.HandlerDocument
 HandlerProcess.6: org.cdlib.mrt.ingest.handlers.process.HandlerDigest
-HandlerProcess.7: org.cdlib.mrt.ingest.handlers.process.HandlerTransfer
+# ASync Storage
+HandlerProcess.7: org.cdlib.mrt.ingest.handlers.process.HandlerQueueStorage
+# Sync Storage
+# HandlerProcess.7: org.cdlib.mrt.ingest.handlers.process.HandlerTransfer
 # Process Recording
 # HandlerRecord.1: org.cdlib.mrt.ingest.handlers.record.HandlerInventoryQueue
 # Process Notify
