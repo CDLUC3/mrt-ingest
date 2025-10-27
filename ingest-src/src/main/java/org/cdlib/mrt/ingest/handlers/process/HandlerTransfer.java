@@ -190,7 +190,6 @@ public class HandlerTransfer extends Handler<JobState>
                System.err.println(MESSAGE + "[WARN] error setting ZK Store JobState: " + e.getMessage());
             }
 
- // IGNORE START
             // Log POST
             long endTime = DateUtil.getEpochUTCDate();
             ThreadContext.put("Method", "StoragePost");
@@ -205,8 +204,6 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    // jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
 	    // jobState.setVersionID(getVersionID(responseBody));
-
- // IGNORE END
 
 	    return new HandlerResult(true, "SUCCESS: Transfer");
 	} catch (TException te) {
