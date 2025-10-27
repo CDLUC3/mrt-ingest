@@ -196,10 +196,6 @@ public class HandlerTransfer extends Handler<JobState>
             ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
             ThreadContext.put("JobID", jobState.getJobID().getValue());
             ThreadContext.put("URL", manifestURL);
-            // ThreadContext.put("ResponsePhrase", responseMessage);
-            // ThreadContext.put("ResponseBody", responseBody);
-            // msgMap.put("DurationMs", endTime - startTime);
-            // msgMap.put("ResponseCode", responseCode);
             LogManager.getLogger().info(msgMap);
 
 	    // jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
