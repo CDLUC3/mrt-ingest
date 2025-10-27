@@ -35,17 +35,16 @@ import java.util.Map;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.IngestServiceState;
 import org.cdlib.mrt.ingest.BatchState;
-import org.cdlib.mrt.ingest.BatchFileState;
-import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobFileState;
+import org.cdlib.mrt.ingest.BatchFileState;
+import org.cdlib.mrt.ingest.ManifestsState;
+import org.cdlib.mrt.ingest.IdentifierState;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.IngestLockNameState;
-import org.cdlib.mrt.ingest.ManifestsState;
 import org.cdlib.mrt.ingest.GenericState;
 import org.cdlib.mrt.ingest.LockState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.ProfilesState;
-import org.cdlib.mrt.ingest.ProfilesFullState;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 
@@ -119,95 +118,6 @@ public interface IngestServiceInf
     public IngestServiceState getServiceState()
         throws TException;
 
-    /**
-     * Alter the state of submissions freeze|thaw
-     * @return IngestServiceState service state information
-     * @throws TException Exception condition 
-     */
-    public IngestServiceState postSubmissionAction(String action, String collection)
-        throws TException;
-
-    /**
-     * Profile creation
-     * @return GenericState service state information
-     * @throws TException Exception condition 
-     */
-    public GenericState postProfileAction(String type, String environment, String notification,
-	 Map<String, String> profileParms)
-        throws TException;
-
-
-    /**
-     * Get profile state information 
-     * @return ProfilesState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public ProfileState getProfileState(String profile)
-        throws TException;
-
-    /**
-     * Get profiles state information 
-     * @return ProfilesState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public ProfilesState getProfilesState(String profilePath, boolean recurse)
-        throws TException;
-
-    /**
-     * Get profiles full state information 
-     * @return ProfilesFullState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public ProfilesFullState getProfilesFullState()
-        throws TException;
-
-    /**
-     * Get Batch entries
-     * @return BatchFileState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public BatchFileState getQueueFileState(Integer batchAge)
-        throws TException;
-
-    /**
-     * Get Batch info from files
-     * @return BatchFileState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public BatchFileState getBatchFileState(String batchID)
-        throws TException;
-
-    /**
-     * Get Batch info from fileswith age
-     * @return BatchFileState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public BatchFileState getBatchFileState(String batchID, Integer batchAge)
-        throws TException;
-
-    /**
-     * Get Job info from files
-     * @return JobFileState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public JobFileState getJobFileState(String batchID, String jobID)
-        throws TException;
-
-    /**
-     * Get Job File View
-     * @return JobViewState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public BatchFileState getJobViewState(String batchID, String jobID)
-        throws TException;
-
-    /**
-     * Get Job info from manifest
-     * @return JobManifestState state information
-     * @throws TException Exception condition during queue service processing
-     */
-    public ManifestsState getJobManifestState(String batchID, String jobID)
-        throws TException;
 
     /**
      * Get ingest home
@@ -231,6 +141,63 @@ public interface IngestServiceInf
      * @throws TException Exception condition during storage service procssing
      */
     public JSONObject getQueueServiceConf()
+        throws TException;
+
+    /**
+     * Get Job info from files
+     * @return JobFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public JobFileState getJobFileState(String batchID, String jobID)
+        throws TException;
+
+    /**
+     * Get Batch entries
+     * @return BatchFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getQueueFileState(Integer batchAge)
+        throws TException;
+
+   /**
+     * Get Batch info from files
+     * @return BatchFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getBatchFileState(String batchID)
+        throws TException;
+
+    /**
+     * Get Batch info from fileswith age
+     * @return BatchFileState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getBatchFileState(String batchID, Integer batchAge)
+        throws TException;
+
+
+    /**
+     * Get Job File View
+     * @return JobViewState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public BatchFileState getJobViewState(String batchID, String jobID)
+        throws TException;
+
+    /**
+     * Get Job info from manifest
+     * @return JobManifestState state information
+     * @throws TException Exception condition during queue service processing
+     */
+    public ManifestsState getJobManifestState(String batchID, String jobID)
+        throws TException;
+
+    /**
+     * Alter the state of submissions freeze|thaw
+     * @return IngestServiceState service state information
+     * @throws TException Exception condition 
+     */
+    public IngestServiceState postSubmissionAction(String action, String collection)
         throws TException;
 
     /**

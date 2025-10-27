@@ -283,7 +283,15 @@ public class BatchManager {
 
 			// Remove cached profile after final processing
 			boolean deleteProfile = false;
-			if (state.equals("Report")) deleteProfile = true;
+			if (state.equals("Report")) {
+			    boolean hasFailure = ingestRequest.getBatch().hasFailure();
+			    if (! hasFailure) {
+				deleteProfile = true;
+			    } else {
+				System.out.println("Error detected in Batch. Profile file not deleted.");
+			    }
+			}
+			
 
 			// assign profile (S3)
                         String batchDir = ingestFileS + "/queue/" + batchState.getBatchID().getValue();

@@ -220,311 +220,211 @@ public class AdminManager {
 		}
 	}
 
-	public ProfilesState getProfilesState(String profilePath, boolean recurse) throws TException {
-		try {
-			ProfilesState profilesState = new ProfilesState();
-			profilesState = ProfileUtil.getProfiles(ingestFileS + "/" + profilePath, recurse);
+        public JobFileState getJobFileState(String batchID, String jobID) throws TException {
+                String[] lines;
+                try {
+                        JobFileState jobFileState = new JobFileState();
 
-			return profilesState;
+                        // Fixed location of ERC file
+                        File jobFile = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID + "/system/mrt-erc.txt");
+                        if ( ! jobFile.exists()) {
+                            throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobFile.getAbsolutePath());
+                        }
 
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
+                        lines = FileUtil.getLinesFromFile(jobFile);
+                        boolean primaryID = true;
+                        for (String line: lines) {
+                           String parts[] = line.split(":", 2);
 
-	public ProfilesFullState getProfilesFullState() throws TException {
-		try {
-			ProfilesFullState profilesFullState = new ProfilesFullState();
-			profilesFullState = ProfileUtil.getProfilesFull(ingestFileS + "/profiles");
+                           if (parts.length < 2) continue;
+                           String key = parts[0];
+                           String value = parts[1];
+                           if (key.startsWith("erc") || (! key.startsWith("wh"))) continue;
 
-			return profilesFullState;
+                           if (key.startsWith("where")) {
+                                // Primary ID is alsways listed first
+                                // All subsequent entries are local IDs
+                                if (primaryID) {
+                                   key += "-primary";
+                                   primaryID = false;
+                                } else {
+                                   key += "-local";
+                                }
+                           }
+                           jobFileState.addEntry(key, value);
+                        }
 
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
+                        return jobFileState;
+                } catch (TException tex) {
+                        throw tex;
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                        lines = null;
+                }
 
-	public BatchFileState getBatchFileState(String batchID, Integer batchAge) throws TException {
-		try {
-			BatchFileState batchFileState = new BatchFileState();
+        }
 
-			// null value is to not filter by age
-			if (batchAge == null) batchAge = new Integer(Integer.MAX_VALUE);
+        public BatchFileState getJobViewState(String batchID, String jobID) throws TException {
+                try {
+                        BatchFileState batchFileState = new BatchFileState();
+                        Vector<File> jobFiles = new Vector<File>();
+
+                        // Fixed location of ERC file
+                        String jobPath = ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID;
+                        File jobDir = new File(jobPath);
+                        if ( ! jobDir.exists()) {
+                            throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobDir.getAbsolutePath());
+                        }
+
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+                        FileUtil.getDirectoryFiles(jobDir, jobFiles);
+                        for (File file: jobFiles.toArray(new File[0])) {
+                           if (file.isDirectory()) continue;
+
+                           Date date = new Date(file.lastModified());
+                           batchFileState.addBatchFile(file.getAbsolutePath().substring(jobPath.length() + 1), dateFormat.format(date));
+                        }
+
+                        return batchFileState;
+                } catch (TException tex) {
+                        throw tex;
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                }
+        }
+
+
+        public ManifestsState getJobManifestState(String batchID, String jobID) throws TException {
+                try {
+
+                        // Fixed location of Manifest file
+                        File jobFile = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID + "/system/mrt-manifest.txt");
+                        if ( ! jobFile.exists()) {
+                            throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job manifest: " + jobFile.getAbsolutePath());
+                        }
+
+                        ManifestsState manifestsState = new ManifestsState();
+
+                        String[] lines = FileUtil.getLinesFromFile(jobFile);
+                        // File URL | sha256 | 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 | 4 |  | producer/TDR Acc+H2O.md | text/x-web-markdown
+                        for (String line: lines) {
+                           // skip headers and footers
+                           if (! line.startsWith("http:")) continue;
+                           String parts[] = line.split("\\|", 7);
+
+                           // skip system files
+                           if ( parts[5].contains("system/")) continue;
+
+                           ManifestEntryState manifestEntryState = new ManifestEntryState();
+                           manifestEntryState.setFileName(parts[5]);
+                           manifestEntryState.setFileSize(parts[3]);
+                           manifestEntryState.setHashAlgorithm(parts[1]);
+                           manifestEntryState.setHashValue(parts[2]);
+                           manifestEntryState.setMimeType(parts[6]);
+
+                           manifestsState.addManifestInstance(manifestEntryState);
+                        }
+
+                        return manifestsState;
+                } catch (TException tex) {
+                        throw tex;
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                }
+        }
+
+
+        public BatchFileState getQueueFileState(Integer days) throws TException {
+                try {
+                        BatchFileState batchFileState = new BatchFileState();
+
+                        File queueDir = new File(ingestConf.getString("ingestServicePath") + "/queue" );
+                        if ( ! queueDir.isDirectory()) {
+                            throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Queue directory: " + queueDir);
+                        }
+ 
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+                        long daysMilli = days.longValue() * 86400 * 1000;
+                        long nowMilli = System.currentTimeMillis();
+
+                        File[] files = queueDir.listFiles();
+                        for (File file: files) {
+                           String filename = file.getName();
+
+                           // filter data
+                           if (! file.isDirectory()) continue;
+                           if (! filename.startsWith("bid")) continue; 
+                           if (file.lastModified() <= (nowMilli - daysMilli)) continue;
+
+                           Date date = new Date(file.lastModified());
+                           batchFileState.addBatchFile(filename, dateFormat.format(date));
+                        }
+
+                        return batchFileState;
+                } catch (TException tex) {
+                        throw tex;
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                }
+        }
+
+        public BatchFileState getBatchFileState(String batchID, Integer batchAge) throws TException {
+                try {
+                        BatchFileState batchFileState = new BatchFileState();
+
+                        // null value is to not filter by age
+                        if (batchAge == null) batchAge = new Integer(Integer.MAX_VALUE);
                         long daysMilli = batchAge.longValue() * 86400 * 1000;
                         long nowMilli = System.currentTimeMillis();
 
 
-			File batchDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID);
-			if ( ! batchDir.isDirectory()) { 
-                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Batch directory: " + batchDir);
-			}
-		
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+                        File batchDir = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID);
+                        if ( ! batchDir.isDirectory()) {
+                            throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Batch directory: " + batchDir);
+                        }
+ 
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
 
-                	File[] files = batchDir.listFiles();
-                	for (File file: files) {
+                        File[] files = batchDir.listFiles();
+                        for (File file: files) {
                            if (file.lastModified() <= (nowMilli - daysMilli)) continue;
 
-			   String filename = file.getName();
+                           String filename = file.getName();
 
-			   // Add jobs within batch
-			   if (file.isDirectory() && filename.startsWith("jid")) {
-				Date date = new Date(file.lastModified());
-				//batchFileState.addBatchFile(filename, dateFormat.parse(date.toString()).toString());
-				batchFileState.addBatchFile(filename, dateFormat.format(date));
-			   // Add manifest if present
-			   } else if (file.isFile() && filename.endsWith(".checkm")) {
-				batchFileState.setBatchManifestName(filename);
-				batchFileState.setBatchManifestData(FileUtil.file2String(file));
-			   }
-			}				
+                           // Add jobs within batch
+                           if (file.isDirectory() && filename.startsWith("jid")) {
+                                Date date = new Date(file.lastModified());
+                                //batchFileState.addBatchFile(filename, dateFormat.parse(date.toString()).toString());
+                                batchFileState.addBatchFile(filename, dateFormat.format(date));
+                           // Add manifest if present
+                           } else if (file.isFile() && filename.endsWith(".checkm")) {
+                                batchFileState.setBatchManifestName(filename);
+                                batchFileState.setBatchManifestData(FileUtil.file2String(file));
+                           }
+                        }
 
-			return batchFileState;
+                        return batchFileState;
                 } catch (TException tex) {
                         throw tex;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
-
-	public BatchFileState getQueueFileState(Integer days) throws TException {
-		try {
-			BatchFileState batchFileState = new BatchFileState();
-
-			File queueDir = new File(ingestConf.getString("ingestServicePath") + "/queue" );
-			if ( ! queueDir.isDirectory()) { 
-                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Queue directory: " + queueDir);
-			}
-		
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-			long daysMilli = days.longValue() * 86400 * 1000;
-			long nowMilli = System.currentTimeMillis();
-
-                	File[] files = queueDir.listFiles();
-                	for (File file: files) {
-			   String filename = file.getName();
-
-			   // filter data
-			   if (! file.isDirectory()) continue; 
-			   if (! filename.startsWith("bid")) continue; 
-			   if (file.lastModified() <= (nowMilli - daysMilli)) continue;
-
-			   Date date = new Date(file.lastModified());
-			   batchFileState.addBatchFile(filename, dateFormat.format(date));
-			}				
-
-			return batchFileState;
-                } catch (TException tex) {
-                        throw tex;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
-
-	public JobFileState getJobFileState(String batchID, String jobID) throws TException {
-                String[] lines;
-		try {
-			JobFileState jobFileState = new JobFileState();
-
-			// Fixed location of ERC file
-			File jobFile = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID + "/system/mrt-erc.txt");
-			if ( ! jobFile.exists()) { 
-                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobFile.getAbsolutePath());
-			}
-		
-                	lines = FileUtil.getLinesFromFile(jobFile);
-			boolean primaryID = true;
-                	for (String line: lines) {
-			   String parts[] = line.split(":", 2);
-
-			   if (parts.length < 2) continue;
-			   String key = parts[0];
-			   String value = parts[1];
-			   if (key.startsWith("erc") || (! key.startsWith("wh"))) continue;
-
-			   if (key.startsWith("where")) {
-				// Primary ID is alsways listed first
-				// All subsequent entries are local IDs
-				if (primaryID) {
-				   key += "-primary";
-			           primaryID = false;
-				} else {
-				   key += "-local";
-				}
-			   } 
-			   jobFileState.addEntry(key, value);
-			}				
-
-			return jobFileState;
-                } catch (TException tex) {
-                        throw tex;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-			lines = null;
-		}
-	}
-
-	public BatchFileState getJobViewState(String batchID, String jobID) throws TException {
-		try {
-			BatchFileState batchFileState = new BatchFileState();
-			Vector<File> jobFiles = new Vector<File>();
-
-			// Fixed location of ERC file
-			String jobPath = ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID;
-			File jobDir = new File(jobPath);
-			if ( ! jobDir.exists()) { 
-                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job file: " + jobDir.getAbsolutePath());
-			}
-
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-			FileUtil.getDirectoryFiles(jobDir, jobFiles);
-                	for (File file: jobFiles.toArray(new File[0])) {
-			   if (file.isDirectory()) continue;
-
-                           Date date = new Date(file.lastModified());
-                           batchFileState.addBatchFile(file.getAbsolutePath().substring(jobPath.length() + 1), dateFormat.format(date));
-			}				
-
-			return batchFileState;
-                } catch (TException tex) {
-                        throw tex;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
-
-	public ManifestsState getJobManifestState(String batchID, String jobID) throws TException {
-		try {
-
-			// Fixed location of Manifest file
-			File jobFile = new File(ingestConf.getString("ingestServicePath") + "/queue/" + batchID + "/" + jobID + "/system/mrt-manifest.txt");
-			if ( ! jobFile.exists()) { 
-                    	    throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find Job manifest: " + jobFile.getAbsolutePath());
-			}
-		
-			ManifestsState manifestsState = new ManifestsState();
-
-                	String[] lines = FileUtil.getLinesFromFile(jobFile);
-			// File URL | sha256 | 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 | 4 |  | producer/TDR Acc+H2O.md | text/x-web-markdown
-			for (String line: lines) {
-			   // skip headers and footers
-			   if (! line.startsWith("http:")) continue;
-			   String parts[] = line.split("\\|", 7);
-			
-			   // skip system files
-			   if ( parts[5].contains("system/")) continue;
-
-			   ManifestEntryState manifestEntryState = new ManifestEntryState();
-			   manifestEntryState.setFileName(parts[5]);
-			   manifestEntryState.setFileSize(parts[3]);
-			   manifestEntryState.setHashAlgorithm(parts[1]);
-			   manifestEntryState.setHashValue(parts[2]);
-			   manifestEntryState.setMimeType(parts[6]);
-
-			   manifestsState.addManifestInstance(manifestEntryState);
-			}				
-
-			return manifestsState;
-                } catch (TException tex) {
-                        throw tex;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
-
-        public GenericState postProfileAction(String type, String environment, String notification, Map profileParms) throws TException {
-		try {
-			File profileTemplate = null;
-			String repoPath = ingestConf.getString("ingestServicePath") + "/profiles/";
-			String templateName = "TEMPLATE-" + type.toUpperCase();
-
-			if (! type.matches("profile")) 
-			   repoPath += "/admin/" + environment + "/" + type;
-			profileTemplate = new File(repoPath + "/" + templateName);
-			if ( ! profileTemplate.exists()) { 
-                    	   throw new TException.REQUESTED_ITEM_NOT_FOUND(MESSAGE + ": Unable to find profileTemplate: " + profileTemplate.getAbsolutePath());
-			}
-
-			// Populate Template
-			String templateString = FileUtil.file2String(profileTemplate);
- 			StringSubstitutor sub = new StringSubstitutor(profileParms);
- 			String profileString = sub.replace(templateString);
-
-			// Handle multi-line Notification format (unique)
-			String contacts[] = notification.split(",");
-			Map<String, String> hs = new HashMap();
-			for (int i=1; i<=contacts.length; i++) {
-			    String additional = "";
-			    profileString = profileString.replace("${NOTIFICATIONENUM}", String.format("%d", i));
-            		    if (i < contacts.length) additional += "\nNotification.${NOTIFICATIONENUM}: ${NOTIFICATION}";
-			    profileString = profileString.replace("${NOTIFICATION}", contacts[i-1] + additional);
-			}
-
-			// Create a profile state, as a submission would do
-			validateProfile(profileString);
-
-			GenericState genericState = new GenericState();
-			genericState.setString(profileString);
-
-			return genericState;
-                } catch (TException tex) {
-			logger.logError(MESSAGE + "Exception:" + tex, 0);
-
-                        throw tex;
-		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
-
-			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-		} finally {
-		}
-	}
-
-
-	protected boolean validateProfile(String profileString) throws TException {
-	   File tempFile = null;
-	   try {
-
-		// Replace XML <CR> with unix
-		profileString = profileString.replaceAll("&#10;", "\n");
-
-		tempFile = File.createTempFile("temp", "_content");
-		FileUtil.string2File(tempFile, profileString);
-		ProfileState testProfileState = ProfileUtil.getProfile(new Identifier("test_content",  Identifier.Namespace.Local), tempFile);
-
-		return true;	// Exception is false
-            } catch (TException me) {
-                    logger.logError(MESSAGE + "TException:" + me, 0);
-		
-                    throw me;
-            } catch (Exception ex) {
-                    logger.logError(MESSAGE + "Exception:" + ex, 0);
-                    throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-            } finally {
-		    if (tempFile != null) tempFile.delete();
-	    }
-	}
+                } catch (Exception ex) {
+                        System.out.println(StringUtil.stackTrace(ex));
+                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+                        throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
+                } finally {
+                }
+        }
 
 
 	protected void setIngestStateProperties(IngestServiceState ingestState) throws TException {

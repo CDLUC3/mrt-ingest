@@ -266,9 +266,11 @@ public class HandlerRetrieve extends Handler<JobState>
 		    }
 		    digestUtil = null;
 
-		    // save manifest
+		    // Copy submission manifest to MRT file in system directory
 		    System.out.println("[INFO] saving submitter's manifest file: " + manifestFile.getAbsolutePath());
-		    manifestFile.renameTo(new File(systemTargetDir, "mrt-submission-manifest.txt"));
+		    FileUtil.file2file(manifestFile,new File(systemTargetDir, "mrt-submission-manifest.txt"));
+		    // Move submission manifest to top level Job dir
+		    manifestFile.renameTo(new File(ingestRequest.getQueuePath(), manifestFile.getName()));
 	        }
 	    }
 

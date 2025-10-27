@@ -463,8 +463,11 @@ public class IngestHandlerTest extends IngestTestCore {
                 assertTrue(hr.getSuccess());
 
                 SystemFileInstance sfi = new SystemFileInstance(SystemFile.mrt_manifest);
+		int isManifest = 0;
+		// Jobs now keep a copy of original manifest at top level
+		if (ingestInput.sampleFile().getFile().getName().contains("checkm")) isManifest = 1;
                 assertTrue(sfi.exists());
-                assertEquals(ingestInput.sampleFile().getListSizeCount(), sfi.sysFileLines().size());
+                assertEquals(ingestInput.sampleFile().getListSizeCount(), sfi.sysFileLines().size() - isManifest);
         }
 
         public void runHandlerCleanupTests(InputFile ingestInput, IngestRequest ir) throws TException, IOException {

@@ -168,12 +168,14 @@ public class JerseyAdmin extends JerseyBase
     }
 
 
-    // Get profiles state user --> name, admin --> path and name
-    @GET
-    @Path("{profilePath: profiles|profiles/admin|profiles/admin/(collection|owner|sla)}")
-    public Response getProfilesState(
+    // Collection Pause or Thaw submissions^M 
+    @POST
+    @Path("/submission/{request: freeze|thaw}/{collection}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
+    public Response postSubmissionAction(
             @DefaultValue("json") @QueryParam("t") String formatType,
-            @PathParam("profilePath") String profilePath,
+            @PathParam("request") String action,
+            @PathParam("collection") String collection,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -181,12 +183,10 @@ public class JerseyAdmin extends JerseyBase
     {
         LoggerInf logger = null;
         try {
-            log("processing getProfilesState");
+            log("Collection processing submission request: " + action + " collection: " + collection);
 
             // Accept is overridden by responseForm form parm
             String responseForm = "";
-	    boolean admin = false;
-
             try {
                 responseForm = processFormatType(request.getHeader("Accept"), "");
             } catch (Exception e) {}
@@ -195,10 +195,7 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
-
-	    if (profilePath.contains("admin")) admin = true;
-
-            StateInf responseState = ingestService.getProfilesState(profilePath, admin);
+            StateInf responseState = ingestService.postSubmissionAction(action, collection);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
@@ -212,11 +209,13 @@ public class JerseyAdmin extends JerseyBase
     }
 
 
-    // Get profiles state - Full
-    @GET
-    @Path("/profiles-full")
-    public Response getProfilesFullState(
+    // Pause or Thaw all submissions
+    @POST
+    @Path("/submissions/{request: freeze|thaw}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
+    public Response postSubmissionAction(
             @DefaultValue("json") @QueryParam("t") String formatType,
+            @PathParam("request") String action,
             @Context HttpServletRequest request,
             @Context CloseableService cs,
             @Context ServletConfig sc)
@@ -224,7 +223,7 @@ public class JerseyAdmin extends JerseyBase
     {
         LoggerInf logger = null;
         try {
-            log("processing getProfilesFullState");
+            log("Global processing submission request: " + action);
 
             // Accept is overridden by responseForm form parm
             String responseForm = "";
@@ -236,87 +235,7 @@ public class JerseyAdmin extends JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getProfilesFullState();
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-
-    // Profile state
-    @GET
-    @Path("/profile/{profile}")
-    public Response getProfileState(
-            @DefaultValue("json") @QueryParam("t") String formatType,
-            @PathParam("profile") String profile,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            log("processing getProfileState" + profile);
-
-            // Accept is overridden by responseForm form parm
-            String responseForm = "";
-            try {
-                responseForm = processFormatType(request.getHeader("Accept"), "");
-            } catch (Exception e) {}
-            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getProfileState(profile);
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-
-    // Profile state admin
-    @GET
-    @Path("/profile/admin/{env: docker|stage|production}/{type: collection|owner|sla}/{profile}")
-    public Response getProfileState(
-            @DefaultValue("json") @QueryParam("t") String formatType,
-            @PathParam("env") String env,
-            @PathParam("type") String type,
-            @PathParam("profile") String profile,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            log("processing getProfileState" + profile);
-
-            // Accept is overridden by responseForm form parm
-            String responseForm = "";
-            try {
-                responseForm = processFormatType(request.getHeader("Accept"), "");
-            } catch (Exception e) {}
-            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.getProfileState("admin/" + env + "/" + type + "/" + profile);
+            StateInf responseState = ingestService.postSubmissionAction(action, null);
             return getStateResponse(responseState, formatType, logger, cs, sc);
 
         } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
@@ -368,7 +287,8 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
-    // Batch File State
+
+   // Batch File State
     @GET
     @Path("/bid/{batchID}")
     public Response getBatchFiletate(
@@ -405,6 +325,7 @@ public class JerseyAdmin extends JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
+
 
     // Batch File State with age
     @GET
@@ -444,6 +365,7 @@ public class JerseyAdmin extends JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
+
 
     // Job File State
     @GET
@@ -562,146 +484,5 @@ public class JerseyAdmin extends JerseyBase
         }
     }
 
-    // Collection Pause or Thaw submissions
-    @POST
-    @Path("/submission/{request: freeze|thaw}/{collection}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
-    public Response postSubmissionAction(
-            @DefaultValue("json") @QueryParam("t") String formatType,
-            @PathParam("request") String action,
-            @PathParam("collection") String collection,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            log("Collection processing submission request: " + action + " collection: " + collection);
 
-            // Accept is overridden by responseForm form parm
-            String responseForm = "";
-            try {
-                responseForm = processFormatType(request.getHeader("Accept"), "");
-            } catch (Exception e) {}
-            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.postSubmissionAction(action, collection);
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-    // Pause or Thaw all submissions
-    @POST
-    @Path("/submissions/{request: freeze|thaw}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
-    public Response postSubmissionAction(
-            @DefaultValue("json") @QueryParam("t") String formatType,
-            @PathParam("request") String action,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            log("Global processing submission request: " + action);
-
-            // Accept is overridden by responseForm form parm
-            String responseForm = "";
-            try {
-                responseForm = processFormatType(request.getHeader("Accept"), "");
-            } catch (Exception e) {}
-            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.postSubmissionAction(action, null);
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-
-    // Create profile: submission or admin (collection/owner/sla)
-    @POST
-    @Path("/profile/{type: profile|collection|owner|sla}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)    // Container, component or manifest file
-    public Response postProfileAction(
-            @DefaultValue("json") @QueryParam("t") String formatType,
-	    @PathParam("type") String type,
-            @DefaultValue("") @FormDataParam("environment") String environment,
-            @DefaultValue("") @FormDataParam("name") String name,
-            @DefaultValue("") @FormDataParam("description") String description,
-            @DefaultValue("") @FormDataParam("collection") String collection,
-            @DefaultValue("") @FormDataParam("ark") String ark,
-            @DefaultValue("") @FormDataParam("owner") String owner,
-            @DefaultValue("") @FormDataParam("notification") String notification,
-            @DefaultValue("") @FormDataParam("context") String context,
-            @DefaultValue("") @FormDataParam("storagenode") String storagenode,
-            @DefaultValue("") @FormDataParam("creationdate") String creationdate,
-            @DefaultValue("") @FormDataParam("modificationdate") String modificationdate,
-            @Context HttpServletRequest request,
-            @Context CloseableService cs,
-            @Context ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = null;
-        try {
-            
-	    log("processing profile request: " + type);
-	    Map<String, String> profileParms = new HashMap();
-	    // Only add Template data in Map
-	    profileParms.put("NAME", name);
-	    profileParms.put("DESCRIPTION", description);
-	    profileParms.put("COLLECTION", collection);
-	    profileParms.put("ARK", ark);
-	    profileParms.put("OWNER", owner);
-	    profileParms.put("CONTEXT", context);
-	    profileParms.put("STORAGENODE", storagenode);
-	    profileParms.put("CREATIONDATE", creationdate);
-	    profileParms.put("MODIFICATIONDATE", modificationdate);
-
-            // Accept is overridden by responseForm form parm
-            String responseForm = "";
-            try {
-                responseForm = processFormatType(request.getHeader("Accept"), "");
-            } catch (Exception e) {}
-            if (StringUtil.isNotEmpty(responseForm)) log("Accept header: - formatType=" + responseForm);
-
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            logger = ingestService.getLogger();
-            StateInf responseState = ingestService.postProfileAction(type, environment, notification, profileParms);
-            return getStateResponse(responseState, formatType, logger, cs, sc);
-
-        } catch (TException.REQUESTED_ITEM_NOT_FOUND renf) {
-            return getStateResponse(renf, formatType, logger, cs, sc);
-        } catch (TException.INVALID_CONFIGURATION ic) {
-            return getStateResponse(ic, formatType, logger, cs, sc);
-        } catch (TException tex) {
-            throw tex;
-        } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
 }
