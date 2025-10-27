@@ -105,8 +105,6 @@ public class HandlerTransfer extends Handler<JobState>
     private Integer defaultStorage = null;
     private StoreNode storeNode = null;			// Worker
     private StoreNode originalStoreNode = null;		// Load balancer
-    private ZooKeeper zooKeeper = null;
-    private String zooConnectString = null;
     private String zooLockNode = null;
     private String hostKey = "canonicalHostname";
     private String hostDomain = "cdlib.org";
@@ -131,64 +129,29 @@ public class HandlerTransfer extends Handler<JobState>
 
         HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
         HttpResponse clientResponse = null;
-	String action = "/add/";
-
-	zooConnectString = jobState.grabMisc();
-	zooLockNode = jobState.grabExtra();
+	String action = "add/";
 
         try {
-            if (! ZookeeperUtil.validateZK(zooKeeper)) {
-                try {
-                   // Refresh ZK connection
-                   zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                } catch  (Exception e ) {
-                   e.printStackTrace(System.err);
-                }
-            }
-
-	    boolean lock = getLock(zooKeeper, jobState.getPrimaryID().getValue(), jobState.getJobID().getValue());
-
 	    originalStoreNode = profileState.getTargetStorage();
-            if (DEBUG) System.out.println("[info] " + MESSAGE + " Original Storage endpoint: " + originalStoreNode.getStorageLink().toString());
-	    storeURL = getStoreHost(originalStoreNode.getStorageLink());
-	    if (storeURL == null) {
-	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Unable to request a Storage worker");
-	       throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(MESSAGE + "Unable to request a Storage worker");
-	    }
-	    storeNode = new StoreNode(storeURL, originalStoreNode.getNodeID());
 
 	    // build REST url 
 	    if (jobState.grabUpdateFlag()) {
-		action = "/update/";
+		action = "update/";
 	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Object update requested.  Overriding default 'add'");
 	    }
 		
-	    String url = storeNode.getStorageLink().toString() + action + storeNode.getNodeID() + 
-			"/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8");
-
-            HttpClient httpClient = HTTPUtil.getHttpClient(url, StorageUtil.STORAGE_CONNECT_TIMEOUT);
-            HttpPost httppost = new HttpPost(url);
-	    List<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();
-	    params.add(new BasicNameValuePair("t", "json"));
+	    String mode = action + originalStoreNode.getNodeID() + "/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"); 
 
             File manifestFile = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
-	    if (manifestFile.length() < (1024L * 1024L)) {		// < 1 MB
-	       // Push manifest to Storage as a form parm
-               String manifest = getManifest(manifestFile);
-	       if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifest: " + manifest);
-  	       params.add(new BasicNameValuePair("manifest", manifest));
-	    } else {
-	       // Storage will Pull manifest via an exposed URL
-               String manifestURL = getManifestURL(ingestRequest, manifestFile);
-	       if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifestURL: " + manifestURL);
-  	       params.add(new BasicNameValuePair("url", manifestURL));
-	    }
+            String manifestURL = getManifestURL(ingestRequest, manifestFile);
+	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifestURL: " + manifestURL);
 
+	    String delete = "";
             if (jobState.grabUpdateFlag()) {
             	File deleteFile = new File(ingestRequest.getQueuePath(), "system/mrt-delete.txt");
 		if (deleteFile.exists()) {
 	            if (DEBUG) System.out.println("[debug] " + MESSAGE + " delete file found: " + deleteFile.getName());
-  	       	    params.add(new BasicNameValuePair("delete", processDeleteFile(deleteFile)));
+  	       	    delete = processDeleteFile(deleteFile);
 		}
 	    }
 
@@ -213,76 +176,42 @@ public class HandlerTransfer extends Handler<JobState>
 
             long startTime = DateUtil.getEpochUTCDate();
 
-	    // make service request
-	    try {
-                httppost.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
-		httppost.setHeader("JID", jobState.getJobID().getValue());
-		httppost.setHeader("hostname", InetAddress.getLocalHost().getHostName());
-		httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8.name()));
-
-                clientResponse = httpClient.execute(httppost);
-	    } catch (Exception e) {
-		e.printStackTrace();
-		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url); 
-	    }
-            int responseCode = clientResponse.getStatusLine().getStatusCode();
-            String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
-            String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code: " + responseCode);
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " response message: " + responseMessage);
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " URL: " + url);
-
-            if (! ZookeeperUtil.validateZK(zooKeeper)) {
-                try {
-                   // Refresh ZK connection
-                   zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-               } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
-               }
+            // Populate Storage data 
+            try {
+	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Storage ZK Manifest URL: " + manifestURL);
+               jobState.setStoreManifestURL(manifestURL);
+	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Storage ZK Mode: " + mode);
+               jobState.setStoreMode(mode);
+	       if (StringUtil.isNotEmpty(delete)) {
+                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Storage ZK Delete detected: " + delete); 
+                   jobState.setStoreDelete(delete);
+	       }
+            } catch (Exception e) {
+               System.err.println(MESSAGE + "[WARN] error setting ZK Store JobState: " + e.getMessage());
             }
 
+ // IGNORE START
             // Log POST
             long endTime = DateUtil.getEpochUTCDate();
             ThreadContext.put("Method", "StoragePost");
             ThreadContext.put("BatchID", jobState.grabBatchID().getValue());
             ThreadContext.put("JobID", jobState.getJobID().getValue());
-            ThreadContext.put("URL", url.toString());
-            ThreadContext.put("ResponsePhrase", responseMessage);
-            ThreadContext.put("ResponseBody", responseBody);
-            msgMap.put("DurationMs", endTime - startTime);
-            msgMap.put("ResponseCode", responseCode);
+            ThreadContext.put("URL", manifestURL);
+            // ThreadContext.put("ResponsePhrase", responseMessage);
+            // ThreadContext.put("ResponseBody", responseBody);
+            // msgMap.put("DurationMs", endTime - startTime);
+            // msgMap.put("ResponseCode", responseCode);
             LogManager.getLogger().info(msgMap);
 
-	    if (responseCode != 200) {
-                try {
-		    if (responseCode != 400) {
-                        throw new TException.EXTERNAL_SERVICE_UNAVAILABLE(responseMessage);
-		    } else {
-			// mrt-delete.txt processing error
-                        throw new TException.REQUEST_INVALID(responseMessage);
-		    }
-                } catch (TException te) {
-                    throw te;
-                } catch (Exception e) {
-                    // let's report something
-		    e.printStackTrace();
-                    throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + url);
-                }
-	    }
+	    // jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
+	    // jobState.setVersionID(getVersionID(responseBody));
 
-	    jobState.setCompletionDate(new DateState(DateUtil.getCurrentDate()));
-	    jobState.setVersionID(getVersionID(responseBody));
+ // IGNORE END
 
-	    return new HandlerResult(true, "SUCCESS: transfer", responseCode);
+	    return new HandlerResult(true, "SUCCESS: Transfer");
 	} catch (TException te) {
 	    te.printStackTrace();
 	    LogManager.getLogger().error(te);
-
-            try {
-                System.out.println("[error] " + MESSAGE + " Error encountered.  Releasing Zookeeper Storage lock: " + this.zooKeeper.toString());
-                releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
-                zooKeeper.close();
-            } catch (Exception e) {}
 
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
@@ -290,21 +219,12 @@ public class HandlerTransfer extends Handler<JobState>
             LogManager.getLogger().error(e);
             String msg = "[error] " + MESSAGE + "processing transfer: " + e.getMessage();
 
-            try {
-                System.out.println("[error] " + MESSAGE + " Error encountered.  Releasing Zookeeper Storage lock: " + this.zooKeeper.toString());
-                releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
-                zooKeeper.close();
-            } catch (Exception e2) {}
-
             return new HandlerResult(false, msg);
 	} finally {
             ThreadContext.clearMap();
             msgMap.clear();
             msgMap = null;
 	    clientResponse = null;
-	    try {
-		zooKeeper.close();
-	    } catch (Exception e) {}
 	}
     }
    
@@ -421,159 +341,6 @@ public class HandlerTransfer extends Handler<JobState>
     public String getName() {
 	return NAME;
     }
-
-    /**
-     * Lock on primary identifier.  Will loop unitil lock obtained.
-     *
-     * @param String primary ID of object (ark)
-     * @param String jobID
-     * @return Boolean result of obtaining lock
-     */
-    private boolean getLock(ZooKeeper zooKeeper, String primaryID, String payload) {
-    try {
-
-        boolean locked = false;
-
-        if (! ZookeeperUtil.validateZK(zooKeeper)) {
-            try {
-               // Refresh ZK connection
-               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-           } catch  (Exception e ) {
-             e.printStackTrace(System.err);
-           }
-        }
-
-	while (! locked) {
-	    try {
-               System.out.println("[info] " + MESSAGE + " Attempting to gain lock");
-	       locked = MerrittLocks.lockObjectStorage(zooKeeper, primaryID);
-	    } catch (Exception e) {
-              if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining lock: " + primaryID);
-	    }
-	    if (locked) break;
-            System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for ID: " + primaryID + " Waiting 15 seconds before retry");
-	    Thread.currentThread().sleep(15 * 1000);	// Wait 15 seconds before attempting to gain lock for ID
-	}
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for ID: " + primaryID + " -- " + payload);
-	    
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    return false;
-	} finally {
-	    try {
-	    } catch (Exception ze) {}
-	}
-    return true;
-    }
-
-
-    /**
-     * Release lock
-     *
-     * @param none needed inputs are global
-     * @return void
-     */
-    private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
-
-        if (! ZookeeperUtil.validateZK(zooKeeper)) {
-            try {
-               // Refresh ZK connection
-               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-           } catch  (Exception e ) {
-             e.printStackTrace(System.err);
-           }
-	}
-
-    	try {
-	    MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
-        } catch (KeeperException ke) {
-	    try {
-		Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-	       MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
-	    } catch (Exception ee) {}
-	} catch (Exception e) {
-	    e.printStackTrace();
-        } finally {
-            try {
-            } catch (Exception ze) {}
-        }
-
-    }
-
-    /**
-     * Request storage worker
-     *
-     * @param String Hostname API
-     * @return hostname
-     */
-    private URL getStoreHost(URL storeHostURL) {
-	String newHostURL = null;
-    	try {
-           tempFile = File.createTempFile("hostname", "txt");
-
-           // Library should retry 3 times, but lets use belt and suspenders
-           for (int i=0; i <= 2; i++) {
-               try {
-                   HttpGet.getFile(new URL(storeHostURL.toString() + "/hostname"), tempFile, 60000, null);
-                   break;
-               } catch (Exception ste) {
-                   System.err.println("[ERROR] Getting a storage node on attempt: " + i);
-                   ste.printStackTrace();
-               }
-               if (i==2) throw new Exception("[ERROR] Failure to retrieve Storage worker after number of attempts: " + i);
-           }
-
-	   String stringResponse = FileUtil.file2String(tempFile);
-	   System.out.println("Response for storage worker request: " + stringResponse);
-
-           JSONObject jsonResponse = JSONUtil.string2json(stringResponse);
-	   String hostname = null;
-	   if (jsonResponse == null) {
-	      // Response not in JSON format
-	      hostname = stringResponse;
-	   } else {
-	      hostname = jsonResponse.getString(hostKey);
-	   }
-
-	   if ( hostname.matches(hostIgnoreDomain)) {
-              if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage endpoint should not change: " + hostname);
-	      newHostURL = storeHostURL.toString();
-	   } else if ( ! (hostname.contains(hostDomain) || hostname.equalsIgnoreCase(hostDockerDomain) || hostname.matches(hostIntegrationTestDomain))) {
-              if (DEBUG) System.out.println("[warning] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname);
-              // String msg = "[error] " + MESSAGE + " Storage endpoint does not contain correct domain: " + hostname;
-              // throw new Exception(msg);
-	   } else {
-	      newHostURL = storeHostURL.getProtocol() + "://" + hostname + ":" + storeHostURL.getPort() + storeHostURL.getPath();
-              if (DEBUG) System.out.println("[info] " + MESSAGE + " Storage worker endpoint: " + newHostURL);
-	   }
-	   return new URL(newHostURL);
-	} catch (Exception e) {
-	    e.printStackTrace();
-            System.err.println(e.getMessage());
-	    return null;
-	} finally {
-	    tempFile.delete();
-	    tempFile = null;
-	}
-    }
-
-/*
-    // XML parser error handler
-    public class SimpleErrorHandler implements ErrorHandler {
-        public void warning(SAXParseException e) throws SAXException {
-            System.out.println(e.getMessage());
-        }
-    
-        public void error(SAXParseException e) throws SAXException {
-            System.out.println(e.getMessage());
-        }
-    
-        public void fatalError(SAXParseException e) throws SAXException {
-            System.out.println(e.getMessage());
-        }
-    }
-*/
 
    public static class Ignorer implements Watcher {
         public void process(WatchedEvent event){}
