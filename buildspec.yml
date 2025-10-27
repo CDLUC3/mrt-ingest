@@ -41,8 +41,6 @@ phases:
       echo TAG_ECS_DEV=$TAG_ECS_DEV
       TAG_ECS_EPHEMERAL=$(yq -r ".\"ecs-tagmap\".\"${REPONAME}\".\"ecs-ephemeral\"" /tmp/ecs-release-manifest.yaml)
       echo TAG_ECS_EPHEMERAL=$TAG_ECS_EPHEMERAL
-      TAG_ECS_DBSNAPSHOT=$(yq -r ".\"ecs-tagmap\".\"${REPONAME}\".\"ecs-dbsnapshot\"" /tmp/ecs-release-manifest.yaml)
-      echo TAG_ECS_DBSNAPSHOT=$TAG_ECS_DBSNAPSHOT
       TAG_ECS_STG=$(yq -r ".\"ecs-tagmap\".\"${REPONAME}\".\"ecs-stg\"" /tmp/ecs-release-manifest.yaml)
       echo TAG_ECS_STG=$TAG_ECS_STG
       TAG_ECS_PRD=$(yq -r ".\"ecs-tagmap\".\"${REPONAME}\".\"ecs-prd\"" /tmp/ecs-release-manifest.yaml)
@@ -89,8 +87,6 @@ phases:
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
           -t ${ECR_REGISTRY}/${REPONAME}:ecs-dev .
-
-        echo "RUNNING_COUNT for ecs-dev: $RUNNING_COUNT"
   
         RUNNING_COUNT=$(aws ecs list-tasks \
           --cluster mrt-ecs-dev-stack \
@@ -98,6 +94,8 @@ phases:
           --desired-status RUNNING \
           --query 'length(taskArns)' \
           --output text)
+
+        echo "RUNNING_COUNT for ecs-dev: $RUNNING_COUNT"
 
         if [ $RUNNING_COUNT -gt 0 ]
         then
@@ -121,34 +119,14 @@ phases:
           --query 'length(taskArns)' \
           --output text)
 
+        echo "RUNNING_COUNT for ecs-dev: $RUNNING_COUNT"
+
         if [ $RUNNING_COUNT -gt 0 ]
         then
           aws ecs update-service --cluster mrt-ecs-ephemeral-stack --service $SERVICENAME \
             --desired-count $RUNNING_COUNT --output text --no-cli-pager \
             --query "service.deployments[0].[id,taskDefinition,status,desiredCount,createdAt]" \
             --force-new-deployment || echo "Skip ecs-ephemeral Deployment"
-        fi  
-      fi
-
-      if [[ "$BRANCHTAG" == "$TAG_ECS_DBSNAPSHOT" ]]
-      then
-        docker build --quiet --push \
-          --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
-          -t ${ECR_REGISTRY}/${REPONAME}:ecs-dbsnapshot .
-
-        RUNNING_COUNT=$(aws ecs list-tasks \
-          --cluster mrt-ecs-dbsnapshot-stack \
-          --service-name $SERVICENAME \
-          --desired-status RUNNING \
-          --query 'length(taskArns)' \
-          --output text)
-
-        if [ $RUNNING_COUNT -gt 0 ]
-        then
-          aws ecs update-service --cluster mrt-ecs-dbsnapshot-stack --service $SERVICENAME \
-            --desired-count $RUNNING_COUNT --output text --no-cli-pager \
-            --query "service.deployments[0].[id,taskDefinition,status,desiredCount,createdAt]" \
-            --force-new-deployment || echo "Skip ecs-dbsnapshot Deployment"
         fi  
       fi
 
@@ -187,7 +165,7 @@ phases:
       # note that this also applied to a main branch build
       if [[ "$MODE" == "OnDemand" ]]
       then
-        for stack in ecs-dev ecs-ephemeral ecs-dbsnapshot ecs-stg ecs-prd
+        for stack in ecs-dev ecs-ephemeral ecs-stg ecs-prd
         do
           TAG_ECS=$(yq -r ".\"ecs-tagmap\".\"${REPONAME}\".\"$stack\"" /tmp/ecs-release-manifest.yaml)
           if [[ "$TAG_ECS" == "null" ]]
