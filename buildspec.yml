@@ -86,12 +86,16 @@ phases:
         -t ${ECR_REGISTRY}/${REPONAME}:${DOCKTAG} .
 
     - |
+      echo "DOCKTAG=${DOCKTAG}"
+
       if [[ "$DOCKTAG" == "$TAG_ECS_DEV" ]]
       then
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
           -t ${ECR_REGISTRY}/${REPONAME}:ecs-dev .
 
+        echo "RUNNING_COUNT for ecs-dev: $RUNNING_COUNT"
+  
         RUNNING_COUNT=$(aws ecs list-tasks \
           --cluster mrt-ecs-dev-stack \
           --service-name $SERVICENAME \
@@ -103,7 +107,7 @@ phases:
         then
           aws ecs update-service --cluster mrt-ecs-dev-stack --service $SERVICENAME \
             --desired-count $RUNNING_COUNT --output text --no-cli-pager \
-           --query "service.deployments[0].[id,taskDefinition,status,desiredCount,createdAt]" \
+            --query "service.deployments[0].[id,taskDefinition,status,desiredCount,createdAt]" \
             --force-new-deployment || echo "Skip ecs-dev Deployment"
         fi  
       fi
