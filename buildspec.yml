@@ -31,7 +31,6 @@ phases:
       else
         BRANCHTAG=$BRANCHNAME
       fi
-    - DOCKTAG=$BRANCHTAG
     - COMMITDATE=`git --no-pager log -1 --pretty='format:%cd' --date='format:%Y-%m-%d %H:%M:%S'`
     - echo "Branchtag ${BRANCHTAG}; COMMITDATE=${COMMITDATE}; REPONAME=${REPONAME}; BRANCHNAME=${BRANCHNAME}"
 
@@ -59,7 +58,6 @@ phases:
       if [[ "${BRANCHTAG}" == "main" ]]
       then
         SEMVER=''
-        DOCKTAG='dev'
       elif [[ "${TAG}" == "" ]]
       then
         SEMVER="-Dversion=${BRANCHTAG}-SNAPSHOT"
@@ -83,12 +81,10 @@ phases:
     - |
       docker build --push --quiet \
         --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
-        -t ${ECR_REGISTRY}/${REPONAME}:${DOCKTAG} .
+        -t ${ECR_REGISTRY}/${REPONAME}:${BRANCHTAG} .
 
     - |
-      echo "DOCKTAG=${DOCKTAG}"
-
-      if [[ "$DOCKTAG" == "$TAG_ECS_DEV" ]]
+      if [[ "$BRANCHTAG" == "$TAG_ECS_DEV" ]]
       then
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
@@ -112,7 +108,7 @@ phases:
         fi  
       fi
 
-      if [[ "$DOCKTAG" == "$TAG_ECS_EPHEMERAL" ]]
+      if [[ "$BRANCHTAG" == "$TAG_ECS_EPHEMERAL" ]]
       then
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
@@ -134,7 +130,7 @@ phases:
         fi  
       fi
 
-      if [[ "$DOCKTAG" == "$TAG_ECS_DBSNAPSHOT" ]]
+      if [[ "$BRANCHTAG" == "$TAG_ECS_DBSNAPSHOT" ]]
       then
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
@@ -156,14 +152,14 @@ phases:
         fi  
       fi
 
-      if [[ "$DOCKTAG" == "$TAG_ECS_STG" ]]
+      if [[ "$BRANCHTAG" == "$TAG_ECS_STG" ]]
       then
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
           -t ${ECR_REGISTRY}/${REPONAME}:ecs-stg .
       fi
 
-      if [[ "$DOCKTAG" == "$TAG_ECS_PRD" ]]
+      if [[ "$BRANCHTAG" == "$TAG_ECS_PRD" ]]
       then
         docker build --quiet --push \
           --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
@@ -197,7 +193,7 @@ phases:
           if [[ "$TAG_ECS" == "null" ]]
           then
             echo "${TAG_ECS} undefined for ${stack}"
-          elif [[ "$DOCKTAG" == "$TAG_ECS" ]]
+          elif [[ "$BRANCHTAG" == "$TAG_ECS" ]]
           then
             echo "${TAG_ECS} Already Built for ${stack}"
           else
