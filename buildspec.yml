@@ -190,8 +190,13 @@ phases:
         for stack in ecs-dev ecs-ephemeral ecs-dbsnapshot ecs-stg ecs-prd
         do
           TAG_ECS=$(yq -r ".\"ecs-tagmap\".\"${REPONAME}\".\"$stack\"" /tmp/ecs-release-manifest.yaml)
-          if [[ "$DOCKTAG" != "$TAG_ECS" ]]
+          if [[ "$TAG_ECS" == "null" ]]
           then
+            echo "${TAG_ECS} undefined for ${stack}"
+          elif [[ "$DOCKTAG" == "$TAG_ECS" ]]
+          then
+            echo "${TAG_ECS} Already Built for ${stack}"
+          else
             # perform get checkout get the specific dockerfile
             git checkout $TAG_ECS
 
