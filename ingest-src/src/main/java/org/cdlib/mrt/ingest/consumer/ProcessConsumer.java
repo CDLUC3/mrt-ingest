@@ -135,7 +135,7 @@ public class ProcessConsumer extends HttpServlet
 	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
-		this.numThreads = new Integer(numThreads).intValue();
+		this.numThreads = Integer.valueOf(numThreads);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
@@ -145,7 +145,7 @@ public class ProcessConsumer extends HttpServlet
 	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
-		this.pollingInterval = new Integer(pollingInterval).intValue();
+		this.pollingInterval = Integer.valueOf(pollingInterval);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
@@ -497,7 +497,7 @@ class ProcessConsumeData implements Runnable
 	    // if (! job.localId().isEmpty()) ingestRequest.getJob().setLocalID(job.localId());
 	    // if (! job.primaryId().isEmpty()) ingestRequest.getJob().setPrimaryID(job.primaryId());
 
-	    Boolean update = new Boolean(jp.getBoolean("update"));
+	    Boolean update = Boolean.valueOf(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
             ingestRequest.getJob().setSubmissionSize(spaceNeeded);
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +

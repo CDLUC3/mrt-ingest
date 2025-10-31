@@ -821,7 +821,7 @@ public class JobState
             String metacatStatusS = (metacatStatus != null) ? metacatStatus : "";
             String persistentURLS = (persistentURL != null) ? persistentURL : "";
             String objectAggregateS = "";
-	    String submissionSizeS = new Long(submissionSize).toString();
+	    String submissionSizeS = Long.valueOf(submissionSize).toString();
 	    try {
                 objectAggregateS = objectProfile.getAggregateType();
 	    } catch (NullPointerException npe) {}

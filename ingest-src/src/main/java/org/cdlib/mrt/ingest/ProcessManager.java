@@ -123,7 +123,8 @@ public class ProcessManager {
 		try {
 			// when service is started
 			if (jvmStartTime == null)
-				jvmStartTime = new Long(DateUtil.getEpochUTCDate());
+				jvmStartTime = Long.valueOf(DateUtil.getEpochUTCDate());
+
 			this.logger = logger;
 			this.storeConf = storeConf;
 			this.ingestConf = ingestConf;
@@ -304,7 +305,8 @@ public class ProcessManager {
             		   sNumDownloadThreads = ingestConf.getString("NumDownloadThreads");
             		   if (StringUtil.isNotEmpty(sNumDownloadThreads)) {
                 	      System.out.println("[info] " + MESSAGE + "Setting download thread pool size: " + sNumDownloadThreads);
-                	      this.numDownloadThreads = new Integer(sNumDownloadThreads).intValue();
+                	      this.numDownloadThreads = Integer.valueOf(sNumDownloadThreads);
+
             		}
         		} catch (Exception e) {
             		   System.err.println("[warn] " + MESSAGE + "Could not set download thread pool size: " + sNumDownloadThreads + "  - using default: " + this.numDownloadThreads);

@@ -232,7 +232,7 @@ public class HandlerInitialize extends Handler<JobState>
 	ingestProperties.put("collection", collectionString);
 
 	ingestProperties.put("storageService", profileState.getTargetStorage().getStorageLink().toString());
-	ingestProperties.put("storageNode", new Integer(profileState.getTargetStorage().getNodeID()).toString());
+	ingestProperties.put("storageNode", Integer.valueOf(profileState.getTargetStorage().getNodeID()));
 
 	Iterator contactsEmail = profileState.getContactsEmail().iterator();
 	String notificationString = "";

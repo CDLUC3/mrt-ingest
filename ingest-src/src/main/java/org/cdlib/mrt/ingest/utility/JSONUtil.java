@@ -170,7 +170,7 @@ public class JSONUtil
 	} catch (Exception e) { 
 	   System.out.println("[ERROR] Could not set BATCH ID for Ingest Request"); 
 	}
-	Boolean update = new Boolean(jp.getBoolean("update"));
+	Boolean update = Boolean.valueOf(jp.getBoolean("update"));
 	ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
 	try {
