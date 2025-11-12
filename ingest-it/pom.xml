@@ -17,7 +17,7 @@
     <skipTests>${env.SKIP_DOCKER_TEST}</skipTests>
     <merritt-core.version>4.0-SNAPSHOT</merritt-core.version>
     <merritt-zk.version>4.0-SNAPSHOT</merritt-zk.version>
-    <merritt-bom.version>4.0-SNAPSHOT</merritt-bom.version>
+    <!-- <merritt-bom.version>4.0-SNAPSHOT</merritt-bom.version> -->
   </properties>
 
   <dependencyManagement>
