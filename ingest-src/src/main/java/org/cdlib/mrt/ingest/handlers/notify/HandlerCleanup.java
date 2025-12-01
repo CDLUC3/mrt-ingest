@@ -48,8 +48,6 @@ import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
- 
-import org.cdlib.mrt.zk.MerrittLocks;
 
 /**
  * remove staging directory
@@ -118,53 +116,11 @@ public class HandlerCleanup extends Handler<JobState>
             String msg = "[error] " + MESSAGE + "removing staging directory: " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {
-	    // Initiated with Storage Handler.  Keep lock until object completes
-	    try {
-                if ( ! unitTest) {
-            	    System.out.println("[debug] " + MESSAGE + " Releasing Zookeeper Storage lock: " + this.zooKeeper.toString());
-		    releaseLock(zooKeeper, jobState.getPrimaryID().getValue());
-		    zooKeeper.close();
-		}
-	    } catch (Exception e) {}
 	}
     }
    
     public String getName() {
 	return NAME;
-    }
-
-    /**
-     * Release lock
-     *
-     * @param none needed inputs are global
-     * @return void
-     */
-    private void releaseLock(ZooKeeper zooKeeper, String primaryID) {
-
-        if (! ZookeeperUtil.validateZK(zooKeeper)) {
-            try {
-               // Refresh ZK connection
-               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-            } catch  (Exception e ) {
-               e.printStackTrace(System.err);
-            }
-        }
-
-        try {
-            MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
-        } catch (KeeperException ke) {
-            try {
-               Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
-               zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-               MerrittLocks.unlockObjectStorage(zooKeeper, primaryID);
-            } catch (Exception ee) {}
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-            } catch (Exception ze) {}
-        }
-
     }
 
    public static class Ignorer implements Watcher {
