@@ -59,7 +59,6 @@ public class HandlerCleanup extends Handler<JobState>
     private static final String NAME = "HandlerCleanup";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
-    private ZooKeeper zooKeeper = null;
     private String zooConnectString = null;
     private LoggerInf logger = null;
     private Properties conf = null;
@@ -79,11 +78,8 @@ public class HandlerCleanup extends Handler<JobState>
 	throws TException 
     {
 
-        zooConnectString = jobState.grabMisc();
-	if (zooConnectString == null) unitTest = true;
 	try {
 
-            if ( ! unitTest) zooKeeper = new ZooKeeper(zooConnectString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 	    File stageDir = new File(ingestRequest.getQueuePath(), "producer");
 
 	    if (! deletePayload) {
