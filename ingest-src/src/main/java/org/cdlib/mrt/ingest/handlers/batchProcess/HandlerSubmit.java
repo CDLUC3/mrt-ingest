@@ -224,6 +224,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	} finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch (Exception e) {
 	    }
 	}

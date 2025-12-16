@@ -32,20 +32,12 @@ package org.cdlib.mrt.ingest.handlers.notify;
 import java.io.File;
 import java.util.Properties;
 
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
-import org.apache.zookeeper.KeeperException.SessionExpiredException;
-
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.FileUtil;
-import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 
@@ -59,7 +51,6 @@ public class HandlerCleanup extends Handler<JobState>
     private static final String NAME = "HandlerCleanup";
     private static final String MESSAGE = NAME + ": ";
     private static final boolean DEBUG = true;
-    private String zooConnectString = null;
     private LoggerInf logger = null;
     private Properties conf = null;
     private boolean unitTest = false;
@@ -118,10 +109,5 @@ public class HandlerCleanup extends Handler<JobState>
     public String getName() {
 	return NAME;
     }
-
-   public static class Ignorer implements Watcher {
-        public void process(WatchedEvent event){}
-   }
-
 
 }

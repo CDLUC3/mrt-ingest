@@ -655,6 +655,7 @@ public class ProcessManager {
 			}
                         try {
                           zooKeeper.close();
+                          zooKeeper = null;
                         } catch(Exception ze) {}
 			}
 	}
@@ -787,6 +788,7 @@ public class ProcessManager {
             } finally {
 		try {
 		   zooKeeper.close();
+		   zooKeeper = null;
 		} catch(Exception ze) {}
 	    }
 	}

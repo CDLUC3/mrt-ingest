@@ -391,6 +391,7 @@ class NotifyConsumerDaemon implements Runnable
 
 	   try {
 	     zooKeeper.close();
+	     zooKeeper = null;
 	   } catch (Exception ze) {}
 	}
     }
@@ -589,6 +590,7 @@ class NotifyConsumeData implements Runnable
            } catch(Exception ze) {}
            try {
              zooKeeper.close();
+             zooKeeper = null;
            } catch(Exception ze) {}
         }
 

@@ -391,6 +391,7 @@ class ProvisionConsumerDaemon implements Runnable
         } finally {
            try {
               zooKeeper.close();
+              zooKeeper = null;
            } catch(Exception ze) {}
         }
     }
@@ -588,6 +589,7 @@ class ProvisionConsumeData implements Runnable
            } catch(Exception ze) {}
            try {
              zooKeeper.close();
+             zooKeeper = null;
            } catch(Exception ze) {}
         }
 

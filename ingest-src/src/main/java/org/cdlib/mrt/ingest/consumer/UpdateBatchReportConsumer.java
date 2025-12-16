@@ -441,6 +441,7 @@ class UpdateBatchReportConsumerDaemon implements Runnable
         } finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch (Exception ze) {}
 	}
     }
@@ -570,6 +571,7 @@ class UpdateBatchReportConsumeData implements Runnable
         } finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch(Exception ze) {}
 	} 
     }
@@ -743,6 +745,9 @@ class UpdateBatchReportCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
 	    sessionAuth = null;
+		    try {
+			zooKeeper.close();
+		    } catch (Exception ze) {}
         }
     }
 

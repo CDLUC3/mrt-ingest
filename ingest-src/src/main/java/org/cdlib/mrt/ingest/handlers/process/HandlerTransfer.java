@@ -40,12 +40,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
-import org.apache.zookeeper.KeeperException.SessionExpiredException;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -74,7 +68,6 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.ingest.utility.JSONUtil;
 import org.cdlib.mrt.ingest.utility.LocalIDUtil;
 import org.cdlib.mrt.ingest.utility.StorageUtil;
-import org.cdlib.mrt.ingest.utility.ZookeeperUtil;
 import org.cdlib.mrt.ingest.utility.TExceptionResponse;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
@@ -105,7 +98,6 @@ public class HandlerTransfer extends Handler<JobState>
     private Integer defaultStorage = null;
     private StoreNode storeNode = null;			// Worker
     private StoreNode originalStoreNode = null;		// Load balancer
-    private String zooLockNode = null;
     private String hostKey = "canonicalHostname";
     private String hostDomain = "cdlib.org";
     private String hostDockerDomain = "store";
@@ -334,9 +326,5 @@ public class HandlerTransfer extends Handler<JobState>
     public String getName() {
 	return NAME;
     }
-
-   public static class Ignorer implements Watcher {
-        public void process(WatchedEvent event){}
-   }
 
 }

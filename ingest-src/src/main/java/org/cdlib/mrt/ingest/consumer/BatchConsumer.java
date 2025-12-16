@@ -435,6 +435,7 @@ class BatchConsumerDaemon implements Runnable
         } finally {
            try {
 	     zooKeeper.close();
+	     zooKeeper = null;
            } catch(Exception ze) {}
         }
     }
@@ -566,6 +567,7 @@ class BatchConsumeData implements Runnable
         } finally {
            try {
 	      zooKeeper.close();
+	      zooKeeper = null;
            } catch(Exception ze) {}
         }
 
@@ -694,6 +696,7 @@ class BatchCleanupDaemon implements Runnable
 	    sessionAuth = null;
            try {
                 zooKeeper.close();
+                zooKeeper = null;
            } catch(Exception ze) {}
         }
     }

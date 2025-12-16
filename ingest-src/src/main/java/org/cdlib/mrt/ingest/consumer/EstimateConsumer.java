@@ -430,6 +430,7 @@ class EstimateConsumerDaemon implements Runnable
         } finally {
 		try {
 		   zooKeeper.close();
+		   zooKeeper = null;
 		} catch (Exception ze) {}
 	}
     }
@@ -676,6 +677,7 @@ class EstimateConsumeData implements Runnable
 	   } catch(Exception ze) {}
 	   try {
 	       zooKeeper.close();
+	       zooKeeper = null;
 	   } catch(Exception ze) {}
 	} 
     }

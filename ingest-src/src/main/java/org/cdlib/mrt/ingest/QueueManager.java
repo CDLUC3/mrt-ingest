@@ -294,6 +294,7 @@ public class QueueManager {
                 } finally {
                         try {
                             zooKeeper.close();
+                            zooKeeper = null;
                         } catch (Exception e) {}
                 }
  
@@ -461,6 +462,7 @@ public class QueueManager {
             } finally {
 		    try {
 		        zooKeeper.close();
+		        zooKeeper = null;
 		    } catch (Exception e) {}
 	    }
 	}
