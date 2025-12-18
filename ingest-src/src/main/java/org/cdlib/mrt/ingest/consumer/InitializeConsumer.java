@@ -321,14 +321,20 @@ class InitializeConsumerDaemon implements Runnable
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
+				   // Reestablish connection
         	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
                			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                } catch (Exception e4) {
-				} finally {
-                                   if (job != null) job.unlock(zooKeeper);
-				   break;
-				}
-                            }
+                                } catch (Exception e4) {}
+				if (e instanceof InterruptedException) {
+                                   System.err.println(MESSAGE + "[INFO] removing lock for Job: " + e.getMessage());
+				   // ZK was unable to unlock job.  Must do it manually
+				   unlockJob(e.getMessage());
+				} 
+				job = null;
+			    } finally {
+                                // if (job != null) job.unlock(zooKeeper);
+				// break;
+			    }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found initialize job data: " + job.id());
@@ -415,6 +421,18 @@ class InitializeConsumerDaemon implements Runnable
 	}
     }
 
+    private void unlockJob(String errorMsg) {
+       String jobID = errorMsg.split(":")[1];
+       String lock = "/jobs/" + jobID.replaceAll("\\s","") + "/lock";
+       try {
+          if (zooKeeper.exists(lock, false) != null) {
+	     zooKeeper.delete(lock, -1);
+          }
+       } catch (Exception e) {
+          System.err.println("Unable to remove lock from error Job: " + lock);
+       }
+    }
+   
     private boolean onHold()
     {
         try {
