@@ -98,7 +98,8 @@ public class IngestRequest
 	    this.profile = new Identifier(profile);
 	    this.setPackageType(packageType);
 	    this.setUpdateFlag(false);
-	    if (packageSize != null) this.packageSize = new Integer(packageSize).intValue();
+	    if (packageSize != null) this.packageSize = Integer.valueOf(packageSize);
+
 	    ResponseFormEnum.setResponseForm(responseForm);
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -177,7 +178,7 @@ public class IngestRequest
      * @param String Submission package size (in octets)
      */
     public void setPackageSize(String size) {
-        this.packageSize = new Integer(size).intValue();
+        this.packageSize = Integer.valueOf(size);
     }
 
     /**

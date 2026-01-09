@@ -70,7 +70,7 @@ public class HandlerProvision extends Handler<JobState>
 
 	try {
 
-	    Integer zfsThreshold = new Integer(ingestRequest.getIngestZfsThreshold());
+	    Integer zfsThreshold = Integer.valueOf(ingestRequest.getIngestZfsThreshold());
 	    if (zfsThreshold == null) {
 	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS Threshold not defined.  Provisioning not supported.");
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning not supported", 0);
