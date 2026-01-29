@@ -185,7 +185,9 @@ public class HandlerDisaggregate extends Handler<BatchState>
             }
 
             Enumeration en = manifest.getRows(manifestFile);
+	    boolean empty = true;
             while (en.hasMoreElements()) {
+	        empty = false;
                 manifestRow = (ManifestRowBatch) en.nextElement();
                 FileComponent fileComponent = manifestRow.getFileComponent();
 	        String fileName = fileComponent.getIdentifier();
@@ -219,6 +221,14 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		} catch (Exception e) {}
 		batchState.addJob(jobState.getJobID().getValue(), jobState);
             }
+
+	    // Empty Batch Manifest
+	    if (empty) {
+               String err = "[error] " + MESSAGE + ": Manifest has no entries: " + manifestFile.getName();
+               System.err.println(err);
+	       throw new TException.INVALID_CONFIGURATION(err);
+	       // return false;
+	    }
             System.out.println("[info] " + MESSAGE + "Queuing is complete, batchID: " + batchState.getBatchID().getValue());
 	    // manifestFile.delete();	// keep for debugging
 
