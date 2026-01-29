@@ -239,6 +239,7 @@ public class BatchManager {
                 } finally {
                         try {
                                 zooKeeper.close();
+                                zooKeeper = null;
                         } catch (Exception e) {
                         }
                 }
@@ -448,6 +449,7 @@ public class BatchManager {
             } finally {
 		try {
 		   zooKeeper.close();
+		   zooKeeper = null;
 		} catch(Exception ze) {}
 	    }
 	}

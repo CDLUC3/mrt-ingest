@@ -239,7 +239,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	    	    jproperties.put("update", batchState.grabUpdateFlag());
 		} catch (Exception e) {
 		    // default
-	    	    jproperties.put("update", new Boolean(false));
+	    	    jproperties.put("update", Boolean.valueOf(false));
 		}
 
 		int retryCount = 0;
@@ -295,6 +295,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	} finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch (Exception e) {
 	    }
 	}
@@ -307,7 +308,7 @@ public class HandlerSubmit extends Handler<BatchState>
     // very simple priority queue algorithm  (05 - 99)
     private String calculatePriority(int batchSize) {
 	
-	Double a = new Double((Math.log(new Integer(batchSize).doubleValue()) * 10.0d) + 5);
+	Double a = Double.valueOf((Math.log(Integer.valueOf(batchSize).doubleValue()) * 10.0d) + 5);
 	if (a > 99.0d) a = 99.0d;
 	if (a < 0.0d) a = 0.0d;
 	String priority = String.format("%02d", a.intValue());

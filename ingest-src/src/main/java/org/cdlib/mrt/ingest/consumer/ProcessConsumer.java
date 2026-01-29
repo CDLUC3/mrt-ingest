@@ -135,7 +135,7 @@ public class ProcessConsumer extends HttpServlet
 	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
-		this.numThreads = new Integer(numThreads).intValue();
+		this.numThreads = Integer.valueOf(numThreads);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
@@ -145,7 +145,7 @@ public class ProcessConsumer extends HttpServlet
 	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
-		this.pollingInterval = new Integer(pollingInterval).intValue();
+		this.pollingInterval = Integer.valueOf(pollingInterval);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
@@ -329,13 +329,19 @@ class ProcessConsumerDaemon implements Runnable
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
-        	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
-               			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                } catch (Exception e4) {
-                                } finally {
-                                   if (job != null) job.unlock(zooKeeper);
-                                   break;
+                                   // Reestablish connection
+                                   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+                                   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+                                } catch (Exception e4) {}
+                                if (e instanceof InterruptedException) {
+                                   System.err.println(MESSAGE + "[INFO] removing lock for Job: " + e.getMessage());
+                                   // ZK was unable to unlock job.  Must do it manually
+                                   unlockJob(e.getMessage());
                                 }
+                                job = null;
+                            } finally {
+                                // if (job != null) job.unlock(zooKeeper);
+                                // break;
                             }
 
                             if ( job != null) {
@@ -398,8 +404,22 @@ class ProcessConsumerDaemon implements Runnable
         } finally {
            try {
                 zooKeeper.close();
+                zooKeeper = null;
            } catch(Exception ze) {}
         }
+    }
+
+    private void unlockJob(String errorMsg) {
+       String jobID = errorMsg.split(":")[1];
+       String lock = "/jobs/" + jobID.replaceAll("\\s","") + "/lock";
+
+       try {
+          if (zooKeeper.exists(lock, false) != null) {
+             zooKeeper.delete(lock, -1);
+          }
+       } catch (Exception e) {
+          System.err.println("Unable to remove lock from errored Job: " + lock);
+       }
     }
 
     // to do: make this a service call
@@ -497,7 +517,7 @@ class ProcessConsumeData implements Runnable
 	    // if (! job.localId().isEmpty()) ingestRequest.getJob().setLocalID(job.localId());
 	    // if (! job.primaryId().isEmpty()) ingestRequest.getJob().setPrimaryID(job.primaryId());
 
-	    Boolean update = new Boolean(jp.getBoolean("update"));
+	    Boolean update = Boolean.valueOf(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
             ingestRequest.getJob().setSubmissionSize(spaceNeeded);
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
@@ -533,16 +553,39 @@ class ProcessConsumeData implements Runnable
                 System.out.println("[item]: ProcessConsume Daemon - Record FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + "Record_FAIL");
                 System.out.println("[item]: ProcessConsume Daemon - Mangling Inventory data which will force a failure.");
 		job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest-phantom/"), "");
+	    // Populate Inventory Manifest URL, if necessary
 	    } else {
-	       // Populate Manifest URL if necessary
 	       if (StringUtil.isEmpty(job.inventoryManifestUrl()) && jobState.grabObjectState() != null) 
 		   try {
 		      job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
 		   } catch (Exception e) {
-		      System.err.println(MESSAGE + "[WARN] error setting INV: " + e.getMessage());
+		      System.err.println(MESSAGE + "[WARN] error setting Inv ZK data: " + e.getMessage());
 		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
 		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
 		      job.setInventory(zooKeeper, jobState.grabObjectState().replace("/state/", "/manifest/"), "");
+		   }
+	    }
+
+	    // Grab ZK Storage data
+	    String storeManifestURL = jobState.grabStoreManifestURL();
+	    String storeMode = jobState.grabStoreMode();
+	    String storeDelete = jobState.grabStoreDelete();
+
+	    // Force a Storage failure
+	    if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), "Store_FAIL")) {
+                System.out.println("[item]: ProcessConsume Daemon - Store FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + "Store_FAIL");
+                System.out.println("[item]: ProcessConsume Daemon - Mangling Storage data which will force a failure.");
+		job.setStore(zooKeeper, storeManifestURL.replace("/state/", "/manifest-phantom/"), storeMode, storeDelete);
+	    // Populate Inventory Manifest URL, if necessary
+	    } else {
+	       if (StringUtil.isEmpty(job.storeManifestUrl()) && storeManifestURL != null) 
+		   try {
+		      job.setStore(zooKeeper, storeManifestURL, storeMode, storeDelete);
+		   } catch (Exception e) {
+		      System.err.println(MESSAGE + "[WARN] error setting Store ZK data: " + e.getMessage());
+		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
+		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
+		      job.setStore(zooKeeper, storeManifestURL, storeMode, storeDelete);
 		   }
 	    }
 
@@ -644,6 +687,7 @@ class ProcessConsumeData implements Runnable
 	   } catch(Exception ze) {}
 	   try {
             zooKeeper.close();
+            zooKeeper = null;
 	   } catch(Exception ze) {}
 	} 
     }

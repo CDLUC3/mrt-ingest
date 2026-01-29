@@ -319,6 +319,7 @@ public class HandlerNotification extends Handler<BatchState>
 	} finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch (Exception e) {}
             formatterUtil = null;
 	    formatType = null;

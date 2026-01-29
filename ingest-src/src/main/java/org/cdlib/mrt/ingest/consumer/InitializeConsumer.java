@@ -135,7 +135,7 @@ public class InitializeConsumer extends HttpServlet
 	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
-		this.numThreads = new Integer(numThreads).intValue();
+		this.numThreads = Integer.valueOf(numThreads);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
@@ -145,7 +145,7 @@ public class InitializeConsumer extends HttpServlet
 	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
-		this.pollingInterval = new Integer(pollingInterval).intValue();
+		this.pollingInterval = Integer.valueOf(pollingInterval);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
@@ -321,14 +321,20 @@ class InitializeConsumerDaemon implements Runnable
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
+				   // Reestablish connection
         	    		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY); 
                			   zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                                } catch (Exception e4) {
-				} finally {
-                                   if (job != null) job.unlock(zooKeeper);
-				   break;
-				}
-                            }
+                                } catch (Exception e4) {}
+				if (e instanceof InterruptedException) {
+                                   System.err.println(MESSAGE + "[INFO] removing lock for Job: " + e.getMessage());
+				   // ZK was unable to unlock job.  Must do it manually
+				   unlockJob(e.getMessage());
+				} 
+				job = null;
+			    } finally {
+                                // if (job != null) job.unlock(zooKeeper);
+				// break;
+			    }
 
                             if ( job != null) {
                                 System.out.println(MESSAGE + "Found initialize job data: " + job.id());
@@ -415,6 +421,18 @@ class InitializeConsumerDaemon implements Runnable
 	}
     }
 
+    private void unlockJob(String errorMsg) {
+       String jobID = errorMsg.split(":")[1];
+       String lock = "/jobs/" + jobID.replaceAll("\\s","") + "/lock";
+       try {
+          if (zooKeeper.exists(lock, false) != null) {
+	     zooKeeper.delete(lock, -1);
+          }
+       } catch (Exception e) {
+          System.err.println("Unable to remove lock from error Job: " + lock);
+       }
+    }
+   
     private boolean onHold()
     {
         try {
@@ -538,7 +556,7 @@ class InitializeConsumeData implements Runnable
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
             ingestRequest.getJob().setQueuePriority(String.format("%02d", priority));
-	    Boolean update = new Boolean(jp.getBoolean("update"));
+	    Boolean update = Boolean.valueOf(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
             ingestRequest.getJob().setSubmissionSize(spaceNeeded);
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +

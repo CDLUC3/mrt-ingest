@@ -385,7 +385,7 @@ public class AdminManager {
                         BatchFileState batchFileState = new BatchFileState();
 
                         // null value is to not filter by age
-                        if (batchAge == null) batchAge = new Integer(Integer.MAX_VALUE);
+                        if (batchAge == null) batchAge = Integer.valueOf(Integer.MAX_VALUE);
                         long daysMilli = batchAge.longValue() * 86400 * 1000;
                         long nowMilli = System.currentTimeMillis();
 

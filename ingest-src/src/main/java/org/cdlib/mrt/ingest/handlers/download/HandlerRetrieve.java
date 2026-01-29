@@ -172,7 +172,7 @@ public class HandlerRetrieve extends Handler<JobState>
 
 		    // Dryrun process of manifest 
                     status = "valid";
-                    System.out.println("[info] " + MESSAGE + "NOT validating manifest integrity.  Already competed in Estimatioin: " + jobState.getPackageName());
+                    System.out.println("[info] " + MESSAGE + "NOT validating manifest integrity.  Already completed in Estimation: " + jobState.getPackageName());
                     //System.out.println("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
                     //if (validateManifestIntegrity(manifestFile, logger)) {
                         //status = "valid";

@@ -154,4 +154,11 @@ public interface JobStateInf
      * @return String priority
      */
     public String getQueuePriority();
+    /**
+     * Get Store queue info
+     * @return String data
+     */
+    public String grabStoreManifestURL();
+    public String grabStoreMode();
+    public String grabStoreDelete();
 }

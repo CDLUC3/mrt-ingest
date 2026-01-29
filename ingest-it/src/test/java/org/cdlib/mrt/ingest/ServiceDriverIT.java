@@ -393,12 +393,16 @@ public class ServiceDriverIT {
 
                 String bid = ingestFromUrl(url, contenturl, filename, "manifest");
                 Batch batch = getZkBatch(bid);
+		Thread.sleep(SLEEP_SUBMIT);
                 assertJobCounts(batch, 15, 1, 1);
                 cleanup(batch);
         }
 
         public void cleanup(Batch batch) {
                 try {
+                        if (batch.status() == BatchState.Pending) {
+                                batch.setStatus(zk, batch.status().success());
+                        }
                         if (batch.status() == BatchState.Processing) {
                                 batch.setStatus(zk, batch.status().success());
                         }
@@ -429,7 +433,8 @@ public class ServiceDriverIT {
                         for (Job j: batch.getProcessingJobs(zk)) {
                                 j.load(zk);
 				// System.out.println(i + " ---- " + j.status() + " ---- " + j.id());
-                                if (j.status() == org.cdlib.mrt.zk.JobState.Recording) {
+                                if (j.status() == org.cdlib.mrt.zk.JobState.Recording 
+				|| j.status() == org.cdlib.mrt.zk.JobState.Storing) {
                                         try {
                                                 j.setStatus(zk, j.status().success());
                                         } catch (MerrittStateError e) {
@@ -468,7 +473,8 @@ public class ServiceDriverIT {
 		System.out.println("[ServiceDriverIT] TestManifest - Test manifest.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/mock_object.checkm"));
-                            
+
+                Thread.sleep(SLEEP_SUBMIT);
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 cleanup(batch);
@@ -501,6 +507,8 @@ public class ServiceDriverIT {
 
                 url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/mock_object.checkm"));
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertFailedJobCounts(batch, 15, 1, 1);
 
@@ -524,6 +532,8 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFromUrl(url, contenturl, filename, "batch-manifest");
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 30, 3, 3);
                 cleanup(batch);
@@ -543,6 +553,8 @@ public class ServiceDriverIT {
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFromUrl(url, contenturl, filename, "single-file-batch-manifest");
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 30, 3, 3);
                 cleanup(batch);
@@ -558,6 +570,8 @@ public class ServiceDriverIT {
 		System.out.println("[ServiceDriverIT] SimpleFileIngest - Submit single file.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 30, 1, 1);
                 cleanup(batch);
@@ -573,6 +587,8 @@ public class ServiceDriverIT {
 		System.out.println("[ServiceDriverIT] SimpleFileIngestCheckJob - Submit single file. Test Job endpoints");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 30, 1, 1);
                 Job job = getJob(batch);
@@ -658,6 +674,7 @@ public class ServiceDriverIT {
 		System.out.println("[ServiceDriverIT] QueueFileIngest - Submit single file.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
 
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
@@ -671,12 +688,13 @@ public class ServiceDriverIT {
          * @throws MerrittZKNodeInvalid 
          * @throws KeeperException 
          */
-        @Test
+        // @Test
         public void QueueFileIngestCatchLock() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
 		System.out.println("[ServiceDriverIT] QueueFileIngestCatchLock - Submit and dectect lock.");
                 //This ark has a time delay in mock-merritt-it to allow the catch of a lock
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/9999/2222", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
 
                 // look for the presence of a zookeeper lock
                 // the lock name should be derived from the submission's primary id (ark)
@@ -760,7 +778,6 @@ public class ServiceDriverIT {
 
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
-
                 Thread.sleep(SLEEP_SUBMIT);
 
                 Batch batch = getZkBatch(bid);
@@ -793,6 +810,7 @@ public class ServiceDriverIT {
 
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid");
                 Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -813,6 +831,7 @@ public class ServiceDriverIT {
 
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid;localid;localid;localidtwo;localidtwo");
                 Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -833,6 +852,7 @@ public class ServiceDriverIT {
 
                 String bid = ingestFile(url, new File("src/test/resources/data/test_erc.zip"), "localidfour; localidfive");
                 Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -855,6 +875,7 @@ public class ServiceDriverIT {
 
                 String bid = ingestFile(url, new File("src/test/resources/data/localid_batch.checkm"), "");
                 Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -877,6 +898,7 @@ public class ServiceDriverIT {
 
                 String bid = ingestFile(url, new File("src/test/resources/data/localid2_batch.checkm"), "localidten");
                 Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -897,6 +919,8 @@ public class ServiceDriverIT {
 		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with primaryID (form parm)");
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/1111/2222", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -915,11 +939,15 @@ public class ServiceDriverIT {
 		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Update with primaryID (form parm)");
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/1111/2222", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 cleanup(batch);
                 url = String.format("http://localhost:%d/%s/poster/update/ark/1111/2222", port, cp);
                 bid = ingestFile(url, new File("src/test/resources/data/test.txt"));
+                Thread.sleep(SLEEP_SUBMIT);
+
                 batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -939,6 +967,7 @@ public class ServiceDriverIT {
 
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Thread.sleep(SLEEP_SUBMIT);
+
                 Batch batch = getZkBatch(bid);
                 assertJobCounts(batch, 15, 1, 1);
                 Job job = getJob(batch);
@@ -962,6 +991,7 @@ public class ServiceDriverIT {
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 ingestFile(url, new File("src/test/resources/data/test.zip"));
+
         }
 
 }

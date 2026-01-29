@@ -428,11 +428,11 @@ public class ProfileUtil
 		} else if (key.startsWith(matchStorageNode)) {
                     if (DEBUG) System.out.println("[debug] storage node: " + value);
 		    try {
-		        node = new Integer(value).intValue();
+		        node = Integer.valueOf(value);
 		    } catch (java.lang.NumberFormatException nfe) {
 			if ( ! isValidProfile(profileName.getValue())) {
 			   // Must be a Template, set to nonsensical value
-		           node = new Integer(0).intValue();
+		           node = Integer.valueOf(0);
 			} else {
                            throw new TException.INVALID_CONFIGURATION("StorageNode parameter in profile is not a valid node ID: " + value);
 			}

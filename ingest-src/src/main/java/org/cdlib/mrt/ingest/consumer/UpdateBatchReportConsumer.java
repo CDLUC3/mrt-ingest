@@ -134,7 +134,7 @@ public class UpdateBatchReportConsumer extends HttpServlet
 	    numThreads = ingestService.getQueueServiceConf().getString("BatchNumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
-		this.numThreads = new Integer(numThreads).intValue();
+		this.numThreads = Integer.valueOf(numThreads);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
@@ -144,7 +144,7 @@ public class UpdateBatchReportConsumer extends HttpServlet
 	    pollingInterval = ingestService.getQueueServiceConf().getString("BatchPollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
 	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
-		this.pollingInterval = new Integer(pollingInterval).intValue();
+		this.pollingInterval = Integer.valueOf(pollingInterval);
 	    }
 	} catch (Exception e) {
 	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
@@ -441,6 +441,7 @@ class UpdateBatchReportConsumerDaemon implements Runnable
         } finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch (Exception ze) {}
 	}
     }
@@ -542,7 +543,7 @@ class UpdateBatchReportConsumeData implements Runnable
 
 	    ingestRequest.getJob().setJobStatus(JobStatusEnum.CONSUMED);
 	    // ingestRequest.getJob().setQueuePriority(JSONUtil.getValue(jp,"queuePriority"));
-	    Boolean update = new Boolean(jp.getBoolean("update"));
+	    Boolean update = Boolean.valueOf(jp.getBoolean("update"));
 	    ingestRequest.getJob().setUpdateFlag(update.booleanValue());
 	    ingestRequest.setQueuePath(new File(ingestService.getIngestServiceProp() + FS +
 			"queue" + FS + ingestRequest.getJob().grabBatchID().getValue()));
@@ -570,6 +571,7 @@ class UpdateBatchReportConsumeData implements Runnable
         } finally {
 	    try {
 		zooKeeper.close();
+		zooKeeper = null;
 	    } catch(Exception ze) {}
 	} 
     }
@@ -743,6 +745,9 @@ class UpdateBatchReportCleanupDaemon implements Runnable
             e.printStackTrace(System.err);
         } finally {
 	    sessionAuth = null;
+		    try {
+			zooKeeper.close();
+		    } catch (Exception ze) {}
         }
     }
 
