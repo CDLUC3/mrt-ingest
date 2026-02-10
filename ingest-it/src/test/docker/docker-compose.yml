@@ -11,15 +11,15 @@ services:
     - published: 8096
       target: 4567
     volumes:
-    - "queue:/tdr/ingest/queue"
+    - "queue:/merritt-filesys/ingest/queue"
     networks:
       merrittnet:
   it-server:
     container_name: it-server
     image: ${ECR_REGISTRY}/merritt-tomcat:dev
     volumes:
-    - "ingest:/tdr/ingest"
-    - "queue:/tdr/ingest/queue"
+    - "ingest:/merritt-filesys/ingest"
+    - "queue:/merritt-filesys/ingest/queue"
     - "${MDIR}/ingest-it/target/mrt-ingest-it-3.0-SNAPSHOT.war:/usr/local/tomcat/webapps/mrtingest.war"
     ports:
     - published: 8080

@@ -10,8 +10,8 @@ FROM ${ECR_REGISTRY}/merritt-tomcat:dev
 COPY ingest-war/target/mrt-ingestwar-*.war /usr/local/tomcat/webapps/ingest.war
 
 RUN mkdir -p /tdr/tmpdir/logs 
-RUN mkdir -p /tdr/ingest/queue && \
-    ln -s /tdr/ingest/queue /usr/local/tomcat/webapps/ingestqueue
+RUN mkdir -p /merritt-filesys/ingest/queue && \
+    ln -s /merritt-filesys/ingest/queue /usr/local/tomcat/webapps/ingestqueue
 
-COPY docker/profiles /tdr/ingest/profiles/
-COPY docker/admin-submit /tdr/ingest/admin-submit
+COPY docker/profiles /merritt-filesys/ingest/profiles/
+COPY docker/admin-submit /merritt-filesys/ingest/admin-submit
