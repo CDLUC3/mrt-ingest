@@ -40,6 +40,8 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.nio.charset.Charset;
+
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -285,11 +287,30 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    // zip
 	    } else if (name.toLowerCase().endsWith("zip")) {
 		in = new BufferedInputStream(new FileInputStream(container));
-		zipIn = new ZipInputStream(in); 
-		ZipEntry zipEntry; 
+
+		// Default encoding
+		zipIn = new ZipInputStream(in, Charset.forName("UTF-8"));
+		ZipEntry zipEntry = new ZipEntry("");   // init
 
 	        final byte[] buffer = new byte[BUFFERSIZE];
-                while ((zipEntry = zipIn.getNextEntry()) != null) {
+		boolean failure = false;
+
+                while (zipEntry != null) {
+                     try {
+                        zipEntry = zipIn.getNextEntry();
+                     } catch (IllegalArgumentException Exception) {
+                        if (failure) throw Exception;
+                        System.out.println("[info] Error detected. Attempting ISO-8859-1 decoding");
+                        failure = true;
+                        zipIn = new ZipInputStream(in, Charset.forName("ISO-8859-1"));
+                        zipEntry = zipIn.getNextEntry();
+                     }
+
+                     if (zipEntry == null) {
+			System.out.println("[info] zip entries exhausted: " + name);
+			continue;
+		     }
+
                      File destFile = new File(container.getParent() + "/" + zipEntry.getName());
                      if (DEBUG) System.out.println("[info] " + MESSAGE + "creating zip entry: " + destFile.getAbsolutePath());
                      if (zipEntry.isDirectory()){
