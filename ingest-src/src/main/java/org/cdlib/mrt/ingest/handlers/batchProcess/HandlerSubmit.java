@@ -209,7 +209,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	    System.out.println("[INFO] Batch created: " + batch.id());
 	    System.out.println("[INFO] Batch data: " + batch.data());
 
-	    batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Pending, "Pending");
+	    // Pending status is set during creation
+	    // batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Pending, "Pending");
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	} catch (Exception e) {
