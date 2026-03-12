@@ -85,7 +85,7 @@ phases:
 
       docker build --push --quiet \
         --build-arg ECR_REGISTRY=${ECR_REGISTRY} \
-        -t ${ECR_REGISTRY}/${REPONAME}:archive-${BRANCHTAG}-${BUILDATE} .
+        -t ${ECR_REGISTRY}/${REPONAME}:archive-${BRANCHTAG}-${BUILDDATE} .
 
       if [[ "$BRANCHTAG" == "main" ]]
       then
