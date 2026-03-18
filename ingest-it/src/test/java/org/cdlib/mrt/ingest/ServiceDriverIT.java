@@ -909,6 +909,27 @@ public class ServiceDriverIT {
         }
 
         /**
+         * Submit Batch manifest with Digest values (all CAPS)
+         * @throws MerrittZKNodeInvalid 
+         * @throws InterruptedException 
+         * @throws KeeperException 
+         */
+        @Test
+        public void SimpleBatchManifestDigest() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
+		System.out.println("[ServiceDriverIT] SimpleBatchManifestDigest - Batch manifest with all caps Digest value");
+                String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
+
+		// Creation of batch validates that manifest digest values are okay
+                String bid = ingestFile(url, new File("src/test/resources/data/digest_batch.checkm"));
+                Thread.sleep(SLEEP_SUBMIT);
+
+                Batch batch = getZkBatch(bid);
+                assertJobCounts(batch, 15, 1, 1);
+                Job job = getJob(batch);
+                cleanup(batch);
+        }
+
+        /**
          * Submit a single file with a primary id specified.
          * @throws InterruptedException 
          * @throws KeeperException 

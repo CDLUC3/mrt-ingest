@@ -105,8 +105,10 @@ public class HandlerVerify extends Handler<JobState>
 
 	    String calculatedChecksum = message.getChecksum();
 
-	    if (! calculatedChecksum.equals(value)) {
-		throw new TException.FIXITY_CHECK_FAILS("[error] submission package checksum mismatch: " + submissionPackage.getName());
+	    if (! calculatedChecksum.equalsIgnoreCase(value)) {
+		throw new TException.FIXITY_CHECK_FAILS("[error] submission package checksum mismatch: " + submissionPackage.getName() + " - " + calculatedChecksum);
+	    } else {
+	    	System.out.println("[info]: " + MESSAGE + "HandlerVerify: Digest value matches: " + submissionPackage.getName());
 	    }
 
             // metadata file in ANVL format
