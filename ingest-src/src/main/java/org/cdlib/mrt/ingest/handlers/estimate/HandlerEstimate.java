@@ -168,7 +168,7 @@ public class HandlerEstimate extends Handler<JobState>
                         if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
                     } else {
                         status = "not-valid";
-                        throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "manifest integrity check fails: " + packageType);
+                        throw new Exception("Manifest integrity check fails: " + manifestFile.getName());
                     }
 
                     if (ingestRequest.getNumDownloadThreads() != 0) {
@@ -256,7 +256,7 @@ public class HandlerEstimate extends Handler<JobState>
 
             return new HandlerResult(true, "SUCCESS: " + NAME + " Resource estimation complete: " + ingestRequest.getJob().toString(), 0);
         } catch (Exception e) {
-            String msg = "[error] " + MESSAGE + "Estimating resources: " + e.getMessage();
+            String msg = "[error] " + MESSAGE + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
             try {
