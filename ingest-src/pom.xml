@@ -12,7 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <merritt-zk.version>4.0-SNAPSHOT</merritt-zk.version>
-        <merritt-core.version>4.0-SNAPSHOT</merritt-core.version>
+        <!-- <merritt-core.version>4.0-SNAPSHOT</merritt-core.version> -->
         <!-- <merritt-bom.version>4.0-SNAPSHOT</merritt-bom.version> -->
     </properties>
 
