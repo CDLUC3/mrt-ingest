@@ -232,12 +232,14 @@ public class BatchReportConsumer extends HttpServlet
     }
 
     public void destroy() {
-	try {
-	    System.out.println("[info] " + MESSAGE + "interrupting consumer daemon");
+        try {       
+            System.out.println("[info] " + MESSAGE + "BatchReport daemon - waiting 5 seconds before interrupt...");
+            Thread.sleep(5000);
+            System.out.println("[info] " + MESSAGE + "BatchReport daemon - wait complete, interrupting daemon");
             consumerThread.interrupt();
-	} catch (Exception e) {
-	    e.printStackTrace(System.err);
-	}
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
     }
 
 }
@@ -404,26 +406,13 @@ class BatchReportConsumerDaemon implements Runnable
 	            e.printStackTrace();
 		}
 	    }
-        } catch (InterruptedException ie) {
-	    try {
-		try {
-	    	    zooKeeper.close();
-		} catch (Exception ze) {}
-                System.out.println(MESSAGE + "shutting down consumer daemon.");
-	        executorService.shutdown();
 
-		int cnt = 0;
-		while (! executorService.awaitTermination(15L, TimeUnit.SECONDS)) {
-                    System.out.println(MESSAGE + "waiting for tasks to complete.");
-		    cnt++;
-		    if (cnt == 8) {	// 2 minutes
-			// force shutdown
-	        	executorService.shutdownNow();
-		    }
-		}
-            } catch (Exception e) {
-		e.printStackTrace(System.err);
-            }
+        } catch (InterruptedException ie) {
+
+                long numActive = executorService.getActiveCount();
+                System.out.println(MESSAGE + "Still active tasks: " + numActive + " -  Forcing failure.");
+                executorService.shutdownNow();
+
 	} catch (Exception e) {
             System.out.println(MESSAGE + "Exception detected, shutting down consumer daemon.");
 	    e.printStackTrace(System.err);

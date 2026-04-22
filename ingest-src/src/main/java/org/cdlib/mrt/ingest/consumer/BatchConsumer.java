@@ -63,6 +63,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -89,6 +90,7 @@ public class BatchConsumer extends HttpServlet
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
+    private static boolean isInterrupted = false;  // JVM shutdown
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -193,10 +195,9 @@ public class BatchConsumer extends HttpServlet
             consumerThread.setDaemon(true);                // Kill thread when servlet dies
             consumerThread.start();
 
-	    System.out.println("[info] " + MESSAGE + "consumer daemon started");
+	    System.out.println("[info] " + MESSAGE + "consumer daemon started: " + consumerThread.toString());
 
             return;
-
         } catch (Exception ex) {
             throw new Exception(ex);
         }
@@ -233,9 +234,16 @@ public class BatchConsumer extends HttpServlet
         return NAME;
     }
 
+    public static boolean getInterrupted() {
+        return isInterrupted;
+    }
+
     public void destroy() {
 	try {
-	    System.out.println("[info] " + MESSAGE + "interrupting consumer daemon");
+	    isInterrupted = true;
+	    System.out.println("[info] " + MESSAGE + "Batch daemon - waiting 5 seconds before interrupt...");
+	    Thread.sleep(5000);
+	    System.out.println("[info] " + MESSAGE + "Batch daemon - wait complete, interrupting daemon");
             consumerThread.interrupt();
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
@@ -368,7 +376,11 @@ class BatchConsumerDaemon implements Runnable
         		    }
 
 			    try {
-                                batch = Batch.acquirePendingBatch(zooKeeper);
+                		if (BatchConsumer.getInterrupted()) {
+                    		   System.out.println(MESSAGE + "Interruption detected.  Acquiring halted.");
+				} else {
+                                   batch = Batch.acquirePendingBatch(zooKeeper);
+				}
                             } catch (Exception e) {
                                 System.err.println(MESSAGE + "[WARN] error acquiring batch: " + e.getMessage());
 				try {
@@ -409,22 +421,13 @@ class BatchConsumerDaemon implements Runnable
 		}
 	    }
         } catch (InterruptedException ie) {
-	    try {
-		try {
-	    	    zooKeeper.close();
-		} catch (Exception ze) {}
-                System.out.println(MESSAGE + "shutting down consumer daemon.");
-	        executorService.shutdown();
 
-		int cnt = 0;
-		while (! executorService.awaitTermination(15L, TimeUnit.SECONDS)) {
-                    System.out.println(MESSAGE + "waiting for tasks to complete.");
-		    cnt++;
-		    if (cnt == 8) {	// 2 minutes
-			// force shutdown
-	        	executorService.shutdownNow();
-		    }
-		}
+	    try {
+
+		long numActive = executorService.getActiveCount();
+                System.out.println(MESSAGE + "Still active tasks: " + numActive + " -  Forcing failure.");
+		executorService.shutdownNow();
+
             } catch (Exception e) {
 		e.printStackTrace(System.err);
             }
@@ -561,6 +564,12 @@ class BatchConsumeData implements Runnable
 	    }
 	    batch.unlock(zooKeeper);
 
+        } catch (InterruptedException ie) {
+            String errmsg = "Interrupted detected while Batch processing - failing Batch";
+            System.err.println(NAME + "[error] Consuming Batch queue data: " + errmsg);
+            try {
+	       batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, errmsg);
+            } catch (Exception ex) {}
         } catch (Exception e) {
             e.printStackTrace(System.err);
             System.out.println("[error] Consuming queue data");

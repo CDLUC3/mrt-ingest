@@ -590,6 +590,12 @@ class NotifyConsumeData implements Runnable
 	    }
             // job.unlock(zooKeeper);
 
+        } catch (InterruptedException ie) {
+            String errmsg = "Interrupted detected while Notifying - failing Job";
+            System.err.println(NAME + "[error] Consuming Job queue data: " + errmsg);
+            try { 
+               job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, errmsg);
+            } catch (Exception ex) {}
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
 	    System.out.println(NAME + "[error] Consuming queue data: Could not recreate session.");

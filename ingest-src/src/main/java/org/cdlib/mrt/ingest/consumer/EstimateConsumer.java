@@ -409,22 +409,13 @@ class EstimateConsumerDaemon implements Runnable
 		}
 	    }
         } catch (InterruptedException ie) {
-	    try {
-		try {
-	    	    zooKeeper.close();
-		} catch (Exception ze) {}
-                System.out.println(MESSAGE + "shutting down consumer daemon.");
-	        executorService.shutdown();
+            try {
+                long numActive = executorService.getActiveCount();
+                System.out.println(MESSAGE + "Interrupt detected. Active tasks: " + numActive + " -  Forcing failure.");
+                executorService.shutdownNow();
 
-		int cnt = 0;
-		while (! executorService.awaitTermination(15L, TimeUnit.SECONDS)) {
-                    System.out.println(MESSAGE + "waiting for tasks to complete.");
-		    cnt++;
-		    if (cnt == 8) {	// 2 minutes
-			// force shutdown
-	        	executorService.shutdownNow();
-		    }
-		}
+                System.out.println(MESSAGE + "shutting down consumer daemon.");
+
             } catch (Exception e) {
 		e.printStackTrace(System.err);
             }
@@ -676,12 +667,18 @@ class EstimateConsumeData implements Runnable
 	    }
 	    // boolean stat = job.unlock(zooKeeper);
 
+        } catch (InterruptedException ie) {
+	    String errmsg = "Interrupted detected while Estimating - failing Job";
+	    System.err.println(NAME + "[error] Consuming Job queue data: " + errmsg);
+	    try {
+               job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, errmsg);
+	    } catch (Exception ex) {}
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
-	    System.out.println(NAME + "[error] Consuming queue data: Could not recreate session.");
+	    System.err.println(NAME + "[error] Consuming queue data: Could not recreate session.");
         } catch (ConnectionLossException cle) {
             cle.printStackTrace(System.err);
-	    System.out.println(NAME + "[error] Consuming queue data: Could not reconnect.");
+	    System.err.println(NAME + "[error] Consuming queue data: Could not reconnect.");
         } catch (Exception e) {
             e.printStackTrace(System.err);
             try {

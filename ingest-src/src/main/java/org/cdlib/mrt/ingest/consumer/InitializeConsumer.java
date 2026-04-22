@@ -416,7 +416,7 @@ class InitializeConsumerDaemon implements Runnable
 	    executorService.shutdown();
         } finally {
 	   try {
-		zooKeeper.close();
+	    zooKeeper.close();
 	   } catch (Exception ze) {}
 	}
     }
@@ -622,6 +622,12 @@ class InitializeConsumeData implements Runnable
 	    }
 	    // boolean stat = job.unlock(zooKeeper);
 
+        } catch (InterruptedException ie) {
+            String errmsg = "Interrupted detected while Initializing - failing Job";
+            System.err.println(NAME + "[error] Consuming Job queue data: " + errmsg);
+            try { 
+               job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, errmsg);
+            } catch (Exception ex) {}
         } catch (SessionExpiredException see) {
             see.printStackTrace(System.err);
 	    System.out.println(NAME + "[error] Consuming queue data: Could not recreate session.");

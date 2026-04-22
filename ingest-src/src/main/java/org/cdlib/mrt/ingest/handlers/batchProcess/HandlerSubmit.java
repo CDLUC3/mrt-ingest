@@ -213,14 +213,14 @@ public class HandlerSubmit extends Handler<BatchState>
 	    // batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Pending, "Pending");
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
-	} catch (Exception e) {
-	    e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();
-	    System.err.println(msg);
-	    try {
-	       batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, e.getMessage());
-	    } catch (Exception zke) {
-	    }
+            System.err.println(msg);
+            try {
+               batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, e.getMessage());
+            } catch (Exception zke) {
+            }
             return new HandlerResult(false, msg, 10);
 	} finally {
 	    try {
