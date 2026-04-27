@@ -91,6 +91,7 @@ public class BatchConsumer extends HttpServlet
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
     private static boolean isInterrupted = false;  // JVM shutdown
+    private int interruptDelay = 5;     // delay before interrupting daemon^M
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -241,9 +242,10 @@ public class BatchConsumer extends HttpServlet
     public void destroy() {
 	try {
 	    isInterrupted = true;
-	    System.out.println("[info] " + MESSAGE + "Batch daemon - waiting 5 seconds before interrupt...");
-	    Thread.sleep(5000);
-	    System.out.println("[info] " + MESSAGE + "Batch daemon - wait complete, interrupting daemon");
+            System.out.println("[info] " + MESSAGE + "destroy() " +   consumerThread.activeCount());
+            System.out.println("[info] " + MESSAGE + "Waiting " + interruptDelay + " seconds before interrupt");
+            Thread.sleep(interruptDelay * 1000);
+            System.out.println("[info] " + MESSAGE + "Wait complete, interrupting daemon");
             consumerThread.interrupt();
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);

@@ -89,6 +89,7 @@ public class UpdateBatchReportConsumer extends HttpServlet
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
+    private int interruptDelay = 1;     // delay before interrupting daemon^M
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -233,10 +234,11 @@ public class UpdateBatchReportConsumer extends HttpServlet
     }
 
     public void destroy() {
-        try {       
-            System.out.println("[info] " + MESSAGE + "UpdateBatchReport daemon - waiting 5 seconds before interrupt...");
-            Thread.sleep(5000);
-            System.out.println("[info] " + MESSAGE + "UpdateBatchReport daemon - wait complete, interrupting daemon");
+        try {
+            System.out.println("[info] " + MESSAGE + "destroy() " +   consumerThread.activeCount());
+            System.out.println("[info] " + MESSAGE + "Waiting " + interruptDelay + " seconds before interrupt");
+            Thread.sleep(interruptDelay * 1000);
+            System.out.println("[info] " + MESSAGE + "Wait complete, interrupting daemon");
             consumerThread.interrupt();
         } catch (Exception e) {
             e.printStackTrace(System.err);
@@ -421,53 +423,15 @@ class UpdateBatchReportConsumerDaemon implements Runnable
 		}
 	    }
         } catch (InterruptedException ie) {
-            long numActive = executorService.getActiveCount();
-
-            // Wait for 15 seconds for completion
-            int numWaitCycles = 0;
-            while ( numActive != 0L && numWaitCycles < 3 ) {
-               System.out.println(MESSAGE + "Still active tasks: " + numActive + " -  Waiting for completion.");
-               try {
-                  Thread.currentThread().sleep(5 * 1000);
-               } catch (Exception te) {}
-               numActive = executorService.getActiveCount();
-               numWaitCycles = numWaitCycles + 1;
-            }
-
-            if (numActive != 0L) {
-               System.out.println(MESSAGE + "Forcing completion of thread pool tasks: " + numActive);
-               executorService.shutdownNow();
-            } else {
-               System.out.println(MESSAGE + "Batches completed without force shutdown");
-            }
-                
             try {
-                zooKeeper.close();
-            } catch (Exception ze) {}
 
-            System.out.println(MESSAGE + "shutting down consumer daemon.");
+                long numActive = executorService.getActiveCount();
+                System.out.println(MESSAGE + "Still active tasks: " + numActive + " -  Forcing failure.");
+                executorService.shutdownNow();
 
-/*
-	    try {
-		try {
-	    	    zooKeeper.close();
-		} catch (Exception ze) {}
-                System.out.println(MESSAGE + "shutting down consumer daemon.");
-	        executorService.shutdown();
-
-		int cnt = 0;
-		while (! executorService.awaitTermination(15L, TimeUnit.SECONDS)) {
-                    System.out.println(MESSAGE + "waiting for tasks to complete.");
-		    cnt++;
-		    if (cnt == 8) {	// 2 minutes
-			// force shutdown
-	        	executorService.shutdownNow();
-		    }
-		}
             } catch (Exception e) {
-		e.printStackTrace(System.err);
+                e.printStackTrace(System.err);
             }
-*/
 	} catch (Exception e) {
             System.out.println(MESSAGE + "Exception detected, shutting down consumer daemon.");
 	    e.printStackTrace(System.err);

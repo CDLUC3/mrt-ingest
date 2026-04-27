@@ -112,6 +112,7 @@ public class HandlerRetrieve extends Handler<JobState>
 	ExecutorService executorService = null;
 
 	try {
+            Thread.sleep(5);
 
 	    boolean result;
 	    PackageTypeEnum packageType = ingestRequest.getPackageType();
@@ -282,6 +283,9 @@ public class HandlerRetrieve extends Handler<JobState>
             }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
+
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TRuntimeException trex) {
 	    trex.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + trex.getDetail());

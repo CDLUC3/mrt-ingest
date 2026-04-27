@@ -89,6 +89,7 @@ public class BatchReportConsumer extends HttpServlet
     private String queuePath = null;
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
+    private int interruptDelay = 1;     // delay before interrupting daemon^M
 
     public void init(ServletConfig servletConfig)
             throws ServletException {
@@ -233,9 +234,10 @@ public class BatchReportConsumer extends HttpServlet
 
     public void destroy() {
         try {       
-            System.out.println("[info] " + MESSAGE + "BatchReport daemon - waiting 5 seconds before interrupt...");
-            Thread.sleep(5000);
-            System.out.println("[info] " + MESSAGE + "BatchReport daemon - wait complete, interrupting daemon");
+            System.out.println("[info] " + MESSAGE + "destroy() " +   consumerThread.activeCount());
+            System.out.println("[info] " + MESSAGE + "Waiting " + interruptDelay + " seconds before interrupt");
+            Thread.sleep(interruptDelay * 1000);
+            System.out.println("[info] " + MESSAGE + "Wait complete, interrupting daemon");
             consumerThread.interrupt();
         } catch (Exception e) {
             e.printStackTrace(System.err);

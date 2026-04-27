@@ -420,9 +420,9 @@ class EstimateConsumerDaemon implements Runnable
 		e.printStackTrace(System.err);
             }
 	} catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down consumer daemon.");
 	    e.printStackTrace(System.err);
-	    executorService.shutdown();
+            System.out.println(MESSAGE + "Exception detected, shutting down consumer daemon.");
+            executorService.shutdown();
         } finally {
 		try {
 		   zooKeeper.close();

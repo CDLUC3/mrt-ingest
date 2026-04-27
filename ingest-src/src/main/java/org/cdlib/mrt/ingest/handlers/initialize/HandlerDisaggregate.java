@@ -98,6 +98,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    packageType = ingestRequest.getPackageType();
 	}
 	try {
+            Thread.sleep(5);
 
 	    boolean result;
 	    File targetDir = new File(ingestRequest.getQueuePath(), "producer");
@@ -148,6 +149,8 @@ public class HandlerDisaggregate extends Handler<JobState>
             }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());

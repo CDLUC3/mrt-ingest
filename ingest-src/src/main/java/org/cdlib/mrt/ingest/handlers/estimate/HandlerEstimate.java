@@ -129,6 +129,7 @@ public class HandlerEstimate extends Handler<JobState>
 
 
         try {
+            Thread.sleep(5);
 
             boolean result;
 	    long submissionSize = 0L;
@@ -255,6 +256,8 @@ public class HandlerEstimate extends Handler<JobState>
             }
 
             return new HandlerResult(true, "SUCCESS: " + NAME + " Resource estimation complete: " + ingestRequest.getJob().toString(), 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
         } catch (Exception e) {
             String msg = "[error] " + MESSAGE + e.getMessage();
             return new HandlerResult(false, msg);

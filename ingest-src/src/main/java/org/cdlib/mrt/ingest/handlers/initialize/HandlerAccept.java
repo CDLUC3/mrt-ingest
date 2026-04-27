@@ -72,6 +72,7 @@ public class HandlerAccept extends Handler<JobState>
     {
 
 	try {
+            Thread.sleep(5);
 
 	    boolean result;
 	    File sourceDir = ingestRequest.getQueuePath();
@@ -103,6 +104,8 @@ public class HandlerAccept extends Handler<JobState>
 
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " has moved data to staging area", 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {

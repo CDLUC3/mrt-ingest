@@ -77,6 +77,7 @@ public class HandlerDocument extends Handler<JobState>
 	String value = "";
 
 	try {
+            Thread.sleep(5);
 
             // get all handlers
             SortedMap sortedMap = Collections.synchronizedSortedMap(new TreeMap());    // thread-safe
@@ -103,6 +104,9 @@ public class HandlerDocument extends Handler<JobState>
             }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " documented handlers", 0);
+
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());

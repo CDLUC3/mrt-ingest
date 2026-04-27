@@ -81,6 +81,7 @@ public class HandlerInitialize extends Handler<JobState>
     {
 
 	try {
+            Thread.sleep(5);
 
 	    File targetDir = new File(ingestRequest.getQueuePath(), "system");
 	    if (! targetDir.exists()) targetDir.mkdirs();
@@ -146,6 +147,8 @@ public class HandlerInitialize extends Handler<JobState>
 		    + MESSAGE + ": unable to build merritt object model file: " + momFile.getAbsolutePath());
 	    }
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " has created metadata");
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, te.getDetail());

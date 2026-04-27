@@ -103,6 +103,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	Batch batch = null;
 
 	try {
+            Thread.sleep(5);
 
             if (! ZookeeperUtil.validateZK(zooKeeper)) {
                 try {
@@ -213,6 +214,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	    // batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Pending, "Pending");
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
         } catch (Exception e) {
             e.printStackTrace();
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();

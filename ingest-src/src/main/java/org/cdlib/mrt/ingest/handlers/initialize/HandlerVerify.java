@@ -73,6 +73,8 @@ public class HandlerVerify extends Handler<JobState>
 	String value = null;
 
 	try {
+            Thread.sleep(5);
+
 	    // Check for necessary inputs
 	    if (StringUtil.isEmpty(jobState.getPackageName())) {
 		throw new TException.INVALID_OR_MISSING_PARM("[error]" + MESSAGE + "package name not supplied");
@@ -120,6 +122,8 @@ public class HandlerVerify extends Handler<JobState>
             }
 
 	    return new HandlerResult(true, "[info]: " + MESSAGE + " submission checksum matches. handler completed successfully");
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
 	    te.printStackTrace(System.err);
 	    return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());

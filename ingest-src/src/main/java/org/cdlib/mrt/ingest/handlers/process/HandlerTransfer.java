@@ -124,6 +124,8 @@ public class HandlerTransfer extends Handler<JobState>
 	String action = "add/";
 
         try {
+            Thread.sleep(5);
+
 	    originalStoreNode = profileState.getTargetStorage();
 
 	    // build REST url 
@@ -194,6 +196,8 @@ public class HandlerTransfer extends Handler<JobState>
 	    // jobState.setVersionID(getVersionID(responseBody));
 
 	    return new HandlerResult(true, "SUCCESS: Transfer");
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
 	    te.printStackTrace();
 	    LogManager.getLogger().error(te);
