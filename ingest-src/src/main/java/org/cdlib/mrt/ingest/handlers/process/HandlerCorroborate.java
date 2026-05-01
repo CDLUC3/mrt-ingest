@@ -90,6 +90,8 @@ public class HandlerCorroborate extends Handler<JobState>
 	String integrityStatus = null;
 
         try {
+	    Thread.sleep(5);
+
             PackageTypeEnum packageType = ingestRequest.getPackageType();
             if (packageType != PackageTypeEnum.container) {
                 System.out.println("[info] " + MESSAGE + "specified package type is not a container.  No processing necesary.");
@@ -133,6 +135,8 @@ public class HandlerCorroborate extends Handler<JobState>
                 return new HandlerResult(false, "ERROR: " + NAME + "error in corroborating manifest: " + manifest.getAbsolutePath(), 0);
 	    }
 
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, "ERROR: " + MESSAGE + te.getDetail());

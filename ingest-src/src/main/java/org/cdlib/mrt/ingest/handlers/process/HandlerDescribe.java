@@ -84,6 +84,8 @@ public class HandlerDescribe extends Handler<JobState>
 
 	Map<String, String> producerERC = null;
 	try {
+            Thread.sleep(5);
+
             systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File producerTargetDir = new File(ingestRequest.getQueuePath(), "producer");
             File systemErcFile = new File(systemTargetDir, "mrt-erc.txt");
@@ -143,6 +145,8 @@ public class HandlerDescribe extends Handler<JobState>
 
 	    return new HandlerResult(true, "SUCCESS: " + MESSAGE + "Success in creating ERC data file.", 0);
 
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());

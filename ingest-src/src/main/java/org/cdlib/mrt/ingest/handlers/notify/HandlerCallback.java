@@ -97,6 +97,8 @@ public class HandlerCallback extends Handler<JobState> {
 	FormatType formatType = null;
         HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
         try {
+            Thread.sleep(5);
+
 	    try {
 	       // Add merritt callback and Job ID to pathname (e.g. mc/<jid>)
                requestURL = new URL(profileState.getCallbackURL().toString() + "/mc/" + jobState.getJobID().getValue());
@@ -216,6 +218,8 @@ System.out.println("================================ CALLBACK ");
             LogManager.getLogger().info(msgMap);
 
             return new HandlerResult(true, msg, 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
         } catch (Exception ex) {
             String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), requestURL);
 	    ex.printStackTrace();

@@ -69,6 +69,7 @@ public class HandlerProvision extends Handler<JobState>
     {
 
 	try {
+            Thread.sleep(5);
 
 	    Integer zfsThreshold = Integer.valueOf(ingestRequest.getIngestZfsThreshold());
 	    if (zfsThreshold == null) {
@@ -101,6 +102,8 @@ public class HandlerProvision extends Handler<JobState>
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning complete", 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "provisioning failure: " + e.getMessage();

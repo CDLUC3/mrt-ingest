@@ -98,6 +98,8 @@ public class HandlerSubmit extends Handler<BatchState>
         ZooKeeper zooKeeper = null;
 
 	try {
+            Thread.sleep(5);
+
             // open a single connection to zookeeper for all queue posting
             // todo: create an interface
             zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
@@ -287,6 +289,8 @@ public class HandlerSubmit extends Handler<BatchState>
 	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
 	    e.printStackTrace();
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();

@@ -83,6 +83,8 @@ public class HandlerNotification extends Handler<BatchState>
 	boolean verbose = false;
 
 	try {
+            Thread.sleep(5);
+
 	    try {
 	        if (profileState.getNotificationSuppression().equalsIgnoreCase("partial") || profileState.getNotificationSuppression().equalsIgnoreCase("full")) {
                     if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected suppression of queue notification: " + profileState.getNotificationSuppression());
@@ -188,6 +190,8 @@ public class HandlerNotification extends Handler<BatchState>
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
 
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
 	    e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + ": in submission notification: " + e.getMessage();

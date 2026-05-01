@@ -71,6 +71,8 @@ public class HandlerDigest extends Handler<JobState>
     {
 
 	try {
+            Thread.sleep(5);
+
             File manifest = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
             manifest.createNewFile();
 
@@ -100,6 +102,9 @@ public class HandlerDigest extends Handler<JobState>
 	    FileUtil.removeLineFromFile(manifest.getAbsolutePath(), "system/mrt-manifest.txt", "CONTAIN");
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " created manifest");
+
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());

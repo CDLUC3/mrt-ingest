@@ -83,6 +83,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	String status = null;
 	PackageTypeEnum packageType = ingestRequest.getPackageType();
 	try {
+            Thread.sleep(5);
+
 	    boolean result;
 	    File queueDir = new File(ingestRequest.getQueuePath().getAbsolutePath());
 	    for (String fileS : queueDir.list()) {
@@ -145,6 +147,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
             }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail(), 10);
 	} catch (Exception e) {

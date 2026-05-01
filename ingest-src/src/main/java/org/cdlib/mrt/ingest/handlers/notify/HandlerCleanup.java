@@ -70,6 +70,7 @@ public class HandlerCleanup extends Handler<JobState>
     {
 
 	try {
+            Thread.sleep(5);
 
 	    File stageDir = new File(ingestRequest.getQueuePath(), "producer");
 
@@ -98,6 +99,8 @@ public class HandlerCleanup extends Handler<JobState>
 	        }
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " deletion of staging directory", 0);
 	    }
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
             e.printStackTrace(System.err);
             String msg = "[error] " + MESSAGE + "removing staging directory: " + e.getMessage();

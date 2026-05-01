@@ -89,6 +89,8 @@ public class HandlerMinter extends Handler<JobState>
         Map<String, String> previousSystemERC = null;
 
 	try {
+            Thread.sleep(5);
+
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
             File metadataFile = new File(systemTargetDir, "mrt-ingest.txt");
             File momFile = new File(systemTargetDir, "mrt-mom.txt");
@@ -267,6 +269,8 @@ public class HandlerMinter extends Handler<JobState>
 	    } else {
 	    	return new HandlerResult(true, "SUCCESS: " + NAME + " no object ID minting required");
 	    }
+        } catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
             te.printStackTrace(System.err);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());

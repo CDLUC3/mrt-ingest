@@ -88,7 +88,10 @@ public class HandlerCharacterize extends Handler<JobState>
 	throws TException 
     {
 
+
 	try {
+	    Thread.sleep(5);
+
 	    URL url = profileState.getCharacterizationURL();
 	    try {
 	        if (StringUtil.isEmpty(url.toString())) {
@@ -131,11 +134,14 @@ public class HandlerCharacterize extends Handler<JobState>
             }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " object components characterized");
+	} catch (InterruptedException ie) {
+            return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            return new HandlerResult(true, "[error]: " + MESSAGE + te.getDetail());
+            return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
             String msg = "[error] " + MESSAGE + "error in characterization: " + e.getMessage();
-            return new HandlerResult(true, msg);
+
+            return new HandlerResult(false, msg);
         } finally {
             // cleanup?
         }
