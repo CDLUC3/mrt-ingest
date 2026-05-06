@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
   minio:
     container_name: minio
-    image: ${ECR_REGISTRY}/mrt-minio-it:dev
+    image: ${ECR_REGISTRY}/mrt-rustfs-it:dev
     # command: server /buckets --address :9000 --console-address ":9001"
     networks:
       merrittnet:
