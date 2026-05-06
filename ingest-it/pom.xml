@@ -142,7 +142,7 @@
                   </run>
                 </image>
                 <image>
-                  <name>${itDockerRegistry}/mrt-minio-it:dev</name>
+                  <name>${itDockerRegistry}/mrt-rustfs-it:dev</name>
                   <alias>mrt-minio-it</alias>
                   <run>
                     <network>
