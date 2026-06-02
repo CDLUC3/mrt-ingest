@@ -101,6 +101,12 @@ public class HandlerDigest extends Handler<JobState>
 
 	    FileUtil.removeLineFromFile(manifest.getAbsolutePath(), "system/mrt-manifest.txt", "CONTAIN");
 
+	    String job_manifest = ingestRequest.getJob().grabBatchID().getValue() + "/" 
+		+ ingestRequest.getJob().getJobID().getValue() + "/" 
+		+ ingestRequest.getJob().getPackageName();
+	    // Do not preserve Job manifest used for submission (top level Job dir)
+	    FileUtil.removeLineFromFile(manifest.getAbsolutePath(), job_manifest, "CONTAIN");
+
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " created manifest");
 
         } catch (InterruptedException ie) {
