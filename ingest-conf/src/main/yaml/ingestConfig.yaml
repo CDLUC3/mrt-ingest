@@ -54,7 +54,7 @@ ingest-docker:
   ingest-info:
     name: "UC3 Docker Ingest"
     identifier: "ingest"
-    target: "http://my-minio-localhost-alias:8086"
+    target: "{!ENV: TARGET_ID !DEFAULT: http://ingest:8080 }"
     description: "UC3 ingest docker micro-service"
     service-scheme: "Ingest/0.1"
     access-uri: "http://ingest:8080"
