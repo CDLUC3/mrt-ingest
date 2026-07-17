@@ -215,6 +215,7 @@ public class HandlerNotification extends Handler<BatchState>
 
         try {
             email.setHostName(ingestRequest.getServiceState().getMailHost());     // production machines are SMTP enabled
+	    if (DEBUG) System.out.println("[info] " + MESSAGE + "Email host defined: " + ingestRequest.getServiceState().getMailHost());
             if (profileState.getAdmin() != null) {
                 for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
                     // admin will receive notifications
