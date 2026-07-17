@@ -182,6 +182,7 @@ public class HandlerNotification extends Handler<BatchState>
 
 	    batch.loadProperties(zooKeeper, false);
   	    email.setHostName(ingestRequest.getServiceState().getMailHost());	// production machines are SMTP enabled
+            if (DEBUG) System.out.println("[info] " + MESSAGE + "Email host defined: " + ingestRequest.getServiceState().getMailHost());
 	    if (jobState.grabAltNotification() == null) {
 	        for (Notification recipient : profileState.getContactsEmail()) {
 		    try {
