@@ -9,7 +9,7 @@ ingest-info:
     access-uri: "http://localhost:{!ENV: it-server.port !DEFAULT: 8080}"
     ezid: "example:value"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
-    mail-host: "smtp"
+    mail-host: "localhost"
     mail-contact: "merritt@ucop.edu"
     mail-replyto: "uc3@ucop.edu"
     admin: "test@email"

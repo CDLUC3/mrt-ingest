@@ -61,7 +61,7 @@ ingest-docker:
     ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
     # mail-host: "{!SSM: ingest/config/mail-host !DEFAULT: localhost}"
-    mail-host: "smtp"
+    mail-host: "localhost"
     mail-contact: "merritt@cdlib.org"
     mail-replyto: "uc3@ucop.edu"
     admin: "test@email"

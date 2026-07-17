@@ -13,7 +13,7 @@ ingest-info:
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
     admin: "test@email"
     purl: "http://n2t.net/"
-    mail-host: "smtp"
+    mail-host: "localhost"
     mail-contact: "{!SSM: ingest/config/mail-contact !DEFAULT: merritt@cdlib.org}"
     mail-replyto: "{!SSM: ingest/config/mail-replyto !DEFAULT: uc3@ucop.edu}"
     ingestServicePath: "/tmp/ingest"
