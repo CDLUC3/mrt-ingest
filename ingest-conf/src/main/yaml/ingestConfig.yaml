@@ -52,7 +52,7 @@ ingest:
 
 ingest-docker:
   ingest-info:
-    name: "UC3 Docker Ingest"
+    name: "{!ENV: CONFIG_NAME !DEFAULT: UC3 Ingest }"
     identifier: "ingest"
     target: "{!ENV: TARGET_ID !DEFAULT: http://ingest:8080 }"
     description: "UC3 ingest docker micro-service"
