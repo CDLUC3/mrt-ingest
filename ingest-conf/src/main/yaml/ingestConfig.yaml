@@ -48,9 +48,7 @@ ingest:
     qualifier: "yyMMdd"
     trace: 5
 
-
-
-ingest-docker:
+ingest-docker: &docker
   ingest-info:
     name: "{!ENV: CONFIG_NAME !DEFAULT: UC3 Ingest }"
     identifier: "ingest"
@@ -58,8 +56,7 @@ ingest-docker:
     description: "UC3 ingest docker micro-service"
     service-scheme: "Ingest/0.1"
     access-uri: "http://ingest:8080"
-    # ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
-    ezid: "{!SSM: ingest/ezid-user !DEFAULT: ezid-user}:{!SSM: ingest/ezid-password: !DEFAULT: ezid-password}"
+    ezid: "ezid-user:ezid-password"
     support-uri: "http://www.cdlib.org/services/uc3/contact.html"
     # mail-host: "{!SSM: ingest/config/mail-host !DEFAULT: localhost}"
     mail-host: "smtp"
@@ -98,3 +95,7 @@ ingest-docker:
     name: "ingest"
     qualifier: "yyMMdd"
     trace: 5
+
+ecs:
+  <<: *docker
+  ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
