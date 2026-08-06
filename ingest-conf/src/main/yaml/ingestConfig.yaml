@@ -48,8 +48,8 @@ ingest:
     qualifier: "yyMMdd"
     trace: 5
 
-ingest-docker: &docker
-  ingest-info:
+ingest-docker: 
+  ingest-info: &ingestinfo
     name: "{!ENV: CONFIG_NAME !DEFAULT: UC3 Ingest }"
     identifier: "ingest"
     target: "{!ENV: TARGET_ID !DEFAULT: http://ingest:8080 }"
@@ -76,19 +76,19 @@ ingest-docker: &docker
     ingestLock: "/mrt.lock"
     NumDownloadThreads: "2"
 
-  store-info:
+  store-info: &storeinfo
     store.1: "http://store:8080/store"
     access.1: "http://store:8080/store"
     localID: "http://inventory:8080/inventory"
 
-  queue-info:
+  queue-info: &queueinfo
     QueueService: "{!ENV: ZKCONN !DEFAULT: zoo:2181}"
     PollingInterval: "30"
     NumThreads: "3"
     BatchPollingInterval: "15"
     BatchNumThreads: "3"
 
-  logger-info:
+  logger-info: &loggerinfo
     messageMaximumLevel: 5
     messageMaximumError: 10
     path: "logs"
@@ -97,5 +97,12 @@ ingest-docker: &docker
     trace: 5
 
 ecs:
-  <<: *docker
-  ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
+  ingest-info:
+    <<: *ingestinfo
+    ezid: "{!SSM: ingest/ezid-user}:{!SSM: ingest/ezid-password}"
+  store-info:
+    <<: *storeinfo
+  queue-info:
+    <<: *queueinfo
+  logger-info:
+    <<: *loggerinfo
