@@ -52,6 +52,8 @@ import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
+import org.cdlib.mrt.utility.HTTPGetUtil;
+import org.cdlib.mrt.utility.HttpGetNew;
 
 /**
  * process batch submission data
@@ -262,7 +264,12 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    tempFile.createNewFile();
 
 	    // retry 3 times
-            FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
+            // FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
+
+            // Proxy and BasicAuth parameters
+	    // NEED RETRY LOGIC?
+	    HTTPGetUtil httpGetParams = HTTPGetUtil.build(null, null, null);
+	    HttpGetNew.getFile(fileURL, tempFile, httpGetParams);
 
     	    return createJob(tempFile, queueDir);
 	} catch (Exception e) {

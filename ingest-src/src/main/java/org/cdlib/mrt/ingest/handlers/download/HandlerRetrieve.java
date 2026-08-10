@@ -74,6 +74,8 @@ import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.TRuntimeException;
 import org.cdlib.mrt.utility.URLEncoder;
+import org.cdlib.mrt.utility.HTTPGetUtil;
+import org.cdlib.mrt.utility.HttpGetNew;
 
 
 /**
@@ -192,6 +194,10 @@ public class HandlerRetrieve extends Handler<JobState>
 
     		    List<Future<String>> tasks = new ArrayList<Future<String>>();
 
+		    // Proxy and BasicAuth parameters
+		    // HTTPGetUtil getUtil = HTTPGetUtil.build(proxyHost, proxyPort, headers);
+		    HTTPGetUtil httpGetParams = HTTPGetUtil.build(null, null, null);
+
 		    // process all rows in each manifest file
                     while (enumRow.hasMoreElements()) {
                         rowIn = (ManifestRowIngest) enumRow.nextElement();
@@ -201,7 +207,8 @@ public class HandlerRetrieve extends Handler<JobState>
                         }
 
 			// launch download
-                        Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState));
+                        // Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState));
+                        Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState, httpGetParams));
 			tasks.add(future);
                     }
 
@@ -393,13 +400,15 @@ class RetrieveData implements Callable<String>
     private File targetDir = null;
     private String fileName = null;
     private JobState jobState = null;
+    private HTTPGetUtil httpGetParams = null;
 
     // constructor
-    public RetrieveData(URL url, File targetDir, String fileName, JobState jobState) {
+    public RetrieveData(URL url, File targetDir, String fileName, JobState jobState, HTTPGetUtil httpGetParams) {
 	this.url = url;
 	this.targetDir = targetDir;
 	this.fileName = fileName;
 	this.jobState = jobState;
+        this.httpGetParams = httpGetParams;
     }
 
     public String call()
@@ -429,7 +438,8 @@ class RetrieveData implements Callable<String>
 	    }
             for (int i=0; i < 2; i++) {
 	        try {
-                    FileUtil.url2File(null, url, f, 2);
+                    // FileUtil.url2File(null, url, f, 2);
+                    HttpGetNew.getFile(url, f, httpGetParams);
 		    bytes = f.length();
 	    	    status = "complete";;
 		    break;
