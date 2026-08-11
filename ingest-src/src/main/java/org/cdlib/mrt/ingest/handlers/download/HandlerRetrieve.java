@@ -196,6 +196,7 @@ public class HandlerRetrieve extends Handler<JobState>
 
 		    // Proxy and BasicAuth parameters
 		    // HTTPGetUtil getUtil = HTTPGetUtil.build(proxyHost, proxyPort, headers);
+                    System.out.println("[HandlerRetrieve] INFO: Populating httpGetParams object with NULL data.");
 		    HTTPGetUtil httpGetParams = HTTPGetUtil.build(null, null, null);
 
 		    // process all rows in each manifest file

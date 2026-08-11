@@ -268,6 +268,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 
             // Proxy and BasicAuth parameters
 	    // NEED RETRY LOGIC?
+	    System.out.println("[HandlerDisaggregate] INFO: Populating httpGetParams object with NULL data.");
 	    HTTPGetUtil httpGetParams = HTTPGetUtil.build(null, null, null);
 	    HttpGetNew.getFile(fileURL, tempFile, httpGetParams);
 
