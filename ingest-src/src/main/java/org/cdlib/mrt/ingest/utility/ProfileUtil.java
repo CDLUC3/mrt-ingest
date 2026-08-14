@@ -87,8 +87,8 @@ public class ProfileUtil
 
     private static final String NAME = "ProfileUtil";
     private static final String MESSAGE = NAME + ": ";
-    // private static final boolean DEBUG = false;
     private static final boolean DEBUG = false;
+    // private static final boolean DEBUG = true;
     private static final int MAX_HANDLERS = 20;
     public static final String DEFAULT_BATCH_ID = "JOB_ONLY";
     private LoggerInf logger = null;
@@ -121,6 +121,7 @@ public class ProfileUtil
     private static final String matchModificationDate = "ModificationDate";
     private static final String matchObjectMinterURL = "ObjectMinterURL";
     private static final String matchCallbackURL = "CallbackURL";
+    private static final String matchProxyURL = "ProxyURL";
     private static final String matchPriority = "Priority";
     // private static final String matchStatusURL = "StatusURL";
     // private static final String matchStatusView = "StatusView";
@@ -299,9 +300,17 @@ public class ProfileUtil
                     try {
                         url = new URL(value);
                     } catch (MalformedURLException muex) {
-                        throw new TException.INVALID_CONFIGURATION("DataONE parameter in profile is not a valid URL: " + value);
+                        throw new TException.INVALID_CONFIGURATION("Callback parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setCallbackURL(url);
+		} else if (key.startsWith(matchProxyURL)) {
+                    if (DEBUG) System.out.println("[debug] proxy URL: " + value);
+                    try {
+                        url = new URL(value);
+                    } catch (MalformedURLException muex) {
+                        throw new TException.INVALID_CONFIGURATION("Proxy parameter in profile is not a valid URL: " + value);
+                    }
+		    profileState.setProxyURL(url);
 		} else if (key.startsWith(matchPriority)) {
                     if (DEBUG) System.out.println("[debug] Priority: " + value);
 		    profileState.setPriority(value);
@@ -486,7 +495,7 @@ public class ProfileUtil
                     if (DEBUG) System.out.println("[debug] suppress dc.identifer/local ID processing: " + value);
 		    if (value.equalsIgnoreCase("true")) profileState.setSuppressDublinCoreLocalID(true);
 	        } else {
-                    if (DEBUG) System.out.println("[debug] could not procces profile parameter: " + key);
+                    if (DEBUG) System.out.println("[debug] could not process profile parameter: " + key);
 		}
 	     }
 

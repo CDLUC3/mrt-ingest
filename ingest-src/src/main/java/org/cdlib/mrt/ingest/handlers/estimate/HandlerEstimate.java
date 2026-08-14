@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.lang.Long;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
+import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -84,6 +86,7 @@ import org.cdlib.mrt.utility.URLEncoder;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.HTTPUtil;
+import org.cdlib.mrt.utility.HTTPGetUtil;
 import org.cdlib.mrt.zk.ZKKey;
 
 
@@ -357,22 +360,44 @@ class CalculateSize implements Callable<String>
         throws Exception
     {
         HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
+	HttpURLConnection uc = null;
         try {
             long bytes = 0;
             int retries = 0;
 
+	    // Check to see if we have a proxy
+	    URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+	    HTTPGetUtil httpGetParams = null;
+
+	    // Check to see if we have a basic-auth
+	    // String basicAuth = jobState.grabObjectProfile().getBasicAuth();
+	    // String basicAuthDomain = jobState.grabObjectProfile().getBasicAuthDomain();
+
             System.out.println("Retrieving remote data size: " + url.toString() + " ---- " + fileName);
             for (int i=0; i < 2; i++) {
                 try {
-		    HttpURLConnection uc = (HttpURLConnection) url.openConnection();
-            	    bytes = uc.getContentLengthLong();
+		    if (proxyURL == null) {
+                        // if (DEBUG) System.out.println("Estimate [info]: " + " Proxy not defined.");
+	    	 	httpGetParams = HTTPGetUtil.build(null, null, null);
+		    } else { 
+                        if (DEBUG) System.out.println("Estimate [info]: " + " Proxy found: " +  proxyURL.toString());
+	    	 	httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+		    }
 
-		    if (uc.getResponseCode() == 404) {
+		    // Add Basic Auth if needed
+		    // if (StringUtil.isNotEmpty(basicAuth)) {
+                    // httpGetParams.addBasidAuthenticationHeader(authcode[0], authcode[0]);
+		    // }
+
+ 		    bytes = httpGetParams.getContentLength(url.toString());
+
+		    // Not found (404)
+		    if (bytes <= -400) {
                         if (DEBUG) System.out.println("Estimate [error]: " + " URL not retrievable: " + url.toString());
             		return url.toString();
 		    }
 
-		    if (bytes == -1 ) {
+		    if (bytes == -1) {
 			ThreadContext.put("Content Length not provided: ", url.toString() + " - " + jobState.grabObjectProfile().getCollectionName());
 		        bytes = 0;
 		    } else {

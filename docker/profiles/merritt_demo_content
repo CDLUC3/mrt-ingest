@@ -60,6 +60,7 @@ ModificationDate: 2010-01-26T23:28:14-08:00
 ObjectMinterURL: http://ezid:4567/shoulder/ark:/99999/fk4
 # ObjectMinterURL: http://callback:8098/status/502
 CallbackURL: http://callback:8098
+ProxyURL: http://uc3-mrtingest-stg02.cdlib.org:65002
 Priority: 2
 # NotificationType: additional
 # NotificationSuppression: full

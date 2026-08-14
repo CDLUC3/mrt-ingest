@@ -53,7 +53,6 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.HTTPGetUtil;
-import org.cdlib.mrt.utility.HttpGetNew;
 
 /**
  * process batch submission data
@@ -199,7 +198,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	        String fileName = fileComponent.getIdentifier();
 	        if (StringUtil.isEmpty(fileName)) fileName = fileComponent.getURL().getFile().replace("/", "");
                 System.out.println("[info] " + MESSAGE + "Queuing is active, batchID: " + batchState.getBatchID().getValue() + " manifest entry: " + fileName);
-		JobState jobState = createJob(fileComponent.getURL(), fileName, queueDir);
+		JobState jobState = createJob(batchState, fileComponent.getURL(), fileName, queueDir);
 		jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
 		// particulars are housed in object manifest file
@@ -256,7 +255,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
      * @param queueDir target directory
      * @return jobState
      */
-    private JobState createJob(URL fileURL, String fileName, File queueDir)
+    private JobState createJob(BatchState batchState, URL fileURL, String fileName, File queueDir)
 	throws TException
     {
 	try {
@@ -266,11 +265,22 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    // retry 3 times
             // FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
 
+            // Check to see if we have a proxy
+            URL proxyURL = batchState.grabBatchProfile().getProxyURL();
+            HTTPGetUtil httpGetParams = null;
+
+	    if (proxyURL == null) {
+		if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy not defined.");
+		httpGetParams = HTTPGetUtil.build(null, null, null);
+	    } else {
+		if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy found: " +  proxyURL.toString());
+		httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+	    }
+
+// Insert Basic parms here
             // Proxy and BasicAuth parameters
-	    // NEED RETRY LOGIC?
-	    System.out.println("[HandlerDisaggregate] INFO: Populating httpGetParams object with NULL data.");
-	    HTTPGetUtil httpGetParams = HTTPGetUtil.build(null, null, null);
-	    HttpGetNew.getFile(fileURL, tempFile, httpGetParams);
+	    // HttpGetNew.getFile(fileURL, tempFile, httpGetParams);
+	    FileUtil.url2File(fileURL.toString(), tempFile, httpGetParams);
 
     	    return createJob(tempFile, queueDir);
 	} catch (Exception e) {

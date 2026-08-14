@@ -67,6 +67,7 @@ public class ProfileState
     private URL dataONEURL = null;
     private URL coordinatingNodeURL = null;
     private URL callbackURL = null;
+    private URL proxyURL = null;
     private String priority = null;
     private String priorityThreshold = null;
     private URL statusURL = null;
@@ -265,6 +266,14 @@ public class ProfileState
     }
 
     /**
+     * Set proxy URL
+     * @param URL proxy URL
+     */
+    public void setProxyURL(URL proxyURL) {
+        this.proxyURL = proxyURL;
+    }
+
+    /**
      * Set Priority values
      * @param String Zookeeper priority for collection
      */
@@ -343,6 +352,14 @@ public class ProfileState
      */
     public URL getCallbackURL() {
         return this.callbackURL; 
+    }
+
+    /**
+     * Get proxy URL
+     * @return proxy URL
+     */
+    public URL getProxyURL() {
+        return this.proxyURL; 
     }
 
     /**

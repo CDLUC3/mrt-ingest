@@ -76,6 +76,7 @@ import org.cdlib.mrt.utility.TRuntimeException;
 import org.cdlib.mrt.utility.URLEncoder;
 import org.cdlib.mrt.utility.HTTPGetUtil;
 import org.cdlib.mrt.utility.HttpGetNew;
+import org.cdlib.mrt.utility.StringUtil;
 
 
 /**
@@ -194,11 +195,6 @@ public class HandlerRetrieve extends Handler<JobState>
 
     		    List<Future<String>> tasks = new ArrayList<Future<String>>();
 
-		    // Proxy and BasicAuth parameters
-		    // HTTPGetUtil getUtil = HTTPGetUtil.build(proxyHost, proxyPort, headers);
-                    System.out.println("[HandlerRetrieve] INFO: Populating httpGetParams object with NULL data.");
-		    HTTPGetUtil httpGetParams = HTTPGetUtil.build(null, null, null);
-
 		    // process all rows in each manifest file
                     while (enumRow.hasMoreElements()) {
                         rowIn = (ManifestRowIngest) enumRow.nextElement();
@@ -208,8 +204,7 @@ public class HandlerRetrieve extends Handler<JobState>
                         }
 
 			// launch download
-                        // Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState));
-                        Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState, httpGetParams));
+                        Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState));
 			tasks.add(future);
                     }
 
@@ -404,12 +399,11 @@ class RetrieveData implements Callable<String>
     private HTTPGetUtil httpGetParams = null;
 
     // constructor
-    public RetrieveData(URL url, File targetDir, String fileName, JobState jobState, HTTPGetUtil httpGetParams) {
+    public RetrieveData(URL url, File targetDir, String fileName, JobState jobState) {
 	this.url = url;
 	this.targetDir = targetDir;
 	this.fileName = fileName;
 	this.jobState = jobState;
-        this.httpGetParams = httpGetParams;
     }
 
     public String call()
@@ -425,6 +419,31 @@ class RetrieveData implements Callable<String>
 		if (fileName.startsWith("/")) fileName = fileName.substring(1);
 	    }
             long startTime = DateUtil.getEpochUTCDate();
+
+            // Check to see if we have a proxy
+            URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+            HTTPGetUtil httpGetParams = null;
+
+/*
+	    // Embedded basic/auth credentials?
+	    String basicAuth = url.toURI().getAuthority();
+	    System.out.println("------------------------");
+	    System.out.println("[info] auth data: " + basicAuth);
+	    System.out.println("------------------------");
+
+	    boolean basicAuthBoolean = StringUtil.matchRegex(basicAuth, "@");
+
+	    if (basicAuthBoolean) {
+		String [] authority = basicAuth.split("@");
+	        // System.out.println("[info] Found Basic auth data: " + authority[0]);
+
+		String [] authcode = authority[0].split(":");
+	        System.out.println("[info] Found Basic auth data, user: " + authcode[0]);
+	        System.out.println("[info] Found Basic auth data, authcode: " + authcode[1]);
+		// httpGetParams.addBasidAuthenticationHeader(authcode[0], authcode[0]);
+	    }
+*/
+	     
             System.out.println("Retrieving remote data: " + url.toString() + " ---- " + fileName);
             File f = new File(targetDir, fileName);
 	    new File(f.getParent()).mkdirs();
@@ -438,9 +457,24 @@ class RetrieveData implements Callable<String>
 		throw new IOException("Error file already exists: " + f.getAbsolutePath());
 	    }
             for (int i=0; i < 2; i++) {
+
+		// Proxy defined?
+                if (proxyURL == null) {
+                    System.out.println("Retieve [info]: " + " Proxy not defined.");
+                    httpGetParams = HTTPGetUtil.build(null, null, null);
+                } else {
+                    System.out.println("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
+                    httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+                }
+
 	        try {
-                    // FileUtil.url2File(null, url, f, 2);
-                    HttpGetNew.getFile(url, f, httpGetParams);
+		    //if (! basicAuthBoolean) {
+                       // HttpGetNew.getFile(url, f, httpGetParams);
+		    FileUtil.url2File(url.toString(), f, httpGetParams);
+		    //} else { 
+                       //FileUtil.url2File(null, url, f, 2);
+		    //}
+
 		    bytes = f.length();
 	    	    status = "complete";;
 		    break;
