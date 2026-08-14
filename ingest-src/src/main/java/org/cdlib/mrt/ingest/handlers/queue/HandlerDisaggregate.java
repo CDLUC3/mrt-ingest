@@ -278,8 +278,6 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    }
 
 // Insert Basic parms here
-            // Proxy and BasicAuth parameters
-	    // HttpGetNew.getFile(fileURL, tempFile, httpGetParams);
 	    FileUtil.url2File(fileURL.toString(), tempFile, httpGetParams);
 
     	    return createJob(tempFile, queueDir);
