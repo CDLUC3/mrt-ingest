@@ -134,6 +134,9 @@ public class HandlerEstimate extends Handler<JobState>
         try {
             Thread.sleep(5);
 
+	    // Ensure that Job has profile (Unit test bypasses process mgr)
+            jobState.setObjectProfile(profileState);
+
             boolean result;
 	    long submissionSize = 0L;
             PackageTypeEnum packageType = ingestRequest.getPackageType();

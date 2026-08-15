@@ -86,6 +86,9 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	try {
             Thread.sleep(5);
 
+            // Ensure that Batch has profile (Unit test bypasses batch mgr)
+            batchState.setBatchProfile(profileState);
+
 	    boolean result;
 	    File queueDir = new File(ingestRequest.getQueuePath().getAbsolutePath());
 	    for (String fileS : queueDir.list()) {

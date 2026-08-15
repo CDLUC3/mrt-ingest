@@ -117,6 +117,9 @@ public class HandlerRetrieve extends Handler<JobState>
 	try {
             Thread.sleep(5);
 
+            // Ensure that Job has profile (Unit test bypasses process mgr)
+            jobState.setObjectProfile(profileState);
+
 	    boolean result;
 	    PackageTypeEnum packageType = ingestRequest.getPackageType();
 	    File targetDir = new File(ingestRequest.getQueuePath(), "producer");
@@ -396,6 +399,7 @@ class RetrieveData implements Callable<String>
     private File targetDir = null;
     private String fileName = null;
     private JobState jobState = null;
+    private ProfileState profileState = null;
     private HTTPGetUtil httpGetParams = null;
 
     // constructor
@@ -422,6 +426,10 @@ class RetrieveData implements Callable<String>
 
             // Check to see if we have a proxy
             URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+            // if (jobState.grabObjectProfile().getProxyURL() != null)
+            //if (profileState.getProxyURL() != null)
+                // proxyURL = jobState.grabObjectProfile().getProxyURL();
+                //proxyURL = profileState.getProxyURL();
             HTTPGetUtil httpGetParams = null;
 
 /*
@@ -460,7 +468,7 @@ class RetrieveData implements Callable<String>
 
 		// Proxy defined?
                 if (proxyURL == null) {
-                    System.out.println("Retieve [info]: " + " Proxy not defined.");
+                    System.out.println("Retrieve [info]: " + " Proxy not defined.");
                     httpGetParams = HTTPGetUtil.build(null, null, null);
                 } else {
                     System.out.println("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
