@@ -72,6 +72,7 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
 import org.cdlib.mrt.utility.MessageDigestValue;
+import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 import org.cdlib.mrt.core.FileComponent;
@@ -368,6 +369,9 @@ class CalculateSize implements Callable<String>
             long bytes = 0;
             int retries = 0;
 
+            // Check to see if we need basic auth
+            String basicAuth = jobState.grabObjectProfile().getBasicAuth();
+
 	    // Check to see if we have a proxy
 	    URL proxyURL = jobState.grabObjectProfile().getProxyURL();
 	    HTTPGetUtil httpGetParams = null;
@@ -387,10 +391,27 @@ class CalculateSize implements Callable<String>
 	    	 	httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
 		    }
 
-		    // Add Basic Auth if needed
-		    // if (StringUtil.isNotEmpty(basicAuth)) {
-                    // httpGetParams.addBasidAuthenticationHeader(authcode[0], authcode[0]);
-		    // }
+                    if (StringUtil.isNotEmpty(basicAuth)) {
+                        if (DEBUG) System.out.println("Estimate [info]: " + " Basic Auth creds defined.");
+                        String[] creds = basicAuth.split("\\|\\|");
+                        String un = creds[0];
+                        String pw = creds[1];
+                        String domain = creds[2];
+
+                        // Check domain to see if we ignore creds
+                        boolean addCreds = true;
+                        if (! url.getHost().contains(domain)) addCreds = false;
+                        // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
+                        // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
+                        // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
+
+                        if (addCreds) {
+                            if (DEBUG) System.out.println("Estimate [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
+                            httpGetParams.addBasidAuthenticationHeader(un, pw);
+                        } else {
+                            if (DEBUG) System.out.println("Estimate [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
+                        }
+                    }
 
  		    bytes = httpGetParams.getContentLength(url.toString());
 

@@ -265,8 +265,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    File tempFile = new File(queueDir, fileName);
 	    tempFile.createNewFile();
 
-	    // retry 3 times
-            // FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
+            // Check to see if we need basic auth
+            String basicAuth = batchState.grabBatchProfile().getBasicAuth();
 
             // Check to see if we have a proxy
             URL proxyURL = batchState.grabBatchProfile().getProxyURL();
@@ -280,7 +280,29 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
 	    }
 
-// Insert Basic parms here
+	    if (StringUtil.isNotEmpty(basicAuth)) {
+		if (DEBUG) System.out.println("Disaggregate [info]: " + " Basic Auth creds defined.");
+		String[] creds = basicAuth.split("\\|\\|");
+	 	String un = creds[0];
+	 	String pw = creds[1];
+	 	String domain = creds[2];
+		
+		// Check domain to see if we ignore creds
+		boolean addCreds = true;
+		if (! fileURL.getHost().contains(domain)) addCreds = false;
+		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
+		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
+		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
+
+		if (addCreds) {
+		    if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain matches: " + fileURL.getHost() + " - " + domain);
+		    httpGetParams.addBasidAuthenticationHeader(un, pw);
+		} else {
+		    if (DEBUG) System.out.println("Disaggregate [info]: ignoring Basic Auth creds: " + fileURL.getHost() + " - " + domain);
+		}
+	    } 
+
+	    // Do we need retry logic here?
 	    FileUtil.url2File(fileURL.toString(), tempFile, httpGetParams);
 
     	    return createJob(tempFile, queueDir);

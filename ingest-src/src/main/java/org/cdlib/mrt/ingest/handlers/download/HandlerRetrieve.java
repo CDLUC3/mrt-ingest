@@ -424,34 +424,13 @@ class RetrieveData implements Callable<String>
 	    }
             long startTime = DateUtil.getEpochUTCDate();
 
+            // Check to see if we need basic auth
+            String basicAuth = jobState.grabObjectProfile().getBasicAuth();
+
             // Check to see if we have a proxy
             URL proxyURL = jobState.grabObjectProfile().getProxyURL();
-            // if (jobState.grabObjectProfile().getProxyURL() != null)
-            //if (profileState.getProxyURL() != null)
-                // proxyURL = jobState.grabObjectProfile().getProxyURL();
-                //proxyURL = profileState.getProxyURL();
             HTTPGetUtil httpGetParams = null;
 
-/*
-	    // Embedded basic/auth credentials?
-	    String basicAuth = url.toURI().getAuthority();
-	    System.out.println("------------------------");
-	    System.out.println("[info] auth data: " + basicAuth);
-	    System.out.println("------------------------");
-
-	    boolean basicAuthBoolean = StringUtil.matchRegex(basicAuth, "@");
-
-	    if (basicAuthBoolean) {
-		String [] authority = basicAuth.split("@");
-	        // System.out.println("[info] Found Basic auth data: " + authority[0]);
-
-		String [] authcode = authority[0].split(":");
-	        System.out.println("[info] Found Basic auth data, user: " + authcode[0]);
-	        System.out.println("[info] Found Basic auth data, authcode: " + authcode[1]);
-		// httpGetParams.addBasidAuthenticationHeader(authcode[0], authcode[0]);
-	    }
-*/
-	     
             System.out.println("Retrieving remote data: " + url.toString() + " ---- " + fileName);
             File f = new File(targetDir, fileName);
 	    new File(f.getParent()).mkdirs();
@@ -474,6 +453,29 @@ class RetrieveData implements Callable<String>
                     System.out.println("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
                     httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
                 }
+
+                if (StringUtil.isNotEmpty(basicAuth)) {
+                    System.out.println("Retrieve [info]: " + " Basic Auth creds defined.");
+                    String[] creds = basicAuth.split("\\|\\|");
+                    String un = creds[0];
+                    String pw = creds[1];
+                    String domain = creds[2];
+    
+                    // Check domain to see if we ignore creds
+                    boolean addCreds = true;
+                    if (! url.getHost().contains(domain)) addCreds = false;
+                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
+                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
+                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
+
+                    if (addCreds) {
+                        System.out.println("Retrieve [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
+                        httpGetParams.addBasidAuthenticationHeader(un, pw);
+                    } else {
+                        System.out.println("Retrieve [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
+                    }
+                }
+
 
 	        try {
 		    //if (! basicAuthBoolean) {

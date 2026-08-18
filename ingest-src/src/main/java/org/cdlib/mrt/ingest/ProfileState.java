@@ -68,6 +68,7 @@ public class ProfileState
     private URL coordinatingNodeURL = null;
     private URL callbackURL = null;
     private URL proxyURL = null;
+    private String basicAuth = null;
     private String priority = null;
     private String priorityThreshold = null;
     private URL statusURL = null;
@@ -274,6 +275,14 @@ public class ProfileState
     }
 
     /**
+     * Set Basic Auth (username||pasword||domain)
+     * @param String basic auth info
+     */
+    public void setBasicAuth(String basicAuth) {
+        this.basicAuth = basicAuth;
+    }
+
+    /**
      * Set Priority values
      * @param String Zookeeper priority for collection
      */
@@ -360,6 +369,14 @@ public class ProfileState
      */
     public URL getProxyURL() {
         return this.proxyURL; 
+    }
+
+    /**
+     * Get Basic Auth
+     * @return Basic Auth info (username||pasword||domain)
+     */
+    public String getBasicAuth() {
+        return this.basicAuth; 
     }
 
     /**

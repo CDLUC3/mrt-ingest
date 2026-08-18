@@ -76,6 +76,7 @@ import org.cdlib.mrt.ingest.StoreNode;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.tools.SSMConfigResolver;
 
 
 /**
@@ -122,6 +123,7 @@ public class ProfileUtil
     private static final String matchObjectMinterURL = "ObjectMinterURL";
     private static final String matchCallbackURL = "CallbackURL";
     private static final String matchProxyURL = "ProxyURL";
+    private static final String matchBasicAuth = "BasicAuth";
     private static final String matchPriority = "Priority";
     // private static final String matchStatusURL = "StatusURL";
     // private static final String matchStatusView = "StatusView";
@@ -311,6 +313,17 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("Proxy parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setProxyURL(url);
+		} else if (key.startsWith(matchBasicAuth)) {
+                    if (DEBUG) System.out.println("[debug] Basic Auth: " + value);
+
+		    String rootPath = System.getenv("SSM_ROOT_PATH");
+		    System.out.println("SSM_ROOT_PATH:" + rootPath);
+
+		    // Get SSM for creds
+		    SSMConfigResolver ssmConfigResolver = new SSMConfigResolver();
+		    String ssmValue = ssmConfigResolver.getResolvedValue(value);
+
+		    profileState.setBasicAuth(ssmValue);
 		} else if (key.startsWith(matchPriority)) {
                     if (DEBUG) System.out.println("[debug] Priority: " + value);
 		    profileState.setPriority(value);
