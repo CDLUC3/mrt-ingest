@@ -318,10 +318,11 @@ public class ProfileUtil
 
 		    String rootPath = System.getenv("SSM_ROOT_PATH");
 		    System.out.println("SSM_ROOT_PATH:" + rootPath);
+		    System.out.println("SSM Key:" + rootPath + value);
 
 		    // Get SSM for creds
 		    SSMConfigResolver ssmConfigResolver = new SSMConfigResolver();
-		    String ssmValue = ssmConfigResolver.getResolvedValue(value);
+		    String ssmValue = ssmConfigResolver.getResolvedValue(rootPath + value);
 
 		    profileState.setBasicAuth(ssmValue);
 		} else if (key.startsWith(matchPriority)) {
