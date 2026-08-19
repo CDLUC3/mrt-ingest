@@ -317,12 +317,18 @@ public class ProfileUtil
                     if (DEBUG) System.out.println("[debug] Basic Auth: " + value);
 
 		    String rootPath = System.getenv("SSM_ROOT_PATH");
-		    System.out.println("SSM_ROOT_PATH:" + rootPath);
-		    System.out.println("SSM Key:" + rootPath + value);
+		    System.out.println("SSM_ROOT_PATH: " + rootPath);
+		    System.out.println("SSM Key: " + rootPath + value);
 
 		    // Get SSM for creds
 		    SSMConfigResolver ssmConfigResolver = new SSMConfigResolver();
-		    String ssmValue = ssmConfigResolver.getResolvedValue(rootPath + value);
+		    String ssmValue = null;
+		    try {
+		       ssmValue = ssmConfigResolver.getResolvedValue(rootPath + value);
+		    } catch (Exception ssme) {
+		       System.err.println("=====> Error pulling SSM Key: " + rootPath + value);
+		       ssmValue = null;
+		    }
 
 		    profileState.setBasicAuth(ssmValue);
 		} else if (key.startsWith(matchPriority)) {
