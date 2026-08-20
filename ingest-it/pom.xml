@@ -96,6 +96,13 @@
             </goals>
           </execution>
         </executions>
+
+        <!-- Eliminate error due to ssm lib in build -->
+        <configuration>
+           <excludes>
+              <exclude>software/amazon/awssdk/services/ssm/DefaultSsmClient</exclude>
+           </excludes>
+        </configuration>
       </plugin>
 
       <plugin>
