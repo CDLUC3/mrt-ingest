@@ -436,6 +436,7 @@ public class ProcessManager {
                                 s3endpoint, s3accesskey, s3secretkey, profileNode, profilePath, false);
 
 
+			jobState.setObjectProfile(profileState);
 
 			// Local profile
 			// profileState = ProfileUtil.getProfile(ingestRequest.getProfile(), batchDir); 
@@ -491,9 +492,7 @@ public class ProcessManager {
 				jobState.setTargetStorage(profileState.getTargetStorage());
 			}
 
-			if (DEBUG)
-				System.out.println("[debug] " + profileState.dump("profileState"));
-			jobState.setObjectProfile(profileState);
+			if (DEBUG) System.out.println("[debug] " + profileState.dump("profileState"));
 
 			// link for ingest to expose manifest data
 			ingestRequest.setLink(this.getServiceState().getAccessServiceURL().toString());

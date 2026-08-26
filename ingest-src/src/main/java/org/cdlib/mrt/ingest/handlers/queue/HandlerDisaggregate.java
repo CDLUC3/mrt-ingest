@@ -46,12 +46,14 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.MintUtil;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
+import org.cdlib.mrt.utility.HTTPGetUtil;
 
 /**
  * process batch submission data
@@ -84,6 +86,9 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	PackageTypeEnum packageType = ingestRequest.getPackageType();
 	try {
             Thread.sleep(5);
+
+            // Ensure that Batch has profile (Unit test bypasses batch mgr)
+            batchState.setBatchProfile(profileState);
 
 	    boolean result;
 	    File queueDir = new File(ingestRequest.getQueuePath().getAbsolutePath());
@@ -197,7 +202,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	        String fileName = fileComponent.getIdentifier();
 	        if (StringUtil.isEmpty(fileName)) fileName = fileComponent.getURL().getFile().replace("/", "");
                 System.out.println("[info] " + MESSAGE + "Queuing is active, batchID: " + batchState.getBatchID().getValue() + " manifest entry: " + fileName);
-		JobState jobState = createJob(fileComponent.getURL(), fileName, queueDir);
+		JobState jobState = createJob(batchState, fileComponent.getURL(), fileName, queueDir);
 		jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
 		// particulars are housed in object manifest file
@@ -254,15 +259,63 @@ public class HandlerDisaggregate extends Handler<BatchState>
      * @param queueDir target directory
      * @return jobState
      */
-    private JobState createJob(URL fileURL, String fileName, File queueDir)
+    private JobState createJob(BatchState batchState, URL fileURL, String fileName, File queueDir)
 	throws TException
     {
 	try {
 	    File tempFile = new File(queueDir, fileName);
 	    tempFile.createNewFile();
 
-	    // retry 3 times
-            FileUtil.url2File(null, fileURL.toString(), tempFile, 3);
+            // Check to see if we need basic auth
+            String basicAuth = batchState.grabBatchProfile().getBasicAuth();
+
+            // Check to see if we have proxy info
+            URL proxyURL = batchState.grabBatchProfile().getProxyURL();
+            String proxyCond = batchState.grabBatchProfile().getProxyCond();
+            boolean proxyUse = true;
+            if (StringUtil.isNotEmpty(proxyCond)) {
+                proxyUse = ProfileUtil.useProxyUserAgent(batchState.getUserAgent(), proxyCond);
+                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+            }
+            HTTPGetUtil httpGetParams = null;
+
+	    if (proxyURL == null) {
+		if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy not defined.");
+		httpGetParams = HTTPGetUtil.build(null, null, null);
+            } else {
+                if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy found: " +  proxyURL.toString());
+                if (proxyUse) {
+                   httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+                } else {
+                   if (DEBUG) System.out.println("Disaggregate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                }
+            }
+
+
+	    if (StringUtil.isNotEmpty(basicAuth)) {
+		if (DEBUG) System.out.println("Disaggregate [info]: " + " Basic Auth creds defined.");
+		String[] creds = basicAuth.split("\\|\\|");
+	 	String un = creds[0];
+	 	String pw = creds[1];
+	 	String domain = creds[2];
+		
+		// Check domain to see if we ignore creds
+		boolean addCreds = true;
+		if (! fileURL.getHost().contains(domain)) addCreds = false;
+		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
+		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
+		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
+
+		if (addCreds) {
+		    if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain matches: " + fileURL.getHost() + " - " + domain);
+		    httpGetParams.addBasidAuthenticationHeader(un, pw);
+		} else {
+		    if (DEBUG) System.out.println("Disaggregate [info]: ignoring Basic Auth creds: " + fileURL.getHost() + " - " + domain);
+		}
+	    } 
+
+	    // Do we need retry logic here?
+	    FileUtil.url2File(fileURL.toString(), tempFile, httpGetParams);
 
     	    return createJob(tempFile, queueDir);
 	} catch (Exception e) {

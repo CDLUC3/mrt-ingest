@@ -60,6 +60,8 @@ ModificationDate: 2010-01-26T23:28:14-08:00
 ObjectMinterURL: http://ezid:4567/shoulder/ark:/99999/fk4
 # ObjectMinterURL: http://callback:8098/status/502
 CallbackURL: http://callback:8098
+# ProxyURL: http://merritt-ingest-proxy.uc3dev.cdlib.net:65080
+# BasicAuth: username||password||domain
 Priority: 2
 # NotificationType: additional
 # NotificationSuppression: full

@@ -62,6 +62,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
@@ -74,6 +75,9 @@ import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.TRuntimeException;
 import org.cdlib.mrt.utility.URLEncoder;
+import org.cdlib.mrt.utility.HTTPGetUtil;
+import org.cdlib.mrt.utility.HttpGetNew;
+import org.cdlib.mrt.utility.StringUtil;
 
 
 /**
@@ -113,6 +117,9 @@ public class HandlerRetrieve extends Handler<JobState>
 
 	try {
             Thread.sleep(5);
+
+            // Ensure that Job has profile (Unit test bypasses process mgr)
+            jobState.setObjectProfile(profileState);
 
 	    boolean result;
 	    PackageTypeEnum packageType = ingestRequest.getPackageType();
@@ -393,6 +400,9 @@ class RetrieveData implements Callable<String>
     private File targetDir = null;
     private String fileName = null;
     private JobState jobState = null;
+    private ProfileState profileState = null;
+    private static final boolean DEBUG = true;
+    private HTTPGetUtil httpGetParams = null;
 
     // constructor
     public RetrieveData(URL url, File targetDir, String fileName, JobState jobState) {
@@ -415,6 +425,20 @@ class RetrieveData implements Callable<String>
 		if (fileName.startsWith("/")) fileName = fileName.substring(1);
 	    }
             long startTime = DateUtil.getEpochUTCDate();
+
+            // Check to see if we need basic auth
+            String basicAuth = jobState.grabObjectProfile().getBasicAuth();
+
+            // Check to see if we have proxy info
+            URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+            String proxyCond = jobState.grabObjectProfile().getProxyCond();
+            boolean proxyUse = true;
+            if (StringUtil.isNotEmpty(proxyCond)) {
+                proxyUse = ProfileUtil.useProxyUserAgent(jobState.grabUserAgent(), proxyCond);
+                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+            }
+            HTTPGetUtil httpGetParams = null;
+
             System.out.println("Retrieving remote data: " + url.toString() + " ---- " + fileName);
             File f = new File(targetDir, fileName);
 	    new File(f.getParent()).mkdirs();
@@ -428,8 +452,52 @@ class RetrieveData implements Callable<String>
 		throw new IOException("Error file already exists: " + f.getAbsolutePath());
 	    }
             for (int i=0; i < 2; i++) {
+
+		// Proxy defined?
+                if (proxyURL == null) {
+                    System.out.println("Retrieve [info]: " + " Proxy not defined.");
+                    httpGetParams = HTTPGetUtil.build(null, null, null);
+                } else {
+                    System.out.println("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
+                    if (proxyUse) {
+                       httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+                    } else {
+                       if (DEBUG) System.out.println("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                    }
+                }
+
+
+                if (StringUtil.isNotEmpty(basicAuth)) {
+                    System.out.println("Retrieve [info]: " + " Basic Auth creds defined.");
+                    String[] creds = basicAuth.split("\\|\\|");
+                    String un = creds[0];
+                    String pw = creds[1];
+                    String domain = creds[2];
+    
+                    // Check domain to see if we ignore creds
+                    boolean addCreds = true;
+                    if (! url.getHost().contains(domain)) addCreds = false;
+                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
+                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
+                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
+
+                    if (addCreds) {
+                        System.out.println("Retrieve [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
+                        httpGetParams.addBasidAuthenticationHeader(un, pw);
+                    } else {
+                        System.out.println("Retrieve [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
+                    }
+                }
+
+
 	        try {
-                    FileUtil.url2File(null, url, f, 2);
+		    //if (! basicAuthBoolean) {
+                       // HttpGetNew.getFile(url, f, httpGetParams);
+		    FileUtil.url2File(url.toString(), f, httpGetParams);
+		    //} else { 
+                       //FileUtil.url2File(null, url, f, 2);
+		    //}
+
 		    bytes = f.length();
 	    	    status = "complete";;
 		    break;

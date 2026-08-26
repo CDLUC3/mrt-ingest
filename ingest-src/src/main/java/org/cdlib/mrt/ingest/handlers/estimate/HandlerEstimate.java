@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.lang.Long;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
+import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -68,8 +70,10 @@ import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.LoggerAbs;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
 import org.cdlib.mrt.utility.MessageDigestValue;
+import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 import org.cdlib.mrt.core.FileComponent;
@@ -84,6 +88,7 @@ import org.cdlib.mrt.utility.URLEncoder;
 import org.cdlib.mrt.utility.DateUtil;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.HTTPUtil;
+import org.cdlib.mrt.utility.HTTPGetUtil;
 import org.cdlib.mrt.zk.ZKKey;
 
 
@@ -130,6 +135,9 @@ public class HandlerEstimate extends Handler<JobState>
 
         try {
             Thread.sleep(5);
+
+	    // Ensure that Job has profile (Unit test bypasses process mgr)
+            jobState.setObjectProfile(profileState);
 
             boolean result;
 	    long submissionSize = 0L;
@@ -357,22 +365,72 @@ class CalculateSize implements Callable<String>
         throws Exception
     {
         HashMap<String,Object> msgMap = new HashMap<>();        // Non string logging
+	HttpURLConnection uc = null;
         try {
             long bytes = 0;
             int retries = 0;
 
+            // Check to see if we need basic auth
+            String basicAuth = jobState.grabObjectProfile().getBasicAuth();
+
+	    // Check to see if we have proxy info
+	    URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+	    String proxyCond = jobState.grabObjectProfile().getProxyCond();
+	    boolean proxyUse = true;
+	    if (StringUtil.isNotEmpty(proxyCond)) {
+	        proxyUse = ProfileUtil.useProxyUserAgent(jobState.grabUserAgent(), proxyCond);
+                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+	    }
+
+	    HTTPGetUtil httpGetParams = null;
+
+	    // Check to see if we have a basic-auth
+	    // String basicAuth = jobState.grabObjectProfile().getBasicAuth();
+	    // String basicAuthDomain = jobState.grabObjectProfile().getBasicAuthDomain();
+
             System.out.println("Retrieving remote data size: " + url.toString() + " ---- " + fileName);
             for (int i=0; i < 2; i++) {
                 try {
-		    HttpURLConnection uc = (HttpURLConnection) url.openConnection();
-            	    bytes = uc.getContentLengthLong();
+		    if (proxyURL == null) {
+                        // if (DEBUG) System.out.println("Estimate [info]: " + " Proxy not defined.");
+	    	 	httpGetParams = HTTPGetUtil.build(null, null, null);
+		    } else { 
+                        if (DEBUG) System.out.println("Estimate [info]: " + " Proxy found: " +  proxyURL.toString());
+			if (proxyUse) {
+	    	 	   httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+			} else {
+                           if (DEBUG) System.out.println("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+			}
+		    }
 
-		    if (uc.getResponseCode() == 404) {
+                    if (StringUtil.isNotEmpty(basicAuth)) {
+                        if (DEBUG) System.out.println("Estimate [info]: " + " Basic Auth creds defined.");
+                        String[] creds = basicAuth.split("\\|\\|");
+                        String un = creds[0];
+                        String pw = creds[1];
+                        String domain = creds[2];
+
+                        // Check domain to see if we ignore creds
+                        boolean addCreds = true;
+                        if (! url.getHost().contains(domain)) addCreds = false;
+
+                        if (addCreds) {
+                            if (DEBUG) System.out.println("Estimate [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
+                            httpGetParams.addBasidAuthenticationHeader(un, pw);
+                        } else {
+                            if (DEBUG) System.out.println("Estimate [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
+                        }
+                    }
+
+ 		    bytes = httpGetParams.getContentLength(url.toString());
+
+		    // Not found (404)
+		    if (bytes <= -400) {
                         if (DEBUG) System.out.println("Estimate [error]: " + " URL not retrievable: " + url.toString());
             		return url.toString();
 		    }
 
-		    if (bytes == -1 ) {
+		    if (bytes == -1) {
 			ThreadContext.put("Content Length not provided: ", url.toString() + " - " + jobState.grabObjectProfile().getCollectionName());
 		        bytes = 0;
 		    } else {
