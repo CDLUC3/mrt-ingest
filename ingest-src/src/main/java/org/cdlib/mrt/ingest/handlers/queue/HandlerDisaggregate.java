@@ -46,6 +46,7 @@ import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.BatchState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.MintUtil;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.FileUtil;
@@ -268,17 +269,28 @@ public class HandlerDisaggregate extends Handler<BatchState>
             // Check to see if we need basic auth
             String basicAuth = batchState.grabBatchProfile().getBasicAuth();
 
-            // Check to see if we have a proxy
+            // Check to see if we have proxy info
             URL proxyURL = batchState.grabBatchProfile().getProxyURL();
+            String proxyCond = batchState.grabBatchProfile().getProxyCond();
+            boolean proxyUse = true;
+            if (StringUtil.isNotEmpty(proxyCond)) {
+                proxyUse = ProfileUtil.useProxyUserAgent(batchState.getUserAgent(), proxyCond);
+                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+            }
             HTTPGetUtil httpGetParams = null;
 
 	    if (proxyURL == null) {
 		if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy not defined.");
 		httpGetParams = HTTPGetUtil.build(null, null, null);
-	    } else {
-		if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy found: " +  proxyURL.toString());
-		httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
-	    }
+            } else {
+                if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy found: " +  proxyURL.toString());
+                if (proxyUse) {
+                   httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+                } else {
+                   if (DEBUG) System.out.println("Disaggregate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                }
+            }
+
 
 	    if (StringUtil.isNotEmpty(basicAuth)) {
 		if (DEBUG) System.out.println("Disaggregate [info]: " + " Basic Auth creds defined.");

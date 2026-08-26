@@ -70,6 +70,7 @@ import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.LoggerAbs;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
 import org.cdlib.mrt.utility.MessageDigestValue;
 import org.cdlib.mrt.utility.StringUtil;
@@ -372,8 +373,15 @@ class CalculateSize implements Callable<String>
             // Check to see if we need basic auth
             String basicAuth = jobState.grabObjectProfile().getBasicAuth();
 
-	    // Check to see if we have a proxy
+	    // Check to see if we have proxy info
 	    URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+	    String proxyCond = jobState.grabObjectProfile().getProxyCond();
+	    boolean proxyUse = true;
+	    if (StringUtil.isNotEmpty(proxyCond)) {
+	        proxyUse = ProfileUtil.useProxyUserAgent(jobState.grabUserAgent(), proxyCond);
+                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+	    }
+
 	    HTTPGetUtil httpGetParams = null;
 
 	    // Check to see if we have a basic-auth
@@ -388,7 +396,11 @@ class CalculateSize implements Callable<String>
 	    	 	httpGetParams = HTTPGetUtil.build(null, null, null);
 		    } else { 
                         if (DEBUG) System.out.println("Estimate [info]: " + " Proxy found: " +  proxyURL.toString());
-	    	 	httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+			if (proxyUse) {
+	    	 	   httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+			} else {
+                           if (DEBUG) System.out.println("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+			}
 		    }
 
                     if (StringUtil.isNotEmpty(basicAuth)) {
@@ -401,9 +413,6 @@ class CalculateSize implements Callable<String>
                         // Check domain to see if we ignore creds
                         boolean addCreds = true;
                         if (! url.getHost().contains(domain)) addCreds = false;
-                        // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
-                        // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
-                        // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
 
                         if (addCreds) {
                             if (DEBUG) System.out.println("Estimate [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);

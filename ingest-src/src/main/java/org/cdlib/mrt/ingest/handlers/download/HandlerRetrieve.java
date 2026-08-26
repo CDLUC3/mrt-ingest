@@ -62,6 +62,7 @@ import org.cdlib.mrt.ingest.IngestRequest;
 import org.cdlib.mrt.ingest.JobState;
 import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.ingest.utility.DigestUtil;
+import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FileUtilAlt;
 import org.cdlib.mrt.ingest.utility.MetadataUtil;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
@@ -400,6 +401,7 @@ class RetrieveData implements Callable<String>
     private String fileName = null;
     private JobState jobState = null;
     private ProfileState profileState = null;
+    private static final boolean DEBUG = true;
     private HTTPGetUtil httpGetParams = null;
 
     // constructor
@@ -427,8 +429,14 @@ class RetrieveData implements Callable<String>
             // Check to see if we need basic auth
             String basicAuth = jobState.grabObjectProfile().getBasicAuth();
 
-            // Check to see if we have a proxy
+            // Check to see if we have proxy info
             URL proxyURL = jobState.grabObjectProfile().getProxyURL();
+            String proxyCond = jobState.grabObjectProfile().getProxyCond();
+            boolean proxyUse = true;
+            if (StringUtil.isNotEmpty(proxyCond)) {
+                proxyUse = ProfileUtil.useProxyUserAgent(jobState.grabUserAgent(), proxyCond);
+                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+            }
             HTTPGetUtil httpGetParams = null;
 
             System.out.println("Retrieving remote data: " + url.toString() + " ---- " + fileName);
@@ -451,8 +459,13 @@ class RetrieveData implements Callable<String>
                     httpGetParams = HTTPGetUtil.build(null, null, null);
                 } else {
                     System.out.println("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
-                    httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+                    if (proxyUse) {
+                       httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
+                    } else {
+                       if (DEBUG) System.out.println("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                    }
                 }
+
 
                 if (StringUtil.isNotEmpty(basicAuth)) {
                     System.out.println("Retrieve [info]: " + " Basic Auth creds defined.");

@@ -68,6 +68,7 @@ public class ProfileState
     private URL coordinatingNodeURL = null;
     private URL callbackURL = null;
     private URL proxyURL = null;
+    private String proxyCond = null;
     private String basicAuth = null;
     private String priority = null;
     private String priorityThreshold = null;
@@ -275,6 +276,14 @@ public class ProfileState
     }
 
     /**
+     * Set proxy Conditiona;
+     * @param String proxy cond
+     */
+    public void setProxyCond(String proxyCond) {
+        this.proxyCond = proxyCond;
+    }
+
+    /**
      * Set Basic Auth (username||pasword||domain)
      * @param String basic auth info
      */
@@ -369,6 +378,14 @@ public class ProfileState
      */
     public URL getProxyURL() {
         return this.proxyURL; 
+    }
+
+    /**
+     * Get proxy Cond
+     * @return proxyCond 
+     */
+    public String getProxyCond() {
+        return this.proxyCond; 
     }
 
     /**

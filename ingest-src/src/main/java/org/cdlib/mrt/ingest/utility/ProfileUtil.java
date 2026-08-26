@@ -123,6 +123,7 @@ public class ProfileUtil
     private static final String matchObjectMinterURL = "ObjectMinterURL";
     private static final String matchCallbackURL = "CallbackURL";
     private static final String matchProxyURL = "ProxyURL";
+    private static final String matchProxyCond = "ProxyCond";
     private static final String matchBasicAuth = "BasicAuth";
     private static final String matchPriority = "Priority";
     // private static final String matchStatusURL = "StatusURL";
@@ -313,6 +314,9 @@ public class ProfileUtil
                         throw new TException.INVALID_CONFIGURATION("Proxy parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setProxyURL(url);
+		} else if (key.startsWith(matchProxyCond)) {
+                    if (DEBUG) System.out.println("[debug] proxy Conditional: " + value);
+		    profileState.setProxyCond(value);
 		} else if (key.startsWith(matchBasicAuth)) {
                     if (DEBUG) System.out.println("[debug] Basic Auth: " + value);
 
@@ -326,7 +330,7 @@ public class ProfileUtil
 		    try {
 		       ssmValue = ssmConfigResolver.getResolvedValue(rootPath + value);
 		    } catch (Exception ssme) {
-		       System.err.println("=====> Error pulling SSM Key: " + rootPath + value);
+		       System.err.println("ProfileUtil] Error pulling SSM Key: " + rootPath + value);
 		       ssmValue = null;
 		    }
 
@@ -693,6 +697,7 @@ public class ProfileUtil
         }
 	return null;
    }
+
     public static boolean isDemoMode(ProfileState profileState) {
         try {
             return profileState.getProfileID().getValue().startsWith("demo_");
@@ -701,6 +706,28 @@ public class ProfileUtil
 	    e.printStackTrace();
         }
 	return true;	// default
+   }
+
+    public static boolean useProxyUserAgent(String userAgent, String proxyCond) {
+        try {
+
+	    boolean negate = false;
+	    if (proxyCond.startsWith("^")) {
+		negate = true;
+		proxyCond = proxyCond.substring(1);
+	    }
+
+	    // explicit for clarity
+	    if (! negate) {
+	       return userAgent.contains(proxyCond);
+	    } else {
+	       return ! userAgent.contains(proxyCond);
+	    }
+
+        } catch (Exception e) {
+            System.err.println("[warning] " + MESSAGE + " could not determine process Proxy Conditional: " + proxyCond);
+	    return false;
+        }
    }
 
 
