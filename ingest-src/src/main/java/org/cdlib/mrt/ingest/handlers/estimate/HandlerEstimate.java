@@ -235,7 +235,7 @@ public class HandlerEstimate extends Handler<JobState>
 
 			    // If URL, then it is a retrieval error
                             if (s.contains("://")) {
-            			return new HandlerResult(false, "ERROR: " + NAME + "Manifest error (URL retrieval error: " + s, 0);
+            			return new HandlerResult(false, "ERROR: " + NAME + ": Manifest error (URL retrieval error: " + s, 0);
                             }
 
 			    // Convert string to long
@@ -425,11 +425,18 @@ class CalculateSize implements Callable<String>
  		    bytes = httpGetParams.getContentLength(url.toString());
 
 		    // Not found (404)
-		    if (bytes <= -400) {
+		    if (bytes == -404) {
                         if (DEBUG) System.out.println("Estimate [error]: " + " URL not retrievable: " + url.toString());
             		return url.toString();
 		    }
 
+		    // Any other non 200 responses
+		    if (bytes <= -400) {
+                        if (DEBUG) System.out.println("Estimate [warn]: " + " Response code: " + bytes + " - URL:" + url.toString());
+            		bytes = 0;
+		    }
+
+		    // Content-Length not provided
 		    if (bytes == -1) {
 			ThreadContext.put("Content Length not provided: ", url.toString() + " - " + jobState.grabObjectProfile().getCollectionName());
 		        bytes = 0;
