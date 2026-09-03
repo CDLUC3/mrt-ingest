@@ -269,6 +269,7 @@ public class HandlerRetrieve extends Handler<JobState>
 			    digestUtil.doFileFixity(new File(targetDir, fileComponent.getIdentifier()), fileComponent);
 		            if (DEBUG) System.out.println("[info] No checksum problems: " + fileComponent.getIdentifier());
 			} catch (TException te) {
+                            if (DEBUG) System.out.println("[error] Error in fixity check: " + fileComponent.getIdentifier());
 			    throw te;
 			}
 		    }
