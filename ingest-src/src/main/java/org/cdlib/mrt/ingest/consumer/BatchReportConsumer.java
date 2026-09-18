@@ -33,6 +33,8 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
@@ -91,6 +93,8 @@ public class BatchReportConsumer extends HttpServlet
     private int pollingInterval = 15;	// default interval (seconds)
     private int interruptDelay = 1;     // delay before interrupting daemon^M
 
+    protected static final Logger log4j = LogManager.getLogger();
+
     public void init(ServletConfig servletConfig)
             throws ServletException {
         super.init(servletConfig);
@@ -105,28 +109,28 @@ public class BatchReportConsumer extends HttpServlet
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not create ingest service in daemon init. ");
+	    log4j.error("[error] " + MESSAGE + "Could not create ingest service in daemon init.");
 	}
 
 	try {
 	    queueConnectionString = ingestService.getQueueServiceConf().getString("QueueService");
 	    if (StringUtil.isNotEmpty(queueConnectionString)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue connection string: " + queueConnectionString);
+	    	log4j.info("[info] " + MESSAGE + "Setting queue connection string: " + queueConnectionString);
 		this.queueConnectionString = queueConnectionString;
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
+	    log4j.error("[error] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
 	}
 
 	try {
 	    queuePath = ingestService.getIngestServiceProp() + "/queue/";
 	    if (StringUtil.isNotEmpty(queuePath)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue path: " + queuePath);
+	    	log4j.info("[info] " + MESSAGE + "Setting queue path: " + queuePath);
 		this.queuePath = queuePath;
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue path: " + queuePath +
+	    log4j.error("[error] " + MESSAGE + "Could not set queue path: " + queuePath +
 		 "  - using default: " + this.queuePath);
 	}
 
@@ -134,27 +138,27 @@ public class BatchReportConsumer extends HttpServlet
 	try {
 	    numThreads = ingestService.getQueueServiceConf().getString("BatchNumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
+	    	log4j.info("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
 		this.numThreads = Integer.valueOf(numThreads);
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
+	    log4j.error("[error] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
 	}
 
 	try {
 	    pollingInterval = ingestService.getQueueServiceConf().getString("BatchPollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
+	    	log4j.info("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
 		this.pollingInterval = Integer.valueOf(pollingInterval);
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
+	    log4j.error("[error] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
 	}
 
         try {
             // Start the Consumer thread
             if (consumerThread == null) {
-	    	System.out.println("[info] " + MESSAGE + "starting consumer daemon");
+	    	log4j.info("[info] " + MESSAGE + "starting consumer daemon");
 		startBatchReportConsumerThread(servletConfig);
 	    }
         } catch (Exception e) {
@@ -164,7 +168,7 @@ public class BatchReportConsumer extends HttpServlet
         try {
             // Start the Queue cleanup thread
             if (cleanupThread == null) {
-	    	System.out.println("[info] " + MESSAGE + "starting Batch cleanup daemon");
+	    	log4j.info("[info] " + MESSAGE + "starting Batch cleanup daemon");
 		startCleanupThread(servletConfig);
 	    }
         } catch (Exception e) {
@@ -181,7 +185,7 @@ public class BatchReportConsumer extends HttpServlet
     {
         try {
             if (consumerThread != null) {
-                System.out.println("[info] " + MESSAGE + "consumer daemon already started");
+                log4j.info("[info] " + MESSAGE + "consumer daemon already started");
                 return;
             }
 
@@ -192,7 +196,7 @@ public class BatchReportConsumer extends HttpServlet
             consumerThread.setDaemon(true);                // Kill thread when servlet dies
             consumerThread.start();
 
-	    System.out.println("[info] " + MESSAGE + "consumer daemon started");
+	    log4j.info("[info] " + MESSAGE + "consumer daemon started");
 
             return;
 
@@ -209,7 +213,7 @@ public class BatchReportConsumer extends HttpServlet
     {
         try {
             if (cleanupThread != null) {
-                System.out.println("[info] " + MESSAGE + "Batch Queue cleanup daemon already started");
+                log4j.info("[info] " + MESSAGE + "Batch Queue cleanup daemon already started");
                 return;
             }
 
@@ -219,7 +223,7 @@ public class BatchReportConsumer extends HttpServlet
             cleanupThread.setDaemon(true);                // Kill thread when servlet dies
             cleanupThread.start();
 
-	    System.out.println("[info] " + MESSAGE + "cleanup daemon started");
+	    log4j.info("[info] " + MESSAGE + "cleanup daemon started");
 
             return;
 
@@ -234,13 +238,13 @@ public class BatchReportConsumer extends HttpServlet
 
     public void destroy() {
         try {       
-            System.out.println("[info] " + MESSAGE + "destroy() " +   consumerThread.activeCount());
-            System.out.println("[info] " + MESSAGE + "Waiting " + interruptDelay + " seconds before interrupt");
+            log4j.info("[info] " + MESSAGE + "destroy() " +   consumerThread.activeCount());
+            log4j.info("[info] " + MESSAGE + "Waiting " + interruptDelay + " seconds before interrupt");
             Thread.sleep(interruptDelay * 1000);
-            System.out.println("[info] " + MESSAGE + "Wait complete, interrupting daemon");
+            log4j.info("[info] " + MESSAGE + "Wait complete, interrupting daemon");
             consumerThread.interrupt();
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            log4j.error("Exception:" + e, e);
         }
     }
 
@@ -266,6 +270,8 @@ class BatchReportConsumerDaemon implements Runnable
     private long sessionID;
     private byte[] sessionAuth;
 
+    protected static final Logger log4j = LogManager.getLogger();
+
 
     // Constructor
     public BatchReportConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
@@ -284,12 +290,13 @@ class BatchReportConsumerDaemon implements Runnable
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+		 log4j.error("Exception:" + e, e);
                }
             }
 
 	} catch (Exception e) {
-	    e.printStackTrace(System.err);
+            log4j.error("Exception:" + e, e);
+
 	}
     }
 
@@ -305,7 +312,8 @@ class BatchReportConsumerDaemon implements Runnable
                // Refresh ZK connection
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
            } catch  (Exception e ) {
-             e.printStackTrace(System.err);
+             log4j.error("Exception:" + e, e);
+
            }
         }
 
@@ -315,24 +323,23 @@ class BatchReportConsumerDaemon implements Runnable
 
                 // Wait for next interval.
                 if (! init) {
-                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     Thread.yield();
                     Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
                 } else {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    log4j.debug(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     init = false;
                 }
 
 
                 // Let's check to see if we are on hold
                 if (onHold()) {
-                    System.out.println(MESSAGE + "detected 'on hold' condition");
+                    log4j.info(MESSAGE + "detected 'on hold' condition");
                     continue;
                 }
 
                 // have we shutdown?
                 if (Thread.currentThread().isInterrupted()) {
-                    System.out.println(MESSAGE + "interruption detected.");
+                    log4j.info(MESSAGE + "interruption detected.");
       		    throw new InterruptedException();
                 }
 
@@ -343,7 +350,7 @@ class BatchReportConsumerDaemon implements Runnable
 		    try {
                        Job.initNodes(zooKeeper);
                     } catch (KeeperException ke) {
-                       System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                       log4j.warn(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
                        try {
                		   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
@@ -355,14 +362,14 @@ class BatchReportConsumerDaemon implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    System.out.println(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    log4j.debug(MESSAGE + "Checking for additional tasks -  Current tasks: " + numActiveTasks + " - Max: " + poolSize);
 
         		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
             		        try {
                		            // Refresh ZK connection
                		            zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
            		        } catch  (Exception e ) {
-             		            e.printStackTrace(System.err);
+		                    log4j.error("Exception:" + e, e);
            		        }
         		    }
 
@@ -370,8 +377,7 @@ class BatchReportConsumerDaemon implements Runnable
 			    try {
 			        batch = Batch.acquireBatchForReporting(zooKeeper);
                             } catch (Exception e) {
-                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
-                                // e.printStackTrace();
+                                log4j.warn(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
                                 try {
                			   Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
@@ -383,7 +389,7 @@ class BatchReportConsumerDaemon implements Runnable
                             }
 
 			    if ( batch != null) { 
-			    	System.out.println(MESSAGE + "Found reporting batch data: " + batch.id());
+			    	log4j.info(MESSAGE + "Found reporting batch data: " + batch.id());
                                 executorService.execute(new BatchReportConsumeData(ingestService, batch, queueConnectionString));
                                 Thread.currentThread().sleep(5 * 1000);
 			    } else {
@@ -391,7 +397,7 @@ class BatchReportConsumerDaemon implements Runnable
 		     	    }
 
 			} else {
-			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    log4j.debug(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
 			}
 		    }
@@ -400,24 +406,26 @@ class BatchReportConsumerDaemon implements Runnable
         	    //Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
 		} catch (NoSuchElementException nsee) {
 		    // no data in queue
-		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
+		    log4j.info("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
 		} catch (Exception e) {
-		    System.err.println("[warn] " + MESSAGE + "General exception.");
-	            e.printStackTrace();
+		    log4j.error("[error] " + MESSAGE + "General exception.");
+		    log4j.error("Exception:" + e, e);
 		}
 	    }
 
         } catch (InterruptedException ie) {
 
                 long numActive = executorService.getActiveCount();
-                System.out.println(MESSAGE + "Still active tasks: " + numActive + " -  Forcing failure.");
+                log4j.warn(MESSAGE + "Still active tasks: " + numActive + " -  Forcing failure.");
                 executorService.shutdownNow();
 
 	} catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down consumer daemon.");
-	    e.printStackTrace(System.err);
+            log4j.fatal(MESSAGE + "Exception detected, shutting down consumer daemon.");
+            log4j.error("Exception:" + e, e);
+            log4j.error("Exception:" + e, e);
+
 	    executorService.shutdown();
         } finally {
 	    try {
@@ -436,13 +444,13 @@ class BatchReportConsumerDaemon implements Runnable
                // Refresh ZK connection
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
            } catch  (Exception e ) {
-             e.printStackTrace(System.err);
+             log4j.error("Exception:" + e, e);
            }
         }
 
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
-                System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
+                log4j.info("[info]" + NAME + ": hold exists, not processing queue.");
                 return true;
             }
         } catch (Exception e) {
@@ -455,7 +463,7 @@ class BatchReportConsumerDaemon implements Runnable
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
+               log4j.info("Disconnected: " + event.toString());
        }
    }
 
@@ -476,6 +484,8 @@ class BatchReportConsumeData implements Runnable
     private IngestServiceInf ingestService = null;
     private BatchState batchState = null;
     private Batch batch = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     // Constructor
     public BatchReportConsumeData(IngestServiceInf ingestService, Batch batch, String queueConnectionString)
@@ -501,7 +511,7 @@ class BatchReportConsumeData implements Runnable
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+                 log4j.error("Exception:" + e, e);
                }
             }
 
@@ -514,7 +524,7 @@ class BatchReportConsumeData implements Runnable
             }
             ji = Job.createJobIdentifiers(JSONUtil.getValue(jp,"objectID"), JSONUtil.getValue(jp,"localID"));
 
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming batch queue " + batch.id() + " - "
+            log4j.info(NAME + " [info] START: consuming batch queue " + batch.id() + " - "
                 + jp.toString() + " - " + ji.toString());
 
 
@@ -545,8 +555,8 @@ class BatchReportConsumeData implements Runnable
 	    batch.unlock(zooKeeper);
 
         } catch (Exception e) {
-            e.printStackTrace(System.err);
-            System.out.println("[error] Consuming queue data");
+            log4j.error("[error] Consuming queue data");
+            log4j.error("Exception:" + e, e);
         } finally {
 	    try {
 		zooKeeper.close();
@@ -558,7 +568,7 @@ class BatchReportConsumeData implements Runnable
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
+               log4j.info("Disconnected: " + event.toString());
        }
    }
 }
@@ -579,6 +589,7 @@ class BatchReportCleanupDaemon implements Runnable
     private long sessionID;
     private byte[] sessionAuth;
 
+    protected static final Logger log4j = LogManager.getLogger();
 
     // Constructor
     public BatchReportCleanupDaemon(String queueConnectionString, ServletConfig servletConfig)
@@ -591,7 +602,7 @@ class BatchReportCleanupDaemon implements Runnable
                // Refresh ZK connection
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
            } catch  (Exception e ) {
-             e.printStackTrace(System.err);
+             log4j.error("Exception:" + e, e);
            }
         }
     }
@@ -610,29 +621,29 @@ class BatchReportCleanupDaemon implements Runnable
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+                 log4j.error("Exception:" + e, e);
                }
             }
 
             sessionID = zooKeeper.getSessionId();
-            System.out.println("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
+            log4j.debug("[info]" + MESSAGE + "session id: " + Long.toHexString(sessionID));
             sessionAuth = zooKeeper.getSessionPasswd();
 
             while (true) {      // Until service is shutdown
 
                 // Wait for next interval.
                 if (! init) {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    log4j.debug(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     Thread.yield();
                     Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
                 } else {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    log4j.debug(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     init = false;
                 }
 
                 // have we shutdown?
                 if (Thread.currentThread().isInterrupted()) {
-                    System.out.println(MESSAGE + "interruption detected.");
+                    log4j.warn(MESSAGE + "interruption detected.");
                     throw new InterruptedException();
                 }
 
@@ -644,7 +655,7 @@ class BatchReportCleanupDaemon implements Runnable
 
 		    // COMPLETED BATCHES
                     while (true) {
-                        System.out.println(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
+                        log4j.info(MESSAGE + "Cleaning Batch queue (Completed states): " + queueConnectionString);
                         List<String> batches = null;
                         try {
 			   try {
@@ -653,7 +664,7 @@ class BatchReportCleanupDaemon implements Runnable
                    		      // Refresh ZK connection
                    		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                		          } catch  (Exception e ) {
-                 		      e.printStackTrace(System.err);
+		                      log4j.error("Exception:" + e, e);
                		          }
             		      }
 
@@ -661,18 +672,18 @@ class BatchReportCleanupDaemon implements Runnable
 			   } catch (Exception e) {
                		      Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                		      zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
-                              System.out.println(MESSAGE + "Error removing completed batches, retrying: " + e.getMessage());
+                              log4j.error(MESSAGE + "Error removing completed batches, retrying: " + e.getMessage());
                               batches = Batch.deleteCompletedBatches(zooKeeper);
 			   }
 
 			   for (String batchName: batches) {
-                               System.out.println(NAME + " Found completed batch.  Removing: " + batchName);
+                               log4j.info(NAME + " Found completed batch.  Removing: " + batchName);
 			   } 
                         } catch (MerrittStateError mse) {
-                           System.out.println(MESSAGE + "Found items but in failed/processing state: " + mse.getMessage());
+                           log4j.warn(MESSAGE + "Found items but in failed/processing state: " + mse.getMessage());
                         } catch (Exception e) {
-			   e.printStackTrace();
-                           System.out.println(MESSAGE + "Error removing completed batches: " + e.getMessage());
+                           log4j.error(MESSAGE + "Error removing completed batches: " + e.getMessage());
+	                   log4j.error("Exception:" + e, e);
                         }
 
                         //Thread.currentThread().sleep(5 * 1000);         // wait a short amount of time
@@ -680,15 +691,15 @@ class BatchReportCleanupDaemon implements Runnable
                     }
 
                 } catch (RejectedExecutionException ree) {
-                    System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission");
+                    log4j.info("[info] " + MESSAGE + "Thread pool limit reached. no submission");
                 } catch (NoSuchElementException nsee) {
                     // no data in queue
-                    System.out.println("[info] " + MESSAGE + "No data in queue to clean");
+                    log4j.info("[info] " + MESSAGE + "No data in queue to clean");
                 } catch (IllegalArgumentException iae) {
                     // no queue exists
                 } catch (Exception e) {
-                    System.err.println("[warn] " + MESSAGE + "General exception.");
-                    e.printStackTrace();
+                    log4j.error("[error] " + MESSAGE + "General exception.");
+                    log4j.error("Exception:" + e, e);
                 } finally {
 		    try {
 			zooKeeper.close();
@@ -696,8 +707,8 @@ class BatchReportCleanupDaemon implements Runnable
 		}
             }
         } catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down cleanup daemon.");
-            e.printStackTrace(System.err);
+            log4j.error(MESSAGE + "Exception detected, shutting down cleanup daemon.");
+            log4j.error("Exception:" + e, e);
         } finally {
 	    sessionAuth = null;
 		    try {
@@ -710,7 +721,7 @@ class BatchReportCleanupDaemon implements Runnable
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
+               log4j.info("Disconnected: " + event.toString());
        }
    }
 
