@@ -37,6 +37,9 @@ import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.HandlerState;
@@ -57,10 +60,10 @@ public class HandlerDocument extends Handler<JobState>
 
     private static final String NAME = "HandlerDocument";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * document handlers used in processing
@@ -129,7 +132,7 @@ public class HandlerDocument extends Handler<JobState>
     private boolean createMetadata(File ingestFile, String handlers)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
         Map<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
 
         ingestProperties.put("handlers", handlers);
@@ -144,11 +147,11 @@ public class HandlerDocument extends Handler<JobState>
            Class classDefinition = Class.forName(className);
            object = classDefinition.newInstance();
        } catch (InstantiationException e) {
-           System.out.println(e);
+	   log4j.error("Instantiation Exception:" + e, e);
        } catch (IllegalAccessException e) {
-           System.out.println(e);
+	   log4j.error("Illegal Access Exception:" + e, e);
        } catch (ClassNotFoundException e) {
-           System.out.println(e);
+	   log4j.error("Class Not Found Exception:" + e, e);
        }
        return object;
    }

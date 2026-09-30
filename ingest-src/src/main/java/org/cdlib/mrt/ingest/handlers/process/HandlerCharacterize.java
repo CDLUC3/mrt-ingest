@@ -37,6 +37,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -72,9 +74,10 @@ public class HandlerCharacterize extends Handler<JobState>
 
     private static final String NAME = "HandlerCharacterize";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * characterize object components
@@ -95,13 +98,13 @@ public class HandlerCharacterize extends Handler<JobState>
 	    URL url = profileState.getCharacterizationURL();
 	    try {
 	        if (StringUtil.isEmpty(url.toString())) {
-	            System.err.println("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
+	            log4j.warn("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
 	    	    return new HandlerResult(true, "SUCCESS: " + NAME + " Skipping characterized");
 		} else {
-		    if (DEBUG) System.out.println("[debug] " + MESSAGE + " found Char. URL: " + url.toString());
+		    log4j.debug("[debug] " + MESSAGE + " found Char. URL: " + url.toString());
 		}
 	    } catch (java.lang.NullPointerException npe) {
-	        System.err.println("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
+	        log4j.warn("[warn] " + MESSAGE + "URL has not been set.  Skipping characterization.");
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " Skipping characterized");
 	    }
 
@@ -117,7 +120,7 @@ public class HandlerCharacterize extends Handler<JobState>
 		if (file.isDirectory()) continue;
 		String fileName = file.getName();
 		if (fileName.startsWith("mrt-")) continue;
-		if (DEBUG) System.out.println("[debug] " + MESSAGE + " processing file: " + fileName);
+		log4j.debug("[debug] " + MESSAGE + " processing file: " + fileName);
 
 		String response = characterize(url, fileName);
 
@@ -159,7 +162,7 @@ public class HandlerCharacterize extends Handler<JobState>
     {
 	FileWriter out = null;
 	try {
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating metadata: " + characterizationFile.getAbsolutePath());
+            log4j.debug("[debug] " + MESSAGE + "creating metadata: " + characterizationFile.getAbsolutePath());
 	    out = new FileWriter(characterizationFile);
 	    out.write(data);
 	} catch (Exception e) {
@@ -195,7 +198,7 @@ public class HandlerCharacterize extends Handler<JobState>
 	    int status = httpResponse.getStatusLine().getStatusCode();
 
 	    if (status >= 300) {
-		System.out.println("[error] " + MESSAGE + "failed to characterize. " + response);
+		log4j.error("[error] " + MESSAGE + "failed to characterize. " + response);
 		throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": characterization service: " + url);
 	    }
 
@@ -218,15 +221,15 @@ public class HandlerCharacterize extends Handler<JobState>
     // XML parser error handler
     public class SimpleErrorHandler implements ErrorHandler {
         public void warning(SAXParseException e) throws SAXException {
-            System.out.println(e.getMessage());
+	    log4j.error("Exception:" + e, e);
         }
 
         public void error(SAXParseException e) throws SAXException {
-            System.out.println(e.getMessage());
+	    log4j.error("Exception:" + e, e);
         }
 
         public void fatalError(SAXParseException e) throws SAXException {
-            System.out.println(e.getMessage());
+	    log4j.error("Exception:" + e, e);
         }
     }
 

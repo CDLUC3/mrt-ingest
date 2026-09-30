@@ -33,6 +33,9 @@ import java.io.File;
 import java.util.Properties;
 
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -41,6 +44,7 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
+
 
 /**
  * provision resources
@@ -51,10 +55,11 @@ public class HandlerProvision extends Handler<JobState>
 
     private static final String NAME = "HandlerProvision";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private static long SLEEP = (5L * 60L * 1000L);
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * provision resources for request
@@ -73,13 +78,13 @@ public class HandlerProvision extends Handler<JobState>
 
 	    Integer zfsThreshold = Integer.valueOf(ingestRequest.getIngestZfsThreshold());
 	    if (zfsThreshold == null) {
-	        if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS Threshold not defined.  Provisioning not supported.");
+	        log4j.warn("[warn] " + MESSAGE + "ZFS Threshold not defined.  Provisioning not supported.");
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning not supported", 0);
 	    }
 	    String ingestQueuePath = ingestRequest.getIngestQueuePath();
 	    File queueFile = new File(ingestQueuePath);
 	    Long capacitySpace = queueFile.getTotalSpace();
-	    if (DEBUG) System.out.println("[INFO] " + MESSAGE + "Found estimate size of: " + jobState.grabSubmissionSize());
+	    log4j.info("[info] " + MESSAGE + "Found estimate size of: " + jobState.grabSubmissionSize());
 
 	    Long freeSpace = queueFile.getFreeSpace() - jobState.grabSubmissionSize();
             Double usage = 100D - ((freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D);
@@ -87,8 +92,8 @@ public class HandlerProvision extends Handler<JobState>
                 ThreadContext.put("Provisioning threshold exceeded ", jobState.grabBatchID().getValue());
 
 		while (usage.intValue() > zfsThreshold) {
-	            if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ZFS usage exceeds Threshold.  Looping until resolved.");
-	            if (DEBUG) System.out.println("[WARN] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
+	            log4j.warn("[warn] " + MESSAGE + "ZFS usage exceeds Threshold.  Looping until resolved.");
+	            log4j.warn("[warn] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
 
                     Thread.sleep(SLEEP);
                     queueFile = new File(ingestQueuePath);
@@ -97,15 +102,16 @@ public class HandlerProvision extends Handler<JobState>
                     usage = 100D - ((freeSpace.doubleValue() / capacitySpace.doubleValue()) * 100D);
 		}
 	    } else { 
-	        if (DEBUG) System.out.println("[INFO] " + MESSAGE + "ZFS usage within threshold boundary.");
-	        if (DEBUG) System.out.println("[INFO] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
+	        log4j.info("[info] " + MESSAGE + "ZFS usage within threshold boundary.");
+	        log4j.info("[info] " + MESSAGE + "Threshold: " + zfsThreshold + " --- Usage: " + usage.intValue());
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " provisioning complete", 0);
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "provisioning failure: " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {

@@ -86,10 +86,8 @@ public class HandlerCallback extends Handler<JobState> {
     private boolean error = false;
     private static final String NAME = "HandlerCallback";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     public static final int CALLBACK_TIMEOUT = (5 * 60 * 1000);
-    protected static final Logger log4j2 = LogManager.getLogger(); 
-
+    protected static final Logger log4j = LogManager.getLogger();
 
     public HandlerResult handle(ProfileState profileState, IngestRequest ingestRequest, 
                                 JobState jobState) throws TException {
@@ -103,7 +101,7 @@ public class HandlerCallback extends Handler<JobState> {
 	       // Add merritt callback and Job ID to pathname (e.g. mc/<jid>)
                requestURL = new URL(profileState.getCallbackURL().toString() + "/mc/" + jobState.getJobID().getValue());
 	    } catch (Exception e) {
-                System.err.println("[error] " + MESSAGE + " Callback URL not defined or not valid: " + profileState.getCallbackURL());
+                log4j.error("[error] " + MESSAGE + " Callback URL not defined or not valid: " + profileState.getCallbackURL());
 
 		// Callback not supported by profile.  Exit gracefully
 		if (profileState.getCallbackURL() == null) return new HandlerResult(true, "Callback not supported", 0);
@@ -112,7 +110,7 @@ public class HandlerCallback extends Handler<JobState> {
 	    }
 	    String credentials = requestURL.getUserInfo();
 	    String protocol = requestURL.getProtocol();
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " Callback URL and pathname: " + requestURL.toString());
+            log4j.debug("[debug] " + MESSAGE + " Callback URL and pathname: " + requestURL.toString());
 
     	    HttpClient httpClient = HTTPUtil.getHttpClient(requestURL.toString(), CALLBACK_TIMEOUT);
 	    String authHeader = null;
@@ -120,11 +118,11 @@ public class HandlerCallback extends Handler<JobState> {
 	    // HTTP Basic authentication (optional)
 	    if (credentials != null) {
 		try {
-            	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Setting Basic Authenication parameters");
+            	    log4j.debug("[debug] " + MESSAGE + " Setting Basic Authenication parameters");
 		    String[] cred = credentials.split(":");
 		    authHeader = HTTPUtil.getBasicAuthenticationHeader(cred[0], cred[1]);
 		} catch (Exception e) {
-            	    if (DEBUG) System.out.println("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
+            	    log4j.warn("[warn] " + MESSAGE + " Basic Authenication parmeters not valid: " + credentials);
 		}
 		// remove credential from URL 
 		String urlString = requestURL.toString();
@@ -135,19 +133,18 @@ public class HandlerCallback extends Handler<JobState> {
             if (ingestRequest.getNotificationFormat() != null) {
 		// POST parm overrides profile parm
 		formatType = ingestRequest.getNotificationFormat();
-            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format set as a POST parameter: " + formatType);
+            	log4j.info("[info] " + MESSAGE + " Notification Format set as a POST parameter: " + formatType);
             } else if (profileState.getNotificationFormat() != null) {
 		formatType = profileState.getNotificationFormat();     
-            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format set as a Profile parameter: " + formatType);
+            	log4j.info("[info] " + MESSAGE + " Notification Format set as a Profile parameter: " + formatType);
 	    } else {
 		formatType = FormatType.valueOf("json");		// default
-            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Notification Format not set.  Default: " + formatType);
+            	log4j.info("[info] " + MESSAGE + " Notification Format not set.  Default: " + formatType);
 	    }
 
             String jobStateString = formatterUtil.doStateFormatting(jobState, formatType);
-System.out.println("================================ CALLBACK ");
-System.out.println(jobStateString);
-System.out.println("================================ CALLBACK ");
+
+	    log4j.debug("[CALLBACK] Job String Stage: " + jobStateString);
             HttpPost httppost = new HttpPost(requestURL.toString());
             HttpResponse clientResponse = null;
             long startTime = DateUtil.getEpochUTCDate();
@@ -164,17 +161,17 @@ System.out.println("================================ CALLBACK ");
                 } catch (Exception e) {
                     if (retryCount > 2) {
                         error = true;
-		        e.printStackTrace();
+			log4j.error("Exception:" + e, e);
                         throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + requestURL);
 		    }
                     retryCount++;
-                    System.err.println("[error] " + MESSAGE + ": Could not make Callback request: " + e.getMessage());
+                    log4j.error("[error] " + MESSAGE + ": Could not make Callback request: " + e.getMessage());
                 }
 	    }
 
             long endTime = DateUtil.getEpochUTCDate();
 	    int responseCode = clientResponse.getStatusLine().getStatusCode();
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
+            log4j.debug("[debug] " + MESSAGE + " response code " + responseCode);
 
 	    Family responseFamily = Family.familyOf(responseCode);
 
@@ -183,25 +180,25 @@ System.out.println("================================ CALLBACK ");
 
 	    if (responseFamily.equals(Response.Status.Family.SUCCESSFUL)) {
     		// 200s
-            	if (DEBUG) System.out.println("[info] " + MESSAGE + " Callback successful: " + responseMessage);
+            	log4j.info("[info] " + MESSAGE + " Callback successful: " + responseMessage);
 	    } else if (responseFamily.equals(Response.Status.Family.CLIENT_ERROR)) {
     		// 400s
-            	if (DEBUG) System.out.println("[ERROR] " + MESSAGE + " Callback client side error: " + responseMessage);
+            	log4j.error("[error] " + MESSAGE + " Callback client side error: " + responseMessage);
 	    } else if (responseFamily.equals(Response.Status.Family.SERVER_ERROR)) {
     		// 500s
-            	if (DEBUG) System.out.println("[ERROR] " + MESSAGE + " Callback server side error: " + responseMessage);
+            	log4j.error("[error] " + MESSAGE + " Callback server side error: " + responseMessage);
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": Callback service: " + requestURL);
 	    } else if (responseFamily.equals(Response.Status.Family.REDIRECTION)) {
     		// 300s
-            	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback redirection encountered: " + responseMessage);
+            	log4j.warn("[warn] " + MESSAGE + " Callback redirection encountered: " + responseMessage);
 	    } else if (responseFamily.equals(Response.Status.Family.INFORMATIONAL)) {
     		// 100s
-            	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback informational response: " + responseMessage);
+            	log4j.warn("[warn] " + MESSAGE + " Callback informational response: " + responseMessage);
 	    } else if (responseFamily.equals(Response.Status.Family.OTHER)) {
     		// Other
-            	if (DEBUG) System.out.println("[warn] " + MESSAGE + " Callback other response: " + responseMessage);
+            	log4j.warn("[warn] " + MESSAGE + " Callback other response: " + responseMessage);
 	    }
-            if (DEBUG && responseBody != null) System.out.println("[info] " + MESSAGE + " Callback response body: " + responseBody);
+            if (responseBody != null) log4j.info("[info] " + MESSAGE + " Callback response body: " + responseBody);
 
             String msg = String.format("SUCCESS: %s completed successfully", getName());
 
@@ -222,7 +219,7 @@ System.out.println("================================ CALLBACK ");
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
         } catch (Exception ex) {
             String msg = String.format("WARNING: %s could not make Callback URL service request: %s", getName(), requestURL);
-	    ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             LogManager.getLogger().error(ex);
             return new HandlerResult(true, msg, 0);
         } finally {
@@ -230,7 +227,7 @@ System.out.println("================================ CALLBACK ");
             msgMap.clear();
             msgMap = null;
             if (error) {
-                if (DEBUG) System.out.println("[error] Callback request failed: " + requestURL + " * notifying users * ");
+                log4j.error("[error] Callback request failed: " + requestURL + " * notifying users * ");
                 if (notify && error) notify(jobState, profileState, ingestRequest);
             }
 
@@ -269,14 +266,16 @@ System.out.println("================================ CALLBACK ");
                emailReply.add(new InternetAddress(replyTo));
                email.setReplyTo(emailReply);
             } else {
-               if (DEBUG) System.err.println("[warning] " + MESSAGE + "Email replyTo not found.");
+               log4j.warn("[warn] " + MESSAGE + "Email replyTo not found.");
             }
 
 
             email.setSubject("[Warning] Callback request failed " + server + owner);
             email.setMsg(jobState.dump("Job notification", "\t", "\n", null));
             email.send();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { 
+	    log4j.error("Exception:" + e, e);
+	}
 
         return;
     }

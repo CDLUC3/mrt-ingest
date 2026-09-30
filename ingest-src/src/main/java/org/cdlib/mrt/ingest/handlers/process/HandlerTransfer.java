@@ -92,7 +92,6 @@ public class HandlerTransfer extends Handler<JobState>
 
     private static final String NAME = "HandlerTransfer";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
@@ -105,6 +104,8 @@ public class HandlerTransfer extends Handler<JobState>
     private String hostIgnoreDomain = "(localhost|N/A)";
     private URL storeURL = null;
     private File tempFile = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
 
     /**
@@ -131,20 +132,20 @@ public class HandlerTransfer extends Handler<JobState>
 	    // build REST url 
 	    if (jobState.grabUpdateFlag()) {
 		action = "update/";
-	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Object update requested.  Overriding default 'add'");
+	       log4j.debug("[debug] " + MESSAGE + "Object update requested.  Overriding default 'add'");
 	    }
 		
 	    String mode = action + originalStoreNode.getNodeID() + "/" + URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"); 
 
             File manifestFile = new File(ingestRequest.getQueuePath().getAbsolutePath() + "/system/mrt-manifest.txt");
             String manifestURL = getManifestURL(ingestRequest, manifestFile);
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " manifestURL: " + manifestURL);
+	    log4j.debug("[debug] " + MESSAGE + " manifestURL: " + manifestURL);
 
 	    String delete = "";
             if (jobState.grabUpdateFlag()) {
             	File deleteFile = new File(ingestRequest.getQueuePath(), "system/mrt-delete.txt");
 		if (deleteFile.exists()) {
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + " delete file found: " + deleteFile.getName());
+	            log4j.debug("[debug] " + MESSAGE + " delete file found: " + deleteFile.getName());
   	       	    delete = processDeleteFile(deleteFile);
 		}
 	    }
@@ -152,19 +153,19 @@ public class HandlerTransfer extends Handler<JobState>
 	    // Update the LocalID db
 	    try {
 		if (jobState.getLocalID() == null) {
-		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID present - null");
+		    log4j.debug("[debug] " + MESSAGE + "No Local ID present - null");
 		    throw new NoSuchElementException("No Local ID present - null");
 		}
 		if (jobState.getLocalID().getValue().contains("(:unas)")) {
-                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Local ID present - (:unas)");
+                    log4j.debug("[debug] " + MESSAGE + "No Local ID present - (:unas)");
 		} else {
-                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Updating LocalID db pid: " + jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
+                   log4j.debug("[debug] " + MESSAGE + "Updating LocalID db pid: " + jobState.getPrimaryID().getValue() + " lid: " + jobState.getLocalID().getValue());
 		   LocalIDUtil.addLocalID(profileState, jobState.getPrimaryID().getValue(), jobState.getLocalID().getValue());
 		}
 	    } catch (NoSuchElementException nse) {
 		// Do nothing - No local ID specified
 	    } catch (Exception e) {
-                System.err.println("[error] " + MESSAGE + "failed to update LocalID db: " + e.getMessage());
+                log4j.error("[error] " + MESSAGE + "failed to update LocalID db: " + e.getMessage());
 		throw e;
 	    }
 
@@ -172,16 +173,16 @@ public class HandlerTransfer extends Handler<JobState>
 
             // Populate Storage data 
             try {
-	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Storage ZK Manifest URL: " + manifestURL);
+	       log4j.debug("[debug] " + MESSAGE + "Storage ZK Manifest URL: " + manifestURL);
                jobState.setStoreManifestURL(manifestURL);
-	       if (DEBUG) System.out.println("[debug] " + MESSAGE + "Storage ZK Mode: " + mode);
+	       log4j.debug("[debug] " + MESSAGE + "Storage ZK Mode: " + mode);
                jobState.setStoreMode(mode);
 	       if (StringUtil.isNotEmpty(delete)) {
-                   if (DEBUG) System.out.println("[debug] " + MESSAGE + "Storage ZK Delete detected: " + delete); 
+                   log4j.debug("[debug] " + MESSAGE + "Storage ZK Delete detected: " + delete); 
                    jobState.setStoreDelete(delete);
 	       }
             } catch (Exception e) {
-               System.err.println(MESSAGE + "[WARN] error setting ZK Store JobState: " + e.getMessage());
+               log4j.warn(MESSAGE + "[warn] error setting ZK Store JobState: " + e.getMessage());
             }
 
             // Log POST
@@ -199,12 +200,13 @@ public class HandlerTransfer extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-	    te.printStackTrace();
+	    log4j.error("Exception:" + te, te);
 	    LogManager.getLogger().error(te);
 
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             LogManager.getLogger().error(e);
             String msg = "[error] " + MESSAGE + "processing transfer: " + e.getMessage();
 
@@ -237,14 +239,14 @@ public class HandlerTransfer extends Handler<JobState>
 		    if (! strLine.startsWith("producer/")) {
 		        strLine = "producer/" + strLine; 
 		    }
-		    if (DEBUG) System.out.println("[debug] " + MESSAGE + "delete entry: " + strLine);
+		    log4j.debug("[debug] " + MESSAGE + "delete entry: " + strLine);
 		    strFile += strLine + "\n";
 		}
 	}
 
 	    return strFile;
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
 	    return null;
 	}
     }
@@ -260,7 +262,7 @@ public class HandlerTransfer extends Handler<JobState>
 	try {
 	    return FileUtil.file2String(manifestFile);
 	} catch (TException te) {
-	    te.printStackTrace();
+	    log4j.error("Exception:" + te, te);
 	    return null;
 	}
     }
@@ -287,7 +289,7 @@ public class HandlerTransfer extends Handler<JobState>
 
 	    return baseURL;
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
 	    return null;
 	}
     }
@@ -313,15 +315,16 @@ public class HandlerTransfer extends Handler<JobState>
 	    if (jsonResponse != null) {
 		versionID = jsonResponse.getJSONObject("ver:versionState").getInt("ver:identifier");
 		String objectID = jsonResponse.getJSONObject("ver:versionState").getString("ver:objectID");
-		if (DEBUG) System.out.println("[debug] Object ID: " + objectID);
-		if (DEBUG) System.out.println("[debug] Version ID: " + versionID.toString());
+		log4j.debug("[debug] Object ID: " + objectID);
+		log4j.debug("[debug] Version ID: " + versionID.toString());
 	    } else {
-		if (DEBUG) System.out.println("[warn] Can not determine object version ID. Default: 0");
+		log4j.debug("[warn] Can not determine object version ID. Default: 0");
 	    }
 	    return versionID;
 
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "getting version ID: " + e.getMessage();
             throw new Exception(msg);
 	}

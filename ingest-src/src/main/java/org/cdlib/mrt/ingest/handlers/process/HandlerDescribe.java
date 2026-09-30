@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.cloud.VersionMap;
@@ -62,13 +65,14 @@ public class HandlerDescribe extends Handler<JobState>
 
     private static final String NAME = "HandlerDescribe";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private static final String FS = System.getProperty("file.separator");
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
     private File systemTargetDir = null;
     private int metadataDisplaySize;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * process metadata
@@ -103,10 +107,10 @@ public class HandlerDescribe extends Handler<JobState>
                 // process deletions
                 File sourceDelete = new File(ingestRequest.getQueuePath() + FS + "producer" + FS + "mrt-delete.txt");
                 if (sourceDelete.exists()) {
-                    if (DEBUG) System.out.println("[debug] " + MESSAGE + " Found deletion file, moving into system dir");
+                    log4j.debug("[debug] " + MESSAGE + " Found deletion file, moving into system dir");
                     File targetDelete = new File(ingestRequest.getQueuePath() + FS + "system" + FS + "mrt-delete.txt");
                     if (! sourceDelete.renameTo(targetDelete)) {
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Could not rename deletion file");
+                        log4j.debug("[debug] " + MESSAGE + " Could not rename deletion file");
 		    } 
                 }
             }
@@ -124,7 +128,7 @@ public class HandlerDescribe extends Handler<JobState>
 	    // Check for embargo data
 	    Map<String, String> producerEmbargo = null;
 	    if (producerEmbargoFile.exists()) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data file found");
+	        log4j.debug("[debug] " + MESSAGE + "Embargo data file found");
 	        producerEmbargo = MetadataUtil.readEmbargoANVL(producerEmbargoFile);
                 // Sanity check
                 if ( producerEmbargo.size() < 1 || ! checkEmbargo(producerEmbargo)) {
@@ -132,7 +136,7 @@ public class HandlerDescribe extends Handler<JobState>
                         + MESSAGE + ": Embargo data not valid");
 		}
 	    } else {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "NO Embargo data file found");
+	        log4j.debug("[debug] " + MESSAGE + "NO Embargo data file found");
 	    }
 
 
@@ -148,10 +152,12 @@ public class HandlerDescribe extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
+
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "processing metadata: " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
@@ -179,24 +185,24 @@ public class HandlerDescribe extends Handler<JobState>
 	        String value = (String) producerEmbargo.get(key);
 
 	        if (key.toLowerCase().matches("embargoenddate")) {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "Embargo data found: " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "Embargo data found: " + value);
 
 		    // "NONE" is supported
 		    if (value.toUpperCase().matches(".*NONE.*")) {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
+        	        log4j.debug("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
 			return true;
 		    }
 
 		    // regex for ISO8601
 		    if (value.toUpperCase().matches(".*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d\\d:\\d\\d)|Z)?.*")) {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
+        	        log4j.debug("[debug] " + MESSAGE + "Valid Embargo data found: " + value);
 			return true;
 		    }
 		    
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid Embargo data found: " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "No Valid Embargo data found: " + value);
 		    return false;
 		} else {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "No Valid Embargo key found: " + key);
+        	    log4j.debug("[debug] " + MESSAGE + "No Valid Embargo key found: " + key);
 		    return false;
 		}
 	    }
@@ -231,7 +237,7 @@ public class HandlerDescribe extends Handler<JobState>
             systemERC = MetadataUtil.readMetadataANVL(systemErcFile, metadataDisplaySize);
         }
 
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating/updating erc: " + systemErcFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "creating/updating erc: " + systemErcFile.getAbsolutePath());
 	try {
 	    objectCreator = jobState.getObjectCreator().replaceAll("^\\s+", "").replaceAll("\\s+$", "");
 	} catch (Exception e) {
@@ -295,7 +301,7 @@ public class HandlerDescribe extends Handler<JobState>
 	final String DC_DELIMITER = "; ";
 	String value = null;
 
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating/updating dublin core: " + systemDCFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "creating/updating dublin core: " + systemDCFile.getAbsolutePath());
 	try {
 	    value = jobState.getDCcontributor();
 	    if (value != null) {
@@ -303,11 +309,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
 		    if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -318,11 +324,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
 		    if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -333,11 +339,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -348,11 +354,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 		        producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -363,11 +369,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 		        producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -378,11 +384,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 		        producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -393,11 +399,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -408,11 +414,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "found DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -423,11 +429,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -438,11 +444,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -453,11 +459,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -468,11 +474,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -483,11 +489,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -498,11 +504,11 @@ public class HandlerDescribe extends Handler<JobState>
 		if (producerDC.containsKey(key)) {
                     if (! ((String) producerDC.get(key)).contains(value)) {
 			producerDC.put(key, producerDC.get(key) + DC_DELIMITER + value);
-                        if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+                        log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		    }
 		} else {
 		    producerDC.put(key, value);
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
+        	    log4j.debug("[debug] " + MESSAGE + "additional DC metadata " + key + ": " + value);
 		}
 	    }
 	} catch (Exception e) { }
@@ -510,9 +516,11 @@ public class HandlerDescribe extends Handler<JobState>
 	try {
 	    MetadataUtil.writeDublinCoreXML(producerDC, systemDCFile);
 	    return true;
-	} catch (Exception e) { e.printStackTrace(); return false; }
+	} catch (Exception e) { 
+	    log4j.error("Exception:" + e, e);
+	    return false;
+	}
     }
-
 
 
     public String getName() {

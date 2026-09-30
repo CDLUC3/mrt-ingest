@@ -51,6 +51,10 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
 /**
  * initialize ingest process
  * @author mreyes
@@ -60,12 +64,12 @@ public class HandlerInitialize extends Handler<JobState>
 
     private static final String NAME = "HandlerInitialize";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private static final int BUFFERSIZE = 4096;
     private static final String FS = System.getProperty("file.separator");
     private LoggerInf logger = null;
     private Properties conf = null;
 
+    protected static final Logger log4j = LogManager.getLogger();
 
 
     /**
@@ -88,9 +92,9 @@ public class HandlerInitialize extends Handler<JobState>
 
 	    // grab existing data if this is an update
 	    if (jobState.grabUpdateFlag()) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Request for UPDATE");
+	        log4j.debug("[debug] " + MESSAGE + "Request for UPDATE");
 	    } else {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "Request for ADD");
+	        log4j.debug("[debug] " + MESSAGE + "Request for ADD");
 	    }
 
 	    // metadata file in ANVL format
@@ -106,7 +110,7 @@ public class HandlerInitialize extends Handler<JobState>
 		File ownerFile = null;
 	        try { 
 		    ownerFile = new File(targetDir, "mrt-owner.txt");
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating owner file: " + ownerFile.getAbsolutePath());
+	            log4j.debug("[debug] " + MESSAGE + "creating owner file: " + ownerFile.getAbsolutePath());
 		    BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(ownerFile));
 		    bufferedWriter.write(owner);
 		    bufferedWriter.close();
@@ -115,7 +119,7 @@ public class HandlerInitialize extends Handler<JobState>
 		        + MESSAGE + ": unable to build owner file: " + ownerFile.getAbsolutePath());
 	        }
 	    } else {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "no owner found; no owner file created.");
+	        log4j.debug("[debug] " + MESSAGE + "no owner found; no owner file created.");
 	    }
 
 	    // membership
@@ -123,7 +127,7 @@ public class HandlerInitialize extends Handler<JobState>
 		File membershipFile = null;
 	        try { 
 		    membershipFile = new File(targetDir, "mrt-membership.txt");
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating membership file: " + membershipFile.getAbsolutePath());
+	            log4j.debug("[debug] " + MESSAGE + "creating membership file: " + membershipFile.getAbsolutePath());
 		    BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(membershipFile));
 
 		    Iterator iterator = profileState.getCollection().iterator();
@@ -136,7 +140,7 @@ public class HandlerInitialize extends Handler<JobState>
 		        + MESSAGE + ": unable to build membership file: " + membershipFile.getAbsolutePath());
 	        }
 	    } else {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "no collection members; no membership file created.");
+	        log4j.debug("[debug] " + MESSAGE + "no collection members; no membership file created.");
 	    }
 
 	    // resource map referencing metadata
@@ -150,10 +154,10 @@ public class HandlerInitialize extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "failed to create metadata: " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
@@ -173,7 +177,7 @@ public class HandlerInitialize extends Handler<JobState>
     private boolean createMerrittObjectModel(JobState jobState, ProfileState profileState, IngestRequest ingestRequest, File momFile)
 	throws TException 
     {
-	if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating merritt object model: " + momFile.getAbsolutePath());
+	log4j.debug("[debug] " + MESSAGE + "creating merritt object model: " + momFile.getAbsolutePath());
 	Map<String, Object> momProperties = new LinkedHashMap();	// maintains insertion order
 	
 	try {
@@ -209,7 +213,7 @@ public class HandlerInitialize extends Handler<JobState>
 		JobState jobState, File ingestFile)
 	throws TException 
     {
-	if (DEBUG) System.out.println("[debug] " + MESSAGE + "creating metadata: " + ingestFile.getAbsolutePath());
+	log4j.debug("[debug] " + MESSAGE + "creating metadata: " + ingestFile.getAbsolutePath());
 	Map<String, Object> ingestProperties = new LinkedHashMap();	// maintains insertion order
 	
 	ingestProperties.put("ingest", ingestRequest.getServiceState().getServiceName());

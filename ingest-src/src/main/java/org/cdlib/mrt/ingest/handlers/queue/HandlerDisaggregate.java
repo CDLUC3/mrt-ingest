@@ -34,6 +34,9 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
@@ -64,10 +67,11 @@ public class HandlerDisaggregate extends Handler<BatchState>
 
     protected static final String NAME = "HandlerDisaggregate";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
     protected static final long MAX_MANIFEST_LENGTH = 5000000;
     protected LoggerInf logger = null;
     protected Properties conf = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * Unpack batch manifest if necessary, create job ID(s)
@@ -96,18 +100,18 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	        file = new File(queueDir, fileS);
 	    	if (packageType == PackageTypeEnum.batchManifestFile || packageType == PackageTypeEnum.batchManifestContainer
 		    || packageType == PackageTypeEnum.batchManifest) {
-			System.out.println("[info] " + MESSAGE + "batchManifest specified, unpacking: " + fileS);
+			log4j.info("[info] " + MESSAGE + "batchManifest specified, unpacking: " + fileS);
 
 			// unpack
 			if (! unpack(file, queueDir, batchState)) {
-	    		    System.out.println("[error] " + MESSAGE + "processing batchManifest: " + file.getAbsolutePath());
+	    		    log4j.error("[error] " + MESSAGE + "processing batchManifest: " + file.getAbsolutePath());
 	    		    throw new TException.INVALID_OR_MISSING_PARM("[error] " 
 				+ MESSAGE + "processing batchManifest: " + file.getAbsolutePath());
 			}
 			status = "valid";
 	    	} else if (packageType == PackageTypeEnum.file || packageType == PackageTypeEnum.container || packageType == PackageTypeEnum.manifest) {
-			System.out.println("[info] " + MESSAGE + "job parm specified, no unpacking needed: " + fileS);
-			System.out.println("[info] " + MESSAGE + "batchID: " + batchState.getBatchID().getValue());
+			log4j.info("[info] " + MESSAGE + "job parm specified, no unpacking needed: " + fileS);
+			log4j.info("[info] " + MESSAGE + "batchID: " + batchState.getBatchID().getValue());
 			JobState jobState = createJob(file, queueDir);
 			jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
@@ -146,7 +150,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		} else {
 			status = "not-valid";
 			String msg = "[error] " + MESSAGE + "specified package type not recognized (file/container/manifest/batchManifest): " + fileS;
-			System.err.println(msg);
+			log4j.error(msg);
 	    		throw new Exception(msg);
 		}
             }
@@ -158,7 +162,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail(), 10);
 	} catch (Exception e) {
             String msg = "[error] " + MESSAGE + "processing file: " + file.getAbsolutePath() + " : " + e.getMessage();
-	    System.err.println(msg);
+	    log4j.error(msg);
             return new HandlerResult(false, msg, 10);
 	} finally {
 	}
@@ -180,15 +184,15 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    ManifestRowBatch manifestRow = null;
 
             if (manifestFile.length() > MAX_MANIFEST_LENGTH) {
-                if (DEBUG) System.out.println("[error]  Manifest exceeds size limit: " + manifestFile.getAbsolutePath()
+                log4j.error("[error]  Manifest exceeds size limit: " + manifestFile.getAbsolutePath()
                         + " -- size: " + manifestFile.length());
                 throw new TException.REQUEST_INVALID(MESSAGE + "Manifest exceeds size limit. (Max: 5MB)");
             }
 
             // Dryrun process of manifest
-            System.out.println("[info] " + MESSAGE + "validating Manifest of Manifest integrity: " + manifestFile.getName());
+            log4j.info("[info] " + MESSAGE + "validating Manifest of Manifest integrity: " + manifestFile.getName());
             if (validateManifestIntegrity(manifestFile, new TFileLogger("Jersey", 10, 10))) {
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "Manifest of Manifest integrity check successful: " + manifestFile.getName());
+                log4j.info("[info] " + MESSAGE + "Manifest of Manifest integrity check successful: " + manifestFile.getName());
             } else {
                 throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "Manifest of Manifest integrity check fails: " + manifestFile.getName());
             }
@@ -201,7 +205,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
                 FileComponent fileComponent = manifestRow.getFileComponent();
 	        String fileName = fileComponent.getIdentifier();
 	        if (StringUtil.isEmpty(fileName)) fileName = fileComponent.getURL().getFile().replace("/", "");
-                System.out.println("[info] " + MESSAGE + "Queuing is active, batchID: " + batchState.getBatchID().getValue() + " manifest entry: " + fileName);
+                log4j.info("[info] " + MESSAGE + "Queuing is active, batchID: " + batchState.getBatchID().getValue() + " manifest entry: " + fileName);
 		JobState jobState = createJob(batchState, fileComponent.getURL(), fileName, queueDir);
 		jobState.setUpdateFlag(batchState.grabUpdateFlag());
 
@@ -234,11 +238,11 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    // Empty Batch Manifest
 	    if (empty) {
                String err = "[error] " + MESSAGE + ": Manifest has no entries: " + manifestFile.getName();
-               System.err.println(err);
+               log4j.error(err);
 	       throw new TException.INVALID_CONFIGURATION(err);
 	       // return false;
 	    }
-            System.out.println("[info] " + MESSAGE + "Queuing is complete, batchID: " + batchState.getBatchID().getValue());
+            log4j.info("[info] " + MESSAGE + "Queuing is complete, batchID: " + batchState.getBatchID().getValue());
 	    // manifestFile.delete();	// keep for debugging
 
     	    return true;
@@ -246,7 +250,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    throw te;
 	} catch (Exception e) {
     	    String msg = "[error] " + MESSAGE + "unpacking manifest file: " + manifestFile.getAbsolutePath();
-	    System.err.println(msg);
+	    log4j.error(msg);
 	    throw new TException.GENERAL_EXCEPTION(msg);
 	} finally {
 	}
@@ -275,25 +279,25 @@ public class HandlerDisaggregate extends Handler<BatchState>
             boolean proxyUse = true;
             if (StringUtil.isNotEmpty(proxyCond)) {
                 proxyUse = ProfileUtil.useProxyUserAgent(batchState.getUserAgent(), proxyCond);
-                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+                log4j.info("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
             }
             HTTPGetUtil httpGetParams = null;
 
 	    if (proxyURL == null) {
-		if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy not defined.");
+		log4j.info("Disaggregate [info]: " + " Proxy not defined.");
 		httpGetParams = HTTPGetUtil.build(null, null, null);
             } else {
-                if (DEBUG) System.out.println("Disaggregate [info]: " + " Proxy found: " +  proxyURL.toString());
+                log4j.info("Disaggregate [info]: " + " Proxy found: " +  proxyURL.toString());
                 if (proxyUse) {
                    httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
                 } else {
-                   if (DEBUG) System.out.println("Disaggregate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                   log4j.info("Disaggregate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
                 }
             }
 
 
 	    if (StringUtil.isNotEmpty(basicAuth)) {
-		if (DEBUG) System.out.println("Disaggregate [info]: " + " Basic Auth creds defined.");
+		log4j.info("Disaggregate [info]: " + " Basic Auth creds defined.");
 		String[] creds = basicAuth.split("\\|\\|");
 	 	String un = creds[0];
 	 	String pw = creds[1];
@@ -302,15 +306,12 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		// Check domain to see if we ignore creds
 		boolean addCreds = true;
 		if (! fileURL.getHost().contains(domain)) addCreds = false;
-		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
-		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
-		// if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
 
 		if (addCreds) {
-		    if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain matches: " + fileURL.getHost() + " - " + domain);
+		    log4j.info("Disaggregate [info]: Basic Auth domain matches: " + fileURL.getHost() + " - " + domain);
 		    httpGetParams.addBasidAuthenticationHeader(un, pw);
 		} else {
-		    if (DEBUG) System.out.println("Disaggregate [info]: ignoring Basic Auth creds: " + fileURL.getHost() + " - " + domain);
+		    log4j.info("Disaggregate [info]: ignoring Basic Auth creds: " + fileURL.getHost() + " - " + domain);
 		}
 	    } 
 
@@ -320,7 +321,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
     	    return createJob(tempFile, queueDir);
 	} catch (Exception e) {
     	    String msg = "[error] " + MESSAGE + "Could not retrieve url: " + fileURL.toString();
-    	    System.out.println(msg);
+    	    log4j.error(msg);
 	    throw new TException.REQUESTED_ITEM_NOT_FOUND(msg);
 	} finally {
             try {
@@ -340,7 +341,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
     {
 	try {
 	    if ( !fileComponent.exists()) {
-	   	System.out.println("[error] " + MESSAGE + "batch manifest object does not exist: " + fileComponent.getAbsolutePath());
+	   	log4j.error("[error] " + MESSAGE + "batch manifest object does not exist: " + fileComponent.getAbsolutePath());
 	    	throw new Exception("[error] " + MESSAGE + "batch manifest object does not exist: " + fileComponent.getAbsolutePath());
 	    }
 	    JobState jobState = new JobState();
@@ -355,10 +356,10 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    File objectManifest = new File(targetDir, fileComponent.getName());
 	    new File(fileComponent.getParentFile(), fileComponent.getName()).renameTo(objectManifest);
 	    if ( ! objectManifest.exists()) {
-	   	System.out.println("[error] " + MESSAGE + "failure to copy batch component into target area: " + targetDir.getAbsolutePath());
+	   	log4j.error("[error] " + MESSAGE + "failure to copy batch component into target area: " + targetDir.getAbsolutePath());
 	    	throw new Exception("[error] " + MESSAGE + "failure to copy batch component into target area: " + targetDir.getAbsolutePath());
 	    } else {
-	   	System.out.println("[info] " + MESSAGE + "created new JOB: " + jobState.getJobID().getValue() +
+	   	log4j.info("[info] " + MESSAGE + "created new JOB: " + jobState.getJobID().getValue() +
 			 " - manifest entry: " + objectManifest.getAbsolutePath()); 
 	    }
 
@@ -367,7 +368,7 @@ public class HandlerDisaggregate extends Handler<BatchState>
 	    throw te;
 	} catch (Exception e) {
     	    String msg = "[error] " + MESSAGE + "creating job for component: " + fileComponent.getAbsolutePath();
-    	    System.out.println(msg);
+    	    log4j.error(msg);
 	    throw new TException.GENERAL_EXCEPTION(msg);
 	} finally {
 	}
@@ -396,7 +397,8 @@ public class HandlerDisaggregate extends Handler<BatchState>
 		throw new Exception("profile type not valid: " + profile);
             }
 	} catch (Exception e) {
-    	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
+
 	    throw new Exception(e.getMessage());
 	} finally {
 	}
@@ -425,15 +427,13 @@ public class HandlerDisaggregate extends Handler<BatchState>
                 mRow = (ManifestRowBatch) en.nextElement();
                 fileComponent = mRow.getFileComponent();
 
-                if (DEBUG) {
-                    System.out.println("Pre-processing Manifest of Manifest entry: " + mRow.getLine());
-                }
-
+		log4j.info("Pre-processing Manifest of Manifest entry: " + mRow.getLine());
             }
             return true;
         } catch (Exception e) {
-	    e.printStackTrace();
-            System.err.println("[ERROR] Pre-processing Manifest of Manifest  not valid: " + manifestFile.getAbsolutePath());
+	    log4j.error("Exception:" + e, e);
+
+            log4j.error("[error] Pre-processing Manifest of Manifest  not valid: " + manifestFile.getAbsolutePath());
             return false;
 	} finally {
 	    manifest = null;

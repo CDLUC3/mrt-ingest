@@ -40,6 +40,8 @@ import org.cdlib.mrt.ingest.ProfileState;
 import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * remove staging directory
@@ -50,12 +52,12 @@ public class HandlerCleanup extends Handler<JobState>
 
     private static final String NAME = "HandlerCleanup";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private boolean unitTest = false;
     private String recycleBinName = "RecycleBin";
     private boolean deletePayload = false;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * remove staging area
@@ -77,32 +79,32 @@ public class HandlerCleanup extends Handler<JobState>
 	    if (! deletePayload) {
 	        File recycleBin = new File(ingestRequest.getQueuePath().getParentFile().getParentFile(), recycleBinName);
 	        if (! recycleBin.exists()) {
-	           if (DEBUG) System.out.println("[debug] " + MESSAGE + "Creating recycle bin directory: " + recycleBin.getAbsolutePath());
+	           log4j.debug("[debug] " + MESSAGE + "Creating recycle bin directory: " + recycleBin.getAbsolutePath());
 	           try {
 	              recycleBin.mkdir();
 	           } catch (Exception e) {}
 	        }
 
 
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "moving staging directory: " + stageDir.getAbsolutePath());
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "target directory: " + recycleBin.getAbsolutePath() + "/" + jobState.getJobID().getValue());
+	        log4j.debug("[debug] " + MESSAGE + "moving staging directory: " + stageDir.getAbsolutePath());
+	        log4j.debug("[debug] " + MESSAGE + "target directory: " + recycleBin.getAbsolutePath() + "/" + jobState.getJobID().getValue());
 	        stageDir.renameTo(new File(recycleBin.getAbsolutePath(), jobState.getJobID().getValue()));
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " moving of staging directory", 0);
 	    } else {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
+	        log4j.debug("[debug] " + MESSAGE + "removing staging directory: " + stageDir.getAbsolutePath());
 
 	        boolean deleteDir = FileUtil.deleteDir(stageDir);
 	        if (! deleteDir) {
 		    // NFS open files are renamed (See section D2. of http://nfs.sourceforge.net)
-                    if (DEBUG) System.out.println("[error] " + MESSAGE + "Failure in removing: " 
-		        + stageDir.getAbsolutePath() + "   Continuing.");
+                    log4j.error("[error] " + MESSAGE + "Failure in removing: " + stageDir.getAbsolutePath() + "   Continuing.");
 	        }
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " deletion of staging directory", 0);
 	    }
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "removing staging directory: " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {

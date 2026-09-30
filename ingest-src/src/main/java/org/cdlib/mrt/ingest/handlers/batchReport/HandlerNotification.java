@@ -42,6 +42,8 @@ import org.apache.commons.mail.ByteArrayDataSource;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
@@ -80,9 +82,10 @@ public class HandlerNotification extends Handler<BatchState>
     private static final String NAME = "HandlerNotification";
     private static final String SERVICE = "Ingest";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private ZooKeeper zooKeeper = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * notify user(s)
@@ -109,19 +112,19 @@ public class HandlerNotification extends Handler<BatchState>
 
             try {
                 if (profileState.getNotificationSuppression().equalsIgnoreCase("full")) {
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected suppression of completion notification: " + profileState.getNotificationSuppression());
+                    log4j.info("[info] " + MESSAGE + "Detected suppression of completion notification: " + profileState.getNotificationSuppression());
                     return new HandlerResult(true, "SUCCESS: " + NAME + " notification suppressed", 0);
                 } 
             } catch (Exception e) {}
 	    try {
                 if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
+                    log4j.info("[info] " + MESSAGE + "Detected 'verbose' format type.");
                     verbose = true;
                 }
 	    } catch (Exception e) {}
 	    try {
                 if (profileState.getNotificationType().equalsIgnoreCase("additional")) {
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'additional' notification (CSV).");
+                    log4j.info("[info] " + MESSAGE + "Detected 'additional' notification (CSV).");
                     csv = true;
                 }
 	    } catch (Exception e) {}
@@ -131,17 +134,17 @@ public class HandlerNotification extends Handler<BatchState>
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+	  	 log4j.error("Exception:" + e, e);
                }
             }
 
 	    String batchID = batchState.getBatchID().getValue();
 	    Batch batch = Batch.findByUuid(zooKeeper, batchID);
-	    if (DEBUG) System.out.println("[info] " + MESSAGE + "Mapping Batch to ZK Batch: " + batchID + " - " + batch.id());
+	    log4j.info("[info] " + MESSAGE + "Mapping Batch to ZK Batch: " + batchID + " - " + batch.id());
 
 	    List<Job> jobs = batch.getProcessingJobs(zooKeeper);
 	    if (jobs.isEmpty()) {
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected BATCH is complete: " + batch.batchUuid());
+                log4j.info("[info] " + MESSAGE + "Detected BATCH is complete: " + batch.batchUuid());
 		batchComplete = true;
 	    } else {
                return new HandlerResult(true, "SUCCESS: " + NAME + " Exiting, Batch not complete: " + batchID, 0);
@@ -156,7 +159,7 @@ public class HandlerNotification extends Handler<BatchState>
 		// overwrite localID
    	        jac.put(jobCompleted.data().put("localID", jobCompleted.localId()));
 	    }
-	    System.out.println("------ JOBS COMPLETED ------");
+	    log4j.info("------ JOBS COMPLETED ------");
 	    JSONObject jcomplete = new JSONObject();
 	    jcomplete.put("completedJobs", jac);
 
@@ -176,7 +179,7 @@ public class HandlerNotification extends Handler<BatchState>
 
    	        jaf.put(jftemp);
 	    }
-	    System.out.println("------ JOBS FAILED ------");
+	    log4j.info("------ JOBS FAILED ------");
 	    JSONObject jfail = new JSONObject();
 	    jfail.put("failedJobs", jaf);
 
@@ -214,7 +217,7 @@ public class HandlerNotification extends Handler<BatchState>
                emailReply.add(new InternetAddress(replyTo));
                email.setReplyTo(emailReply);
 	    } else {
-               if (DEBUG) System.err.println("[warning] " + MESSAGE + "Email replyTo not found.");
+               log4j.warn("[warn] " + MESSAGE + "Email replyTo not found.");
 	    }
 
 
@@ -284,21 +287,9 @@ public class HandlerNotification extends Handler<BatchState>
                 if (ingestRequest.getNotificationFormat() != null) formatType = ingestRequest.getNotificationFormat();
                 else if (profileState.getNotificationFormat() != null) formatType = profileState.getNotificationFormat();     // POST parm overrides profile parm
 
-/*
-		try {
-		    email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
-			batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
-		} catch (Exception e) {
-	            if (DEBUG) System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
-		    // human readable
-		    email.attach(new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"), "text/plain"),
-			 batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
-		}
-*/
-
 		if (! verbose) {
 		    email.setMsg(batchDump(batch, ""));
-		    System.out.println(batchDump(batch, ""));
+		    log4j.debug(batchDump(batch, ""));
 		} else {
   	            email.setMsg(getVerboseMsg(jobState));
 		}
@@ -306,10 +297,10 @@ public class HandlerNotification extends Handler<BatchState>
 		try {
   	            email.send();
 		} catch (Exception e) {
-		    e.printStackTrace();
+		    log4j.error("Exception:" + e, e);
 		}
 	    } else {
-	        if (DEBUG) System.out.println("[info] " + MESSAGE + "batch is not complete.  No notification necessary");
+	        log4j.info("[info] " + MESSAGE + "batch is not complete.  No notification necessary");
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
@@ -317,7 +308,7 @@ public class HandlerNotification extends Handler<BatchState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
-	    e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "in notification: " + e.getMessage();
 	    throw new TException.GENERAL_EXCEPTION(msg);
 	} finally {
@@ -396,7 +387,7 @@ public class HandlerNotification extends Handler<BatchState>
 	   failed = batch.getFailedJobs(zooKeeper).size();
 	   pending = batch.getProcessingJobs(zooKeeper).size();
 	} catch (Exception zke) {
-	   System.err.println("[ERROR] Could not determine status for batch: " + batch.id());
+	   log4j.error("[error] Could not determine status for batch: " + batch.id());
 	}
 
 	// gather job status
