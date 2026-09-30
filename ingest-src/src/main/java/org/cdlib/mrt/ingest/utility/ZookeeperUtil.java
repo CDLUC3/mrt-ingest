@@ -32,6 +32,8 @@ package org.cdlib.mrt.ingest.utility;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -43,11 +45,10 @@ public class ZookeeperUtil
 
     private static final String NAME = "ZookeeperUtil";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
 
     public static final int SLEEP_ZK_RETRY = (30 * 1000);			// 30 sec retry timeout
     public static final int ZK_SESSION_TIMEOUT = (6 * 60 * 60 * 1000); 		// 6 hour session timeout
-
+    protected static final Logger log4j = LogManager.getLogger();
 
     public static boolean validateZK(ZooKeeper zk)
     {
@@ -61,7 +62,7 @@ public class ZookeeperUtil
 	    return true;
 	} catch (Exception e) {
 	    // Log
-	    if (DEBUG) System.err.println("[INFO] ZookeeperUtil: Need to ESTABLISH/REFRESH ZK Connection " + caller);
+	    log4j.info("[info] ZookeeperUtil: Need to ESTABLISH/REFRESH ZK Connection " + caller);
 	    ThreadContext.put("Zookeeper Connection needs refresh", caller);
 	    try {
 		// Close expired connection.

@@ -334,12 +334,18 @@ class BatchConsumerDaemon implements Runnable
                     Thread.yield();
                     Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
                 } else {
+		    // Add heartbeat to Tomcat log
+                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+
                     log4j.debug(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     init = false;
                 }
 
                 // Let's check to see if we are on hold
                 if (onHold()) {
+		    // Add heartbeat to Tomcat log
+                    System.out.print(MESSAGE + "detected 'on hold' condition");
+
                     log4j.info(MESSAGE + "detected 'on hold' condition");
 		    // Go into a polling state until HOLD is released
                     continue;

@@ -56,9 +56,12 @@ import org.cdlib.mrt.utility.FileUtil;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
+import org.cdlib.mrt.zk.MerrittJsonKey;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
-import org.cdlib.mrt.zk.MerrittJsonKey;
 
 
 /**
@@ -73,6 +76,7 @@ public class JSONUtil
     private static final boolean DEBUG = true;
     private static final String DELIMITER = "\t";
     private LoggerInf logger = null;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * create json 
@@ -120,7 +124,7 @@ public class JSONUtil
 	try {
            return jo.getString(key);
 	} catch (Exception e) {
-	   System.err.println("[WARN] Could not find value in JSONObject: " + key);
+	   log4j.warn("[warn] Could not find value in JSONObject: " + key);
 	   return null;
 	}
     }
@@ -134,7 +138,7 @@ public class JSONUtil
 	    jobStateString = formatterUtil.doStateFormatting(jobState, FormatType.json).replaceAll("job:","").
         	    replaceFirst("\"xmlns:job\":\"http://uc3.cdlib.org/ontology/mrt/ingest/job\",","");
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
 	} finally {
 	   formatterUtil = null;
 	}
@@ -163,12 +167,12 @@ public class JSONUtil
 	   ingestRequest.getJob().setJobID(new Identifier(JSONUtil.getValue(jp,"jobID")));
 	} catch (Exception e) { 
 	   // ignore if called from batch - no JOB ID
-	   if (priority != 0) System.out.println("[WARN] Could not set JOB ID for Ingest Request"); 
+	   if (priority != 0) log4j.warn("[warn] Could not set JOB ID for Ingest Request"); 
 	}
 	try {
 	   ingestRequest.getJob().setBatchID(new Identifier(JSONUtil.getValue(jp,"batchID")));
 	} catch (Exception e) { 
-	   System.out.println("[ERROR] Could not set BATCH ID for Ingest Request"); 
+	   log4j.error("[error] Could not set BATCH ID for Ingest Request"); 
 	}
 	Boolean update = Boolean.valueOf(jp.getBoolean("update"));
 	ingestRequest.getJob().setUpdateFlag(update.booleanValue());

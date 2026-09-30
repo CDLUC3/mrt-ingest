@@ -92,7 +92,7 @@ public class FormatterUtil
 
 	    return FileUtil.file2String(file);
 	} catch (Exception e) {
-	    // e.printStackTrace();
+	    // log4j.error("Exception:" + e, e);
 	    throw e;
 	}
     }
@@ -118,7 +118,7 @@ public class FormatterUtil
             throw tex;
 
         } catch (Exception ex) {
-            // if (DEBUG) System.err.println("getFormatter: stack:" + StringUtil.stackTrace(ex));
+            // log4j.warn("getFormatter: stack:" + StringUtil.stackTrace(ex));
             throw new TException.REQUEST_ELEMENT_UNSUPPORTED("State formatter type not supported:" + formatS);
         }
     }

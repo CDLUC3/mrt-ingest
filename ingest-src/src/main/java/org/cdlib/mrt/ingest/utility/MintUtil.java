@@ -90,8 +90,8 @@ public class MintUtil
     private LoggerInf logger = null;
     private Properties conf = null;
     private Properties ingestProperties = null;
-    private static final boolean DEBUG = true;
-    protected static final Logger log4j2 = LogManager.getLogger();
+    protected static final Logger log4j = LogManager.getLogger();
+
 
     public static Identifier getJobID()
         throws TException
@@ -99,7 +99,7 @@ public class MintUtil
 	try {
             return new Identifier("jid-" + UUID.randomUUID().toString(), Identifier.Namespace.Local);
 	} catch (Exception ex) {
-            System.out.println(StringUtil.stackTrace(ex));
+            log4j.error(StringUtil.stackTrace(ex));
             String err = MESSAGE + "error in minting job ID - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("error in minting job ID");
@@ -112,7 +112,7 @@ public class MintUtil
 	try {
             return new Identifier("bid-" + UUID.randomUUID().toString(), Identifier.Namespace.Local);
 	} catch (Exception ex) {
-            System.out.println(StringUtil.stackTrace(ex));
+            log4j.error(StringUtil.stackTrace(ex));
             String err = MESSAGE + "error in minting batch ID - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("error in minting batch ID");
@@ -135,7 +135,7 @@ public class MintUtil
 	    // authenticate
 	    String misc = null;
 	    if ((misc = profileState.getMisc()) == null) {
-	        System.err.println("[warning] " + MESSAGE + "EZID credentials not found.");
+	        log4j.warn("[warning] " + MESSAGE + "EZID credentials not found.");
 		throw new TException.GENERAL_EXCEPTION("EZID credentials not found.");
 	    }
 
@@ -148,7 +148,7 @@ public class MintUtil
 	    if ( ! mint) {
 	        // Update an ID.  Fails if ID does not exist.
 		url = url.replaceFirst("/shoulder.*", "/id/") + jobState.getPrimaryID().getValue();
-		System.out.println("[info] " + MESSAGE + "updating ID: " + url);
+		log4j.info("[info] " + MESSAGE + "updating ID: " + url);
 	    }
 
 	    String target = "";
@@ -159,24 +159,24 @@ public class MintUtil
   	    while (collections.hasNext()) {
     		String collection = collections.next();
 		if (collection.startsWith("ark:/")) {
-		    System.out.println("[info] " + MESSAGE + "Found group identifier: " + collection);
+		    log4j.info("[info] " + MESSAGE + "Found group identifier: " + collection);
 		    group = "&group=" + escape(collection);
 		    break;
 		} else {
-		    System.err.println("[warning] " + MESSAGE + "Collection ID is not a valid group identifier: " + collection);
+		    log4j.warn("[warn] " + MESSAGE + "Collection ID is not a valid group identifier: " + collection);
 		}
   	    }
 	    if (StringUtil.isEmpty(group))
-	        System.err.println("[warning] " + MESSAGE + "No group found. Thus no group info in EZID target URL");
+	        log4j.debug("[warn] " + MESSAGE + "No group found. Thus no group info in EZID target URL");
 	    try {
 		// e.g. http://merritt.cdlib.org/m/{objectID}
 		// Need to double encode the id, as EZID will HEX percent decode
 		target = "_target: " + ingestRequest.getServiceState().getTargetID() + "/m/" +
 		   URLEncoder.encode(URLEncoder.encode(jobState.getPrimaryID().getValue(), "UTF-8"), "UTF-8");
-	        System.out.println("[info] " + MESSAGE + "Target url: " + target);
+	        log4j.info("[info] " + MESSAGE + "Target url: " + target);
 		if (ingestRequest.getRetainTargetURL()) {
 		   target = "";
-	           System.out.println("[info] " + MESSAGE + "Found retain existing Target URL.  Not setting _target for EZID.");
+	           log4j.info("[info] " + MESSAGE + "Found retain existing Target URL.  Not setting _target for EZID.");
 		}
 	    } catch (Exception e) { }
 
@@ -192,7 +192,7 @@ public class MintUtil
 		if (profileState.getEzidCoowner() != null) {
 	            // coowner = "\n" + "_coowners: " + profileState.getEzidCoowner() + "\n";
 	            coowner = "_owner: " + profileState.getEzidCoowner();
-                    System.out.println("[info] " + MESSAGE + "Found EZID co-owner: " + profileState.getEzidCoowner());
+                    log4j.info("[info] " + MESSAGE + "Found EZID co-owner: " + profileState.getEzidCoowner());
 		}
 	    } catch (Exception e) { }
 
@@ -202,13 +202,13 @@ public class MintUtil
 	    try {
 		if (aggregateType != null) {
 		    if (aggregateType.matches("MRT-collection|MRT-owner|MRT-service-level-agreement")) {
-                        System.out.println("[info] " + MESSAGE + "Object is admin.  Setting to not harvest and to make reserved.");
+                        log4j.info("[info] " + MESSAGE + "Object is admin.  Setting to not harvest and to make reserved.");
 			// Do not harvest and flag as a reserved ID
 	                adminHeader = "_status: reserved" + "\n" + "_export: no";
 		    }
 		}
 	    } catch (Exception e) {
-	        System.err.println("[warning] " + MESSAGE + "Could not determine if object is admin aggregate type: " + aggregateType);
+	        log4j.warn("[warn] " + MESSAGE + "Could not determine if object is admin aggregate type: " + aggregateType);
 	    }
 
 	    try {
@@ -223,7 +223,7 @@ public class MintUtil
 	    stringEntity = getMetadata(jobState) + "\n" + context + "\n" + target + "\n" + coowner + "\n" + adminHeader;
             httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
 
-            System.out.println("[info] POST stringEntity: " + stringEntity);
+            log4j.info("[info] POST stringEntity: " + stringEntity);
 
             String responseBody = null;
 	    HttpResponse httpResponse = null;
@@ -244,16 +244,16 @@ public class MintUtil
                      if (retryCount >= 3) {
 	                throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("error in connecting to host: " + url);
 		     }
-		     System.err.println("[error] " + MESSAGE + "error connecting to host. " + hhce.getMessage());
-		     System.err.println("Wait 5 seconds and retry attempt: " + retryCount);
+		     log4j.error("[error] " + MESSAGE + "error connecting to host. " + hhce.getMessage());
+		     log4j.info("Wait 5 seconds and retry attempt: " + retryCount);
 		     Thread.sleep(5000);
 	    	} catch (Exception e) {
 		     retryCount++;
                      if (retryCount >= 3) {
 			throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("minting ID from endpoint: " + url);
 		     }
-		     System.err.println("[error] " + MESSAGE + "request failed with status message: " + e.getMessage());
-		     System.err.println("Wait 5 seconds and retry attempt: " + retryCount);
+		     log4j.error("[error] " + MESSAGE + "request failed with status message: " + e.getMessage());
+		     log4j.info("Wait 5 seconds and retry attempt: " + retryCount);
 		     Thread.sleep(5000);
 		     responseBody = "failed";
 	    	}
@@ -271,10 +271,10 @@ public class MintUtil
             msgMap.put("ResponseCode", statusCode);
 	    LogManager.getLogger().info(msgMap);
 
-            System.out.println("[info] " + MESSAGE + "response code: " + statusCode);
-            System.out.println("[info] " + MESSAGE + "response phrase: " + statusPhrase);
+            log4j.info("[info] " + MESSAGE + "response code: " + statusCode);
+            log4j.info("[info] " + MESSAGE + "response phrase: " + statusPhrase);
 	    if (responseBody.startsWith("success")) {
-                System.out.println("[info] " + MESSAGE + "response body: " + responseBody);
+                log4j.info("[info] " + MESSAGE + "response body: " + responseBody);
 	    }
 	    String expectedResponse = "success:";		// e.g. success: ark:/99999/fk42z13f2
 
@@ -282,12 +282,12 @@ public class MintUtil
 	    if ( ! id.startsWith(expectedResponse)) {
         	startTime = DateUtil.getEpochUTCDate();
 	        if (! mint) {
-	            System.out.println("[info] " + MESSAGE + "could not update, attempting to create/update: " + url + "?update_if_exists=yes");
+	            log4j.info("[info] " + MESSAGE + "could not update, attempting to create/update: " + url + "?update_if_exists=yes");
                     Thread.sleep(15000);
 	            httpCommand = new HttpPut(url + "?update_if_exists=yes");
 	    	    httpCommand.addHeader("Content-Type", "text/plain");
 		    
-		    System.out.println("[info] PUT stringEntity: " + stringEntity);
+		    log4j.info("[info] PUT stringEntity: " + stringEntity);
 	            httpCommand.setEntity(new StringEntity(stringEntity, "UTF-8"));
 
 		    try {
@@ -296,21 +296,21 @@ public class MintUtil
 		    } catch (HttpHostConnectException hhce) {
 		       throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("error in connecting to host: " + url);
 		    } catch (org.apache.http.client.HttpResponseException hre) {
-			System.err.println("[error] " + MESSAGE + "request failed with status code: " + hre.getStatusCode());
-			System.err.println("[error] " + MESSAGE + "request failed with message: " + hre.getMessage());
+			log4j.error("[error] " + MESSAGE + "request failed with status code: " + hre.getStatusCode());
+			log4j.error("[error] " + MESSAGE + "request failed with message: " + hre.getMessage());
 			responseBody = "failed";
 		        throw new TException.GENERAL_EXCEPTION("error in creating/updating identifier: " + responseBody);
 		    }
-	    	    System.out.println("[info] PUT " + responseBody);
+	    	    log4j.info("[info] PUT " + responseBody);
 	       	    id = new String(responseBody);
 	            if ( ! id.startsWith(expectedResponse)) {
 		        throw new TException.GENERAL_EXCEPTION("error in creating/updating identifier: " + url);
 		    }
-		    System.out.println("[info] " + MESSAGE + "created/updated ID: " + url);
+		    log4j.info("[info] " + MESSAGE + "created/updated ID: " + url);
 	        } else {
-		    System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
+		    log4j.error("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
 		    retryCount = 1;
-		    System.err.println("[error] " + MESSAGE + "Awaiting retry");
+		    log4j.error("[error] " + MESSAGE + "Awaiting retry");
 
                     while (true) {
                         if (retryCount >= 3) {
@@ -318,7 +318,7 @@ public class MintUtil
                         } else {
                             Thread.sleep(15000);
 		        }
-		        System.err.println("[info] " + MESSAGE + "Attempting retry: " + retryCount);
+		        log4j.info("[info] " + MESSAGE + "Attempting retry: " + retryCount);
                         httpResponse = httpClient.execute(httpCommand);
                         responseBody = StringUtil.streamToString(httpResponse.getEntity().getContent(), "UTF-8");
             	        id = new String(responseBody);
@@ -327,8 +327,8 @@ public class MintUtil
                         statusPhrase = httpResponse.getStatusLine().getReasonPhrase();
 
                         if (statusCode < 400) break;
-		        System.err.println("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
-                        System.err.println(MESSAGE + "Wait 15 seconds and retry attempt: " + retryCount);
+		        log4j.error("[error] " + MESSAGE + "Encountered incorrect response during mint attempt: " + statusCode + " : " + statusPhrase);
+                        log4j.info(MESSAGE + "Wait 15 seconds and retry attempt: " + retryCount);
 		    }
 		}
 		// Log PUT
@@ -354,7 +354,7 @@ public class MintUtil
             LogManager.getLogger().error(tex);
 	    throw tex;
 	} catch (Exception ex) {
-            System.out.println(StringUtil.stackTrace(ex));
+            log4j.error(StringUtil.stackTrace(ex));
             LogManager.getLogger().error(ex);
             String err = MESSAGE + "error in processing ID - Exception:" + ex;
 
@@ -478,12 +478,12 @@ public class MintUtil
 	        if (DCformat.startsWith("text/")) resourceType = "Text";
 	        if (DCformat.startsWith("video/")) resourceType = "Film";
 	    } catch (Exception e) {
-		if (DEBUG) System.out.println("[WARN] " + MESSAGE + "No valid DC Format specified");
+		log4j.warn("[WARN] " + MESSAGE + "No valid DC Format specified");
 	    }
 
 	    if (resourceType == null) {
 		resourceType = "Dataset";
-		if (DEBUG) System.out.println("[INFO] " + MESSAGE + 
+		log4j.info("[INFO] " + MESSAGE + 
 		    "Could not determing datacite resource type. Using default: " + resourceType);
 	    }
 	    return ResourceTypeEnum.setResourceType(resourceType);
@@ -533,7 +533,7 @@ public class MintUtil
             sr.register(new Scheme("https", ssf, 443));
             return new DefaultHttpClient(ccm, base.getParams());
         } catch (Exception ex) {
-            ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             return null;
         }
     }
@@ -565,7 +565,7 @@ public class MintUtil
             }
         }
         if (first) rebuild = s;
-        System.out.println("[info] " + MESSAGE + "sanitized localid: " + s + " ---> " + rebuild);
+        log4j.info("[info] " + MESSAGE + "sanitized localid: " + s + " ---> " + rebuild);
 
         return rebuild;
     }

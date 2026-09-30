@@ -29,18 +29,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 package org.cdlib.mrt.ingest.utility;
 
-// import com.amazonaws.AmazonServiceException;
-// import com.amazonaws.auth.AWSCredentials;
-// import com.amazonaws.auth.AWSStaticCredentialsProvider;
-// import com.amazonaws.services.s3.AmazonS3;
-// import com.amazonaws.services.s3.AmazonS3Client;
-// import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-// import com.amazonaws.services.s3.model.S3Object;
-// import com.amazonaws.services.s3.model.S3ObjectInputStream;
-// import com.amazonaws.auth.BasicAWSCredentials;
-// import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-// import com.amazonaws.ClientConfiguration;
-
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
@@ -65,6 +53,9 @@ import java.net.URI;
 import java.net.MalformedURLException;
 
 import org.cdlib.mrt.utility.TException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  * S3 tool
@@ -78,12 +69,13 @@ public class S3Util
     private static final boolean DEBUG = false;
 
     private static int node;
+    protected static final Logger log4j = LogManager.getLogger();
 
 
     public static S3Client getAWSClient(Region region)
             throws TException
     {
-	System.out.println("[S3Util] getAWSClient - Region=" + region.toString());
+	log4j.info("[S3Util] getAWSClient - Region=" + region.toString());
         try {
             S3Client s3Client = S3Client.builder()
                      .region(region)
@@ -92,7 +84,8 @@ public class S3Util
             return s3Client;
 
         } catch (S3Exception e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
+	    log4j.error("Exception:" + e, e);
+            log4j.error(e.awsErrorDetails().errorMessage());
             throw new TException(e);
         }
     }
@@ -101,7 +94,7 @@ public class S3Util
     public static S3Client getMinioClient(Region region, String accessKey, String secretKey, String endPoint)
             throws TException
     {
-	System.out.println("[S3Util] getMinioClient - Endpoint=" + endPoint);
+	log4j.info("[S3Util] getMinioClient - Endpoint=" + endPoint);
         try {
             AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
             AwsCredentialsProvider creds = StaticCredentialsProvider.create(awsCreds);
@@ -115,7 +108,8 @@ public class S3Util
             return s3Client;
 
         } catch (S3Exception e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
+	    log4j.error("Exception:" + e, e);
+            log4j.error(e.awsErrorDetails().errorMessage());
             throw new TException(e);
         }
     }
@@ -126,7 +120,7 @@ public class S3Util
     public static InputStream getObjectSyncInputStream (S3Client s3Client, String bucketName, String keyName)
         throws TException
     {
-        System.out.println("[S3Util] getObjectSyncInputStream " 
+        log4j.info("[S3Util] getObjectSyncInputStream " 
 		+ " - keyName=" + keyName 
 		+ " - bucketName=" + bucketName);
 
@@ -141,7 +135,7 @@ public class S3Util
             return is;
 
         } catch (S3Exception e) {
-           //System.err.println(e.awsErrorDetails().errorMessage());
+           log4j.error(e.awsErrorDetails().errorMessage());
            if ((e.statusCode() == 404) || e.toString().contains("404")) {
                throw new TException.REQUESTED_ITEM_NOT_FOUND("Not found:"
                        + " - bucket:" + bucketName

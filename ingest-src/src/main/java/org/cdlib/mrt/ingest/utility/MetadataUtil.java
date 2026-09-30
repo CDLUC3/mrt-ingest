@@ -55,12 +55,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
  
 import org.cdlib.mrt.utility.DOMParser;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.XMLUtil;
+
 
 /**
  * simple metadata tool
@@ -71,9 +74,10 @@ public class MetadataUtil
 
     private static final String NAME = "MetadataUtil";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private static final String DELIMITER = "\t";
     private LoggerInf logger = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * write metadata to anvl file
@@ -88,7 +92,7 @@ public class MetadataUtil
 	try {
 	    writeMetadataANVL(file, properties, null, append);
 	} catch (Exception e) {
-		e.printStackTrace();
+		log4j.error("Exception:" + e, e);
 	}
 
 	return true;
@@ -108,10 +112,10 @@ public class MetadataUtil
 	BufferedWriter fileBuffer = null;
 	try {
 	    if (delimiter == null) {
-		System.out.println("No ANVL delimiter set - using default");
+		log4j.info("No ANVL delimiter set - using default");
 		delimiter = DELIMITER;
 	    } else {
-		System.out.println("ANVL delimiter: " + delimiter);
+		log4j.info("ANVL delimiter: " + delimiter);
 	    }
 	    fileBuffer = new BufferedWriter(new FileWriter(file, append));
 	    Iterator ingestItr = properties.keySet().iterator();
@@ -173,7 +177,7 @@ public class MetadataUtil
 	    while ((line = fileBuffer.readLine()) != null) {
 		if (dcPattern.matcher(line).matches()) {
 		    tokens = splitPattern.split(line, 2);
-		    System.out.println("[info] " + NAME + " Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+		    log4j.info("[info] " + NAME + " Found ANVL data: " + tokens[0] + " - " + tokens[1]);
 
                     // a little hack to process local/primary IDs
                     if (tokens[0].matches("where")) {
@@ -184,14 +188,14 @@ public class MetadataUtil
                     }
 		    if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
 			if (tokens[1].length() > metadataDisplaySize) {
-		    	   System.out.println("[info] " + NAME + " Truncating metadata: " + tokens[0] + " to size: " + metadataDisplaySize + " ---- " + tokens[1].substring(0, metadataDisplaySize));
+		    	   log4j.info("[info] " + NAME + " Truncating metadata: " + tokens[0] + " to size: " + metadataDisplaySize + " ---- " + tokens[1].substring(0, metadataDisplaySize));
 		           linkedHashMap.put(tokens[0], tokens[1].substring(0, metadataDisplaySize));
 			} else {
 		           linkedHashMap.put(tokens[0], tokens[1]);
 			}
 		    }
 		} else {
-		    System.out.println("[warn] " + NAME + "No match: " + line);
+		    log4j.warn("[warn] " + NAME + "No match: " + line);
 		}
 	    }
 
@@ -228,12 +232,12 @@ public class MetadataUtil
             while ((line = fileBuffer.readLine()) != null) {
                 if (dcPattern.matcher(line).matches()) {
                     tokens = splitPattern.split(line, 2);
-                    System.out.println("[info] " + NAME + " Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+                    log4j.info("[info] " + NAME + " Found ANVL data: " + tokens[0] + " - " + tokens[1]);
                     if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
                         linkedHashMap.put(tokens[0], tokens[1]);
                     }
                 } else {
-                    System.out.println("[warn] " + NAME + " No embargo key/value pair defined: " + line);
+                    log4j.warn("[warn] " + NAME + " No embargo key/value pair defined: " + line);
                 }
             }
         } 
@@ -270,12 +274,12 @@ public class MetadataUtil
             while ((line = fileBuffer.readLine()) != null) {
                 if (dcPattern.matcher(line).matches()) {
                     tokens = splitPattern.split(line, 2);
-                    System.out.println("[info] " + NAME + "Found ANVL data: " + tokens[0] + " - " + tokens[1]);
+                    log4j.info("[info] " + NAME + "Found ANVL data: " + tokens[0] + " - " + tokens[1]);
                     if (StringUtil.isNotEmpty(StringUtil.squeeze(tokens[1]))) {
                         linkedHashMap.put(tokens[0], tokens[1]);
                     }
                 } else {
-                    System.out.println("[warn] " + NAME + "No match: " + line);
+                    log4j.warn("[warn] " + NAME + "No match: " + line);
                 }
             }
 
@@ -306,7 +310,7 @@ public class MetadataUtil
             fileInputStream = new FileInputStream(DCFile);
 	    Document document = DOMParser.doParse(fileInputStream, null);
 
-	    System.out.println("[info] " + NAME + "Root element :" + document.getDocumentElement().getNodeName());
+	    log4j.info("[info] " + NAME + "Root element :" + document.getDocumentElement().getNodeName());
 	    NodeList nodeList = document.getFirstChild().getChildNodes();
  
 	    for (int temp = 0; temp < nodeList.getLength(); temp++) {
@@ -318,20 +322,20 @@ public class MetadataUtil
 		    String value = element.getTextContent();
 		    if (validDC(key)) {
 			if (linkedHashMap.containsKey(key)) {
-		            if (DEBUG) System.out.println("[info] " + NAME + " appending DC element: " + key + " - " + value);
+		            log4j.info("[info] " + NAME + " appending DC element: " + key + " - " + value);
 			    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
 			} else {
-		            if (DEBUG) System.out.println("[info] " + NAME + " processing DC element: " + key + " - " + value);
+		            log4j.info("[info] " + NAME + " processing DC element: " + key + " - " + value);
 			    linkedHashMap.put(key, value);
 			}
 		    } else {
-		        if (DEBUG) System.out.println("[warn] " + NAME + " DC element not recognized: " + key);
+		        log4j.warn("[warn] " + NAME + " DC element not recognized: " + key);
 		    }
 	        }
 	    }
 
         } catch (Exception e) { 
-            if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-dc.xml: " + DCFile.getName());
+            log4j.error("[error] " + MESSAGE + ": unable to read mrt-dc.xml: " + DCFile.getName());
         } finally {
             try { 
 	        fileInputStream.close();
@@ -372,7 +376,7 @@ public class MetadataUtil
 		String key = (String) iterator.next();
 		String value = (String) linkedHashMap.get(key);
         	if ( ! validDC(key)) {
-	            System.out.println("[warn] " + NAME + " DC element not recognized: " + key);
+	            log4j.warn("[warn] " + NAME + " DC element not recognized: " + key);
 		    continue;
 	        }
 
@@ -455,10 +459,10 @@ public class MetadataUtil
 		value = node.getTextContent();
 
 		if (linkedHashMap.containsKey(key)) {
-		    if (DEBUG) System.out.println("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
+		    log4j.info("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
 		    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
 		} else {
-		    if (DEBUG) System.out.println("[info] " + NAME + " processing DataCite element: " + key + " - " + value);
+		    log4j.info("[info] " + NAME + " processing DataCite element: " + key + " - " + value);
 		    linkedHashMap.put(key, value);
 		}
 
@@ -473,10 +477,10 @@ public class MetadataUtil
 		value = node.getTextContent();
 
 		if (linkedHashMap.containsKey(key)) {
-		    if (DEBUG) System.out.println("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
+		    log4j.info("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
 		    linkedHashMap.put(key, linkedHashMap.get(key) + DC_DELIMITER + value);
 		} else {
-		    if (DEBUG) System.out.println("[info] " + NAME + " processing DataCite element: " + key + " - " + value);
+		    log4j.info("[info] " + NAME + " processing DataCite element: " + key + " - " + value);
 		    linkedHashMap.put(key, value);
 		}
 
@@ -485,12 +489,12 @@ public class MetadataUtil
 	    key = "datacite.publicationyear";
 	    expr = xpath.compile("//*[local-name()='resource']/*[local-name()='publicationYear']");
 	    value = expr.evaluate(document);
-	    if (DEBUG) System.out.println("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
+	    log4j.info("[info] " + NAME + " appending DataCite element: " + key + " - " + value);
 	    linkedHashMap.put(key, value);
 
         } catch (Exception e) { 
-	    e.printStackTrace();
-            if (DEBUG) System.out.println("[error] " + MESSAGE + ": unable to read mrt-datacite.xml: " + e.getMessage());
+	    log4j.error("Exception:" + e, e);
+            log4j.error("[error] " + MESSAGE + ": unable to read mrt-datacite.xml: " + e.getMessage());
             throw new TException.GENERAL_EXCEPTION("[error] " +
                 MESSAGE + ": unable to process mrt-datacite.xml: " + e.getMessage());
         } finally {

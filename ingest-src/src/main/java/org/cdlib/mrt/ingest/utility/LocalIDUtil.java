@@ -36,6 +36,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 
@@ -74,8 +76,8 @@ public class LocalIDUtil
     private static final String NAME = "LocalIDUtil";
     private static final String MESSAGE = NAME + ": ";
     private LoggerInf logger = null;
-    private static final boolean DEBUG = true;
     public static final int LOCALID_TIMEOUT = (5 * 60 * 1000);
+    protected static final Logger log4j = LogManager.getLogger();
 
     public static String fetchPrimaryID(ProfileState profileState, String localID)
         throws TException
@@ -91,7 +93,7 @@ public class LocalIDUtil
             String url = localIDURL.toString() + "/primary/" +
 			URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" +
 			URLEncoder.encode(localID,  "utf-8") + "?t=json";
-            if (DEBUG) System.out.println("[debug] PrimaryID fetch URL: " + url);
+            log4j.debug("[debug] PrimaryID fetch URL: " + url);
             HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
             HttpGet httpget = new HttpGet(url);
 
@@ -99,7 +101,7 @@ public class LocalIDUtil
             try {
                 clientResponse = httpClient.execute(httpget);
             } catch (Exception e) {
-                e.printStackTrace();
+		log4j.error("Exception:" + e, e);
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": localid service: " + url);
             }
             int responseCode = clientResponse.getStatusLine().getStatusCode();
@@ -125,13 +127,13 @@ public class LocalIDUtil
 		if ( primaryExists) {
                    primaryID = jsonResponse.getJSONObject("invloc:localContainerState").getString("invloc:primaryIdentifier");
                    if (StringUtil.isNotEmpty(primaryID)) {
-                      if (DEBUG) System.out.println("[debug] primary ID: " + primaryID);
+                      log4j.debug("[debug] primary ID: " + primaryID);
                    } else {
-                       if (DEBUG) System.out.println("[debug] Can not determine primary ID from localID DB");
+                       log4j.debug("[debug] Can not determine primary ID from localID DB");
                        primaryID = null;
                    }
                } else {
-                   if (DEBUG) System.out.println("[debug] No primaryID exists from localID: " + localID);
+                   log4j.debug("[debug] No primaryID exists from localID: " + localID);
 		   primaryID = null;
                }
 	    }
@@ -141,7 +143,7 @@ public class LocalIDUtil
         } catch (TException te) {
 	    throw te;
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "failed to map localID. " + e.getMessage();
             throw new TException.GENERAL_EXCEPTION(msg);
         } finally {
@@ -163,7 +165,7 @@ public class LocalIDUtil
             // build REST url
             String url = localIDURL.toString() + "/local/" + 
 			URLEncoder.encode(primaryID,  "utf-8") + "?t=json";
-            if (DEBUG) System.out.println("[debug] LocalID fetch URL from localID db: " + url);
+            log4j.debug("[debug] LocalID fetch URL from localID db: " + url);
 
             HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
             HttpGet httpget = new HttpGet(url);
@@ -172,7 +174,7 @@ public class LocalIDUtil
             try {
                 clientResponse = httpClient.execute(httpget);
             } catch (Exception e) {
-                e.printStackTrace();
+		log4j.error("Exception:" + e, e);
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": localid service: " + url);
             }
 
@@ -197,36 +199,36 @@ public class LocalIDUtil
             if (jsonResponse != null) {
                 boolean primaryExists = jsonResponse.getJSONObject("invloc:localContainerState").getBoolean("invloc:exists");
 		if ( ! primaryExists) {
-		   if (DEBUG) System.out.println("[debug] In search for localIDs, primaryID does not exist: " + primaryID);
+		   log4j.debug("[debug] In search for localIDs, primaryID does not exist: " + primaryID);
 		   return localIDs;
 		}
 		try {
 		   // Single localID (JSONObject)
                    localIDs = jsonResponse.getJSONObject("invloc:localContainerState").getJSONObject("invloc:local").getJSONObject("invloc:primaryLocalState").getString("invloc:localID");
-                   if (DEBUG) System.out.println("[debug] Single LocalID found: " + localIDs);
+                   log4j.debug("[debug] Single LocalID found: " + localIDs);
 		} catch (org.json.JSONException jsonEx) {
-                   if (DEBUG) System.out.println("[debug] Single LocalID not found for primaryID: " + primaryID);
+                   log4j.debug("[debug] Single LocalID not found for primaryID: " + primaryID);
 		}
 		// multiple localIDs (JSONArray)
 		if (localIDs == null) {
-                   if (DEBUG) System.out.println("[debug] Searching for multiple localID for primaryID: " + primaryID);
+                   log4j.debug("[debug] Searching for multiple localID for primaryID: " + primaryID);
                    JSONArray jlocalIDs = jsonResponse.getJSONObject("invloc:localContainerState").getJSONObject("invloc:local").getJSONArray("invloc:primaryLocalState");
        		   for (int i = 0, size = jlocalIDs.length(); i < size; i++) {
 	              JSONObject jlocalID = jlocalIDs.getJSONObject(i);
 		      String localID = jlocalID.getString("invloc:localID");
-                      if (DEBUG) System.out.println("[debug] Multiple LocalID found: " + localID);
+                      log4j.debug("[debug] Multiple LocalID found: " + localID);
                       if (localIDs == null) localIDs = localID;
                       else localIDs += "; " + localID;
 		   }
                } 
 	    }
-	    if (StringUtil.isEmpty(localIDs)) if (DEBUG) System.out.println("[debug] Can not determine local ID");
+	    if (StringUtil.isEmpty(localIDs)) log4j.debug("[debug] Can not determine local ID");
             return localIDs;
 
         } catch (TException te) {
 	    throw te;
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "failed to map primaryID to localID. " + e.getMessage();
             throw new TException.GENERAL_EXCEPTION(msg);
         } finally {
@@ -249,7 +251,7 @@ public class LocalIDUtil
             String url = localIDURL.toString() + "/primary/" + 
 		URLEncoder.encode(primaryID, "utf-8") + "/" + 
 		URLEncoder.encode(profileState.getOwner(), "utf-8") + "/" + URLEncoder.encode(localID, "utf-8") + "?t=xml";
-            if (DEBUG) System.out.println("[debug] LocalID add URL for localID db: " + url);
+            log4j.debug("[debug] LocalID add URL for localID db: " + url);
 
             HttpClient httpClient = HTTPUtil.getHttpClient(url, LOCALID_TIMEOUT);
             HttpPost httppost = new HttpPost(url);
@@ -270,7 +272,7 @@ public class LocalIDUtil
 		     break;
                 } catch (Exception ce) {
                      if (retryCount >= 3) throw ce;
-                     System.err.println("[error] " + MESSAGE + ": " + ce.getMessage());
+                     log4j.error("[error] " + MESSAGE + ": " + ce.getMessage());
                      retryCount++;
                 }
             }
@@ -279,7 +281,7 @@ public class LocalIDUtil
                 try {
                     // most likely exception
                     // can only call once, as stream is not reset
-		    System.err.println("[error] Local ID add.  Response code: " + responseCode + "  - Message: " + responseMessage);
+		    log4j.error("[error] Local ID add.  Response code: " + responseCode + "  - Message: " + responseMessage);
                     throw new TException.REQUEST_INVALID(responseMessage);
                 } catch (TException te) {
                     throw te;
@@ -288,15 +290,15 @@ public class LocalIDUtil
                     throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": localID service: " + url);
                 }
 	    } else {
-                if (DEBUG) System.out.println("[debug] LocalID updated: " + localID);
-   	        if (DEBUG) System.out.println(responseBody);
+                log4j.debug("[debug] LocalID updated: " + localID);
+   	        log4j.debug(responseBody);
 		// all done, fall through to end 
 	    }
 
         } catch (TException te) {
 	    throw te;
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "failed to add localID. " + e.getMessage();
             throw new TException.GENERAL_EXCEPTION(msg);
         }
