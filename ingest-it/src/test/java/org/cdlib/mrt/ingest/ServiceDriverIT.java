@@ -1,5 +1,6 @@
 package org.cdlib.mrt.ingest;
 
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Ignore;
@@ -18,6 +19,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,8 +28,12 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
 import javax.xml.xpath.XPathFactory;
+
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 //https://stackoverflow.com/a/22939742/3846548
 import org.apache.xpath.jaxp.XPathFactoryImpl;
 import org.apache.zookeeper.KeeperException;
@@ -44,9 +50,6 @@ import org.cdlib.mrt.zk.MerrittZKNodeInvalid;
 import org.cdlib.mrt.zk.QueueItemHelper;
 import org.cdlib.mrt.zk.QueueItem.ZkPaths;
 
-import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 /**
  * Merritt Ingest Integration Test Driver
@@ -85,6 +88,8 @@ public class ServiceDriverIT {
         private XPathFactory xpathfactory;
         private String profile = "merritt_test_content";
         private ZooKeeper zk;
+
+	protected static final Logger log4j = LogManager.getLogger();
 
         public static final int SLEEP_SUBMIT = 15000;
         public static final int SLEEP_RETRY = 3000;
@@ -412,7 +417,7 @@ public class ServiceDriverIT {
                         //Thread.sleep(SLEEP_CLEANUP);
                         batch.delete(zk);
                 } catch(Exception e) {
-                        System.out.println(e);
+			log4j.error("Exception:" + e, e);
                 }
         }
 
@@ -432,13 +437,13 @@ public class ServiceDriverIT {
                         }
                         for (Job j: batch.getProcessingJobs(zk)) {
                                 j.load(zk);
-				// System.out.println(i + " ---- " + j.status() + " ---- " + j.id());
+				// log4j.debug(i + " ---- " + j.status() + " ---- " + j.id());
                                 if (j.status() == org.cdlib.mrt.zk.JobState.Recording 
 				|| j.status() == org.cdlib.mrt.zk.JobState.Storing) {
                                         try {
                                                 j.setStatus(zk, j.status().success());
                                         } catch (MerrittStateError e) {
-                                                e.printStackTrace();
+						log4j.error("Exception:" + e, e);
                                         }
                                 }
                         }
@@ -470,7 +475,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void TestManifest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
-		System.out.println("[ServiceDriverIT] TestManifest - Test manifest.");
+		log4j.info("[ServiceDriverIT] TestManifest - Test manifest.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/mock_object.checkm"));
 
@@ -499,7 +504,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void TestManifestWithRequeue() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
-		System.out.println("[ServiceDriverIT] TestManifestWithRequeue - Test manifest while forcing failure.");
+		log4j.info("[ServiceDriverIT] TestManifestWithRequeue - Test manifest while forcing failure.");
                 // tell the mock-merritt-it service to temporarily suspend content delivery
                 String url = String.format("http://localhost:%d/status/stop", mockport, cp);
                 getJsonContent(new HttpPost(url), 200);
@@ -527,7 +532,7 @@ public class ServiceDriverIT {
 
         @Test
         public void BatchManifestIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] BatchManifestIngest - Submit batch manifest.");
+		log4j.info("[ServiceDriverIT] BatchManifestIngest - Submit batch manifest.");
                 String filename = "sampleBatchOfManifests.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
@@ -548,7 +553,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void BatchFilesIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] BatchFilesIngest - Submit batch manifest by URL.");
+		log4j.info("[ServiceDriverIT] BatchFilesIngest - Submit batch manifest by URL.");
                 String filename = "sampleBatchOfFiles.checkm";
                 String contenturl = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/" + filename;
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
@@ -567,7 +572,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleFileIngest - Submit single file.");
+		log4j.info("[ServiceDriverIT] SimpleFileIngest - Submit single file.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Thread.sleep(SLEEP_SUBMIT);
@@ -584,7 +589,7 @@ public class ServiceDriverIT {
         */
         @Test
         public void SimpleFileIngestCheckJob() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestCheckJob - Submit single file. Test Job endpoints");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestCheckJob - Submit single file. Test Job endpoints");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Thread.sleep(SLEEP_SUBMIT);
@@ -671,7 +676,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void QueueFileIngest() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] QueueFileIngest - Submit single file.");
+		log4j.info("[ServiceDriverIT] QueueFileIngest - Submit single file.");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Thread.sleep(SLEEP_SUBMIT);
@@ -690,7 +695,7 @@ public class ServiceDriverIT {
          */
         // @Test
         public void QueueFileIngestCatchLock() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] QueueFileIngestCatchLock - Submit and dectect lock.");
+		log4j.info("[ServiceDriverIT] QueueFileIngestCatchLock - Submit and dectect lock.");
                 //This ark has a time delay in mock-merritt-it to allow the catch of a lock
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/9999/2222", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
@@ -750,7 +755,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void QueueFileIngestPauseSubmissions() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] QueueFileIngestPauseSubmissions - Submit while Ingest frozen, then thaw");
+		log4j.info("[ServiceDriverIT] QueueFileIngestPauseSubmissions - Submit while Ingest frozen, then thaw");
                 MerrittLocks.lockIngestQueue(zk);
                 assertTrue(MerrittLocks.checkLockIngestQueue(zk));
 
@@ -773,7 +778,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void QueueFileIngestPauseCollection() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid, MerrittStateError {
-		System.out.println("[ServiceDriverIT] QueueFileIngestPauseCollection - Submit to a frozen collection, then thaw");
+		log4j.info("[ServiceDriverIT] QueueFileIngestPauseCollection - Submit to a frozen collection, then thaw");
                 MerrittLocks.lockCollection(zk, profile);
 
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
@@ -805,7 +810,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithLocalid() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestWithLocalid - single localID (form parm)");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestWithLocalid - single localID (form parm)");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid");
@@ -826,7 +831,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithLocalids() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestWithLocalids - multiple localIDs with duplicates (form parm)");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestWithLocalids - multiple localIDs with duplicates (form parm)");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"), "localid;localid;localid;localidtwo;localidtwo");
@@ -847,7 +852,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleContainerLocalIDWithForm() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleContainerLocalIDWithForm - Form parameter localIDs and ERC file (mrt-erc.txt)");
+		log4j.info("[ServiceDriverIT] SimpleContainerLocalIDWithForm - Form parameter localIDs and ERC file (mrt-erc.txt)");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 String bid = ingestFile(url, new File("src/test/resources/data/test_erc.zip"), "localidfour; localidfive");
@@ -870,7 +875,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleBatchManifestLocalIDWithERCFile() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestLocalIDWithERCForm - Batch manifest with localIDs and ERC file (mrt-erc.txt)");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestLocalIDWithERCForm - Batch manifest with localIDs and ERC file (mrt-erc.txt)");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 String bid = ingestFile(url, new File("src/test/resources/data/localid_batch.checkm"), "");
@@ -893,7 +898,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleBatchManifestLocalIDWithForm() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleBatchManifestLocalIDWithForm - Batch manifest with localIDs and Form parameters");
+		log4j.info("[ServiceDriverIT] SimpleBatchManifestLocalIDWithForm - Batch manifest with localIDs and Form parameters");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 String bid = ingestFile(url, new File("src/test/resources/data/localid2_batch.checkm"), "localidten");
@@ -916,7 +921,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleBatchManifestDigest() throws IOException, JSONException, KeeperException, InterruptedException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleBatchManifestDigest - Batch manifest with all caps Digest value");
+		log4j.info("[ServiceDriverIT] SimpleBatchManifestDigest - Batch manifest with all caps Digest value");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
 		// Creation of batch validates that manifest digest values are okay
@@ -937,7 +942,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithArk() throws IOException, JSONException, MerrittZKNodeInvalid, KeeperException, InterruptedException {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with primaryID (form parm)");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with primaryID (form parm)");
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/1111/2222", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Thread.sleep(SLEEP_SUBMIT);
@@ -957,7 +962,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithArkAndUpdate() throws IOException, JSONException, MerrittZKNodeInvalid, KeeperException, InterruptedException {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Update with primaryID (form parm)");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestWithArk - Update with primaryID (form parm)");
                 String url = String.format("http://localhost:%d/%s/poster/submit/ark/1111/2222", port, cp);
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
                 Thread.sleep(SLEEP_SUBMIT);
@@ -983,7 +988,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleFileIngestWithUpdate() throws IOException, JSONException, InterruptedException, KeeperException, MerrittZKNodeInvalid {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Update");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestWithArk - Update");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 String bid = ingestFile(url, new File("src/test/resources/data/foo.txt"));
@@ -1008,7 +1013,7 @@ public class ServiceDriverIT {
          */
         @Test
         public void SimpleZipIngest() throws IOException, JSONException {
-		System.out.println("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with Zip payload");
+		log4j.info("[ServiceDriverIT] SimpleFileIngestWithArk - Submit with Zip payload");
                 String url = String.format("http://localhost:%d/%s/poster/submit", port, cp);
 
                 ingestFile(url, new File("src/test/resources/data/test.zip"));

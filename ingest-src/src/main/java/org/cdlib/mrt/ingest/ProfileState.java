@@ -36,6 +36,9 @@ import java.util.Vector;
 import java.io.File;
 import java.io.Serializable;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
@@ -51,7 +54,8 @@ public class ProfileState
 
     private static final String NAME = "ProfileState";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
 
     private Identifier profileID = null;
@@ -789,9 +793,9 @@ public class ProfileState
         try {
             this.notificationFormat = FormatType.valueOf(notificationFormat);
         } catch (Exception e) {
-            // default
-	    e.printStackTrace();
-            if (DEBUG) System.out.println("[warn] ProfileState: Could not assign format type: " + notificationFormat);
+	    log4j.error("Exception:" + e, e);
+
+            log4j.warn("[warn] ProfileState: Could not assign format type: " + notificationFormat);
             this.notificationFormat = null;
         }
     }

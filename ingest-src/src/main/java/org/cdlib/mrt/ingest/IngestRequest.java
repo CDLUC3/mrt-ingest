@@ -31,6 +31,9 @@ package org.cdlib.mrt.ingest;
 
 import java.io.File;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatType;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
@@ -47,7 +50,8 @@ public class IngestRequest
 
     private static final String NAME = "IngestRequest";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     private Identifier profile = null;
     private int packageSize;
@@ -102,7 +106,7 @@ public class IngestRequest
 
 	    ResponseFormEnum.setResponseForm(responseForm);
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
 	}
     }
 
@@ -292,7 +296,7 @@ public class IngestRequest
             this.notificationFormat = FormatType.valueOf(notificationFormat);
         } catch (Exception e) {
             // default
-            if (DEBUG) System.out.println("[warn] IngestRequest: Could not assign format type: " + notificationFormat);
+            log4j.warn("[warn] IngestRequest: Could not assign format type: " + notificationFormat);
             this.notificationFormat = null;
         }
     }

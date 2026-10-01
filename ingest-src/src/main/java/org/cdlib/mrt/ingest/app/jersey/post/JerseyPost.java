@@ -44,6 +44,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.formatter.FormatterInf;
 import org.cdlib.mrt.ingest.app.IngestServiceInit;
 import org.cdlib.mrt.ingest.app.jersey.JerseyBase;
@@ -65,8 +68,8 @@ public class JerseyPost extends JerseyBase
     protected static final String NAME = "JerseyPost";
     protected static final String MESSAGE = NAME + ": ";
     protected static final FormatterInf.Format DEFAULT_OUTPUT_FORMAT = FormatterInf.Format.xml;
-    protected static final boolean DEBUG = false;
     protected static final String NL = System.getProperty("line.separator");
+    protected static final Logger log4j = LogManager.getLogger();
 
     // Show service status
     @GET
@@ -94,7 +97,7 @@ public class JerseyPost extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -122,7 +125,7 @@ public class JerseyPost extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
