@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.apache.commons.text.StringSubstitutor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
@@ -61,7 +63,6 @@ public class AdminManager {
 
 	private static final String NAME = "AdminManager";
 	private static final String MESSAGE = NAME + ": ";
-	private static final boolean DEBUG = true;
 	private LoggerInf logger = null;
 	private JSONObject ingestConf = null;
 	private ArrayList<String> m_admin = new ArrayList<String>(20);
@@ -73,6 +74,7 @@ public class AdminManager {
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
+	protected static final Logger log4j = LogManager.getLogger();
 
 	protected AdminManager(LoggerInf logger, JSONObject ingestConf) throws TException {
 		try {
@@ -93,8 +95,8 @@ public class AdminManager {
 			throw tex;
 		} catch (Exception ex) {
 			String msg = MESSAGE + "AdminManager Exception:" + ex;
-			logger.logError(msg, LoggerInf.LogLevel.SEVERE);
-			logger.logError(MESSAGE + "trace:" + StringUtil.stackTrace(ex), LoggerInf.LogLevel.DEBUG);
+			log4j.error("Exception:" + ex, ex);
+
 			throw new TException.GENERAL_EXCEPTION(msg);
 		}
 	}
@@ -134,37 +136,37 @@ public class AdminManager {
 
                         // Profile Node
                         profileNode = ingestConf.getString(matchProfileNode);
-                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+                        log4j.info("[info] " + MESSAGE + "Profile Node: " + profileNode);
 
                         // Profile Path
                         profilePath = ingestConf.getString(matchProfilePath);
-                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+                        log4j.info("[info] " + MESSAGE + "Profile Path: " + profilePath);
 
                         // Profile Endpoint
                         try {
                             s3endpoint = ingestConf.getString(matchS3endpoint);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
                         } catch (Exception e) {
                             s3endpoint = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined.");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined.");
                         }
 
                         // Profile Access Key
                         try {
                             s3accesskey = ingestConf.getString(matchS3accesskey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
                         } catch (Exception e) {
                             s3accesskey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
                         }
 
                         // Profile Secret Key
                         try {
                             s3secretkey = ingestConf.getString(matchS3secretkey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
                         } catch (Exception e) {
                             s3secretkey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
                         }
 
 		} catch (TException tex) {
@@ -189,8 +191,7 @@ public class AdminManager {
 			throw me;
 
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		}
 	}
@@ -213,8 +214,7 @@ public class AdminManager {
 			return profileState;
 
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 		}
@@ -258,8 +258,7 @@ public class AdminManager {
                 } catch (TException tex) {
                         throw tex;
                 } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                         lines = null;
@@ -292,8 +291,7 @@ public class AdminManager {
                 } catch (TException tex) {
                         throw tex;
                 } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                 }
@@ -335,8 +333,7 @@ public class AdminManager {
                 } catch (TException tex) {
                         throw tex;
                 } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                 }
@@ -373,8 +370,7 @@ public class AdminManager {
                 } catch (TException tex) {
                         throw tex;
                 } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                 }
@@ -419,8 +415,7 @@ public class AdminManager {
                 } catch (TException tex) {
                         throw tex;
                 } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                 }
@@ -491,10 +486,8 @@ public class AdminManager {
 		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
 
