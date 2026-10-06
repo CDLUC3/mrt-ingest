@@ -36,6 +36,9 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.StringEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -73,6 +76,7 @@ public class StorageUtil
     public static final int STORAGE_READ_TIMEOUT = (48 * 60 * 60 * 1000); 		// 48 hours for long requests
     public static final int STORAGE_CONNECT_TIMEOUT = (48 * 60 * 60 * 1000);		// 48 hours for long requests
 
+    protected static final Logger log4j = LogManager.getLogger();
 
     public static String getStorageManifest(ProfileState profileState, String objectID)
         throws TException
@@ -88,7 +92,8 @@ public class StorageUtil
 	} catch (TException tex) {
 	    throw tex;
 	} catch (Exception ex) {
-            System.out.println(StringUtil.stackTrace(ex));
+	    log4j.error("Exception:" + ex, ex);
+            log4j.error(StringUtil.stackTrace(ex));
             String err = MESSAGE + "error in accessing Storage Manifest - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("Error in accessing Storage Manifest");
@@ -107,7 +112,8 @@ public class StorageUtil
 	    FileUtil.string2File(tempFile, getStorageString(profileState, objectID, filename));
 	    return tempFile;
 	} catch (Exception ex) {
-            System.out.println(StringUtil.stackTrace(ex));
+	    log4j.error("Exception:" + ex, ex);
+            log4j.error(StringUtil.stackTrace(ex));
             String err = MESSAGE + "error in accessing Storage file - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("Error in accessing Storage file");
@@ -139,20 +145,20 @@ public class StorageUtil
             HttpClient httpClient = HTTPUtil.getHttpClient(storageURL, StorageUtil.STORAGE_READ_TIMEOUT_SHORT);
             HttpGet httpget = new HttpGet(storageURL);
             httpget.setHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " storage URL: " + storageURL);
+            log4j.debug("[debug] " + MESSAGE + " storage URL: " + storageURL);
 
             // make service request
             try {
             	clientResponse = httpClient.execute(httpget);
             } catch (Exception e) {
-		e.printStackTrace();
+		log4j.error("Exception:" + e, e);
                 throw new TException.EXTERNAL_SERVICE_UNAVAILABLE("[error] " + NAME + ": storage service: " + storageURL);
             }
 
             int responseCode = clientResponse.getStatusLine().getStatusCode();
             String responseMessage = clientResponse.getStatusLine().getReasonPhrase();
             String responseBody = StringUtil.streamToString(clientResponse.getEntity().getContent(), "UTF-8");
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " response code " + responseCode);
+            log4j.debug("[debug] " + MESSAGE + " response code " + responseCode);
 
             if (responseCode == 404) return null;
             if (responseCode != 200) {
@@ -168,13 +174,14 @@ public class StorageUtil
                 }
             }
 
-            if (DEBUG) System.out.println("[debug] " + MESSAGE + " storage URL response: " + responseMessage);
+            log4j.debug("[debug] " + MESSAGE + " storage URL response: " + responseMessage);
 	    return responseBody;
 
 	} catch (TException tex) {
 	    throw tex;
 	} catch (Exception ex) {
-            System.out.println(StringUtil.stackTrace(ex));
+	    log4j.error("Exception:" + ex, ex);
+            log4j.error(StringUtil.stackTrace(ex));
             String err = MESSAGE + "error in accessing Storage file - Exception:" + ex;
 
             throw new TException.GENERAL_EXCEPTION("Error in accessing Storage file");
@@ -196,7 +203,7 @@ public class StorageUtil
 
             return files;
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "failed to create version map: " + e.getMessage();
             throw new TException.GENERAL_EXCEPTION(msg);
         } finally {

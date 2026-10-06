@@ -50,6 +50,10 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -77,7 +81,6 @@ public class BatchManager {
 
 	private static final String NAME = "BatchManager";
 	private static final String MESSAGE = NAME + ": ";
-	private static final boolean DEBUG = true;
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
@@ -97,6 +100,8 @@ public class BatchManager {
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
+
+	protected static final Logger log4j = LogManager.getLogger();
 
 	public JSONObject getQueueServiceConf() {
 		return queueConf;
@@ -122,8 +127,7 @@ public class BatchManager {
 			throw tex;
 		} catch (Exception ex) {
 			String msg = MESSAGE + "batchManager Exception:" + ex;
-			logger.logError(msg, LoggerInf.LogLevel.SEVERE);
-			logger.logError(MESSAGE + "trace:" + StringUtil.stackTrace(ex), LoggerInf.LogLevel.DEBUG);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(msg);
 		}
 	}
@@ -176,45 +180,45 @@ public class BatchManager {
 			}
 			// email contact
 			emailContact = ingestConf.getString(matchEmailContact);
-                        System.out.println("[info] " + MESSAGE + "Contact email: " + emailContact);
+                        log4j.info("[info] " + MESSAGE + "Contact email: " + emailContact);
 
                         // email reply-to
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
-                        System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
+                        log4j.info("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
                         // Profile Node
                         profileNode = ingestConf.getString(matchProfileNode);
-                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+                        log4j.info("[info] " + MESSAGE + "Profile Node: " + profileNode);
 
                         // Profile Path
                         profilePath = ingestConf.getString(matchProfilePath);
-                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+                        log4j.info("[info] " + MESSAGE + "Profile Path: " + profilePath);
 
                         // Profile Endpoint
 			try {
                             s3endpoint = ingestConf.getString(matchS3endpoint);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
 			} catch (Exception e) {
                             s3endpoint = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined.");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined.");
 			}
 
                         // Profile Access Key
 			try {
                             s3accesskey = ingestConf.getString(matchS3accesskey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
 			} catch (Exception e) {
                             s3accesskey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
 			}
 
                         // Profile Secret Key
 			try {
                             s3secretkey = ingestConf.getString(matchS3secretkey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
 			} catch (Exception e) {
                             s3secretkey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
 			}
 
             	        if (! ZookeeperUtil.validateZK(zooKeeper)) {
@@ -222,11 +226,11 @@ public class BatchManager {
                    	        // Refresh ZK connection
                    	        zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                	            } catch  (Exception e ) {
-                 	        e.printStackTrace(System.err);
+				log4j.error("Exception:" + e, e);
                	            }
             	        }
 
-                        System.out.println("[info] " + MESSAGE + "Initializing Zookeeper Locks");
+                        log4j.info("[info] " + MESSAGE + "Initializing Zookeeper Locks");
 			MerrittLocks.initLocks(zooKeeper);
 
 		} catch (TException tex) {
@@ -259,8 +263,7 @@ public class BatchManager {
 			throw me;
 
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		}
 	}
@@ -289,7 +292,7 @@ public class BatchManager {
 			    if (! hasFailure) {
 				deleteProfile = true;
 			    } else {
-				System.out.println("Error detected in Batch. Profile file not deleted.");
+				log4j.error("Error detected in Batch. Profile file not deleted.");
 			    }
 			}
 			
@@ -307,8 +310,7 @@ public class BatchManager {
                         if (emailReplyTo != null)
                                 profileState.setEmailReplyTo(emailReplyTo);
 
-			if (DEBUG)
-				System.out.println("[debug] " + profileState.dump("profileState"));
+			log4j.debug("[debug] " + profileState.dump("profileState"));
 
 			batchState.setBatchProfile(profileState);
 
@@ -323,7 +325,7 @@ public class BatchManager {
                         //if ( ! state.matches("Process")) {
                                 try {
                                         postThread.join();
-                                        if (DEBUG) System.out.println(NAME + "[debug] Synchronous mode processing: " + state);
+                                        log4j.debug(NAME + "[debug] Synchronous mode processing: " + state);
                                 } catch (InterruptedException ignore) {
                                 }
                         //}
@@ -333,8 +335,7 @@ public class BatchManager {
 		} catch (TException me) {
 			throw me;
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 			if (profileState != null)
@@ -415,10 +416,8 @@ public class BatchManager {
 		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
 
@@ -443,8 +442,7 @@ public class BatchManager {
                     throw me;
 
             } catch (Exception ex) {
-                    System.out.println(StringUtil.stackTrace(ex));
-                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+		    log4j.error("Exception:" + ex, ex);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
             } finally {
 		try {
@@ -460,11 +458,11 @@ public class BatchManager {
 			Class classDefinition = Class.forName(className);
 			object = classDefinition.newInstance();
 		} catch (InstantiationException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		} catch (IllegalAccessException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		} catch (ClassNotFoundException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		}
 		return object;
 	}
@@ -500,7 +498,7 @@ public class BatchManager {
 				//this.batchHandlers = new TreeMap<Integer, HandlerState>(profileState.getBatchHandlers());
 				//this.batchHandlers = new TreeMap<Integer, HandlerState>();
 			} catch (Exception e) {
-				e.printStackTrace(System.err);
+				log4j.error("Exception:" + e, e);
 			}
 		}
 
@@ -519,25 +517,16 @@ public class BatchManager {
 						throw new TException.INVALID_CONFIGURATION("[error] Could not find queue handler: " + handlerS);
 					}
 					StateInf stateClass = batchState;
-/*
-					if (isError && (!handler.getName().equals("HandlerNotification"))) {
-						System.out
-								.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
-						continue;
-					}
-
-*/
 					HandlerResult handlerResult = null;
 					try {
 						handlerResult = handler.handle(profileState, ingestRequest, stateClass);
 					} catch (Exception e) {
-						e.printStackTrace();
+						log4j.error("Exception:" + e, e);
 						handlerResult.setSuccess(false);
 					}
 
 					// Abort if failure
-					if (DEBUG)
-						System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
+					log4j.debug("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
 					if (handlerResult.getSuccess()) {
 						batchState.setBatchStatus(BatchStatusEnum.QUEUED);
 					} else {
@@ -549,11 +538,11 @@ public class BatchManager {
 
 				// ready for consumer to start processing
 				//BatchState.putBatchReadiness(batchState.getBatchID().getValue(), 1);
-				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue() + " Status: " + batchState.getBatchStatus().toString());
+				log4j.info(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue() + " Status: " + batchState.getBatchStatus().toString());
 
 			} catch (Exception e) {
-				System.out.println(MESSAGE + "Exception detected while posting data to queue.");
-				e.printStackTrace(System.err);
+				log4j.error(MESSAGE + "Exception detected while posting data to queue.");
+				log4j.error("Exception:" + e, e);
 			} finally {
 				//batchHandlers = null;
 			}

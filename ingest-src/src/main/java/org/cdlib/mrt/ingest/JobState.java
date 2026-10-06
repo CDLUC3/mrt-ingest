@@ -34,6 +34,9 @@ import au.com.bytecode.opencsv.CSVWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.cloud.VersionMap;
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.core.Identifier;
@@ -45,6 +48,7 @@ import org.cdlib.mrt.ingest.utility.MintUtil;
 import org.cdlib.mrt.ingest.utility.ProfileUtil;
 import org.cdlib.mrt.ingest.utility.FormatterUtil;
 import org.cdlib.mrt.utility.StateInf;
+
 
 /**
  * Job State information
@@ -114,6 +118,7 @@ public class JobState
 	private String storeMode = "";			// ZK Store mode
 	private String storeDelete = "";		// ZK Store delete
 
+	protected static final Logger log4j = LogManager.getLogger();
 
 	// constructors
 	public JobState(){}
@@ -336,11 +341,11 @@ public class JobState
 		   if (getLocalID() != null) {
 		      // Augment
 		      localID = MintUtil.sanitize(getLocalID().getValue() + ";" + localID);
-		      System.out.println("[DEBUG]: Augmenting Local ID to: " + localID);
+		      log4j.info("[info]: Augmenting Local ID to: " + localID);
 		   }
 		   this.localID = new Identifier(localID, Identifier.Namespace.Local);  // default Local namespace
 		} catch (Exception e) {
-		   e.printStackTrace();
+		   log4j.error("Exception:" + e, e);
 		}
 	}
 

@@ -40,6 +40,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -78,9 +81,9 @@ public class HandlerSubmit extends Handler<BatchState>
 
     protected static final String NAME = "HandlerSubmit";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
+    protected static final Logger log4j = LogManager.getLogger();
     ZooKeeper zooKeeper = null;
 
     /**
@@ -110,7 +113,7 @@ public class HandlerSubmit extends Handler<BatchState>
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+		 log4j.error("Exception:" + e, e);
                }
             }
 
@@ -197,7 +200,7 @@ public class HandlerSubmit extends Handler<BatchState>
             try {
                 Job.initNodes(zooKeeper);
             } catch (KeeperException ke) {
-                System.out.println(MESSAGE + "[WARN] Session expired or Connection loss.  Reconnecting...");
+                log4j.warn(MESSAGE + "[warn] Session expired or Connection loss.  Reconnecting...");
                 try {
 		    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
             	    zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
@@ -207,8 +210,8 @@ public class HandlerSubmit extends Handler<BatchState>
 
 
 	    batch = Batch.createBatch(zooKeeper, jproperties);
-	    System.out.println("[INFO] Batch created: " + batch.id());
-	    System.out.println("[INFO] Batch data: " + batch.data());
+	    log4j.info("[info] Batch created: " + batch.id());
+	    log4j.info("[info] Batch data: " + batch.data());
 
 	    // Pending status is set during creation
 	    // batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Pending, "Pending");
@@ -217,9 +220,10 @@ public class HandlerSubmit extends Handler<BatchState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();
-            System.err.println(msg);
+            log4j.error(msg);
             try {
                batch.setStatus(zooKeeper, org.cdlib.mrt.zk.BatchState.Failed, e.getMessage());
             } catch (Exception zke) {

@@ -35,6 +35,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.ingest.BatchState;
@@ -90,6 +92,9 @@ public class ProvisionConsumer extends HttpServlet
     private int numThreads = 5;		// default size
     private int pollingInterval = 15;	// default interval (seconds)
 
+
+    protected static final Logger log4j = LogManager.getLogger();
+
     public void init(ServletConfig servletConfig)
             throws ServletException {
         super.init(servletConfig);
@@ -104,28 +109,28 @@ public class ProvisionConsumer extends HttpServlet
             ingestServiceInit = IngestServiceInit.getIngestServiceInit(servletConfig);
             ingestService = ingestServiceInit.getIngestService();
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not create ingest service in daemon init. ");
+	    log4j.error("[error] " + MESSAGE + "Could not create ingest service in daemon init. ");
 	}
 
 	try {
 	    queueConnectionString = ingestService.getQueueServiceConf().getString("QueueService");
 	    if (StringUtil.isNotEmpty(queueConnectionString)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue connection string: " + queueConnectionString);
+	    	log4j.info("[info] " + MESSAGE + "Setting queue connection string: " + queueConnectionString);
 		this.queueConnectionString = queueConnectionString;
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
+	    log4j.error("[error] " + MESSAGE + "Could not set queue connection string: " + queueConnectionString +
 		 "  - using default: " + this.queueConnectionString);
 	}
 
 	try {
 	    queuePath = ingestService.getIngestServiceProp() + "/queue/";
 	    if (StringUtil.isNotEmpty(queuePath)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting queue path: " + queuePath);
+	    	log4j.info("[info] " + MESSAGE + "Setting queue path: " + queuePath);
 		this.queuePath = queuePath;
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set queue path: " + queuePath +
+	    log4j.error("[error] " + MESSAGE + "Could not set queue path: " + queuePath +
 		 "  - using default: " + this.queuePath);
 	}
 
@@ -133,27 +138,27 @@ public class ProvisionConsumer extends HttpServlet
 	try {
 	    numThreads = ingestService.getQueueServiceConf().getString("NumThreads");
 	    if (StringUtil.isNotEmpty(numThreads)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
+	    	log4j.info("[info] " + MESSAGE + "Setting thread pool size: " + numThreads);
 		this.numThreads = Integer.valueOf(numThreads);
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
+	    log4j.error("[error] " + MESSAGE + "Could not set thread pool size: " + numThreads + "  - using default: " + this.numThreads);
 	}
 
 	try {
 	    pollingInterval = ingestService.getQueueServiceConf().getString("PollingInterval");
 	    if (StringUtil.isNotEmpty(pollingInterval)) {
-	    	System.out.println("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
+	    	log4j.info("[info] " + MESSAGE + "Setting polling interval: " + pollingInterval);
 		this.pollingInterval = Integer.valueOf(pollingInterval);
 	    }
 	} catch (Exception e) {
-	    System.err.println("[warn] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
+	    log4j.error("[error] " + MESSAGE + "Could not set polling interval: " + pollingInterval + "  - using default: " + this.pollingInterval);
 	}
 
         try {
             // Start the Consumer thread
             if (consumerThread == null) {
-	    	System.out.println("[info] " + MESSAGE + "starting consumer daemon");
+	    	log4j.info("[info] " + MESSAGE + "starting consumer daemon");
 		startProvisionConsumerThread(servletConfig);
 	    }
         } catch (Exception e) {
@@ -171,7 +176,7 @@ public class ProvisionConsumer extends HttpServlet
     {
         try {
             if (consumerThread != null) {
-                System.out.println("[info] " + MESSAGE + "consumer daemon already started");
+                log4j.info("[info] " + MESSAGE + "consumer daemon already started");
                 return;
             }
 
@@ -182,7 +187,7 @@ public class ProvisionConsumer extends HttpServlet
             consumerThread.setDaemon(true);                // Kill thread when servlet dies
             consumerThread.start();
 
-	    System.out.println("[info] " + MESSAGE + "consumer daemon started");
+	    log4j.info("[info] " + MESSAGE + "consumer daemon started");
 
             return;
 
@@ -193,10 +198,10 @@ public class ProvisionConsumer extends HttpServlet
 
     public void destroy() {
 	try {
-	    System.out.println("[info] " + MESSAGE + "interrupting consumer daemon");
+	    log4j.info("[info] " + MESSAGE + "interrupting consumer daemon");
             consumerThread.interrupt();
 	} catch (Exception e) {
-	    e.printStackTrace(System.err);
+            log4j.error("Exception:" + e, e);
 	}
     }
 
@@ -222,6 +227,8 @@ class ProvisionConsumerDaemon implements Runnable
     private long sessionID;
     private byte[] sessionAuth;
 
+    protected static final Logger log4j = LogManager.getLogger();
+
 
     // Constructor
     public ProvisionConsumerDaemon(String queueConnectionString, ServletConfig servletConfig, 
@@ -240,12 +247,12 @@ class ProvisionConsumerDaemon implements Runnable
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+                 log4j.error("Exception:" + e, e);
                }
             }
 
 	} catch (Exception e) {
-	    e.printStackTrace(System.err);
+            log4j.error("Exception:" + e, e);
         } finally {
            try {
            } catch(Exception ze) {}
@@ -265,7 +272,7 @@ class ProvisionConsumerDaemon implements Runnable
                  // Refresh ZK connection
                  zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
              } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+                 log4j.error("Exception:" + e, e);
              }
          }
 
@@ -275,23 +282,22 @@ class ProvisionConsumerDaemon implements Runnable
 
                 // Wait for next interval.
                 if (! init) {
-                    //System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     Thread.yield();
                     Thread.currentThread().sleep(pollingInterval.longValue() * 1000);
                 } else {
-                    System.out.println(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
+                    log4j.debug(MESSAGE + "Waiting for polling interval(seconds): " + pollingInterval);
                     init = false;
                 }
 
                 // Let's check to see if we are on hold
                 if (onHold()) {
-                    System.out.println(MESSAGE + "detected 'on hold' condition");
+                    log4j.info(MESSAGE + "detected 'on hold' condition");
                     continue;
                 }
 
                 // have we shutdown?
                 if (Thread.currentThread().isInterrupted()) {
-                    System.out.println(MESSAGE + "interruption detected.");
+                    log4j.warn(MESSAGE + "interruption detected.");
       		    throw new InterruptedException();
                 }
 
@@ -303,7 +309,7 @@ class ProvisionConsumerDaemon implements Runnable
 		    while (true) {
 		        numActiveTasks = executorService.getActiveCount();
 			if (numActiveTasks < poolSize) {
-			    System.out.println(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    log4j.debug(MESSAGE + "Checking for additional Job tasks for Worker: Current tasks: " + numActiveTasks + " - Max: " + poolSize);
                             Job job = null;
 
             		    if (! ZookeeperUtil.validateZK(zooKeeper)) {
@@ -311,21 +317,21 @@ class ProvisionConsumerDaemon implements Runnable
                    		    // Refresh ZK connection
                    		    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                		        } catch  (Exception e ) {
-                 		    e.printStackTrace(System.err);
+               			    log4j.error("Exception:" + e, e);
                		        }
             		    }
 
 			    try {
                                 job = Job.acquireJob(zooKeeper, org.cdlib.mrt.zk.JobState.Provisioning);
                             } catch (Exception e) {
-                                System.err.println(MESSAGE + "[WARN] error acquiring job: " + e.getMessage());
+                                log4j.error(MESSAGE + "[error] error acquiring job: " + e.getMessage());
                                 try {
                                    // Reestablish connection
                                    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                                 } catch (Exception e4) {}
                                 if (e instanceof InterruptedException) {
-                                   System.err.println(MESSAGE + "[INFO] removing lock for Job: " + e.getMessage());
+                                   log4j.info(MESSAGE + "[info] removing lock for Job: " + e.getMessage());
                                    // ZK was unable to unlock job.  Must do it manually
                                    unlockJob(e.getMessage());
                                 }
@@ -336,9 +342,9 @@ class ProvisionConsumerDaemon implements Runnable
                             }
 
                             if ( job != null) {
-                                System.out.println(MESSAGE + "Found provisioning job data: " + job.id());
+                                log4j.info(MESSAGE + "Found provisioning job data: " + job.id());
                                 if (job.status() != org.cdlib.mrt.zk.JobState.Provisioning) {
-                                   System.err.println(MESSAGE + "Job already processed by Provision Consumer: " + job.id());
+                                   log4j.error(MESSAGE + "Job already processed by Provision Consumer: " + job.id());
                                    try {
                                      job.unlock(zooKeeper);
                                    } catch (Exception el) {}
@@ -352,37 +358,36 @@ class ProvisionConsumerDaemon implements Runnable
 
 
 			} else {
-			    System.out.println(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
+			    log4j.debug(MESSAGE + "Work queue is full, NOT checking for additional tasks: " + numActiveTasks + " - Max: " + poolSize);
 			    break;
 			}
 		    }
 
 		} catch (RejectedExecutionException ree) {
-	            //System.out.println("[info] " + MESSAGE + "Thread pool limit reached. no submission, and requeuing: " + item.getId());
         	    Thread.currentThread().sleep(5 * 1000);         // let thread pool relax a bit
 		} catch (NoSuchElementException nsee) {
 		    // no data in queue
-		    System.out.println("[info] " + MESSAGE + "No data in queue to process");
+		    log4j.info("[info] " + MESSAGE + "No data in queue to process");
 		} catch (IllegalArgumentException iae) {
 		    // no queue exists
 		} catch (Exception e) {
-		    System.err.println("[warn] " + MESSAGE + "General exception.");
-	            e.printStackTrace();
+		    log4j.error("[error] " + MESSAGE + "General exception.");
+                    log4j.error("Exception:" + e, e);
 		}
 	    }
         } catch (InterruptedException ie) {
             try {
                 long numActive = executorService.getActiveCount();
-                System.out.println(MESSAGE + "Interrupt detected. Active tasks: " + numActive + " -  Forcing failure.");
+                log4j.error(MESSAGE + "Interrupt detected. Active tasks: " + numActive + " -  Forcing failure.");
                 executorService.shutdownNow();
 
-                System.out.println(MESSAGE + "shutting down consumer daemon.");
+                log4j.info(MESSAGE + "shutting down consumer daemon.");
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                log4j.error("Exception:" + e, e);
             }
 	} catch (Exception e) {
-            System.out.println(MESSAGE + "Exception detected, shutting down consumer daemon.");
-	    e.printStackTrace(System.err);
+            log4j.error(MESSAGE + "Exception detected, shutting down consumer daemon.");
+            log4j.error("Exception:" + e, e);
 	    executorService.shutdown();
         } finally {
            try {
@@ -402,7 +407,7 @@ class ProvisionConsumerDaemon implements Runnable
              zooKeeper.delete(lock, -1);
           }
        } catch (Exception e) {
-          System.err.println("Unable to remove lock from errored Job: " + lock);
+          log4j.error("Unable to remove lock from errored Job: " + lock);
        }
     }
 
@@ -415,13 +420,13 @@ class ProvisionConsumerDaemon implements Runnable
                // Refresh ZK connection
                zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
            } catch  (Exception e ) {
-             e.printStackTrace(System.err);
+             log4j.error("Exception:" + e, e);
            }
         }
 
         try {
             if (MerrittLocks.checkLockIngestQueue(zooKeeper)) {
-                System.out.println("[info]" + NAME + ": hold exists, not processing queue.");
+                log4j.debug("[info]" + NAME + ": hold exists, not processing queue.");
                 return true;
             }
         } catch (Exception e) {
@@ -437,7 +442,7 @@ class ProvisionConsumerDaemon implements Runnable
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
+               log4j.error("Disconnected: " + event.toString());
        }
    }
 
@@ -458,6 +463,8 @@ class ProvisionConsumeData implements Runnable
     private Job job = null;
     private IngestServiceInf ingestService = null;
     private JobState jobState = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     // Constructor
     public ProvisionConsumeData(IngestServiceInf ingestService, Job job, String queueConnectionString)
@@ -482,7 +489,7 @@ class ProvisionConsumeData implements Runnable
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+                 log4j.error("Exception:" + e, e);
                }
             }
 
@@ -499,7 +506,7 @@ class ProvisionConsumeData implements Runnable
                spaceNeeded = job.longProperty(zooKeeper, ZKKey.JOB_SPACE_NEEDED);
                priority =  job.intProperty(zooKeeper, ZKKey.JOB_PRIORITY);
             }
-            if (DEBUG) System.out.println(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString() 
+            log4j.info(NAME + " [info] START: consuming job queue " + job.id() + " - " + jp.toString() + " - " + ji.toString() 
 		+ " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
 
             IngestRequest ingestRequest = JSONUtil.populateIngestRequest(jp, ji, priority, spaceNeeded);
@@ -519,8 +526,8 @@ class ProvisionConsumeData implements Runnable
 
 	    String process = "Provision";
             if (FileUtilAlt.quickFailure(ingestRequest.getQueuePath().getParentFile().getParentFile(), process + "_FAIL")) {
-                System.out.println("[item]: ProvisionConsume Daemon - FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + process + "_FAIL");
-                System.out.println("[item]: ProvisionConsume Daemon - Forcing a failure.");
+                log4j.info("[item]: ProvisionConsume Daemon - FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile().toString() + "/" + process + "_FAIL");
+                log4j.info("[item]: ProvisionConsume Daemon - Forcing a failure.");
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, "FAIL file exists: " + ingestRequest.getQueuePath().getParentFile().getParentFile() + "/" + process + "_FAIL  -  Forcing a failure.");
                 job.unlock(zooKeeper);
                 return;
@@ -533,7 +540,7 @@ class ProvisionConsumeData implements Runnable
                    // Refresh ZK connection
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                } catch  (Exception e ) {
-                 e.printStackTrace(System.err);
+                 log4j.error("Exception:" + e, e);
                }
             }
 
@@ -553,52 +560,55 @@ class ProvisionConsumeData implements Runnable
 
 
 	    if (jobState.getJobStatus() == JobStatusEnum.COMPLETED) {
-                if (DEBUG) System.out.println("[item]: ProvisionConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString()
+                log4j.info("[item]: ProvisionConsume Daemon - COMPLETED job message:" + jp.toString() + " --- " + ji.toString()
 		    + " - " + "priority: "  + priority +  " - " + "spaceNeeded: "  + spaceNeeded);
 
 		try {
                    job.setStatus(zooKeeper, job.status().success(), "Success");
 		} catch (MerrittStateError mse) {
-                   System.err.println(MESSAGE + "[WARN] error changing job status: " + mse.getMessage());
+                   log4j.error(MESSAGE + "[error] error changing job status: " + mse.getMessage());
                    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                    job.setStatus(zooKeeper, job.status().success(), "Success");
 		}
 	    } else if (jobState.getJobStatus() == JobStatusEnum.FAILED) {
-                System.out.println("[item]: ProvisionConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
+                log4j.info("[item]: ProvisionConsume Daemon - FAILED job message: " + jobState.getJobStatusMessage());
 		try {
                    job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
                 } catch (Exception e) {
-                   System.err.println(MESSAGE + "[WARN] error changing job status: " + e.getMessage());
+                   log4j.error(MESSAGE + "[error] error changing job status: " + e.getMessage());
                    Thread.currentThread().sleep(ZookeeperUtil.SLEEP_ZK_RETRY);
                    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                    job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, jobState.getJobStatusMessage());
                 }
 
 	    } else {
-		System.out.println("ProvisionConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
+		log4j.error("ProvisionConsume Daemon - Undetermined STATE: " + jobState.getJobStatus().getValue() + " -- " + jobState.getJobStatusMessage());
 	    }
             // job.unlock(zooKeeper);
 
         } catch (InterruptedException ie) {
             String errmsg = "Interrupted detected while Provisioning - failing Job";
-            System.err.println(NAME + "[error] Consuming Job queue data: " + errmsg);
+            log4j.error(NAME + "[error] Consuming Job queue data: " + errmsg);
             try { 
                job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, errmsg);
             } catch (Exception ex) {}
         } catch (SessionExpiredException see) {
-            see.printStackTrace(System.err);
-	    System.out.println(NAME + "[error] Consuming queue data: Could not recreate session.");
+	    log4j.error(NAME + "[error] Consuming queue data: Could not recreate session.");
+            log4j.error("Exception:" + see, see);
         } catch (ConnectionLossException cle) {
-            cle.printStackTrace(System.err);
-	    System.out.println(NAME + "[error] Consuming queue data: Could not reconnect.");
+	    log4j.error(NAME + "[error] Consuming queue data: Could not reconnect.");
+            log4j.error("Exception:" + cle, cle);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            log4j.error("Exception:" + e, e);
             try {
                 job.setStatus(zooKeeper, org.cdlib.mrt.zk.JobState.Failed, e.getMessage());
                 job.unlock(zooKeeper);
-           } catch (Exception ex) { System.out.println("Exception [error] Error failing job: " + job.id());}
-           System.out.println("Exception [error] Consuming queue data");
+           } catch (Exception ex) {
+		 log4j.error("Exception [error] Error failing job: " + job.id());
+	   }
+
+           log4j.error("Exception [error] Consuming queue data");
         } finally {
            try {
              job.unlock(zooKeeper);
@@ -614,7 +624,7 @@ class ProvisionConsumeData implements Runnable
    public class Ignorer implements Watcher {
        public void process(WatchedEvent event){
            if (event.getState().equals("Disconnected"))
-               System.out.println("Disconnected: " + event.toString());
+               log4j.error("Disconnected: " + event.toString());
        }
    }
 }

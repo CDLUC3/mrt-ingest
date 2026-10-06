@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import org.glassfish.jersey.server.CloseableService;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Response;
@@ -50,13 +49,14 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
 import org.cdlib.mrt.core.ManifestRowBatch;
 import org.cdlib.mrt.core.ManifestRowIngest;
 import org.cdlib.mrt.core.ManifestRowInf;
-
 import org.cdlib.mrt.core.Identifier;
 import org.cdlib.mrt.formatter.FormatterAbs;
 import org.cdlib.mrt.formatter.FormatterInf;
@@ -76,6 +76,8 @@ import org.cdlib.mrt.utility.TFileLogger;
 import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 
+import org.glassfish.jersey.server.CloseableService;
+
 /**
  * Base Jersey handling for Ingest
  * Keep the Jersey as thin as possible.
@@ -89,12 +91,12 @@ public class JerseyBase
     protected static final String MESSAGE = NAME + ": ";
     protected static final FormatterInf.Format DEFAULT_OUTPUT_FORMAT
             = FormatterInf.Format.xml;
-    protected static final boolean DEBUG = true;
     protected static final String NL = System.getProperty("line.separator");
     protected static final String FS = System.getProperty("file.separator");
 
     protected LoggerInf defaultLogger = new TFileLogger("Jersey", 10, 10);
     protected JerseyCleanup jerseyCleanup = new JerseyCleanup();
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * Format file from input State file
@@ -134,11 +136,11 @@ public class JerseyBase
             return typeFile;
 
         } catch (TException tex) {
-            System.err.println("Stack:" + StringUtil.stackTrace(tex));
+	    log4j.error("Exception:" + tex, tex);
             throw tex;
 
         } catch (Exception ex) {
-            System.err.println("Stack:" + StringUtil.stackTrace(ex));
+	    log4j.error("Exception:" + ex, ex);
             throw new TException.GENERAL_EXCEPTION(MESSAGE + " Exception:" + ex);
 
         } finally {
@@ -182,47 +184,6 @@ public class JerseyBase
 
 
     /**
-     * Add an object to this ingest service
-     * @param ingestRequest complete request information
-     * @param request http request information
-     * @param sc ServletConfig used to get system configuration
-     * @return formatted version state information
-     * @throws TException processing exception
-     */
-/*
-    public Response submit(IngestRequest ingestRequest, HttpServletRequest request, CloseableService cs, ServletConfig sc)
-        throws TException
-    {
-        LoggerInf logger = defaultLogger;
-        try {
-	    ingestRequest.getJob().setJobID(MintUtil.getJobID());
-	    if (DEBUG) System.out.println("[info] POST started, Job ID: " +  ingestRequest.getJob().getJobID().getValue());
-            log("addVersion submit entered:"
-                    + " - ingestRequest=" + ingestRequest.dump("submit")
-                    + " - request=" + request.toString()
-                    );
-            IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
-            IngestServiceInf ingestService = ingestServiceInit.getIngestService();
-            ingestRequest = getFormData(ingestRequest, request, ingestService.getIngestServiceProp() + "/queue", logger);
-	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
-            jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
-            StateInf responseState = submit(ingestRequest, ingestService, logger);
-	    if (DEBUG) System.out.println("[info] POST complete, Job ID: " +  ingestRequest.getJob().getJobID().getValue());
-
-            return getStateResponse(responseState, ingestRequest.getResponseForm(), logger, cs, sc);
-
-        } catch (TException tex) {
-            return getExceptionResponse(tex, ingestRequest.getResponseForm(), logger);
-
-        } catch (Exception ex) {
-            System.err.println("TRACE:" + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-*/
-
-
-    /**
      * Request an ID
      * @param ingestRequest complete request information
      * @param request http request information
@@ -243,7 +204,7 @@ public class JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             ingestRequest = getFormData(ingestRequest, request, ingestService.getIngestServiceProp() + "/queue", logger);
-	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
+	    log4j.info("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
             jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
 
             StateInf responseState = requestIdentifier(ingestRequest, ingestService, logger);
@@ -254,46 +215,12 @@ public class JerseyBase
             return getExceptionResponse(tex, ingestRequest.getResponseForm(), logger);
 
         } catch (Exception ex) {
-            System.err.println("TRACE:" + StringUtil.stackTrace(ex));
+	    log4j.error("Exception:" + ex, ex);
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
 
 
-    /**
-    /**
-     * Add an object to this ingest service
-     * @param ingestRequest request information
-     * @param sc ServletConfig used to get system configuration
-     * @return version state information for added item
-     * @throws TException processing exception
-     */
-/*
-    protected StateInf submit(
-            IngestRequest ingestRequest,
-            IngestServiceInf ingestService,
-            LoggerInf logger)
-        throws TException
-    {
-        try {
-	    // make needed directories
-	    new File(ingestRequest.getQueuePath(), "system").mkdir();
-	    new File(ingestRequest.getQueuePath(), "producer").mkdir();
-
-            StateInf responseState = ingestService.submit(ingestRequest);
-            return responseState;
-
-        } catch (TException tex) {
-            throw tex;
-
-        } catch (Exception ex) {
-            if (DEBUG) System.err.println("TRACE:" + StringUtil.stackTrace(ex));
-            throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
-        }
-    }
-*/
-
-    /**
     /**
      * request id from ide service
      * @param ingestRequest request information
@@ -315,7 +242,7 @@ public class JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            if (DEBUG) System.err.println("TRACE:" + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -337,7 +264,7 @@ public class JerseyBase
 	    // batch processing
 	    ingestRequest.getJob().setBatchID(MintUtil.getBatchID());	
 
-            if (DEBUG) System.out.println("[info] POST started, Batch ID: " +  ingestRequest.getJob().grabBatchID().getValue());
+            log4j.info("[info] POST started, Batch ID: " +  ingestRequest.getJob().grabBatchID().getValue());
             log("submit to queue request entered:"
                     + " - ingestRequest=" + ingestRequest.dump("submitPost")
                     + " - request=" + request.toString()
@@ -345,7 +272,7 @@ public class JerseyBase
             IngestServiceInit ingestServiceInit = IngestServiceInit.getIngestServiceInit(sc);
             IngestServiceInf ingestService = ingestServiceInit.getIngestService();
             ingestRequest = getFormData(ingestRequest, request, ingestService.getIngestServiceProp() + "/queue", logger);
-	    if (DEBUG) System.out.println("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
+	    log4j.info("[info] queuepath: " + ingestRequest.getQueuePath().getAbsolutePath());
             jerseyCleanup.addTempFile(ingestRequest.getQueuePath());
             BatchState responseState = ingestService.submitPost(ingestRequest, "Process");
 
@@ -359,11 +286,11 @@ public class JerseyBase
 		    // For large POST
                     if (retryCount >= 6) {	// 30 seconds
                         // We can not wait any longer. Let's return BatchState with current state (may be missing some JobStates)
-                        if (DEBUG) System.out.println("[error] JerseyBase: Truncating BatchState response:" + responseState.getBatchID().getValue());
+                        log4j.error("[error] JerseyBase: Truncating BatchState response:" + responseState.getBatchID().getValue());
                         BatchState batchState = responseState.clone();
                         response = getStateResponse(batchState, ingestRequest.getResponseForm(), logger, cs, sc);
                     } else {
-                        if (DEBUG) System.out.println("[error] JerseyBase: Batch State is not yet stable (still adding jobs) " + responseState.getBatchID().getValue() + "  Retrying...");
+                        log4j.error("[error] JerseyBase: Batch State is not yet stable (still adding jobs) " + responseState.getBatchID().getValue() + "  Retrying...");
 		    }
                     try {
                         Thread.sleep(1000 * 5);
@@ -373,7 +300,7 @@ public class JerseyBase
 		finally {
 		}
 	    }
-            if (DEBUG) System.out.println("[info] POST complete, Batch ID: " +  ingestRequest.getJob().grabBatchID().getValue());
+            log4j.info("[info] POST complete, Batch ID: " +  ingestRequest.getJob().grabBatchID().getValue());
 
             return response;
 
@@ -381,7 +308,7 @@ public class JerseyBase
             return getExceptionResponse(tex, ingestRequest.getResponseForm(), logger);
 
         } catch (Exception ex) {
-            System.err.println("TRACE:" + StringUtil.stackTrace(ex));
+	    log4j.error("Exception:" + ex, ex);
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -436,14 +363,14 @@ public class JerseyBase
 		 if (field.get(o) == null) break;
 		 id = "BID";
 		 value = field.get(o).toString();
-                 System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
+                 log4j.debug("HEADER: " + field.getName() + " : " + field.get(o).toString());
 		 break;
 	      }
               if (field.getName().equals("jobID")) {
 		 if (field.get(o) == null) break;
 		 id = "JID";
 		 value = field.get(o).toString();
-                 System.out.println("HEADER: " + field.getName() + " : " + field.get(o).toString());
+                 log4j.debug("HEADER: " + field.getName() + " : " + field.get(o).toString());
 		 break;
               }
            }
@@ -489,7 +416,7 @@ public class JerseyBase
     protected Response getExceptionResponse(TException exception, String formatType, LoggerInf logger)
         throws TException
     {
-        if (DEBUG) System.err.println("TRACE:" + StringUtil.stackTrace(exception));
+        log4j.trace("[TRACE] " + StringUtil.stackTrace(exception));
         int httpStatus = exception.getStatus().getHttpResponse();
         TypeFile typeFile = null;
         FormatType format = null;
@@ -559,7 +486,7 @@ public class JerseyBase
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + e);
 	}
 
-	if (DEBUG) System.err.println("[debug] form items: " + items.toString());
+	log4j.debug("[debug] form items: " + items.toString());
 
 	// Process form fields
 	Iterator<FileItem> iter = items.iterator();
@@ -572,20 +499,20 @@ public class JerseyBase
 		    if (item.getFieldName().equals("submitter")) {
 		       field = "submitter";
 		       ingestRequest.getJob().setUserAgent(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] submitter: " + ingestRequest.getJob().grabUserAgent());
+		       log4j.debug("[debug] submitter: " + ingestRequest.getJob().grabUserAgent());
 		    } else if (item.getFieldName().equals("object")){
 		       field = "object";
 		       ingestRequest.getJob().setPrimaryID(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] object: " + ingestRequest.getJob().getPrimaryID());
+		       log4j.debug("[debug] object: " + ingestRequest.getJob().getPrimaryID());
 		    } else if (item.getFieldName().equals("profile")){
 		       field = "profile";
 		       ingestRequest.setProfile(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] profile: " + ingestRequest.getProfile());
+		       log4j.debug("[debug] profile: " + ingestRequest.getProfile());
 		    } else if (item.getFieldName().equals("filename")){
 		       filename = true;	
 		       field = "filename";
 		       ingestRequest.getJob().setPackageName(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] package name(filename): " + ingestRequest.getJob().getPackageName());
+		       log4j.debug("[debug] package name(filename): " + ingestRequest.getJob().getPackageName());
 		    } else if (item.getFieldName().equals("type")){
 		       field = "type";
 		       // object-manifest and batch-Manifest can not be an enum (hyphens)
@@ -599,19 +526,19 @@ public class JerseyBase
 		           ingestRequest.setPackageType("batchManifest");
 		       else 
 		           ingestRequest.setPackageType(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] file type: " + ingestRequest.getPackageType());
+		       log4j.debug("[debug] file type: " + ingestRequest.getPackageType());
 		    } else if (item.getFieldName().equals("size")){
 		       field = "size";
 		       ingestRequest.setPackageSize(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] file size: " + ingestRequest.getPackageSize());
+		       log4j.debug("[debug] file size: " + ingestRequest.getPackageSize());
 		    } else if (item.getFieldName().equals("digestType")){
 		       field = "digestType";
 		       ingestRequest.getJob().setHashAlgorithm(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] algorithm: " + ingestRequest.getJob().getHashAlgorithm());
+		       log4j.debug("[debug] algorithm: " + ingestRequest.getJob().getHashAlgorithm());
 		    } else if (item.getFieldName().equals("digestValue")){
 		       field = "digestValue";
 		       ingestRequest.getJob().setHashValue(item.getString("utf-8"));
-		       if (DEBUG) System.err.println("[debug] value: " + ingestRequest.getJob().getHashValue());
+		       log4j.debug("[debug] value: " + ingestRequest.getJob().getHashValue());
 		    } else if (item.getFieldName().equals("creator")){
 		       field = "creator";
 		       ingestRequest.getJob().setObjectCreator(item.getString("utf-8"));
@@ -641,117 +568,117 @@ public class JerseyBase
         	       String responseForm = processFormatType(ingestRequest.getResponseForm(), item.getString("utf-8"));
 
             	       ingestRequest.setResponseForm(responseForm);
-		       if (DEBUG) System.err.println("[debug] response form: " + ingestRequest.getResponseForm());
+		       log4j.debug("[debug] response form: " + ingestRequest.getResponseForm());
 		    } else if (item.getFieldName().equals("notificationFormat")) {
 		       field = "notificationFormat";
         	       String notificationForm = item.getString("utf-8");
 
             	       ingestRequest.setNotificationFormat(notificationForm);
-		       if (DEBUG) System.err.println("[debug] notificationFormat: " + ingestRequest.getNotificationFormat());
+		       log4j.debug("[debug] notificationFormat: " + ingestRequest.getNotificationFormat());
 		    } else if (item.getFieldName().equals("DC.contributor")) {
 		       field = "DC.contributor";
         	       String DCcontributor = item.getString("utf-8");
 
             	       ingestRequest.setDCcontributor(DCcontributor);
-		       if (DEBUG) System.err.println("[debug] DC.contributor: " + ingestRequest.getDCcontributor());
+		       log4j.debug("[debug] DC.contributor: " + ingestRequest.getDCcontributor());
 		    } else if (item.getFieldName().equals("DC.coverage")) {
 		       field = "DC.coverage";
         	       String DCcoverage = item.getString("utf-8");
 
             	       ingestRequest.setDCcoverage(DCcoverage);
-		       if (DEBUG) System.err.println("[debug] DC.coverage: " + ingestRequest.getDCcoverage());
+		       log4j.debug("[debug] DC.coverage: " + ingestRequest.getDCcoverage());
 		    } else if (item.getFieldName().equals("DC.creator")) {
 		       field = "DC.creator";
         	       String DCcreator = item.getString("utf-8");
 
             	       ingestRequest.setDCcreator(DCcreator);
-		       if (DEBUG) System.err.println("[debug] DC.creator: " + ingestRequest.getDCcreator());
+		       log4j.debug("[debug] DC.creator: " + ingestRequest.getDCcreator());
 		    } else if (item.getFieldName().equals("DC.date")) {
 		       field = "DC.date";
         	       String DCdate = item.getString("utf-8");
 
             	       ingestRequest.setDCdate(DCdate);
-		       if (DEBUG) System.err.println("[debug] DC.date: " + ingestRequest.getDCdate());
+		       log4j.debug("[debug] DC.date: " + ingestRequest.getDCdate());
 		    } else if (item.getFieldName().equals("DC.description")) {
 		       field = "DC.description";
         	       String DCdescription = item.getString("utf-8");
 
             	       ingestRequest.setDCdescription(DCdescription);
-		       if (DEBUG) System.err.println("[debug] DC.description: " + ingestRequest.getDCdescription());
+		       log4j.debug("[debug] DC.description: " + ingestRequest.getDCdescription());
 		    } else if (item.getFieldName().equals("DC.format")) {
 		       field = "DC.format";
         	       String DCformat = item.getString("utf-8");
 
             	       ingestRequest.setDCformat(DCformat);
-		       if (DEBUG) System.err.println("[debug] DC.format: " + ingestRequest.getDCformat());
+		       log4j.debug("[debug] DC.format: " + ingestRequest.getDCformat());
 		    } else if (item.getFieldName().equals("DC.identifier")) {
 		       field = "DC.identifier";
         	       String DCidentifier = item.getString("utf-8");
 
             	       ingestRequest.setDCidentifier(DCidentifier);
-		       if (DEBUG) System.err.println("[debug] DC.identifier: " + ingestRequest.getDCidentifier());
+		       log4j.debug("[debug] DC.identifier: " + ingestRequest.getDCidentifier());
 		    } else if (item.getFieldName().equals("DC.language")) {
 		       field = "DC.language";
         	       String DClanguage = item.getString("utf-8");
 
             	       ingestRequest.setDClanguage(DClanguage);
-		       if (DEBUG) System.err.println("[debug] DC.language: " + ingestRequest.getDClanguage());
+		       log4j.debug("[debug] DC.language: " + ingestRequest.getDClanguage());
 		    } else if (item.getFieldName().equals("DC.publisher")) {
 		       field = "DC.publisher";
         	       String DCpublisher = item.getString("utf-8");
 
             	       ingestRequest.setDCpublisher(DCpublisher);
-		       if (DEBUG) System.err.println("[debug] DC.publisher: " + ingestRequest.getDCpublisher());
+		       log4j.debug("[debug] DC.publisher: " + ingestRequest.getDCpublisher());
 		    } else if (item.getFieldName().equals("DC.relation")) {
 		       field = "DC.relation";
         	       String DCrelation = item.getString("utf-8");
 
             	       ingestRequest.setDCrelation(DCrelation);
-		       if (DEBUG) System.err.println("[debug] DC.relation: " + ingestRequest.getDCrelation());
+		       log4j.debug("[debug] DC.relation: " + ingestRequest.getDCrelation());
 		    } else if (item.getFieldName().equals("DC.rights")) {
 		       field = "DC.rights";
         	       String DCrights = item.getString("utf-8");
 
             	       ingestRequest.setDCrights(DCrights);
-		       if (DEBUG) System.err.println("[debug] DC.rights: " + ingestRequest.getDCrights());
+		       log4j.debug("[debug] DC.rights: " + ingestRequest.getDCrights());
 		    } else if (item.getFieldName().equals("DC.source")) {
 		       field = "DC.source";
         	       String DCsource = item.getString("utf-8");
 
             	       ingestRequest.setDCsource(DCsource);
-		       if (DEBUG) System.err.println("[debug] DC.source: " + ingestRequest.getDCsource());
+		       log4j.debug("[debug] DC.source: " + ingestRequest.getDCsource());
 		    } else if (item.getFieldName().equals("DC.subject")) {
 		       field = "DC.subject";
         	       String DCsubject = item.getString("utf-8");
 
             	       ingestRequest.setDCsubject(DCsubject);
-		       if (DEBUG) System.err.println("[debug] DC.subject: " + ingestRequest.getDCsubject());
+		       log4j.debug("[debug] DC.subject: " + ingestRequest.getDCsubject());
 		    } else if (item.getFieldName().equals("DC.title")) {
 		       field = "DC.title";
         	       String DCtitle = item.getString("utf-8");
 
             	       ingestRequest.setDCtitle(DCtitle);
-		       if (DEBUG) System.err.println("[debug] DC.title: " + ingestRequest.getDCtitle());
+		       log4j.debug("[debug] DC.title: " + ingestRequest.getDCtitle());
 		    } else if (item.getFieldName().equals("DC.type")) {
 		       field = "DC.type";
         	       String DCtype = item.getString("utf-8");
 
             	       ingestRequest.setDCtype(DCtype);
-		       if (DEBUG) System.err.println("[debug] DC.type: " + ingestRequest.getDCtype());
+		       log4j.debug("[debug] DC.type: " + ingestRequest.getDCtype());
 		    } else if (item.getFieldName().equals("DataCite.resourceType")) {
 		       field = "DataCite.resourceType";
         	       String resourceType = item.getString("utf-8");
 
             	       ingestRequest.setDataCiteResourceType(resourceType);
-		       if (DEBUG) System.err.println("[debug] DataCite.resourceType: " + ingestRequest.getDataCiteResourceType());
+		       log4j.debug("[debug] DataCite.resourceType: " + ingestRequest.getDataCiteResourceType());
 		    } else if (item.getFieldName().equals("retainTargetURL")) {
 		       field = "retainTargetURL";
 		       if (item.getString("utf-8").equalsIgnoreCase("true")) {
 		           ingestRequest.setRetainTargetURL(true);
-		           if (DEBUG) System.err.println("[debug] Retain EZID target URL set");
+		           log4j.debug("[debug] Retain EZID target URL set");
 			}
 		    } else {
-            	       System.err.println("[warning] Form field not supported: " + item.getFieldName());
+            	       log4j.warn("[warn] Form field not supported: " + item.getFieldName());
 		       // throw new TException.INVALID_OR_MISSING_PARM("Form field not supported: " + item.getFieldName());
 		    }
 	            item.delete();
@@ -773,23 +700,23 @@ public class JerseyBase
 		long sizeInBytes = item.getSize();
 		String file = null;
 
-		if (DEBUG) System.err.println("[debug] content field name: " + fieldName);
-		if (DEBUG) System.err.println("[debug] content file name: " + fileName);
-		if (DEBUG) System.err.println("[debug] content type: " + contentType);
-		if (DEBUG) System.err.println("[debug] content size: " + sizeInBytes);
+		log4j.debug("[debug] content field name: " + fieldName);
+		log4j.debug("[debug] content file name: " + fileName);
+		log4j.debug("[debug] content type: " + contentType);
+		log4j.debug("[debug] content size: " + sizeInBytes);
 
 		if ((file = ingestRequest.getJob().getPackageName()) != null && filename ){
-            	   if (DEBUG) System.out.println("[info] filename parameter set [modal]: " + file);
+            	   log4j.info("[info] filename parameter set [modal]: " + file);
 		   fileName = file;
 		}
 		ingestRequest.getJob().setPackageName(fileName);
 
-            	if (DEBUG) System.out.println("extracting file: " + fileName);
+            	log4j.info("extracting file: " + fileName);
 		File uploadedFile = new File(queueDir, fileName);
 		if (uploadedFile.exists()) {
 	 	   // in case of multiple uploaded files or duplicate entries
 		   uploadedFile = new File(queueDir, UUID.randomUUID().toString() + "-" + fileName);
-            	   if (DEBUG) System.out.println("[warn] file exists renaming to : " + uploadedFile.getName());
+            	   log4j.warn("[warn] file exists renaming to : " + uploadedFile.getName());
 		}
 
 		try {
@@ -802,29 +729,29 @@ public class JerseyBase
 
 		// Simplified ingest code
 		if (ingestRequest.getPackageType() == null) {
-		    if (DEBUG) System.out.println("[info] No file type found.  Let's do our best to determine.");
+		    log4j.info("[info] No file type found.  Let's do our best to determine.");
 		    if (fileName.endsWith(".gz") || fileName.endsWith(".tar") || fileName.endsWith(".zip") || fileName.endsWith(".bz")
 			    || fileName.endsWith(".tgz") || fileName.endsWith(".bz2")) {
 			ingestRequest.setPackageType("container");
-		        if (DEBUG) System.out.println("[info] Found container extension.");
+		        log4j.info("[info] Found container extension.");
 		    } else {
 		        String manifestType = null;
 		        manifestType = determineBatchManifest(new File(queueDir, fileName));
 			
 			if (manifestType == null) {
-		            if (DEBUG) System.out.println("[info] File NOT a batch manifest.");
+		            log4j.info("[info] File NOT a batch manifest.");
 		            manifestType = determineObjectManifest(new File(queueDir, fileName));
 			    if (manifestType == null) {
-		        	if (DEBUG) System.out.println("[info] File NOT an object manifest.");
+		        	log4j.info("[info] File NOT an object manifest.");
 			    }
 			}
 
 		        if (manifestType != null) {
-		            if (DEBUG) System.out.println("[info] Found checkm manifest.  Type is: " + manifestType);
+		            log4j.info("[info] Found checkm manifest.  Type is: " + manifestType);
 			    ingestRequest.setPackageType(manifestType);
 		    	} else {
 			    ingestRequest.setPackageType("file");
-		            if (DEBUG) System.out.println("[info] Unrecognized file.  Assume type is file");
+		            log4j.info("[info] Unrecognized file.  Assume type is file");
 			}
 		    }
 		}
@@ -833,7 +760,7 @@ public class JerseyBase
 	}
 
 	ingestRequest.setQueuePath(queueDir);
-	if (DEBUG) System.out.println(ingestRequest.dump("submit"));
+	log4j.debug(ingestRequest.dump("submit"));
 	return ingestRequest;
 
         } catch (TException tex) {
@@ -856,7 +783,7 @@ public class JerseyBase
     {
 	String manifestType = null;
         try {
-            if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
+            log4j.info("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
 
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", -100, -100), ManifestRowAbs.ManifestType.batch);
             Enumeration<ManifestRowInf> en = manifest.getRows(manifestFile);
@@ -878,8 +805,7 @@ public class JerseyBase
 	    return manifestType;
 
         } catch (Exception ex) {
-	    // ex.printStackTrace();
-            if (DEBUG) System.out.println("[warn] Could not determine if file is manifest: " + manifestFile.getName());
+            log4j.info("[warn] Could not determine if file is manifest: " + manifestFile.getName());
 	    return manifestType;
         }
     }
@@ -893,7 +819,7 @@ public class JerseyBase
     {
 	String manifestType = null;
         try {
-            if (DEBUG) System.out.println("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
+            log4j.info("[info] Attempting to determine manifest type: " + manifestFile.getAbsolutePath());
 
             Manifest manifest = Manifest.getManifest(new TFileLogger("Jersey", 10, 10), ManifestRowAbs.ManifestType.ingest);
             Enumeration<ManifestRowInf> en = manifest.getRows(manifestFile);
@@ -913,7 +839,7 @@ public class JerseyBase
 	    return manifestType;
         } catch (Exception ex) {
 	    // ex.printStackTrace();
-            if (DEBUG) System.out.println("[warn] Could not determine if file is manifest: " + manifestFile.getName());
+            log4j.info("[warn] Could not determine if file is manifest: " + manifestFile.getName());
 	    return manifestType;
         }
     }
@@ -959,7 +885,7 @@ public class JerseyBase
             throw tex;
 
         } catch (Exception ex) {
-            if (DEBUG) System.err.println("getFormatter: stack:" + StringUtil.stackTrace(ex));
+            log4j.debug("getFormatter: stack:" + StringUtil.stackTrace(ex));
             throw new TException.REQUEST_ELEMENT_UNSUPPORTED("State formatter type not supported:" + formatS);
         }
     }
@@ -1022,8 +948,7 @@ public class JerseyBase
      */
     protected void log(String msg)
     {
-        if (DEBUG) System.err.println("[JerseyBase]>" + msg);
-        //logger.logMessage(msg, 0, true);
+        log4j.debug("[JerseyBase]>" + msg);
     }
 
     /**
@@ -1041,14 +966,14 @@ public class JerseyBase
 
                 newFormatType = FormatType.valueOfMimeType(acceptParm).toString();
             } catch (Exception e) {
-                System.out.println("[warning] format type not supported: " + acceptParm + " - setting to: " + newFormatType);
+                log4j.warn("[warn] format type not supported: " + acceptParm + " - setting to: " + newFormatType);
             }
         } else {
 	    try {
                 FormatType format = FormatType.valueOf(formatType.toLowerCase());
                 newFormatType = format.toString();
 	    } catch (Exception e) {
-                System.out.println("[warning] format type not supported: " + formatType + " - setting to: " + newFormatType);
+                log4j.warn("[warn] format type not supported: " + formatType + " - setting to: " + newFormatType);
 	    }
 	}
 	return newFormatType;

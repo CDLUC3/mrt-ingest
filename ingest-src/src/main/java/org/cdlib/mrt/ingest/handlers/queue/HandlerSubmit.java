@@ -36,6 +36,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -70,9 +73,10 @@ public class HandlerSubmit extends Handler<BatchState>
 
     protected static final String NAME = "HandlerSubmit";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
     protected Properties conf = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * Submit batch manifest jobs to queing service
@@ -106,9 +110,9 @@ public class HandlerSubmit extends Handler<BatchState>
 	    priority = calculatePriority(batchState.getJobStates().size());		// 00-99 (0=highest)
 	    if (profileState.getPriority() != null) {
 		priority = profileState.getPriority();
-	    	System.out.println("[info] Overwriting calculated queue priority: " + priority);
+	    	log4j.info("[info] Overwriting calculated queue priority: " + priority);
 	    }
-	    System.out.println("[info] queue priority: " + priority);
+	    log4j.info("[info] queue priority: " + priority);
 
 	    // common across all jobs in batch
 	    jproperties.put("submissionDate", batchState.getSubmissionDate().toString());
@@ -233,7 +237,7 @@ public class HandlerSubmit extends Handler<BatchState>
 		} catch (Exception e) { }
 		try {
 		    if (ingestRequest.getRetainTargetURL()) {
-			System.out.println("[info] " + MESSAGE + "Setting retainTargetURL to true");
+			log4j.info("[info] " + MESSAGE + "Setting retainTargetURL to true");
 			jproperties.put("retainTargetURL", "true");
 		    }
 		} catch (Exception e) { }
@@ -254,21 +258,22 @@ public class HandlerSubmit extends Handler<BatchState>
                    	        // Refresh ZK connection
                    	        zooKeeper = new ZooKeeper(batchState.grabTargetQueue(), ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                	            } catch  (Exception e ) {
-                 	        e.printStackTrace(System.err);
+				log4j.error("Exception:" + e, e);
                	            }
             	        }
 
 			// Create Job 
-			System.out.println("[info] queue submission: " + jproperties.toString() 
+			log4j.info("[info] queue submission: " + jproperties.toString() 
 				+ "  --- Priority: " + priority 
 				+ " --- Identifiers: " + jidentifiers.toString());
 			job = Job.createJob(zooKeeper, ingestRequest.getBatch().id(), Integer.parseInt(priority), jproperties, jidentifiers);
 
 			break;
 		    } catch (Exception e) {
-			e.printStackTrace();
+			log4j.error("Exception:" + e, e);
+
 			String msg = "Failed to create Job queue submission: " + jproperties.toString();
-			System.err.println("[error] " + msg);
+			log4j.error("[error] " + msg);
 
 			// Batch failure
 			if (job != null) {
@@ -286,15 +291,16 @@ public class HandlerSubmit extends Handler<BatchState>
 	    }
 
 	    // global
-	    System.out.println("[info] QueueHandlerSubmit: Ready to process requests.");
+	    log4j.info("[info] QueueHandlerSubmit: Ready to process requests.");
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "submitting batch: " + batchState.getBatchID().getValue() + " : " + e.getMessage();
-	    System.err.println(msg);
+	    log4j.error(msg);
             return new HandlerResult(false, msg, 10);
 	} finally {
 	    try {
@@ -316,7 +322,7 @@ public class HandlerSubmit extends Handler<BatchState>
 	if (a > 99.0d) a = 99.0d;
 	if (a < 0.0d) a = 0.0d;
 	String priority = String.format("%02d", a.intValue());
-	System.out.println("[info] Calculated queue priority: " + priority);
+	log4j.info("[info] Calculated queue priority: " + priority);
 	return priority;
     }
 
@@ -328,10 +334,10 @@ public class HandlerSubmit extends Handler<BatchState>
 	    // Set in setenv.sh (e.g. ingest01-stg)
 	    String workerEnv = System.getenv("WORKERNAME");
 	    workerID = workerEnv.substring("ingest0".length(), "ingest0".length() + 1);
-	    System.out.println("[info] Setting Ingest worker: " + workerID);
+	    log4j.info("[info] Setting Ingest worker: " + workerID);
 
 	} catch (Exception e ) {
-	    System.out.println("[info] Can not calculate Ingest worker.  Setting to '0'.");
+	    log4j.info("[info] Can not calculate Ingest worker.  Setting to '0'.");
 	}
 
 	return workerID;

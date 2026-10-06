@@ -29,17 +29,20 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************/
 
 package org.cdlib.mrt.ingest.utility;
+
 import java.io.IOException;
 import java.io.File;
-import org.cdlib.mrt.utility.TException;
+import java.io.FileFilter;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.util.Vector;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import java.io.FileFilter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import org.cdlib.mrt.utility.TException;
 
 /**
  * Generalized file utilities
@@ -49,6 +52,8 @@ public class FileUtilAlt {
     protected static final String NAME = "FileUtil";
     protected static final String MESSAGE = NAME + ": ";
     protected static final int BUFSIZE = 32768;
+    protected static final Logger log4j = LogManager.getLogger();
+
 
     /**
      * Build list of files for a directory
@@ -98,10 +103,10 @@ public class FileUtilAlt {
             }
 
         } catch(TException mfe) {
-	    mfe.printStackTrace();
+	    log4j.error("Exception:" + mfe, mfe);
             throw mfe;
         } catch(Exception ex) {
-	    ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             String err = MESSAGE + "getDirectoryFiles() - Exception:" + ex;
             throw new TException.GENERAL_EXCEPTION( err);
         }
@@ -142,7 +147,7 @@ public class FileUtilAlt {
 		return false;
 	    }
         } catch(Exception ex) {
-	    ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             String err = MESSAGE + "isDirectory() - Exception:" + ex;
             throw new TException.GENERAL_EXCEPTION( err);
         }
@@ -164,7 +169,7 @@ public class FileUtilAlt {
 	    File daemonFile = new File(failDir, "/" + daemonName);
             return daemonFile.exists();
         } catch(Exception ex) {
-	    ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             String err = MESSAGE + "quickFailure() - Exception:" + ex;
             // throw new TException.GENERAL_EXCEPTION(err);
 	    return false;

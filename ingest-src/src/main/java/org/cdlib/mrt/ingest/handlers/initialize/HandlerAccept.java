@@ -45,6 +45,9 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * move package to staging area "producer" directory
  * @author mreyes
@@ -54,10 +57,11 @@ public class HandlerAccept extends Handler<JobState>
 
     private static final String NAME = "HandlerAccept";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private static final String FS = System.getProperty("file.separator");
     private LoggerInf logger = null;
     private Properties conf = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * copy package to staging area
@@ -83,19 +87,19 @@ public class HandlerAccept extends Handler<JobState>
 	    for (String fileS : ingestRequest.getQueuePath().list()) {
 	    	if ( ! isComponent(fileS)) continue;
 
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "moving file to stage dir: " + fileS);
+	    log4j.debug("[debug] " + MESSAGE + "moving file to stage dir: " + fileS);
 		File sourceFile = new File(sourceDir, fileS);
 		File targetFile = new File(targetDir, fileS);
 		if (sourceFile.isHidden()) continue;		// process after disaggregate
 		boolean renamed = sourceFile.renameTo(targetFile);
 		if (! renamed) {
-	            if (DEBUG) System.out.println("[error] " + MESSAGE + "unable to move file to stage dir: " + fileS);
+	            log4j.error("[error] " + MESSAGE + "unable to move file to stage dir: " + fileS);
 		    throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] "
 			+ MESSAGE + ": unable to move file to stage dir: " + fileS);
 		}
 
 		if (! targetFile.exists()) {
-	            if (DEBUG) System.out.println("[error] " + MESSAGE + "unable to move file to stage dir: " + fileS);
+	            log4j.error("[error] " + MESSAGE + "unable to move file to stage dir: " + fileS);
 	    	    // return new HandlerResult(false, "[error]: " + MESSAGE + "unable to copying file to stage dir: " + fileS);
 		    throw new TException.REQUESTED_ITEM_NOT_FOUND("[error] " 
 			+ MESSAGE + ": unable to move file to stage dir: " + fileS);

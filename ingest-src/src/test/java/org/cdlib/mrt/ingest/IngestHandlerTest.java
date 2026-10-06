@@ -1,10 +1,10 @@
 package org.cdlib.mrt.ingest;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import static org.junit.Assert.*;
-//import static org.mockito.Mockito.*;
-//import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,7 +17,6 @@ import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Properties;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -46,6 +45,7 @@ public class IngestHandlerTest extends IngestTestCore {
         public static final String SAMPLES = "https://raw.githubusercontent.com/CDLUC3/mrt-doc/main/sampleFiles/";
         public static final String JOBID = "jobID";
         public static final String BATCHID = "batchid";
+        protected static final Logger log4j = LogManager.getLogger();
 
         public enum SampleFile {
                 SingleFileNoDigest("test.txt", PackageTypeEnum.file, ""),
@@ -100,7 +100,7 @@ public class IngestHandlerTest extends IngestTestCore {
                                         Path p = Paths.get(this.url.getFile());
                                         this.path = p.getFileName().toString();
                                 } catch (MalformedURLException e) {
-                                        System.err.println(e);
+					log4j.error("Exception:" + e, e);
                                 }
                         } else {
                                 this.path = path;
@@ -314,7 +314,7 @@ public class IngestHandlerTest extends IngestTestCore {
         public void createTestDirectory() throws IOException, TException {
 
                 tempdir = Files.createTempDirectory("ingestTest");
-                System.out.println("Creating " + tempdir);
+                log4j.info("Creating " + tempdir);
                 Files.createDirectory(getProducerPath());
                 Files.createDirectory(getSystemPath());
 
@@ -325,7 +325,7 @@ public class IngestHandlerTest extends IngestTestCore {
 
         @After
         public void clearTestDirectory() throws IOException {
-                System.out.println("Deleting " + tempdir);
+                log4j.info("Deleting " + tempdir);
                 FileUtils.deleteDirectory(tempdir.toFile());
         }
 

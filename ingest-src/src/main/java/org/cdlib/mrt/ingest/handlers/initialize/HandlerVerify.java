@@ -44,6 +44,10 @@ import org.cdlib.mrt.utility.MessageDigestValue;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
 /**
  * verify submission package
  * @author mreyes
@@ -53,8 +57,8 @@ public class HandlerVerify extends Handler<JobState>
 
     private static final String NAME = "HandlerVerify";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * compute/verify checksum
@@ -110,7 +114,7 @@ public class HandlerVerify extends Handler<JobState>
 	    if (! calculatedChecksum.equalsIgnoreCase(value)) {
 		throw new TException.FIXITY_CHECK_FAILS("[error] submission package checksum mismatch: " + submissionPackage.getName() + " - " + calculatedChecksum);
 	    } else {
-	    	System.out.println("[info]: " + MESSAGE + "HandlerVerify: Digest value matches: " + submissionPackage.getName());
+	    	log4j.info("[info]: " + MESSAGE + "HandlerVerify: Digest value matches: " + submissionPackage.getName());
 	    }
 
             // metadata file in ANVL format
@@ -125,10 +129,10 @@ public class HandlerVerify extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-	    te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
 	    return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-	    e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "processing checksum: " + e.getMessage();
 	    return new HandlerResult(false, msg);
 	} finally {
@@ -148,7 +152,7 @@ public class HandlerVerify extends Handler<JobState>
     private boolean createMetadata(File ingestFile, String digest, String value, String status)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
         LinkedHashMap<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
 
         ingestProperties.put("packageIntegrity", status);

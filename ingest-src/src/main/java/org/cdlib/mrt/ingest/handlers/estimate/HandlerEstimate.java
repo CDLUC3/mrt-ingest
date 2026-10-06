@@ -102,7 +102,6 @@ public class HandlerEstimate extends Handler<JobState>
 
     private static final String NAME = "HandlerEstimate";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private static final String FS = System.getProperty("file.separator");
     private LoggerInf logger = null;
     private Properties conf = null;
@@ -110,6 +109,7 @@ public class HandlerEstimate extends Handler<JobState>
     protected static final Logger log4j2 = LogManager.getLogger();
     private String zooConnectString = null;
 
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * Estimate resource needs
@@ -147,7 +147,7 @@ public class HandlerEstimate extends Handler<JobState>
 
             if (packageType == PackageTypeEnum.container || packageType == PackageTypeEnum.file) {
                 submissionSize = calulateDirSize(targetDir);
-                System.out.println("[info] " + MESSAGE + "Container or File submission.  Size: " + submissionSize);
+                log4j.info("[info] " + MESSAGE + "Container or File submission.  Size: " + submissionSize);
                 jobState.setSubmissionSize(submissionSize);
                 return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
             } else if (packageType == PackageTypeEnum.manifest) {
@@ -158,9 +158,9 @@ public class HandlerEstimate extends Handler<JobState>
                     manifestFile = new File(targetDir, fileS);
 
                     if (manifestFile.exists()) {
-                        System.out.println("[HandlerEstimate] Processing manifest file: " + manifestFile.getName());
+                        log4j.info("[HandlerEstimate] Processing manifest file: " + manifestFile.getName());
                     } else if (executorService != null) {
-                        System.out.println("[HandlerEstimate] WARNING: Manifest file does not exist: " + manifestFile.getName());
+                        log4j.warn("[HandlerEstimate] WARNING: Manifest file does not exist: " + manifestFile.getName());
                         continue;
                     } else {
                         // manifest does not exist and no other manifests processed...FAIL
@@ -171,10 +171,10 @@ public class HandlerEstimate extends Handler<JobState>
                     FileComponent fileComponent = null;
 
                     // Dryrun process of manifest
-                    System.out.println("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
+                    log4j.info("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
                     if (validateManifestIntegrity(manifestFile, logger)) {
                         status = "valid";
-                        if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
+                        log4j.info("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
                     } else {
                         status = "not-valid";
                         throw new Exception("Manifest integrity check fails: " + manifestFile.getName());
@@ -182,7 +182,7 @@ public class HandlerEstimate extends Handler<JobState>
 
                     if (ingestRequest.getNumDownloadThreads() != 0) {
                         thread_pool_size = ingestRequest.getNumDownloadThreads();
-                        System.out.println("[HandlerEstimate] INFO: Setting processing pool size to: " + thread_pool_size);
+                        log4j.info("[HandlerEstimate] INFO: Setting processing pool size to: " + thread_pool_size);
                     }
 
                     // Check for duplicate manifest entries
@@ -193,7 +193,7 @@ public class HandlerEstimate extends Handler<JobState>
                         fileComponent = rowIn.getFileComponent();
                         String objectName = fileComponent.getIdentifier();
                         if (objectNames.contains(objectName)) {
-                            System.err.println("[error] Duplicate manifest entry detected: " + objectName);
+                            log4j.error("[error] Duplicate manifest entry detected: " + objectName);
 			    ThreadContext.put("Duplicate manifest entry detected: ", objectName + " - " + jobState.getPackageName() + " - " + jobState.grabObjectProfile().getCollectionName());
             		    return new HandlerResult(false, "Error: " + NAME + " Duplicate manifest entry detected: " + objectName, 0);
                         } else {
@@ -210,9 +210,7 @@ public class HandlerEstimate extends Handler<JobState>
                     while (enumRow.hasMoreElements()) {
                         rowIn = (ManifestRowIngest) enumRow.nextElement();
                         fileComponent = rowIn.getFileComponent();
-                        if (DEBUG) {
-                            System.out.println(fileComponent.dump("handlerEstimate"));
-                        }
+                        log4j.debug(fileComponent.dump("handlerEstimate"));
 
                         // launch download
                         Future<String> future = executorService.submit(new CalculateSize(fileComponent.getURL(), fileComponent.getIdentifier(), jobState));
@@ -223,7 +221,7 @@ public class HandlerEstimate extends Handler<JobState>
                     executorService.shutdown();
 
                     while (! executorService.isTerminated()) {
-                        System.out.println("awaiting completion of size calculation.... Thread: " + Thread.currentThread().getName());
+                        log4j.info("awaiting completion of size calculation.... Thread: " + Thread.currentThread().getName());
                         Thread.currentThread().sleep(15000);            // 15 seconds
                     }
 
@@ -246,19 +244,19 @@ public class HandlerEstimate extends Handler<JobState>
 			// Differeniiate from a zero length file
 			if (submissionSize == 0) submissionSize = -1;
                     } catch (Exception e) {
-                        e.printStackTrace(System.err);
-                        System.err.println("Error in calculating Manifest size");
+			log4j.error("Exception:" + e, e);
+                        log4j.error("Error in calculating Manifest size");
                     }
 
                     tasks.clear();
 
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest size calculation successful: " + jobState.getPackageName() + ": " + submissionSize);
+                    log4j.info("[info] " + MESSAGE + "manifest size calculation successful: " + jobState.getPackageName() + ": " + submissionSize);
 		    jobState.setSubmissionSize(submissionSize);
 
                 }
 
             } else {
-                System.out.println("[error] " + MESSAGE + "package type not recognized: " + packageType);
+                log4j.error("[error] " + MESSAGE + "package type not recognized: " + packageType);
                 status = "not-valid";
                 throw new TException.INVALID_OR_MISSING_PARM("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType);
             }
@@ -321,15 +319,13 @@ public class HandlerEstimate extends Handler<JobState>
             while (eRow.hasMoreElements()) {
                 rIn = (ManifestRowIngest) eRow.nextElement();
                 fComponent = rIn.getFileComponent();
-                if (DEBUG) {
-                    System.out.println("Pre-processing manifest entry: " + rIn.getLine());
-                }
+                log4j.debug("Pre-processing manifest entry: " + rIn.getLine());
 
             }
             return true;
         } catch (Exception e) {
-	    e.printStackTrace();
-            System.err.println("[ERROR] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
+	    log4j.error("Exception:" + e, e);
+            log4j.error("[ERROR] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
             return false;
         } finally {
             manifest = null;
@@ -349,10 +345,11 @@ public class HandlerEstimate extends Handler<JobState>
 class CalculateSize implements Callable<String>
 {
 
-    private static final boolean DEBUG = true;
     private URL url = null;
     private String fileName = null;
     private JobState jobState = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     // constructor
     public CalculateSize(URL url, String fileName, JobState jobState) {
@@ -379,7 +376,7 @@ class CalculateSize implements Callable<String>
 	    boolean proxyUse = true;
 	    if (StringUtil.isNotEmpty(proxyCond)) {
 	        proxyUse = ProfileUtil.useProxyUserAgent(jobState.grabUserAgent(), proxyCond);
-                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+                log4j.info("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
 	    }
 
 	    HTTPGetUtil httpGetParams = null;
@@ -388,23 +385,23 @@ class CalculateSize implements Callable<String>
 	    // String basicAuth = jobState.grabObjectProfile().getBasicAuth();
 	    // String basicAuthDomain = jobState.grabObjectProfile().getBasicAuthDomain();
 
-            System.out.println("Retrieving remote data size: " + url.toString() + " ---- " + fileName);
+            log4j.info("Retrieving remote data size: " + url.toString() + " ---- " + fileName);
             for (int i=0; i < 2; i++) {
                 try {
 		    if (proxyURL == null) {
-                        // if (DEBUG) System.out.println("Estimate [info]: " + " Proxy not defined.");
+                        log4j.debug("Estimate [info]: " + " Proxy not defined.");
 	    	 	httpGetParams = HTTPGetUtil.build(null, null, null);
 		    } else { 
-                        if (DEBUG) System.out.println("Estimate [info]: " + " Proxy found: " +  proxyURL.toString());
+                        log4j.info("Estimate [info]: " + " Proxy found: " +  proxyURL.toString());
 			if (proxyUse) {
 	    	 	   httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
 			} else {
-                           if (DEBUG) System.out.println("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                           log4j.info("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
 			}
 		    }
 
                     if (StringUtil.isNotEmpty(basicAuth)) {
-                        if (DEBUG) System.out.println("Estimate [info]: " + " Basic Auth creds defined.");
+                        log4j.info("Estimate [info]: " + " Basic Auth creds defined.");
                         String[] creds = basicAuth.split("\\|\\|");
                         String un = creds[0];
                         String pw = creds[1];
@@ -415,10 +412,10 @@ class CalculateSize implements Callable<String>
                         if (! url.getHost().contains(domain)) addCreds = false;
 
                         if (addCreds) {
-                            if (DEBUG) System.out.println("Estimate [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
+                            log4j.info("Estimate [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
                             httpGetParams.addBasidAuthenticationHeader(un, pw);
                         } else {
-                            if (DEBUG) System.out.println("Estimate [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
+                            log4j.info("Estimate [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
                         }
                     }
 
@@ -426,13 +423,13 @@ class CalculateSize implements Callable<String>
 
 		    // Not found (404)
 		    if (bytes == -404) {
-                        if (DEBUG) System.out.println("Estimate [error]: " + " URL not retrievable: " + url.toString());
+                        log4j.error("Estimate [error]: " + " URL not retrievable: " + url.toString());
             		return url.toString();
 		    }
 
 		    // Any other non 200 responses
 		    if (bytes <= -400) {
-                        if (DEBUG) System.out.println("Estimate [warn]: " + " Response code: " + bytes + " - URL:" + url.toString());
+                        log4j.warn("Estimate [warn]: " + " Response code: " + bytes + " - URL:" + url.toString());
             		bytes = 0;
 		    }
 
@@ -441,11 +438,11 @@ class CalculateSize implements Callable<String>
 			ThreadContext.put("Content Length not provided: ", url.toString() + " - " + jobState.grabObjectProfile().getCollectionName());
 		        bytes = 0;
 		    } else {
-                        if (DEBUG) System.out.println("[info] Found size: " + url.toString() + " - Bytes: " + bytes);
+                        log4j.info("[info] Found size: " + url.toString() + " - Bytes: " + bytes);
 		    }
                     break;
                 } catch (Exception ste) {
-                    System.out.println("[error] retrieving bytes size: " + url.toString() + " retry attempt: " + i);
+                    log4j.error("[error] retrieving bytes size: " + url.toString() + " retry attempt: " + i);
                 }
                 retries = i;
                 if (i==1) break;        // log error
@@ -454,9 +451,9 @@ class CalculateSize implements Callable<String>
             return String.valueOf(bytes);
 
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             LogManager.getLogger().error(e);
-            System.out.println("[error] In retrieval of URL: " + url.toString());
+            log4j.error("[error] In retrieval of URL: " + url.toString());
             return "0";
         } finally {
             ThreadContext.clearMap();

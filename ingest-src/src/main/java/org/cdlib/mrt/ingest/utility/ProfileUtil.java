@@ -77,6 +77,9 @@ import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.tools.SSMConfigResolver;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 
 /**
@@ -88,8 +91,6 @@ public class ProfileUtil
 
     private static final String NAME = "ProfileUtil";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = false;
-    // private static final boolean DEBUG = true;
     private static final int MAX_HANDLERS = 20;
     public static final String DEFAULT_BATCH_ID = "JOB_ONLY";
     private LoggerInf logger = null;
@@ -139,6 +140,7 @@ public class ProfileUtil
     private static final String matchNotificationType = "NotificationType";
     private static final String matchNotificationSuppression = "NotificationSuppression";
     private static final String matchSuppressDublinCoreLocalID = "SuppressDublinCoreLocalID";
+    protected static final Logger log4j = LogManager.getLogger();
 
     // Process active profile (S3)
     public static synchronized ProfileState getProfile(Identifier profileName, String ingestDir, String s3endpoint, String accessKey, String secretKey, String profileNode, String profilePath, boolean delete)
@@ -157,16 +159,16 @@ public class ProfileUtil
 
 	    if (! profileFile.exists()) {
 
-                System.out.println("[info] Cached S3 profile file does not exist: " + profileFile.getAbsolutePath());
-                System.out.println("[info] Downloading S3 profile: " + profileName.getValue() + " From S3: " + profileNode + "/" + profilePath );
+                log4j.info("[info] Cached S3 profile file does not exist: " + profileFile.getAbsolutePath());
+                log4j.info("[info] Downloading S3 profile: " + profileName.getValue() + " From S3: " + profileNode + "/" + profilePath );
 		String s3Path = profilePath + "/" + profileName.getValue();
 		S3Client s3Client = null;
 
 		if (! StringUtil.isEmpty(s3endpoint)) {
-                    System.out.println("[info] Detected Minio style S3 environment");
+                    log4j.info("[info] Detected Minio style S3 environment");
 		    s3Client = S3Util.getMinioClient(region, accessKey, secretKey, s3endpoint);
 		} else {
-                    System.out.println("[info] Detected AWS style S3 environment");
+                    log4j.info("[info] Detected AWS style S3 environment");
 		    s3Client = S3Util.getAWSClient(region);
 		}
 
@@ -175,12 +177,12 @@ public class ProfileUtil
                     inputStream = S3Util.getObjectSyncInputStream(s3Client, profileNode, s3Path);
 		    copyInputStreamToFile(inputStream, profileFile);
 	        } catch (Exception e2) {
-		    e2.printStackTrace();
+		    log4j.error("Exception:" + e2, e2);
 		    throw new Exception(e2.getMessage());
 	        } finally {
 		}
 	    } else {
-                System.out.println("[info] Cached S3 profile exists: " + profileNode + " - " + profilePath + " - " + profileName.toString());
+                log4j.info("[info] Cached S3 profile exists: " + profileNode + " - " + profilePath + " - " + profileName.toString());
 	    }
 
 	    profileState = getProfile(profileName, profileFile);
@@ -193,9 +195,10 @@ public class ProfileUtil
 	} catch (TException tex) {
 	    throw tex;
 	} catch (Exception ex) {
+	    log4j.error("Exception:" + ex, ex);
             String err = MESSAGE + "error in creating profile ID - Exception:" + ex;
 
-            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            log4j.error(err + " : " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(err);
 	} finally {
 	    profileState = null;
@@ -209,7 +212,7 @@ public class ProfileUtil
 	try {
                 File profileTxt = new File(ingestDir, profileName.getValue() + ".txt");		// assume a text extension
                 if (!profileTxt.exists()) {
-                    if (DEBUG) System.out.println("[info] Profile name not found. Attempting w/o extension");
+                    log4j.info("[info] Profile name not found. Attempting w/o extension");
                     profileTxt = new File(ingestDir, profileName.getValue());
                     if (!profileTxt.exists()) {
                         throw new TException.INVALID_OR_MISSING_PARM(
@@ -220,9 +223,10 @@ public class ProfileUtil
 	} catch (TException tex) {
 	    throw tex;
 	} catch (Exception ex) {
+	    log4j.error("Exception:" + ex, ex);
             String err = MESSAGE + "error in creating profile ID - Exception:" + ex;
 
-            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            log4j.error(err + " : " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(err);
 	}
     }
@@ -260,46 +264,30 @@ public class ProfileUtil
                 String value = profileProperties.getProperty(key);
 
                 if (key.startsWith(matchProfileID)) {
-                    if (DEBUG) System.out.println("[debug] profile: " + value);
+                    log4j.debug("[debug] profile: " + value);
                     profileState.setProfileID(new Identifier(value));
 		} else if (key.startsWith(matchProfileDescription)) {
-                    if (DEBUG) System.out.println("[debug] profile description: " + value);
+                    log4j.debug("[debug] profile description: " + value);
 		    profileState.setProfileDescription(value);
 		} else if (key.startsWith(matchIdentifierScheme)) {
-                    if (DEBUG) System.out.println("[debug] identifier scheme: " + value);
+                    log4j.debug("[debug] identifier scheme: " + value);
 		    profileState.setIdentifierScheme(value);
 		} else if (key.startsWith(matchIdentifierNamespace)) {
-                    if (DEBUG) System.out.println("[debug] identifier namespace: " + value);
+                    log4j.debug("[debug] identifier namespace: " + value);
 		    profileState.setIdentifierNamespace(value);
 		} else if (key.startsWith(matchNotification)) {
-                    if (DEBUG) System.out.println("[debug] contact email: " + value);
+                    log4j.debug("[debug] contact email: " + value);
 		    profileState.setContactsEmail(new Notification(value));
 		} else if (key.startsWith(matchObjectMinterURL)) {
-                    if (DEBUG) System.out.println("[debug] object minter URL: " + value);
+                    log4j.debug("[debug] object minter URL: " + value);
                     try {
                         url = new URL(value);
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("Mint Service parameter in profile is not a valid URL: " + value);
                     }
 		    profileState.setObjectMinterURL(url);
-		//} else if (key.startsWith(matchCharacterizationURL)) {
-                    //if (DEBUG) System.out.println("[debug] characterization URL: " + value);
-                    //try {
-                        //url = new URL(value);
-                    //} catch (MalformedURLException muex) {
-                        //throw new TException.INVALID_CONFIGURATION("CharacterizationService parameter in profile is not a valid URL: " + value);
-                    //}
-		    //profileState.setCharacterizationURL(url);
-		//} else if (key.startsWith(matchCoordinatingNodeURL)) {
-                    //if (DEBUG) System.out.println("[debug] dataONE coordinating node URL: " + value);
-                    //try {
-                        //url = new URL(value);
-                    //} catch (MalformedURLException muex) {
-                        //throw new TException.INVALID_CONFIGURATION("Dataone CN parameter in profile is not a valid URL: " + value);
-                    //}
-		    //profileState.setCoordinatingNodeURL(url);
 		} else if (key.startsWith(matchCallbackURL)) {
-                    if (DEBUG) System.out.println("[debug] callback URL: " + value);
+                    log4j.debug("[debug] callback URL: " + value);
                     try {
                         url = new URL(value);
                     } catch (MalformedURLException muex) {
@@ -307,7 +295,7 @@ public class ProfileUtil
                     }
 		    profileState.setCallbackURL(url);
 		} else if (key.startsWith(matchProxyURL)) {
-                    if (DEBUG) System.out.println("[debug] proxy URL: " + value);
+                    log4j.debug("[debug] proxy URL: " + value);
                     try {
                         url = new URL(value);
                     } catch (MalformedURLException muex) {
@@ -315,14 +303,14 @@ public class ProfileUtil
                     }
 		    profileState.setProxyURL(url);
 		} else if (key.startsWith(matchProxyCond)) {
-                    if (DEBUG) System.out.println("[debug] proxy Conditional: " + value);
+                    log4j.debug("[debug] proxy Conditional: " + value);
 		    profileState.setProxyCond(value);
 		} else if (key.startsWith(matchBasicAuth)) {
-                    if (DEBUG) System.out.println("[debug] Basic Auth: " + value);
+                    log4j.debug("[debug] Basic Auth: " + value);
 
 		    String rootPath = System.getenv("SSM_ROOT_PATH");
-		    System.out.println("SSM_ROOT_PATH: " + rootPath);
-		    System.out.println("SSM Key: " + rootPath + value);
+		    log4j.debug("SSM_ROOT_PATH: " + rootPath);
+		    log4j.debug("SSM Key: " + rootPath + value);
 
 		    // Get SSM for creds
 		    SSMConfigResolver ssmConfigResolver = new SSMConfigResolver();
@@ -330,30 +318,23 @@ public class ProfileUtil
 		    try {
 		       ssmValue = ssmConfigResolver.getResolvedValue(rootPath + value);
 		    } catch (Exception ssme) {
-		       System.err.println("ProfileUtil] Error pulling SSM Key: " + rootPath + value);
+		       log4j.error("Exception:" + ssme, ssme);
+		       log4j.error("ProfileUtil] Error pulling SSM Key: " + rootPath + value);
 		       ssmValue = null;
 		    }
 
 		    profileState.setBasicAuth(ssmValue);
 		} else if (key.startsWith(matchPriority)) {
-                    if (DEBUG) System.out.println("[debug] Priority: " + value);
+                    log4j.debug("[debug] Priority: " + value);
 		    profileState.setPriority(value);
-		//} else if (key.startsWith(matchStatusURL)) {
-                    //if (DEBUG) System.out.println("[debug] status URL: " + value);
-                    //try {
-                        //url = new URL(value);
-                    //} catch (MalformedURLException muex) {
-                        //throw new TException.INVALID_CONFIGURATION("StatusURL parameter in profile is not a valid URL: " + value);
-                    //}
-		    //profileState.setStatusURL(url);
 		} else if (key.startsWith(matchCollection)) {
-                    if (DEBUG) System.out.println("[debug] collection: " + value);
+                    log4j.debug("[debug] collection: " + value);
                     if ((! value.startsWith("ark:/")) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Collection ID is not a valid: " + value);
 		    profileState.setCollection(value);
 		    // For display state only - assumes only on collection per object
 		    profileState.setCollectionName(value);
 		} else if (key.startsWith(matchHandlerIngest)) {
-                    if (DEBUG) System.out.println("[debug] ingest handler: " + value);
+                    log4j.debug("[debug] ingest handler: " + value);
 
                     String handlerIngestS = key.substring(matchHandlerIngest.length());
                     Integer handlerID = Integer.parseInt(handlerIngestS);
@@ -362,7 +343,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    ingestHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerQueue)) {
-                    if (DEBUG) System.out.println("[debug] queue handler: " + value);
+                    log4j.debug("[debug] queue handler: " + value);
 
                     String handlerQueueS = key.substring(matchHandlerQueue.length());
                     Integer handlerID = Integer.parseInt(handlerQueueS);
@@ -371,7 +352,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    queueHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerBatchProcess)) {
-                    if (DEBUG) System.out.println("[debug] batch process handler: " + value);
+                    log4j.debug("[debug] batch process handler: " + value);
 
                     String handlerBatchProcessS = key.substring(matchHandlerBatchProcess.length());
                     Integer handlerID = Integer.parseInt(handlerBatchProcessS);
@@ -380,7 +361,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    batchProcessHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerBatchReport)) {
-                    if (DEBUG) System.out.println("[debug] batch report handler: " + value);
+                    log4j.debug("[debug] batch report handler: " + value);
 
                     String handlerBatchReportS = key.substring(matchHandlerBatchReport.length());
                     Integer handlerID = Integer.parseInt(handlerBatchReportS);
@@ -389,7 +370,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    batchReportHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerInitialize)) {
-                    if (DEBUG) System.out.println("[debug] initialize handler: " + value);
+                    log4j.debug("[debug] initialize handler: " + value);
 
                     String handlerInitializeS = key.substring(matchHandlerInitialize.length());
                     Integer handlerID = Integer.parseInt(handlerInitializeS);
@@ -398,7 +379,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    initializeHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerEstimate)) {
-                    if (DEBUG) System.out.println("[debug] estimate handler: " + value);
+                    log4j.debug("[debug] estimate handler: " + value);
 
                     String handlerEstimateS = key.substring(matchHandlerEstimate.length());
                     Integer handlerID = Integer.parseInt(handlerEstimateS);
@@ -407,7 +388,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    estimateHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerProvision)) {
-                    if (DEBUG) System.out.println("[debug] provision handler: " + value);
+                    log4j.debug("[debug] provision handler: " + value);
 
                     String handlerProvisionS = key.substring(matchHandlerProvision.length());
                     Integer handlerID = Integer.parseInt(handlerProvisionS);
@@ -416,7 +397,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    provisionHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerDownload)) {
-                    if (DEBUG) System.out.println("[debug] download handler: " + value);
+                    log4j.debug("[debug] download handler: " + value);
 
                     String handlerDownloadS = key.substring(matchHandlerDownload.length());
                     Integer handlerID = Integer.parseInt(handlerDownloadS);
@@ -425,7 +406,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    downloadHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerProcess)) {
-                    if (DEBUG) System.out.println("[debug] process handler: " + value);
+                    log4j.debug("[debug] process handler: " + value);
 
                     String handlerProcessS = key.substring(matchHandlerProcess.length());
                     Integer handlerID = Integer.parseInt(handlerProcessS);
@@ -434,7 +415,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    processHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerRecord)) {
-                    if (DEBUG) System.out.println("[debug] record handler: " + value);
+                    log4j.debug("[debug] record handler: " + value);
 
                     String handlerRecordS = key.substring(matchHandlerRecord.length());
                     Integer handlerID = Integer.parseInt(handlerRecordS);
@@ -443,7 +424,7 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    recordHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchHandlerNotify)) {
-                    if (DEBUG) System.out.println("[debug] notify handler: " + value);
+                    log4j.debug("[debug] notify handler: " + value);
 
                     String handlerNotifyS = key.substring(matchHandlerNotify.length());
                     Integer handlerID = Integer.parseInt(handlerNotifyS);
@@ -452,14 +433,14 @@ public class ProfileUtil
 		    handler.setHandlerName(value);
 		    notifyHandlers.put(handlerID, handler);
 		} else if (key.startsWith(matchStorageService)) {
-                    if (DEBUG) System.out.println("[debug] storage service: " + value);
+                    log4j.debug("[debug] storage service: " + value);
                     try {
                         storageUrl = new URL(value);
                     } catch (MalformedURLException muex) {
                         throw new TException.INVALID_CONFIGURATION("StorageService parameter in profile is not a valid URL: " + value);
                     }
 		} else if (key.startsWith(matchStorageNode)) {
-                    if (DEBUG) System.out.println("[debug] storage node: " + value);
+                    log4j.debug("[debug] storage node: " + value);
 		    try {
 		        node = Integer.valueOf(value);
 		    } catch (java.lang.NumberFormatException nfe) {
@@ -471,27 +452,27 @@ public class ProfileUtil
 			}
 		    } 
 		} else if (key.startsWith(matchCreationDate)) {
-                    if (DEBUG) System.out.println("[debug] creation date: " + value);
+                    log4j.debug("[debug] creation date: " + value);
 		    DateState ds = new DateState(value);
 		    if ((ds.getDate() == null) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Creation Date parameter in profile is not a valid: " + value);
 		    profileState.setCreationDate(ds);
 		} else if (key.startsWith(matchModificationDate)) {
-                    if (DEBUG) System.out.println("[debug] modification date: " + value);
+                    log4j.debug("[debug] modification date: " + value);
 		    DateState ds = new DateState(value);
 		    if ((ds.getDate() == null) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Modification Date  parameter in profile is not a valid: " + value);
 		    profileState.setModificationDate(ds);
 		} else if (key.startsWith(matchType)) {
-                    if (DEBUG) System.out.println("[debug] object type: " + value);
+                    log4j.debug("[debug] object type: " + value);
 		    if (! profileState.setObjectType(value)) throw new TException.INVALID_CONFIGURATION("Object type not valid: " + value);
 		} else if (key.startsWith(matchRole)) {
-                    if (DEBUG) System.out.println("[debug] object role: " + value);
+                    log4j.debug("[debug] object role: " + value);
 		    if (! profileState.setObjectRole(value)) throw new TException.INVALID_CONFIGURATION("Object role not valid: " + value);
 		} else if (key.startsWith(matchAggregate)) {
-                    if (DEBUG) System.out.println("[debug] aggregate: " + value);
+                    log4j.debug("[debug] aggregate: " + value);
 		    if (! profileState.setAggregateType(value))
 			if (StringUtil.isNotEmpty(profileState.getAggregateType()) && isValidProfile(profileName.getValue())) throw new TException.INVALID_CONFIGURATION("Aggregate not valid: " + value);
 		} else if (key.startsWith(matchOwner)) {
-                    if (DEBUG) System.out.println("[debug] owner: " + value);
+                    log4j.debug("[debug] owner: " + value);
 		    if (! profileState.setOwner(value)) {
                         if ( ! isValidProfile(profileName.getValue())) {
                            // Must be a Template, set to non-sensical value
@@ -501,25 +482,25 @@ public class ProfileUtil
 			}
 		    }
 		} else if (key.startsWith(matchContext)) {
-                    if (DEBUG) System.out.println("[debug] context: " + value);
+                    log4j.debug("[debug] context: " + value);
 		    profileState.setContext(value);
 		} else if (key.startsWith(matchEzidCoowner)) {
-                    if (DEBUG) System.out.println("[debug] EZID co-owner found: " + value);
+                    log4j.debug("[debug] EZID co-owner found: " + value);
 		    profileState.setEzidCoowner(value);
 		} else if (key.startsWith(matchNotificationFormat)) {
-                    if (DEBUG) System.out.println("[debug] notification format: " + value);
+                    log4j.debug("[debug] notification format: " + value);
 		    profileState.setNotificationFormat(value);
 		} else if (key.startsWith(matchNotificationType)) {
-                    if (DEBUG) System.out.println("[debug] notification type: " + value);
+                    log4j.debug("[debug] notification type: " + value);
 		    profileState.setNotificationType(value);
 		} else if (key.startsWith(matchNotificationSuppression)) {
-                    if (DEBUG) System.out.println("[debug] notification suppression: " + value);
+                    log4j.debug("[debug] notification suppression: " + value);
 		    profileState.setNotificationSuppression(value);
 		} else if (key.startsWith(matchSuppressDublinCoreLocalID)) {
-                    if (DEBUG) System.out.println("[debug] suppress dc.identifer/local ID processing: " + value);
+                    log4j.debug("[debug] suppress dc.identifer/local ID processing: " + value);
 		    if (value.equalsIgnoreCase("true")) profileState.setSuppressDublinCoreLocalID(true);
 	        } else {
-                    if (DEBUG) System.out.println("[debug] could not process profile parameter: " + key);
+                    log4j.warn("[warn] could not process profile parameter: " + key);
 		}
 	     }
 
@@ -543,7 +524,8 @@ public class ProfileUtil
 	} catch (Exception ex) {
             String err = MESSAGE + "error in creating profile ID - Exception:" + ex;
 
-            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            log4j.error(err);
+	    log4j.error("Exception:" + ex, ex);
             throw new TException.GENERAL_EXCEPTION(err);
 	} finally {
 	    ingestHandlers = null;
@@ -607,7 +589,8 @@ public class ProfileUtil
 	} catch (Exception ex) {
             String err = MESSAGE + "error getting profiles - Exception:" + ex;
 
-            System.out.println(err + " : " + StringUtil.stackTrace(ex));
+            log4j.error(err);
+	    log4j.error("Exception:" + ex, ex);
             throw new TException.GENERAL_EXCEPTION(err);
 	}
     }
@@ -645,7 +628,8 @@ public class ProfileUtil
 	    // Convention that all profiles end with "_content"
             return profileName.endsWith("_content");
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine if profile is valid: " + profileName);
+            log4j.warn("[warn] " + MESSAGE + " could not determine if profile is valid: " + profileName);
+	    log4j.warn("Exception:" + e, e);
         }
 	return true;	// default
    }
@@ -655,7 +639,8 @@ public class ProfileUtil
 	    // Convention that all tempaltes start with "TEMPLATE"
             return profileName.startsWith("TEMPLATE");
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine if file is a template: " + profileName);
+            log4j.warn("[warn] " + MESSAGE + " could not determine if file is a template: " + profileName);
+	    log4j.warn("Exception:" + e, e);
         }
 	return true;	// default
    }
@@ -667,7 +652,8 @@ public class ProfileUtil
 	    if (profileName.endsWith("/owner")) return "owner";
 	    if (profileName.endsWith("/sla")) return "sla";
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine if profile is an admin to be filtered: " + profileName);
+            log4j.warn("[warn] " + MESSAGE + " could not determine if profile is an admin to be filtered: " + profileName);
+	    log4j.warn("Exception:" + e, e);
         }
 	return null;	// default
    }
@@ -680,7 +666,8 @@ public class ProfileUtil
 
 	    return profileState.getProfileDescription();
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine retrieve profile description from profile: " + profile.getName());
+            log4j.warn("[warn] " + MESSAGE + " could not determine retrieve profile description from profile: " + profile.getName());
+	    log4j.warn("Exception:" + e, e);
         }
 	return null;
    }
@@ -693,7 +680,8 @@ public class ProfileUtil
 
 	    return profileState.getModificationDate();
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine retrieve profile mod date from profile: " + profile.getName());
+            log4j.warn("[warn] " + MESSAGE + " could not determine retrieve profile mod date from profile: " + profile.getName());
+	    log4j.warn("Exception:" + e, e);
         }
 	return null;
    }
@@ -702,8 +690,8 @@ public class ProfileUtil
         try {
             return profileState.getProfileID().getValue().startsWith("demo_");
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine \"demo\" mode.");
-	    e.printStackTrace();
+            log4j.warn("[warn] " + MESSAGE + " could not determine \"demo\" mode.");
+	    log4j.error("Exception:" + e, e);
         }
 	return true;	// default
    }
@@ -725,24 +713,12 @@ public class ProfileUtil
 	    }
 
         } catch (Exception e) {
-            System.err.println("[warning] " + MESSAGE + " could not determine process Proxy Conditional: " + proxyCond);
+            log4j.warn("[warn] " + MESSAGE + " could not determine process Proxy Conditional: " + proxyCond);
+	    log4j.warn("Exception:" + e, e);
 	    return false;
         }
    }
 
-
-/*
-    public static void copyInputStreamToFile(InputStream input, File file) {  
-        try {
-	    Path path = Paths.get(file.getAbsoultePath());
-	    Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
-	    OutputStream output = new FileOutputStream(file) {
-            input.transferTo(output);
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-        }
-    }
-*/
 
 	private static void copyInputStreamToFile(InputStream inputStream, File file)
             throws Exception {
@@ -758,7 +734,7 @@ public class ProfileUtil
             }
 	    outputStream.close();
         } catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
 	}
 
     }
@@ -770,7 +746,7 @@ public class ProfileUtil
 
 	private static void deleteTempFile(String fileName) throws Exception {
             String dir = System.getProperty("java.io.tmpdir");
-            System.out.println("[info] Deleting cached profile: " + fileName);
+            log4j.info("[info] Deleting cached profile: " + fileName);
 	    new File(dir + "/" + fileName).delete();
         }
 

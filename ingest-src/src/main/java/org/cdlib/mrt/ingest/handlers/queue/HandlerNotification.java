@@ -36,6 +36,8 @@ import javax.mail.internet.InternetAddress;
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.ByteArrayDataSource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -51,7 +53,6 @@ import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
 
-
 /**
  * notify user of queue submission results
  * @author mreyes
@@ -62,8 +63,8 @@ public class HandlerNotification extends Handler<BatchState>
     protected static final String NAME = "HandlerNotification";
     private static final String SERVICE = "Ingest";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
     protected LoggerInf logger = null;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * notify user(s)
@@ -87,13 +88,13 @@ public class HandlerNotification extends Handler<BatchState>
 
 	    try {
 	        if (profileState.getNotificationSuppression().equalsIgnoreCase("partial") || profileState.getNotificationSuppression().equalsIgnoreCase("full")) {
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected suppression of queue notification: " + profileState.getNotificationSuppression());
+                    log4j.info("[info] " + MESSAGE + "Detected suppression of queue notification: " + profileState.getNotificationSuppression());
 		    return new HandlerResult(true, "SUCCESS: " + NAME + " notification suppressed", 0);
 	        }
 	    } catch (Exception e) {}
 	    try {
 	        if (profileState.getNotificationType().equalsIgnoreCase("verbose")) {
-                    if (DEBUG) System.out.println("[info] " + MESSAGE + "Detected 'verbose' format type.");
+                    log4j.info("[info] " + MESSAGE + "Detected 'verbose' format type.");
 		    verbose = true;
 	        }
 	    } catch (Exception e) {}
@@ -104,12 +105,13 @@ public class HandlerNotification extends Handler<BatchState>
 		    try {
   	    	        email.addTo(recipient.getContactEmail());
 		    } catch (Exception e) { 
-		        e.printStackTrace();
+			log4j.error("Exception:" + e, e);
+
 		        notify(e.getMessage() + " - " + recipient.getContactEmail(), profileState, ingestRequest); 
 		    }
 	        }
 	    } else {
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "recipients will not receive Queue notification.");
+                log4j.info("[info] " + MESSAGE + "recipients will not receive Queue notification.");
 	    }
             if (profileState.getAdmin() != null) {
                 for (Iterator<String> admin = profileState.getAdmin().iterator(); admin.hasNext(); ) {
@@ -130,7 +132,7 @@ public class HandlerNotification extends Handler<BatchState>
                emailReply.add(new InternetAddress(replyTo));
                email.setReplyTo(emailReply);
             } else {
-               if (DEBUG) System.err.println("[warning] " + MESSAGE + "Email replyTo not found.");
+               log4j.warn("[warn] " + MESSAGE + "Email replyTo not found.");
             }
 
 
@@ -163,7 +165,7 @@ public class HandlerNotification extends Handler<BatchState>
                 email.attach(new ByteArrayDataSource(formatterUtil.doStateFormatting(batchState, formatType), formatType.getMimeType()),
                     batchID + "." + formatType.getExtension(), "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
             } catch (Exception e) {
-                if (DEBUG) System.out.println("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
+                log4j.warn("[warn] " + MESSAGE + "Could not determine format type.  Setting to default.");
                 // human readable
                 email.attach(new ByteArrayDataSource("Completion of Ingest - " + batchState.dump("Notification Report"), "text/plain"),
                      batchID + ".txt", "Full report for " +  batchID, EmailAttachment.ATTACHMENT);
@@ -178,14 +180,13 @@ public class HandlerNotification extends Handler<BatchState>
 	       }
   	       email.setMsg(batchState.dump("", false, false));
             } catch (Exception e) {
-		e.printStackTrace(System.err);
+		log4j.error("Exception:" + e, e);
             }
 
 	    try {
   	        email.send();
 	    } catch (Exception e) {
-		e.printStackTrace(System.err);
-		// do not fail?
+		log4j.error("Exception:" + e, e);
 	    }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " notification completed", 0);
@@ -193,9 +194,10 @@ public class HandlerNotification extends Handler<BatchState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
-	    e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + ": in submission notification: " + e.getMessage();
-	    System.err.println(msg);
+	    log4j.error(msg);
             throw new TException.GENERAL_EXCEPTION(msg);
 
         } finally {

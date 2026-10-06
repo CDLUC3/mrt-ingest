@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.core.FileComponent;
@@ -67,11 +70,12 @@ public class HandlerCorroborate extends Handler<JobState>
 
     private static final String NAME = "HandlerCorroborate";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
     private String manifestName = "mrt-manifest.txt";
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * validate manifest
@@ -94,15 +98,15 @@ public class HandlerCorroborate extends Handler<JobState>
 
             PackageTypeEnum packageType = ingestRequest.getPackageType();
             if (packageType != PackageTypeEnum.container) {
-                System.out.println("[info] " + MESSAGE + "specified package type is not a container.  No processing necesary.");
+                log4j.info("[info] " + MESSAGE + "specified package type is not a container.  No processing necesary.");
                 return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	    } else {
 	 	// Let's check for a manifest within container
 		if (! manifest.exists()) {
-                    System.out.println("[info] " + MESSAGE + "no manifest exists in container.  No processing necesary.");
+                    log4j.info("[info] " + MESSAGE + "no manifest exists in container.  No processing necesary.");
                     return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 		} else {
-                    System.out.println("[info] " + MESSAGE + "Corroborating manifest found in container.");
+                    log4j.info("[info] " + MESSAGE + "Corroborating manifest found in container.");
 		} 
 	    }
 
@@ -112,7 +116,7 @@ public class HandlerCorroborate extends Handler<JobState>
 	        if (! (valid = checkManifest(manifest, ingestRequest.getQueuePath()))) {
 		    valid = false;
                     integrityStatus = "failed";
-                    System.err.println("[error] " + MESSAGE + "error in corroborating manifest: " + manifest.getAbsolutePath());
+                    log4j.error("[error] " + MESSAGE + "error in corroborating manifest: " + manifest.getAbsolutePath());
 	        } else {
                     integrityStatus = "verified";
 	        } 
@@ -138,10 +142,12 @@ public class HandlerCorroborate extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
+
             return new HandlerResult(false, "ERROR: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "validating manifest: " + e.getMessage();
             return new HandlerResult(false, msg);
 	}
@@ -162,7 +168,7 @@ public class HandlerCorroborate extends Handler<JobState>
     private boolean createMetadata(File ingestFile, String validateStatus, String integrityStatus)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
         Map<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
 
         ingestProperties.put("manifestValidity", validateStatus);
@@ -226,16 +232,16 @@ public class HandlerCorroborate extends Handler<JobState>
 		// cross-reference supplied manifest with directory data
 		FileComponent fcCheck = fcDirectory.get(fc.getIdentifier());
 		if (fcCheck == null) {
-                    System.err.println("[error] " + MESSAGE + "manifest file entry does not exist in data dir: " + fc.getIdentifier());
+                    log4j.error("[error] " + MESSAGE + "manifest file entry does not exist in data dir: " + fc.getIdentifier());
 		    return false;
 		} else {
 		    if (fc.getSize() != fcCheck.getSize()) {
-                        System.err.println("[error] " + MESSAGE + "manifest file entry filesize does not match data: " + fc.getIdentifier() + "    " +
+                        log4j.error("[error] " + MESSAGE + "manifest file entry filesize does not match data: " + fc.getIdentifier() + "    " +
 				fc.getSize() + " -- " + fcCheck.getSize());
 		        return false;
 		    }
 	            if (! fc.getMessageDigest().getValue().equals(fcCheck.getMessageDigest().getValue())) {
-                        System.err.println("[error] " + MESSAGE + "manifest file entry digest does not match data: " + fc.getIdentifier() + "    " +
+                        log4j.error("[error] " + MESSAGE + "manifest file entry digest does not match data: " + fc.getIdentifier() + "    " +
 				fc.getMessageDigest().getValue() + " -- " + fcCheck.getMessageDigest().getValue());
 		        return false;
 		    }
@@ -249,16 +255,16 @@ public class HandlerCorroborate extends Handler<JobState>
 
 		FileComponent fcCheck = fcManifest.get(fc.getIdentifier());
 		if (fcCheck == null) {
-                    System.err.println("[error] " + MESSAGE + "data file does not exist in manifest: " + fc.getIdentifier());
+                    log4j.error("[error] " + MESSAGE + "data file does not exist in manifest: " + fc.getIdentifier());
 		    return false;
 		} else {
 		    if (fc.getSize() != fcCheck.getSize()) {
-                        System.err.println("[error] " + MESSAGE + "data file filesize does not match manifest: " + fc.getIdentifier() + "    " +
+                        log4j.error("[error] " + MESSAGE + "data file filesize does not match manifest: " + fc.getIdentifier() + "    " +
 				fc.getSize() + " -- " + fcCheck.getSize());
 		        return false;
 		    }
 	            if (! fc.getMessageDigest().getValue().equals(fcCheck.getMessageDigest().getValue())) {
-                        System.err.println("[error] " + MESSAGE + "data file digest does not match manifest: " + fc.getIdentifier() + "    " +
+                        log4j.error("[error] " + MESSAGE + "data file digest does not match manifest: " + fc.getIdentifier() + "    " +
 				fc.getMessageDigest().getValue() + " -- " + fcCheck.getMessageDigest().getValue());
 		        return false;
 		    }
@@ -267,9 +273,11 @@ public class HandlerCorroborate extends Handler<JobState>
 
 
 	} catch (TException te) {
-		te.printStackTrace();
+		log4j.error("Exception:" + te, te);
+
 	        throw te;
 	} catch (Exception e) {
+		log4j.error("Exception:" + e, e);
 	        e.printStackTrace();
 	        throw new TException.GENERAL_EXCEPTION(e.getMessage());
 	}

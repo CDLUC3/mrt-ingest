@@ -34,6 +34,9 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.core.FileComponent;
 import org.cdlib.mrt.core.Manifest;
 import org.cdlib.mrt.core.ManifestRowAbs;
@@ -69,10 +72,10 @@ public class HandlerPost extends Handler<BatchState>
 
     protected static final String NAME = "HandlerPost";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
     protected static final long MAX_MANIFEST_LENGTH = 5000000;
     protected LoggerInf logger = null;
     protected Properties conf = null;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * Unpack batch manifest if necessary, create job ID(s)
@@ -97,7 +100,7 @@ public class HandlerPost extends Handler<BatchState>
 	    for (String fileS : queueDir.list()) {
 	        file = new File(queueDir, fileS);
 		batchState.setPackageName(file.getName());
-		System.out.println("[info] " + MESSAGE + "batchID: " + batchState.getBatchID().getValue());
+		log4j.info("[info] " + MESSAGE + "batchID: " + batchState.getBatchID().getValue());
             }
 
 	    return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
@@ -105,7 +108,8 @@ public class HandlerPost extends Handler<BatchState>
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (Exception e) {
             String msg = "[error] " + MESSAGE + "processing file: " + file.getAbsolutePath() + " : " + e.getMessage();
-	    System.err.println(msg);
+
+	    log4j.error(msg);
             return new HandlerResult(false, msg, 10);
 	} finally {
 	}

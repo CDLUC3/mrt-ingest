@@ -49,6 +49,9 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -80,7 +83,6 @@ public class ProcessManager {
 
 	private static final String NAME = "ProcessManager";
 	private static final String MESSAGE = NAME + ": ";
-	private static final boolean DEBUG = true;
 	private LoggerInf logger = null;
         private JSONObject storeConf = null;
         private JSONObject ingestConf = null;
@@ -106,6 +108,7 @@ public class ProcessManager {
         private String s3endpoint = null;
         private String s3accesskey = null;
         private String s3secretkey = null;
+	protected static final Logger log4j = LogManager.getLogger();
 
 	public String getIngestServiceProp() {
 		return this.ingestFileS;
@@ -144,8 +147,7 @@ public class ProcessManager {
 			throw tex;
 		} catch (Exception ex) {
 			String msg = MESSAGE + "ProcessManager Exception:" + ex;
-			logger.logError(msg, LoggerInf.LogLevel.SEVERE);
-			logger.logError(MESSAGE + "trace:" + StringUtil.stackTrace(ex), LoggerInf.LogLevel.DEBUG);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(msg);
 		}
 	}
@@ -253,45 +255,45 @@ public class ProcessManager {
 
 			// email contact
 			m_emailContact = ingestConf.getString(matchEmailContact);
-                	System.out.println("[info] " + MESSAGE + "Contact email: " + m_emailContact);
+                	log4j.info("[info] " + MESSAGE + "Contact email: " + m_emailContact);
 
 			// email reply-to
 			m_emailReplyTo = ingestConf.getString(matchEmailReplyTo);
-                	System.out.println("[info] " + MESSAGE + "Repy To email: " + m_emailReplyTo);
+                	log4j.info("[info] " + MESSAGE + "Repy To email: " + m_emailReplyTo);
 
                         // Profile Node
                         profileNode = ingestConf.getString(matchProfileNode);
-                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+                        log4j.info("[info] " + MESSAGE + "Profile Node: " + profileNode);
 
                         // Profile Path
                         profilePath = ingestConf.getString(matchProfilePath);
-                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+                        log4j.info("[info] " + MESSAGE + "Profile Path: " + profilePath);
 
                         // Profile Endpoint
 			try {
                             s3endpoint = ingestConf.getString(matchS3endpoint);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
 			} catch (Exception e) {
                             s3endpoint = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined");
 			}
 
                         // Profile Access Key
 			try {
                             s3accesskey = ingestConf.getString(matchS3accesskey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
 			} catch (Exception e) {
                             s3accesskey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
 			}
 
                         // Profile Secret Key
 			try {
                             s3secretkey = ingestConf.getString(matchS3secretkey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
 			} catch (Exception e) {
                             s3secretkey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
 			}
 
 			// ingestServicePath
@@ -304,12 +306,12 @@ public class ProcessManager {
         		try {
             		   sNumDownloadThreads = ingestConf.getString("NumDownloadThreads");
             		   if (StringUtil.isNotEmpty(sNumDownloadThreads)) {
-                	      System.out.println("[info] " + MESSAGE + "Setting download thread pool size: " + sNumDownloadThreads);
+                	      log4j.info("[info] " + MESSAGE + "Setting download thread pool size: " + sNumDownloadThreads);
                 	      this.numDownloadThreads = Integer.valueOf(sNumDownloadThreads);
 
             		}
         		} catch (Exception e) {
-            		   System.err.println("[warn] " + MESSAGE + "Could not set download thread pool size: " + sNumDownloadThreads + "  - using default: " + this.numDownloadThreads);
+            		   log4j.warn("[warn] " + MESSAGE + "Could not set download thread pool size: " + sNumDownloadThreads + "  - using default: " + this.numDownloadThreads);
         		}
 
 			// purl
@@ -317,13 +319,11 @@ public class ProcessManager {
 			if (!m_purl.endsWith("/")) m_purl += "/";
 
 		} catch (TException tex) {
-			tex.printStackTrace();
+			log4j.error("Exception:" + tex, tex);
 			throw tex;
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			log4j.error("Exception:" + ex, ex);
 			String msg = MESSAGE + " Exception:" + ex;
-			logger.logError(msg, 3);
-			logger.logError(StringUtil.stackTrace(ex), 0);
 			throw new TException.GENERAL_EXCEPTION(msg);
 		}
 	}
@@ -361,8 +361,7 @@ public class ProcessManager {
 		} catch (TException te) {
 			throw te;
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 
 		}
@@ -393,19 +392,19 @@ public class ProcessManager {
 	                try {
                 	    ingestRequest.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
             	        } catch (org.json.JSONException je) {
-                	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
+                	    log4j.info("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
                 	    ingestRequest.setIngestQueuePath(null);
             	        }
 	                try {
                 	    ingestRequest.setIngestZfsThreshold(ingestConf.getString("ingestZfsThreshold"));
             	        } catch (org.json.JSONException je) {
-                	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "ingestZfsThreshold not set.  Can not provision accurately");
+                	    log4j.warn("[WARN] " + MESSAGE + "ingestZfsThreshold not set.  Can not provision accurately");
                 	    ingestRequest.setIngestZfsThreshold(null);
             	        }
 	                try {
                 	    ingestRequest.setMetadataDisplaySize(ingestConf.getInt("metadataDisplaySize"));
             	        } catch (org.json.JSONException je) {
-                	    if (DEBUG) System.out.println("[WARN] " + MESSAGE + "metadataDisplaySize not set.  Can not truncate large Metadata");
+                	    log4j.warn("[WARN] " + MESSAGE + "metadataDisplaySize not set.  Can not truncate large Metadata");
                 	    ingestRequest.setIngestZfsThreshold(null);
             	        }
 
@@ -420,12 +419,12 @@ public class ProcessManager {
 			jobState.setSubmissionDate(new DateState(DateUtil.getCurrentDate()));
 
 			if (ingestRequest.getRetainTargetURL()) {
-				System.out.println("[info] Retain Target URL set: " + ingestRequest.getRetainTargetURL());
+				log4j.info("[info] Retain Target URL set: " + ingestRequest.getRetainTargetURL());
 				jobState.setRetainTargetURL(ingestRequest.getRetainTargetURL());
 			}
 
 			if (ingestRequest.getJob().grabUpdateFlag()) {
-				System.out.println("[info] Update flag set: " + ingestRequest.getJob().grabUpdateFlag());
+				log4j.info("[info] Update flag set: " + ingestRequest.getJob().grabUpdateFlag());
 				jobState.setUpdateFlag(ingestRequest.getJob().grabUpdateFlag());
 			}
 
@@ -459,20 +458,20 @@ public class ProcessManager {
 			if (match) {
 				// assign access URL
 				if (m_access.get(intKey) != null) {
-					System.out.println("Mapping store node to access node: " + m_access.get(intKey));
+					log4j.info("Mapping store node to access node: " + m_access.get(intKey));
 					profileState.setAccessURL(m_access.get(intKey));
 				} else {
-					System.err.println("No access node associated with  storage node: " + profileStorageURL);
+					log4j.info("No access node associated with  storage node: " + profileStorageURL);
 				}
 			} else {
 				String msg = MESSAGE + "Exception: Profile storage node is not supported: " + profileStorageURL;
 				// throw new TException.INVALID_CONFIGURATION(msg);
-				System.err.println("[warn]" + msg);
+				log4j.warn("[warn]" + msg);
 			}
 
 			if (m_localID != null) {
 				profileState.setLocalIDURL(new URL(m_localID));
-				System.out.println("Setting local ID URL: " + m_localID);
+				log4j.info("Setting local ID URL: " + m_localID);
 			}
 			if (m_admin != null)
 				profileState.setAdmin(m_admin);
@@ -492,7 +491,7 @@ public class ProcessManager {
 				jobState.setTargetStorage(profileState.getTargetStorage());
 			}
 
-			if (DEBUG) System.out.println("[debug] " + profileState.dump("profileState"));
+			log4j.debug("[debug] " + profileState.dump("profileState"));
 
 			// link for ingest to expose manifest data
 			ingestRequest.setLink(this.getServiceState().getAccessServiceURL().toString());
@@ -514,19 +513,19 @@ public class ProcessManager {
 
 				// Lock on localID and Owner, if necessary
 				if (jobState.getPrimaryID() != null && StringUtil.isNotEmpty(jobState.getPrimaryID().getValue())) {
-                                   System.out.println("[localID Check] Primary ID exists.  No LocalID locking needed.");
+                                   log4j.info("[localID Check] Primary ID exists.  No LocalID locking needed.");
 				   skipLock = true;
 				}
 				if (jobState.getLocalID() == null || StringUtil.isEmpty(jobState.getLocalID().getValue())) {
-                                   System.out.println("[localID Check] Local ID does not exist.  No LocalID locking needed.");
+                                   log4j.info("[localID Check] Local ID does not exist.  No LocalID locking needed.");
 				   skipLock = true;
 				}
 				if (! skipLock) {
-                                    System.out.println("[localID Check] LocalID locking starting.");
+                                    log4j.info("[localID Check] LocalID locking starting.");
             			    zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
     				    localIDLock = getLocalIDLock(zooKeeper, jobState.getLocalID().getValue(), jobState.grabObjectProfile().getOwner());
 				} else {
-                                    System.out.println("[localID Check] No LocalID locking needed");
+                                    log4j.info("[localID Check] No LocalID locking needed");
 				}
 			}
 
@@ -542,7 +541,7 @@ public class ProcessManager {
 				StateInf stateClass = jobState;
 				if (isError && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerNotification.class) 
 					    && (handler.getClass() != org.cdlib.mrt.ingest.handlers.notify.HandlerCallback.class)) {
-					System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
+					log4j.info("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 					continue;
 				}
 				if (handler.getClass() == org.cdlib.mrt.ingest.handlers.notify.HandlerNotification.class) {
@@ -559,7 +558,7 @@ public class ProcessManager {
 					try {
 						batchState = updateBatch(batchState, ingestRequest, jobState);
 					} catch (Exception e) {
-						System.out.println("Failed to update batch.  Assume this to be a requeued object and skipping Notification");
+						log4j.error("Failed to update batch.  Assume this to be a requeued object and skipping Notification");
 						reQueue = true;
 					}
 					if ( ! reQueue ) {
@@ -590,7 +589,7 @@ public class ProcessManager {
 						+ jobState.grabTargetStorage().getNodeID() + "/"
 						+ URLEncoder.encode(jobState.getPrimaryID().getValue(), "utf-8"));
 
-					System.out.println("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
+					log4j.info("[info]" + MESSAGE + "Setting lock path prior to Transfer: " + ingestConf.getString("ingestLock"));
 					jobState.setMisc(queueConf.getString("QueueService"));
 					jobState.setExtra(ingestConf.getString("ingestLock"));
 				}
@@ -604,27 +603,27 @@ public class ProcessManager {
 					handlerResult = handler.handle(profileState, ingestRequest, stateClass);
 
 				} catch (Exception e) {
-					e.printStackTrace();
+					log4j.error("Exception:" + e, e);
 					handlerResult.setSuccess(false);
 				}
 
 				// Abort if failure
-				if (DEBUG) System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
+				log4j.debug("[debug] " + handler.getName() + ": " + handlerResult.getDescription());
 				if (handlerResult.getSuccess()) {
-					if (DEBUG) System.out.println("[debug] " + handler.getName() + " Success: " + handlerResult.getSuccess());
+					log4j.debug("[debug] " + handler.getName() + " Success: " + handlerResult.getSuccess());
 					//if (!isError) {
 					jobState.setJobStatus(JobStatusEnum.COMPLETED);
 					jobState.setJobStatusMessage(handlerResult.getDescription());
 					//}
 				} else {
-					if (DEBUG) System.out.println("[debug] " + handler.getName() + " Failure: " + handlerResult.getSuccess());
+					log4j.debug("[debug] " + handler.getName() + " Failure: " + handlerResult.getSuccess());
 					// do not abort, but skip all further processing and note exception
 					jobState.setJobStatus(JobStatusEnum.FAILED);
 					jobState.setJobStatusMessage(handlerResult.getDescription());
 					isError = true;
 
 					// Hard-code Callback for failed jobs
-					if (DEBUG) System.out.println("[debug] " + "Forcing Callback for Failed Job: " + jobState.toString());
+					log4j.debug("[debug] " + "Forcing Callback for Failed Job: " + jobState.toString());
 					Handler callbackHandler = (Handler) createObject("org.cdlib.mrt.ingest.handlers.notify.HandlerCallback");
 					callbackHandler.handle(profileState, ingestRequest, jobState);
 				}
@@ -641,13 +640,12 @@ public class ProcessManager {
 		} catch (TException me) {
 			throw me;
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 			profileState = null;
 			if (state.matches("Process") && (! skipLock)) {
-            		   System.out.println("[debug] " + MESSAGE + " Releasing Local ID lock");
+            		   log4j.debug("[debug] " + MESSAGE + " Releasing Local ID lock");
 			   try {
                                releaseLocalIDLock(zooKeeper, localIDLock);
 			   } catch (Exception e) {}
@@ -662,7 +660,7 @@ public class ProcessManager {
 	private boolean override(IngestRequest ingestRequest) throws Exception {
 		try {
 			if (new File(ingestRequest.getQueuePath().getParentFile(), "POST_COMPLETE").exists()) {
-				System.out.println("[INFO] ProcessManager: POST_COMPLETE detected: "
+				log4j.info("[INFO] ProcessManager: POST_COMPLETE detected: "
 						+ ingestRequest.getQueuePath().getParentFile());
 				return true;
 			}
@@ -709,10 +707,8 @@ public class ProcessManager {
 		String targetIDS = ingestConf.getString(TARGETID);
 		if (targetIDS == null) {
 			targetIDS = "http://merritt.cdlib.org"; // default
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + TARGETID + " parameter is not available");
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + TARGETID + " using default value: " + targetIDS);
+			log4j.warn(MESSAGE + "[warn] " + TARGETID + " parameter is not available");
+			log4j.warn(MESSAGE + "[warn] " + TARGETID + " using default value: " + targetIDS);
 		}
 		ingestState.setTargetID(targetIDS);
 
@@ -748,10 +744,8 @@ public class ProcessManager {
 		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
 
@@ -781,8 +775,7 @@ public class ProcessManager {
                     throw me;
 
             } catch (Exception ex) {
-                    System.out.println(StringUtil.stackTrace(ex));
-                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+		    log4j.error("Exception:" + ex, ex);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
             } finally {
 		try {
@@ -810,7 +803,7 @@ public class ProcessManager {
 				   batchState.setBatchID(jobState.grabBatchID());
 				} catch (Exception eee) {
 				   // Recover from restart
-				   System.out.println("[info]" + MESSAGE + "Batch not defined. Read from serialized object on disk: " + jobState.getJobID());
+				   log4j.info("[info]" + MESSAGE + "Batch not defined. Read from serialized object on disk: " + jobState.getJobID());
 				   batchState = ProfileUtil.readFrom(batchState, ingestRequest.getQueuePath().getParentFile());
 				   batchState.setBatchID(jobState.grabBatchID());
 				}
@@ -818,7 +811,7 @@ public class ProcessManager {
 				// remove old job and replace w/ new
 				Map<String, JobState> jobStates = (HashMap<String, JobState>) batchState.getJobStates();
 				JobState jobStateTemp = (JobState) jobStates.get(jobState.getJobID().getValue());
-				System.out.println("[info]" + MESSAGE + "updating job: " + jobState.getJobID());
+				log4j.info("[info]" + MESSAGE + "updating job: " + jobState.getJobID());
 				batchState.removeJob(jobState.getJobID().getValue());
 				batchState.addJob(jobState.getJobID().getValue(), jobState);
 				if (batchState.getBatchStatus() == BatchStatusEnum.FAILED
@@ -838,8 +831,8 @@ public class ProcessManager {
 
 			return batchState;
 		} catch (Exception e) {
-			System.out.println("-> Error updating batch: " + jobState.getJobID().getValue());
-			e.printStackTrace(System.err);
+			log4j.error("-> Error updating batch: " + jobState.getJobID().getValue());
+			log4j.error("Exception:" + e, e);
 			throw new Exception(e.getMessage());
 		}
 	}
@@ -871,8 +864,7 @@ public class ProcessManager {
 		} catch (TException te) {
 			throw te;
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		}
 	}
@@ -883,11 +875,11 @@ public class ProcessManager {
 			Class classDefinition = Class.forName(className);
 			object = classDefinition.newInstance();
 		} catch (InstantiationException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		} catch (IllegalAccessException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		} catch (ClassNotFoundException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		}
 		return object;
 	}
@@ -906,19 +898,19 @@ public class ProcessManager {
         boolean locked = false;
         while (! locked) {
             try {
-               System.out.println("[info] " + MESSAGE + " Attempting to gain localID lock: " + localID + "_" + owner);
+               log4j.info("[info] " + MESSAGE + " Attempting to gain localID lock: " + localID + "_" + owner);
                locked = MerrittLocks.lockObjectLocalID(zooKeeper, localID + "_" + owner);
             } catch (Exception e) {
-              if (DEBUG) System.err.println("[debug] " + MESSAGE + " Exception in gaining localID lock: " + localID);
+               log4j.error("[error] " + MESSAGE + " Exception in gaining localID lock: " + localID);
             }
             if (locked) break;
-            System.out.println("[info] " + MESSAGE + " UNABLE to Gain lock for localID: " + localID + " Waiting 15 seconds before retry");
+            log4j.info("[info] " + MESSAGE + " UNABLE to Gain lock for localID: " + localID + " Waiting 15 seconds before retry");
             Thread.currentThread().sleep(15 * 1000);    // Wait 15 seconds before attempting to gain lock for localID
         }
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + " Gained lock for localID: " + localID + " -- " + owner);
+        log4j.debug("[debug] " + MESSAGE + " Gained lock for localID: " + localID + " -- " + owner);
 
         } catch (Exception e) {
-            e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             return null;
         } finally {
             try {
@@ -936,10 +928,10 @@ public class ProcessManager {
      */
     private void releaseLocalIDLock(ZooKeeper zooKeeper, String localID) {
         try {
-               System.out.println("[info] " + MESSAGE + " Attempting to release localID lock: " + localID);
+               log4j.info("[info] " + MESSAGE + " Attempting to release localID lock: " + localID);
                MerrittLocks.unlockObjectLocalID(zooKeeper, localID); 
         } catch (Exception e) {
-            // e.printStackTrace();
+            // log4j.error("Exception:" + e, e);
         } finally {
             try {
             } catch (Exception ze) {}

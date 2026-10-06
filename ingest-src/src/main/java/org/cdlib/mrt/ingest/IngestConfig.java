@@ -42,7 +42,10 @@ import org.cdlib.mrt.utility.LoggerAbs;
 import org.cdlib.mrt.utility.PropertiesUtil;
 import org.cdlib.mrt.utility.StringUtil;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+
 
 /**
  *
@@ -52,8 +55,8 @@ public class IngestConfig
 {
     protected static final String NAME = "IngestConfig";
     protected static final String MESSAGE = NAME + ": ";
-    protected static final boolean DEBUG = true;
     
+    protected static final Logger log4j = LogManager.getLogger();
     protected LoggerInf logger = null;
     protected JSONObject loggerConf = null;
     protected JSONObject ingestConf = null;
@@ -110,7 +113,6 @@ public class IngestConfig
 
             JSONObject jIngInfo = getYamlJson();
 
-            // System.out.println("***getYamlJson:\n" + jIngInfo.toString(3));
 	    // Config logger object (config-info)
             JSONObject loggerConf = jIngInfo.getJSONObject("logger-info");
             LoggerInf logger = ingestConfig.setLogger(loggerConf);
@@ -125,7 +127,7 @@ public class IngestConfig
 	    try {
 	        ingestConfig.setIngestQueuePath(ingestConf.getString("ingestQueuePath"));
 	    } catch (org.json.JSONException je) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
+	        log4j.debug("[debug] " + MESSAGE + "ingestQueuePath not set, no EFS shared disk defined.");
 	        ingestConfig.setIngestQueuePath(null);
 	    }
 
@@ -133,35 +135,35 @@ public class IngestConfig
 	    try {
 	        ingestConfig.setIngestProfileNode(ingestConf.getString("s3config_bucket"));
 	    } catch (org.json.JSONException je) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3config_bucket not set. No S3 profiles.");
+	        log4j.debug("[debug] " + MESSAGE + "s3config_bucket not set. No S3 profiles.");
 	        ingestConfig.setIngestProfileNode(null);
 	    }
 	    // Profile S3 prefix
 	    try {
 	        ingestConfig.setIngestProfilePath(ingestConf.getString("s3config_prefix"));
 	    } catch (org.json.JSONException je) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3config_prefix not set. No S3 profiles.");
+	        log4j.debug("[debug] " + MESSAGE + "s3config_prefix not set. No S3 profiles.");
 	        ingestConfig.setIngestProfilePath(null);
 	    }
 	    // Profile S3 endpoint
 	    try {
 	        ingestConfig.setIngestProfileEndpoint(ingestConf.getString("s3endpoint"));
 	    } catch (org.json.JSONException je) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3endpoint not set. Assume host has default S3 access.");
+	        log4j.debug("[debug] " + MESSAGE + "s3endpoint not set. Assume host has default S3 access.");
 	        ingestConfig.setIngestProfileEndpoint(null);
 	    }
 	    // Profile S3 Access Key
 	    try {
 	        ingestConfig.setIngestProfileAccessKey(ingestConf.getString("s3accesskey"));
 	    } catch (org.json.JSONException je) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3accesskey not set. Assume host has default S3 access.");
+	        log4j.debug("[debug] " + MESSAGE + "s3accesskey not set. Assume host has default S3 access.");
 	        ingestConfig.setIngestProfileAccessKey(null);
 	    }
 	    // Profile S3 Secret Key
 	    try {
 	        ingestConfig.setIngestProfileSecretKey(ingestConf.getString("s3secretkey"));
 	    } catch (org.json.JSONException je) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "s3secretkey not set. Assume host has default S3 access.");
+	        log4j.debug("[debug] " + MESSAGE + "s3secretkey not set. Assume host has default S3 access.");
 	        ingestConfig.setIngestProfileSecretKey(null);
 	    }
 	    
@@ -177,11 +179,11 @@ public class IngestConfig
             return ingestConfig;
 
         } catch (TException tex) {
-            tex.printStackTrace();
+	    log4j.error("Exception:" + tex, tex);
             throw tex;
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             throw new TException(ex);
         }
 
@@ -197,14 +199,13 @@ public class IngestConfig
             Test test=new Test();
             InputStream propStream =  test.getClass().getClassLoader().getResourceAsStream(propName);
             String ingestYaml = StringUtil.streamToString(propStream, "utf8");
-               // System.out.println("ingestYaml:\n" + ingestYaml);
             String ingInfoConfig = getYamlInfo();
             String rootPath = System.getenv("SSM_ROOT_PATH");
-            System.out.println("SSM_ROOT_PATH:" + rootPath);
+            log4j.debug("SSM_ROOT_PATH:" + rootPath);
             SSMConfigResolver ssmResolver = new SSMConfigResolver();
             YamlParser yamlParser = new YamlParser(ssmResolver);
-            System.out.println("Ingest Table:" + ingInfoConfig);
-            System.out.println("Ingest Yaml:\n" + ingestYaml);
+            log4j.debug("Ingest Table:" + ingInfoConfig);
+            log4j.debug("Ingest Yaml:\n" + ingestYaml);
             map = yamlParser.parseString(ingestYaml);
             lmap = (LinkedHashMap<String, Object>)map.get(ingInfoConfig);
             if (lmap == null) {
@@ -218,7 +219,7 @@ public class IngestConfig
             throw tex;
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+	    log4j.error("Exception:" + ex, ex);
             throw new TException.INVALID_CONFIGURATION(MESSAGE + "Unable to locate configuration");
         } finally {
 	    map = null;
@@ -268,7 +269,7 @@ public class IngestConfig
         if (!log.exists()) log.mkdir();
         String logPath = log.getCanonicalPath() + '/';
 
-        if (DEBUG) System.out.println(PropertiesUtil.dumpProperties("LOG", logprop)
+        log4j.debug(PropertiesUtil.dumpProperties("LOG", logprop)
             + "\npath:" + path
             + "\nlogpath:" + logPath
         );

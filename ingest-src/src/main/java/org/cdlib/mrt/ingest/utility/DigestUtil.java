@@ -42,6 +42,11 @@ import org.cdlib.mrt.utility.MessageDigestType;
 import org.cdlib.mrt.utility.FixityTests;
 import org.cdlib.mrt.utility.TFileLogger;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
+
 
 
 /**
@@ -58,6 +63,8 @@ public class DigestUtil
     private LoggerInf logger = null;
     private Properties conf = null;
     private Properties ingestProperties = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     public DigestUtil() {
         logger = new TFileLogger("DigestUtil", 10, 10);
@@ -85,7 +92,7 @@ public class DigestUtil
 		algorithm.toString(), componentFile.length());    // ignore size
         if (!fixityResult.checksumMatch) {
             String msg = MESSAGE + "Fixity check fails: " + fixityResult.dump(componentFile.getName());
-            System.out.println("[ERROR] Checksum error:" + NL
+            log4j.error("[error] Checksum error:" + NL
                     + " - File checksum=" + fixity.getChecksum() + NL
                     + " - In   checksum=" + checksum + NL
                     + " - File algorithm=" + algorithm.toString() + NL);

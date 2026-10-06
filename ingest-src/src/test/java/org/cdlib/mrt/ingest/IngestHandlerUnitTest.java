@@ -1,8 +1,11 @@
 package org.cdlib.mrt.ingest;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cdlib.mrt.ingest.utility.PackageTypeEnum;
 import org.cdlib.mrt.utility.TException;
 import org.junit.Test;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,13 +15,15 @@ import java.nio.file.StandardCopyOption;
 
 public class IngestHandlerUnitTest extends IngestHandlerTest {
 
+	protected static final Logger log4j = LogManager.getLogger();
+
         public IngestHandlerUnitTest() throws TException {
                 super();
         }
 
         @Test
         public void HandlerInitializeTest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerInitializeTest - Initialize data");
+                log4j.info("[IngestHandlerUnitTest] HandlerInitializeTest - Initialize data");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileNoDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -28,7 +33,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerAcceptTest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerAcceptTest - Test data");
+                log4j.info("[IngestHandlerUnitTest] HandlerAcceptTest - Test data");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileNoDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -39,7 +44,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerVerifyTest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerVerifyTest - Verify data");
+                log4j.info("[IngestHandlerUnitTest] HandlerVerifyTest - Verify data");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileNoDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -51,7 +56,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerVerifyTestWithDigest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerVerifyTestWithDigest - Verify data with Digest");
+                log4j.info("[IngestHandlerUnitTest] HandlerVerifyTestWithDigest - Verify data with Digest");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -63,7 +68,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerVerifyTestWithInvalidDigest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerVerifyTestWithInvalidDigest - Verify data with bad Digest");
+                log4j.info("[IngestHandlerUnitTest] HandlerVerifyTestWithInvalidDigest - Verify data with bad Digest");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -75,7 +80,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerDisaggregateTest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerDisaggregateTest - Test disaggregate");
+                log4j.info("[IngestHandlerUnitTest] HandlerDisaggregateTest - Test disaggregate");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -87,7 +92,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerRetrieveTest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerRetrieveTest - Test retrieval");
+                log4j.info("[IngestHandlerUnitTest] HandlerRetrieveTest - Test retrieval");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -100,7 +105,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerCorroborate() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerCorroborate - Test corroborate");
+                log4j.info("[IngestHandlerUnitTest] HandlerCorroborate - Test corroborate");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -113,7 +118,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerCharacterize() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerCharacterize - Test characterize");
+                log4j.info("[IngestHandlerUnitTest] HandlerCharacterize - Test characterize");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -127,7 +132,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerDescribe() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerDescribe - Test describe");
+                log4j.info("[IngestHandlerUnitTest] HandlerDescribe - Test describe");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -139,7 +144,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerDocument() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerDocument - Test document");
+                log4j.info("[IngestHandlerUnitTest] HandlerDocument - Test document");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -152,7 +157,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerDigest() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerDigest - Test digest");
+                log4j.info("[IngestHandlerUnitTest] HandlerDigest - Test digest");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileBadDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -165,7 +170,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void HandlerCleanup() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] HandlerCleanup - Test cleanup");
+                log4j.info("[IngestHandlerUnitTest] HandlerCleanup - Test cleanup");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -179,7 +184,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersSingleFile() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersSingleFile - Run single file");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersSingleFile - Run single file");
                 InputFile ingestInput = new InputFile(SampleFile.SingleFileWithDigest, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -189,7 +194,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersZipFile() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersZipFile - Run zip file");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersZipFile - Run zip file");
                 InputFile ingestInput = new InputFile(SampleFile.ZipFileAsFile, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -199,7 +204,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersZipFileContainer() throws TException, IOException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersZipFileContainer - Run zip file containers");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersZipFileContainer - Run zip file containers");
                 InputFile ingestInput = new InputFile(SampleFile.ZipFileAsContainer, tempdir);
                 IngestRequest ir = ingestInput.getIngestRequest(this.im, ingestInput.getJobState());
                 ingestInput.moveToIngestDir();
@@ -209,7 +214,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersCheckm4Blocks() throws IOException, TException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersCheckm4Blocks - Run sample data");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersCheckm4Blocks - Run sample data");
                 InputFile ingestInput = new InputFile(SampleFile.FourBlocks, tempdir);
                 InputStream in = ingestInput.sampleFile().getUrl().openStream();
                 Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),
@@ -221,7 +226,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersCheckmBigHunt() throws IOException, TException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersCheckmBigHunt - Run more sample data");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersCheckmBigHunt - Run more sample data");
                 InputFile ingestInput = new InputFile(SampleFile.BigHunt, tempdir);
                 InputStream in = ingestInput.sampleFile().getUrl().openStream();
                 Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),
@@ -233,7 +238,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersCheckmCall911() throws IOException, TException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersCheckmCall911 - Run yet more sample data");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersCheckmCall911 - Run yet more sample data");
                 InputFile ingestInput = new InputFile(SampleFile.Call911, tempdir);
                 InputStream in = ingestInput.sampleFile().getUrl().openStream();
                 Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),
@@ -245,7 +250,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersCheckmBatchContainers() throws IOException, TException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersCheckmBatchContainers - Batch manifest of containers");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersCheckmBatchContainers - Batch manifest of containers");
                 InputFile ingestInput = new InputFile(SampleFile.BatchContainers, createBatchDir());
                 InputStream in = ingestInput.sampleFile().getUrl().openStream();
                 Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),
@@ -257,7 +262,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersCheckmBatchFiles() throws IOException, TException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersCheckmBatchFiles - Batch manifest of files");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersCheckmBatchFiles - Batch manifest of files");
                 InputFile ingestInput = new InputFile(SampleFile.BatchFiles, createBatchDir());
                 InputStream in = ingestInput.sampleFile().getUrl().openStream();
                 Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),
@@ -269,7 +274,7 @@ public class IngestHandlerUnitTest extends IngestHandlerTest {
 
         @Test
         public void AllHandlersCheckmBatchManifests() throws IOException, TException {
-                System.out.println("[IngestHandlerUnitTest] AllHandlersCheckmBatchManifests - Batch manifest of manifest");
+                log4j.info("[IngestHandlerUnitTest] AllHandlersCheckmBatchManifests - Batch manifest of manifest");
                 InputFile ingestInput = new InputFile(SampleFile.BatchManifests, createBatchDir());
                 InputStream in = ingestInput.sampleFile().getUrl().openStream();
                 Files.copy(in, Paths.get(tempdir.resolve(ingestInput.getCopyPath()).toString()),

@@ -87,13 +87,13 @@ import org.cdlib.mrt.utility.StringUtil;
 public class HandlerRetrieve extends Handler<JobState>
 {
 
-    protected static final Logger log4j2 = LogManager.getLogger();
     private static final String NAME = "HandlerRetrieve";
     private static final String MESSAGE = NAME + ": ";
     private int thread_pool_size = 4;	// Default
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * retrieve data
@@ -127,10 +127,10 @@ public class HandlerRetrieve extends Handler<JobState>
             File systemTargetDir = new File(ingestRequest.getQueuePath(), "system");
 
 	    if (packageType == PackageTypeEnum.container) {
-		System.out.println("[info] " + MESSAGE + "container parm specified, no retrieval necessary.");
+		log4j.info("[info] " + MESSAGE + "container parm specified, no retrieval necessary.");
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	    } else if (packageType == PackageTypeEnum.file) {
-		System.out.println("[info] " + MESSAGE + "file parm specified, no retrieval necessary.");
+		log4j.info("[info] " + MESSAGE + "file parm specified, no retrieval necessary.");
 	        return new HandlerResult(true, "SUCCESS: " + NAME + " completed successfully", 0);
 	    } else if (packageType == PackageTypeEnum.manifest) {
 		String alg = null;
@@ -140,20 +140,20 @@ public class HandlerRetrieve extends Handler<JobState>
 		    val = jobState.getHashValue();
 		} catch (Exception e) {}
 		if (alg == null || val == null) {
-		    System.out.println("[info] " + MESSAGE + "no manifest digest data provided. bypassing check");
+		    log4j.info("[info] " + MESSAGE + "no manifest digest data provided. bypassing check");
 		} else {
-		    System.out.println("[info] " + MESSAGE + "validating manifest checksum: " + jobState.getPackageName());
+		    log4j.info("[info] " + MESSAGE + "validating manifest checksum: " + jobState.getPackageName());
 		    if (validateManifestChecksum(new File(targetDir, jobState.getPackageName()), jobState.getHashAlgorithm(), jobState.getHashValue())) {
 		        status = "valid";
-        	        if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest fixity check successful: " + jobState.getPackageName());
+        	        log4j.info("[info] " + MESSAGE + "manifest fixity check successful: " + jobState.getPackageName());
 		    } else {
 		        status = "not-valid";
 		        throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "manifest fixity check fails: " + packageType);
 		    }
-		    System.out.println("[info] " + MESSAGE + "manifest parm specified, processing manifest(s)");
+		    log4j.info("[info] " + MESSAGE + "manifest parm specified, processing manifest(s)");
 		}
 	    } else {
-		System.out.println("[error] " + MESSAGE + "package type not recognized: " + packageType);
+		log4j.error("[error] " + MESSAGE + "package type not recognized: " + packageType);
 		status = "not-valid";
 		throw new TException.INVALID_OR_MISSING_PARM("[error] " + MESSAGE + "specified package type not recognized (file/container/manifest): " + packageType);
 	    }
@@ -166,9 +166,9 @@ public class HandlerRetrieve extends Handler<JobState>
 	            manifestFile = new File(targetDir, fileS);
 
 		    if (manifestFile.exists()) {
-                        System.out.println("[HandlerRetrieve] Processing manifest file: " + manifestFile.getName());
+                        log4j.debug("[HandlerRetrieve] Processing manifest file: " + manifestFile.getName());
 		    } else if (executorService != null) {
-                        System.out.println("[HandlerRetrieve] WARNING: Manifest file does not exist: " + manifestFile.getName());
+                        log4j.warn("[HandlerRetrieve] WARNING: Manifest file does not exist: " + manifestFile.getName());
 			continue;
 		    } else {
 			// manifest does not exist and no other manifests processed...FAIL
@@ -180,19 +180,11 @@ public class HandlerRetrieve extends Handler<JobState>
 
 		    // Dryrun process of manifest 
                     status = "valid";
-                    System.out.println("[info] " + MESSAGE + "NOT validating manifest integrity.  Already completed in Estimation: " + jobState.getPackageName());
-                    //System.out.println("[info] " + MESSAGE + "validating manifest integrity: " + jobState.getPackageName());
-                    //if (validateManifestIntegrity(manifestFile, logger)) {
-                        //status = "valid";
-                        //if (DEBUG) System.out.println("[info] " + MESSAGE + "manifest integrity check successful: " + jobState.getPackageName());
-                    //} else {
-                        //status = "not-valid";
-                        //throw new TException.FIXITY_CHECK_FAILS("[error] " + MESSAGE + "manifest integrity check fails: " + packageType);
-                    //}
+                    log4j.info("[info] " + MESSAGE + "NOT validating manifest integrity.  Already completed in Estimation: " + jobState.getPackageName());
 
 		    if (ingestRequest.getNumDownloadThreads() != 0) {
 			thread_pool_size = ingestRequest.getNumDownloadThreads();
-                        System.out.println("[HandlerRetrieve] INFO: Setting download pool size to: " + thread_pool_size);
+                        log4j.info("[HandlerRetrieve] INFO: Setting download pool size to: " + thread_pool_size);
 		    }
 			
 		    executorService = Executors.newFixedThreadPool(thread_pool_size);
@@ -203,9 +195,7 @@ public class HandlerRetrieve extends Handler<JobState>
                     while (enumRow.hasMoreElements()) {
                         rowIn = (ManifestRowIngest) enumRow.nextElement();
                         fileComponent = rowIn.getFileComponent();
-                        if (DEBUG) {
-                            System.out.println(fileComponent.dump("handlerRetrieve"));
-                        }
+                        log4j.debug(fileComponent.dump("handlerRetrieve"));
 
 			// launch download
                         Future<String> future = executorService.submit(new RetrieveData(fileComponent.getURL(), targetDir, fileComponent.getIdentifier(), jobState));
@@ -216,7 +206,7 @@ public class HandlerRetrieve extends Handler<JobState>
       		    executorService.shutdown();
 
 		    while (! executorService.isTerminated()) {
-		        System.out.println("awaiting completion of retrievals.... Thread: " + Thread.currentThread().getName());
+		        log4j.info("awaiting completion of retrievals.... Thread: " + Thread.currentThread().getName());
 		        Thread.currentThread().sleep(15000);		// 15 seconds
 		    }
 
@@ -232,8 +222,8 @@ public class HandlerRetrieve extends Handler<JobState>
       			}
 
 		    } catch (Exception e) { 
-		        System.err.println("Error in checking download status");
-			e.printStackTrace(System.err);
+		        log4j.error("Error in checking download status");
+			log4j.error("Exception:" + e, e);
 			failure = true;
 		    }
 
@@ -257,26 +247,26 @@ public class HandlerRetrieve extends Handler<JobState>
                         rowIn = (ManifestRowIngest) enumRow.nextElement();
                         fileComponent = rowIn.getFileComponent();
 			if (fileComponent.getMessageDigest() == null) {
-		            if (DEBUG) System.out.println("[info] No checksum provided: " + fileComponent.getIdentifier());
+		            log4j.info("[info] No checksum provided: " + fileComponent.getIdentifier());
 			    continue;
 			}
 			if (fileComponent.getIdentifier() == null) {
 			    fileComponent.setIdentifier(fileComponent.getURL().getPath());
-		            if (DEBUG) System.out.println("[info] No filename provided.  Using URL name: " + fileComponent.getIdentifier());
+		            log4j.info("[info] No filename provided.  Using URL name: " + fileComponent.getIdentifier());
 			}
 
 			try {
 			    digestUtil.doFileFixity(new File(targetDir, fileComponent.getIdentifier()), fileComponent);
-		            if (DEBUG) System.out.println("[info] No checksum problems: " + fileComponent.getIdentifier());
+		            log4j.info("[info] No checksum problems: " + fileComponent.getIdentifier());
 			} catch (TException te) {
-                            if (DEBUG) System.out.println("[error] Error in fixity check: " + fileComponent.getIdentifier());
+                            log4j.error("[error] Error in fixity check: " + fileComponent.getIdentifier());
 			    throw te;
 			}
 		    }
 		    digestUtil = null;
 
 		    // Copy submission manifest to MRT file in system directory
-		    System.out.println("[INFO] saving submitter's manifest file: " + manifestFile.getAbsolutePath());
+		    log4j.info("[info] saving submitter's manifest file: " + manifestFile.getAbsolutePath());
 		    FileUtil.file2file(manifestFile,new File(systemTargetDir, "mrt-submission-manifest.txt"));
 		    // Move submission manifest to top level Job dir
 		    manifestFile.renameTo(new File(ingestRequest.getQueuePath(), manifestFile.getName()));
@@ -295,13 +285,13 @@ public class HandlerRetrieve extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TRuntimeException trex) {
-	    trex.printStackTrace(System.err);
+	    log4j.error("Exception:" + trex, trex);
             return new HandlerResult(false, "[error]: " + MESSAGE + trex.getDetail());
 	} catch (TException te) {
-	    te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
             return new HandlerResult(false, te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "processing manifest: " + manifestFile.getAbsolutePath() + " : " + e.getMessage();
             return new HandlerResult(false, msg);
 	} finally {
@@ -323,7 +313,7 @@ public class HandlerRetrieve extends Handler<JobState>
     private boolean createMetadata(File ingestFile, String status)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
         Map<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
 
         ingestProperties.put("manifestValidity", status);
@@ -369,15 +359,13 @@ public class HandlerRetrieve extends Handler<JobState>
             while (eRow.hasMoreElements()) {
                 rIn = (ManifestRowIngest) eRow.nextElement();
                 fComponent = rIn.getFileComponent();
-                if (DEBUG) {
-                    System.out.println("Pre-processing manifest entry: " + rIn.getLine());
-                }
+                log4j.debug("Pre-processing manifest entry: " + rIn.getLine());
     
             }
 	    return true;
 	} catch (Exception e) {
-e.printStackTrace();
-	    System.err.println("[ERROR] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
+	    log4j.error("Exception:" + e, e);
+	    log4j.error("[error] Pre-processing manifest not valid: " + manifestFile.getAbsolutePath());
 	    return false;
 	} finally {
             manifest = null;
@@ -402,8 +390,9 @@ class RetrieveData implements Callable<String>
     private String fileName = null;
     private JobState jobState = null;
     private ProfileState profileState = null;
-    private static final boolean DEBUG = true;
     private HTTPGetUtil httpGetParams = null;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     // constructor
     public RetrieveData(URL url, File targetDir, String fileName, JobState jobState) {
@@ -436,40 +425,40 @@ class RetrieveData implements Callable<String>
             boolean proxyUse = true;
             if (StringUtil.isNotEmpty(proxyCond)) {
                 proxyUse = ProfileUtil.useProxyUserAgent(jobState.grabUserAgent(), proxyCond);
-                if (DEBUG) System.out.println("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
+                log4j.info("Estimate [info]:  Proxy Conditional found: " + proxyCond + " - Proxy use: " + proxyUse);
             }
             HTTPGetUtil httpGetParams = null;
 
-            System.out.println("Retrieving remote data: " + url.toString() + " ---- " + fileName);
+            log4j.info("Retrieving remote data: " + url.toString() + " ---- " + fileName);
             File f = new File(targetDir, fileName);
 	    new File(f.getParent()).mkdirs();
 	    if (! f.exists()) {
 	        if (! f.createNewFile()) {
-	            System.out.println("[error] creating target file. Already created: " + f.getAbsolutePath());
+	            log4j.error("[error] creating target file. Already created: " + f.getAbsolutePath());
 		    throw new IOException("Error file already exists: " + f.getAbsolutePath());
 	        }
 	    } else {
-	        System.out.println("[error] file already exists: " + f.getAbsolutePath());
+	        log4j.error("[error] file already exists: " + f.getAbsolutePath());
 		throw new IOException("Error file already exists: " + f.getAbsolutePath());
 	    }
             for (int i=0; i < 2; i++) {
 
 		// Proxy defined?
                 if (proxyURL == null) {
-                    System.out.println("Retrieve [info]: " + " Proxy not defined.");
+                    log4j.info("Retrieve [info]: " + " Proxy not defined.");
                     httpGetParams = HTTPGetUtil.build(null, null, null);
                 } else {
-                    System.out.println("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
+                    log4j.info("Retrieve [info]: " + " Proxy found: " +  proxyURL.toString());
                     if (proxyUse) {
                        httpGetParams = HTTPGetUtil.build(proxyURL.getHost(), proxyURL.getPort(), null);
                     } else {
-                       if (DEBUG) System.out.println("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
+                       log4j.info("Estimate [info]: ProxyCond true, NOT using defined proxy: " +  proxyURL.toString());
                     }
                 }
 
 
                 if (StringUtil.isNotEmpty(basicAuth)) {
-                    System.out.println("Retrieve [info]: " + " Basic Auth creds defined.");
+                    log4j.info("Retrieve [info]: " + " Basic Auth creds defined.");
                     String[] creds = basicAuth.split("\\|\\|");
                     String un = creds[0];
                     String pw = creds[1];
@@ -478,15 +467,12 @@ class RetrieveData implements Callable<String>
                     // Check domain to see if we ignore creds
                     boolean addCreds = true;
                     if (! url.getHost().contains(domain)) addCreds = false;
-                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth username: " + un);
-                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth password: " + pw);
-                    // if (DEBUG) System.out.println("Disaggregate [info]: Basic Auth domain: " + domain);
 
                     if (addCreds) {
-                        System.out.println("Retrieve [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
+                        log4j.info("Retrieve [info]: Basic Auth domain matches: " + url.getHost() + " - " + domain);
                         httpGetParams.addBasidAuthenticationHeader(un, pw);
                     } else {
-                        System.out.println("Retrieve [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
+                        log4j.info("Retrieve [info]: ignoring Basic Auth creds: " + url.getHost() + " - " + domain);
                     }
                 }
 
@@ -503,7 +489,7 @@ class RetrieveData implements Callable<String>
 	    	    status = "complete";;
 		    break;
 		} catch (Exception ste) {
-		    System.out.println("[error] error on attempt: " + i);
+		    log4j.error("[error] error on attempt: " + i);
 		    f.delete();
 		    status = "fail";
 		}
@@ -526,14 +512,14 @@ class RetrieveData implements Callable<String>
 	    return null;
 
 	} catch (IOException ioe) {
-	    ioe.printStackTrace();
+	    log4j.error("Exception:" + ioe, ioe);
             LogManager.getLogger().error(ioe);
-	    System.out.println("[error] file already exists " + url.getFile());
+	    log4j.error("[error] file already exists " + url.getFile());
 	    return new String(url.getFile());
 	} catch (Exception e) {
-	    e.printStackTrace();
+	    log4j.error("Exception:" + e, e);
             LogManager.getLogger().error(e);
-	    System.out.println("[error] In retrieval of URL: " + url.toString());
+	    log4j.error("[error] In retrieval of URL: " + url.toString());
 	    return new String(url.toString());
         } finally {
             ThreadContext.clearMap();

@@ -34,6 +34,10 @@ import java.io.File;
 import java.util.List;
 import java.util.Vector;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
 /**
  * Process cleanup
  * @author mreyes
@@ -42,6 +46,7 @@ public class JerseyCleanup
         implements Closeable
 {
     protected Vector<File> tempFiles = new Vector<File>(20);
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * temp files used during IngestService processing
@@ -54,7 +59,7 @@ public class JerseyCleanup
             tempFiles.add(tempFile);
 
         } catch (Exception ex) {
-            System.out.println("WARNING: Exception during addTempFile:" + ex);
+            log4j.warn("warn: Exception during addTempFile:" + ex);
         }
     }
 
@@ -78,7 +83,7 @@ public class JerseyCleanup
                 File file = tempFiles.get(i);
                 if ((file == null) || !file.exists()) continue;
                 try {
-                    //System.out.println("!!!! JerseyCleanup - delete:" + file.getCanonicalPath());
+                    log4j.debug("!!!! JerseyCleanup - delete:" + file.getCanonicalPath());
                     file.delete();
 
                 } catch (Exception ex) { }

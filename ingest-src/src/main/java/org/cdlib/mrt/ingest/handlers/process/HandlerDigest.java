@@ -33,6 +33,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
 import org.cdlib.mrt.ingest.IngestRequest;
@@ -44,6 +47,7 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.StringUtil;
 import org.cdlib.mrt.utility.TException;
 
+
 /**
  * create manifest based on current queue path
  * @author mreyes
@@ -53,10 +57,10 @@ public class HandlerDigest extends Handler<JobState>
 
     private static final String NAME = "HandlerDigest";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private Integer defaultStorage = null;
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * create manifest for all queue data
@@ -94,7 +98,7 @@ public class HandlerDigest extends Handler<JobState>
 		    ingestRequest.getJob().grabBatchID().getValue() + "/" + ingestRequest.getQueuePath().getName();
 	    }
 
-	    if (DEBUG) System.out.println("[debug] " + MESSAGE + " baseURL: " + baseURL);
+	    log4j.debug("[debug] " + MESSAGE + " baseURL: " + baseURL);
 
 	    // build manifest
 	    ManifestBuild.getPostManifest(baseURL, ingestRequest.getQueuePath(), manifest);
@@ -112,10 +116,12 @@ public class HandlerDigest extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
+
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
+
             String msg = "[error] " + MESSAGE + "creating manifest: " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {

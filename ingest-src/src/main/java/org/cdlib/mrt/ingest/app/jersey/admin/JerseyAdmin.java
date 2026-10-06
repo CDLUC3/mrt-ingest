@@ -29,12 +29,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 package org.cdlib.mrt.ingest.app.jersey.admin;
 
-import java.util.Map;
-import java.util.HashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.server.CloseableService;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import java.util.Map;
+import java.util.HashMap;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -70,8 +72,8 @@ public class JerseyAdmin extends JerseyBase
     protected static final String NAME = "JerseyAdmin";
     protected static final String MESSAGE = NAME + ": ";
     protected static final FormatterInf.Format DEFAULT_OUTPUT_FORMAT = FormatterInf.Format.xml;
-    protected static final boolean DEBUG = false;
     protected static final String NL = System.getProperty("line.separator");
+    protected static final Logger log4j = LogManager.getLogger();
 
     // Show service status
     @GET
@@ -99,7 +101,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -127,7 +129,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -161,7 +163,7 @@ public class JerseyAdmin extends JerseyBase
             throw tex;
 
         } catch (Exception ex) {
-            System.out.println("TRACE:" + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             log(ex.toString());
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
@@ -203,7 +205,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -243,7 +245,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -282,7 +284,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -321,7 +323,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -361,7 +363,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -401,7 +403,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -440,7 +442,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }
@@ -479,7 +481,7 @@ public class JerseyAdmin extends JerseyBase
         } catch (TException tex) {
             throw tex;
         } catch (Exception ex) {
-            System.out.println("[TRACE] " + StringUtil.stackTrace(ex));
+            log4j.trace("[trace] " + StringUtil.stackTrace(ex));
             throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
         }
     }

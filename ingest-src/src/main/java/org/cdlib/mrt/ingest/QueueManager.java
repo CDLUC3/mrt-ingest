@@ -50,6 +50,9 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.cdlib.mrt.core.DateState;
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -77,7 +80,6 @@ public class QueueManager {
 
 	private static final String NAME = "QueueManager";
 	private static final String MESSAGE = NAME + ": ";
-	private static final boolean DEBUG = true;
 	private LoggerInf logger = null;
 	private JSONObject queueConf = null;
 	private JSONObject ingestConf = null;
@@ -93,6 +95,7 @@ public class QueueManager {
 
 	private boolean debugDump = false;
 	private String ingestFileS = null; // prop "IngestService"
+	protected static final Logger log4j = LogManager.getLogger();
 
 	public JSONObject getQueueServiceConf() {
 		return queueConf;
@@ -117,9 +120,9 @@ public class QueueManager {
 		} catch (TException tex) {
 			throw tex;
 		} catch (Exception ex) {
+			log4j.error("QueueManager Exception:" + ex, ex);
 			String msg = MESSAGE + "QueueManager Exception:" + ex;
-			logger.logError(msg, LoggerInf.LogLevel.SEVERE);
-			logger.logError(MESSAGE + "trace:" + StringUtil.stackTrace(ex), LoggerInf.LogLevel.DEBUG);
+
 			throw new TException.GENERAL_EXCEPTION(msg);
 		}
 	}
@@ -168,46 +171,46 @@ public class QueueManager {
 			}
 			// email contact
 			emailContact = ingestConf.getString(matchEmailContact);
-                        System.out.println("[info] " + MESSAGE + "Contact email: " + emailContact);
+                        log4j.info("[info] " + MESSAGE + "Contact email: " + emailContact);
 
                         // email reply-to
                         emailReplyTo = ingestConf.getString(matchEmailReplyTo);
-                        System.out.println("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
+                        log4j.info("[info] " + MESSAGE + "Repy To email: " + emailReplyTo);
 
                         // Profile Node
                         profileNode = ingestConf.getString(matchProfileNode);
-                        System.out.println("[info] " + MESSAGE + "Profile Node: " + profileNode);
+                        log4j.info("[info] " + MESSAGE + "Profile Node: " + profileNode);
 
                         // Profile Path
                         profilePath = ingestConf.getString(matchProfilePath);
-                        System.out.println("[info] " + MESSAGE + "Profile Path: " + profilePath);
+                        log4j.info("[info] " + MESSAGE + "Profile Path: " + profilePath);
 
 
                         // Profile Endpoint
 			try {
                             s3endpoint = ingestConf.getString(matchS3endpoint);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint: " + s3endpoint);
 			} catch (Exception e) {
                             s3endpoint = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Endpoint NOT defined");
 			}
 
                         // Profile Access Key
 			try {
                             s3accesskey = ingestConf.getString(matchS3accesskey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key: " + s3accesskey);
 			} catch (Exception e) {
                             s3accesskey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Access Key NOT defined");
 			}
 
                         // Profile Secret Key
 			try {
                             s3secretkey = ingestConf.getString(matchS3secretkey);
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key: " + s3secretkey);
 			} catch (Exception e) {
                             s3secretkey = null;
-                            System.out.println("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
+                            log4j.info("[info] " + MESSAGE + "S3 Profile Secret Key NOT defined");
 			}
 
 		} catch (TException tex) {
@@ -233,8 +236,7 @@ public class QueueManager {
 			throw me;
 
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		}
 	}
@@ -249,7 +251,7 @@ public class QueueManager {
                                 // Refresh ZK connection
                                 zooKeeper = new ZooKeeper(queueConnectionString, ZookeeperUtil.ZK_SESSION_TIMEOUT, new Ignorer());
                             } catch  (Exception e ) {
-                                e.printStackTrace(System.err);
+				log4j.error("Exception:" + e, e);
                             }
                         }
 
@@ -263,7 +265,7 @@ public class QueueManager {
                               MerrittLocks.unlockCollection(zooKeeper, collection);
                               ingestState.setSubmissionState(action);
                            } else {
-                              System.err.println("Exception: Ingest collection action not valid: " + action );
+                              log4j.error("Exception: Ingest collection action not valid: " + action );
                               throw new TException.REQUEST_INVALID(MESSAGE + "Exception: Ingest collection action not valid: " + action );
                            }
                         } else {
@@ -275,7 +277,7 @@ public class QueueManager {
                               MerrittLocks.unlockIngestQueue(zooKeeper);
                               ingestState.setSubmissionState(action);
                            } else {
-                              System.err.println("Exception: Ingest queue action not valid: " + action );
+                              log4j.error("Exception: Ingest queue action not valid: " + action );
                               throw new TException.REQUEST_INVALID(MESSAGE + "Exception: Ingest queue action not valid: " + action );
                            }
                         }
@@ -288,8 +290,7 @@ public class QueueManager {
                         throw me;
 
                 } catch (Exception ex) {
-                        System.out.println(StringUtil.stackTrace(ex));
-                        logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
                         throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
                 } finally {
                         try {
@@ -330,8 +331,7 @@ public class QueueManager {
                         if (emailReplyTo != null)
                                 profileState.setEmailReplyTo(emailReplyTo);
 
-			if (DEBUG)
-				System.out.println("[debug] " + profileState.dump("profileState"));
+			log4j.debug("[debug] " + profileState.dump("profileState"));
 
 			batchState.setBatchProfile(profileState);
 
@@ -345,8 +345,7 @@ public class QueueManager {
 
                                 try {
                                         postThread.join();
-                                        if (DEBUG)
-                                                System.out.println(NAME + "[debug] Synchronous mode processing");
+                                        log4j.info(NAME + "[debug] Synchronous mode processing");
                                 } catch (InterruptedException ignore) {
                                 }
 
@@ -356,8 +355,7 @@ public class QueueManager {
 		} catch (TException me) {
 			throw me;
 		} catch (Exception ex) {
-			System.out.println(StringUtil.stackTrace(ex));
-			logger.logError(MESSAGE + "Exception:" + ex, 0);
+			log4j.error("Exception:" + ex, ex);
 			throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
 		} finally {
 			if (profileState != null)
@@ -432,10 +430,8 @@ public class QueueManager {
 		String mailHost = ingestConf.getString(MAILHOST);
 		if (mailHost == null) {
 			mailHost = "localhost"; // default
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
-			if (DEBUG)
-				System.err.println(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " parameter is not available");
+			log4j.warn(MESSAGE + "[warn] " + MAILHOST + " using default value: " + mailHost);
 		}
 		ingestState.setMailHost(mailHost);
 
@@ -456,8 +452,7 @@ public class QueueManager {
                     throw me;
 
             } catch (Exception ex) {
-                    System.out.println(StringUtil.stackTrace(ex));
-                    logger.logError(MESSAGE + "Exception:" + ex, 0);
+		    log4j.error("Exception:" + ex, ex);
                     throw new TException.GENERAL_EXCEPTION(MESSAGE + "Exception:" + ex);
             } finally {
 		    try {
@@ -473,11 +468,11 @@ public class QueueManager {
 			Class classDefinition = Class.forName(className);
 			object = classDefinition.newInstance();
 		} catch (InstantiationException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		} catch (IllegalAccessException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		} catch (ClassNotFoundException e) {
-			System.out.println(e);
+			log4j.error("Exception:" + e, e);
 		}
 		return object;
 	}
@@ -510,7 +505,7 @@ public class QueueManager {
 				this.profileState = profileState;
 				this.queueHandlers = new TreeMap<Integer, HandlerState>(profileState.getQueueHandlers());
 			} catch (Exception e) {
-				e.printStackTrace(System.err);
+				log4j.error("Exception:" + e, e);
 			}
 		}
 
@@ -527,7 +522,7 @@ public class QueueManager {
 					}
 					StateInf stateClass = batchState;
 					if (isError && (!handler.getName().equals("HandlerNotification"))) {
-						System.out.println("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
+						log4j.info("[info]" + MESSAGE + "error detected, skipping handler: " + handler.getName());
 						continue;
 					}
 
@@ -535,13 +530,12 @@ public class QueueManager {
 					try {
 						handlerResult = handler.handle(profileState, ingestRequest, stateClass);
 					} catch (Exception e) {
-						e.printStackTrace();
+						log4j.error("Exception:" + e, e);
 						handlerResult.setSuccess(false);
 					}
 
 					// Abort if failure
-					if (DEBUG)
-						System.out.println("[debug] " + handler.getName() + ": " + handlerResult.getDescription() + " - status: " + handlerResult.getSuccess() );
+					log4j.debug("[debug] " + handler.getName() + ": " + handlerResult.getDescription() + " - status: " + handlerResult.getSuccess() );
 					if (handlerResult.getSuccess()) {
 						if (! isError) batchState.setBatchStatus(BatchStatusEnum.QUEUED);
 					} else {
@@ -552,11 +546,11 @@ public class QueueManager {
 				}
 
 				// ready for consumer to start processing
-				System.out.println(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue() + " Status: " + batchState.getBatchStatus().toString());
+				log4j.info(MESSAGE + "Completion of posting data to queue: " + batchState.getBatchID().getValue() + " Status: " + batchState.getBatchStatus().toString());
 
 			} catch (Exception e) {
-				System.out.println(MESSAGE + "Exception detected while posting data to queue.");
-				e.printStackTrace(System.err);
+				log4j.error(MESSAGE + "Exception detected while posting data to queue.");
+				log4j.error("Exception:" + e, e);
 			} finally {
 				queueHandlers = null;
 			}

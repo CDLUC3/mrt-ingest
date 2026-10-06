@@ -47,6 +47,8 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -60,6 +62,7 @@ import org.cdlib.mrt.utility.LoggerInf;
 import org.cdlib.mrt.utility.TException;
 import org.cdlib.mrt.utility.URLEncoder;
 
+
 /**
  * unpack container (if needed) and move to appropriate processing location
  * @author mreyes
@@ -70,11 +73,11 @@ public class HandlerDisaggregate extends Handler<JobState>
     private static final String NAME = "HandlerDisaggregate";
     private static final String MESSAGE = NAME + ": ";
     private static final int BUFFERSIZE = 4096;
-    private static final boolean DEBUG = true;
     private static final String FS = System.getProperty("file.separator");
     private LoggerInf logger = null;
     private Properties conf = null;
 
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * Unpack container
@@ -93,7 +96,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 
 	PackageTypeEnum packageType = ingestRequest.getPackageType();
 	if (packageType == PackageTypeEnum.batchManifest) {
-	    System.out.println("batch manifest detected. resetting type to object manifest");
+	    log4j.info("batch manifest detected. resetting type to object manifest");
 	    ingestRequest.setPackageType("manifest");
 	    packageType = ingestRequest.getPackageType();
 	}
@@ -105,7 +108,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    for (String fileS : targetDir.list()) {
 	        file = new File(targetDir, fileS);
 	    	if (packageType == PackageTypeEnum.container) {
-			System.out.println("[info] " + MESSAGE + "container parm specified, uncompression/un-archiving processing: " + fileS);
+			log4j.info("[info] " + MESSAGE + "container parm specified, uncompression/un-archiving processing: " + fileS);
 			status = "valid";
 
 			// uncompress
@@ -121,20 +124,20 @@ public class HandlerDisaggregate extends Handler<JobState>
 
 			// untar 
 			if (! untar(file, targetDir)) {
-	    		    System.out.println("[error] " + MESSAGE + "processing tar container: " + file.getAbsolutePath());
+	    		    log4j.error("[error] " + MESSAGE + "processing tar container: " + file.getAbsolutePath());
 	    		    throw new TException.INVALID_OR_MISSING_PARM("[error] " 
 				+ MESSAGE + "processing tar container: " + file.getAbsolutePath());
 			}
 		        file.delete();
 
 	    	} else if (packageType == PackageTypeEnum.file) {
-			System.out.println("[info] " + MESSAGE + "file parm specified, no uncompression/un-archiving needed: " + fileS);
+			log4j.info("[info] " + MESSAGE + "file parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";
 	    	} else if (packageType == PackageTypeEnum.manifest) {
-			System.out.println("[info] " + MESSAGE + "manifest parm specified, no uncompression/un-archiving needed: " + fileS);
+			log4j.info("[info] " + MESSAGE + "manifest parm specified, no uncompression/un-archiving needed: " + fileS);
 			status = "n/a";
 		} else {
-			System.out.println("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
+			log4j.info("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
 			status = "not-valid";
 	    		throw new Exception("[error] " + MESSAGE + "specified package type not supported (valid: file/container/manifest): " + packageType + " - " + fileS);
 		}
@@ -152,10 +155,10 @@ public class HandlerDisaggregate extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "processing container: " + file.getAbsolutePath() + " : " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
@@ -184,7 +187,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    TarEntry tarEntry = tarIn.getNextEntry();
 	    while (tarEntry != null) {
 	        File destFile = new File(container.getParent() + FS + tarEntry.getName());
-	        if (DEBUG) System.out.println("[info] " + MESSAGE + "creating tar entry: " + destFile.getAbsolutePath());
+	        log4j.info("[info] " + MESSAGE + "creating tar entry: " + destFile.getAbsolutePath());
 	        if (tarEntry.isDirectory()){
 		    destFile.mkdirs();
 	        } else {
@@ -201,8 +204,8 @@ public class HandlerDisaggregate extends Handler<JobState>
 	    container.delete();
     	    return true;
 	} catch (Exception e) {
-    	    e.printStackTrace();
-    	    System.out.println("[error] " + MESSAGE + "error decompressing/expanding file: " + container.getAbsolutePath());
+	    log4j.error("Exception:" + e, e);
+    	    log4j.error("[error] " + MESSAGE + "error decompressing/expanding file: " + container.getAbsolutePath());
 	    throw e;
 	} finally {
             try {
@@ -247,7 +250,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 
 		File file = new File (container.getParent() + isTar + newName);
 		fileOut = new FileOutputStream(file);
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "creating gzip entry: " + file.getAbsolutePath());
+                log4j.info("[info] " + MESSAGE + "creating gzip entry: " + file.getAbsolutePath());
 
 	        GzipCompressorInputStream gzIn = new GzipCompressorInputStream(fileIn);
 	        final byte[] buffer = new byte[BUFFERSIZE];
@@ -274,7 +277,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 
 		File file = new File (container.getParent() + isTar + newName);
 		fileOut = new FileOutputStream(file);
-                if (DEBUG) System.out.println("[info] " + MESSAGE + "creating bzip2 entry: " + file.getAbsolutePath());
+                log4j.info("[info] " + MESSAGE + "creating bzip2 entry: " + file.getAbsolutePath());
 		bzIn = new BZip2CompressorInputStream(fileIn);
 		final byte[] buffer = new byte[BUFFERSIZE];
 		int n = 0;
@@ -303,19 +306,19 @@ public class HandlerDisaggregate extends Handler<JobState>
                         zipEntry = zipIn.getNextEntry();
                      } catch (IllegalArgumentException Exception) {
                         if (failure) throw Exception;
-                        System.out.println("[info] Error detected. Attempting ISO-8859-1 decoding");
+                        log4j.warn("[warn] Error detected. Attempting ISO-8859-1 decoding");
                         failure = true;
                         zipIn = new ZipInputStream(in, Charset.forName("ISO-8859-1"));
                         zipEntry = zipIn.getNextEntry();
                      }
 
                      if (zipEntry == null) {
-			System.out.println("[info] zip entries exhausted: " + name);
+			log4j.warn("[warn] zip entries exhausted: " + name);
 			continue;
 		     }
 
                      File destFile = new File(container.getParent() + "/" + zipEntry.getName());
-                     if (DEBUG) System.out.println("[info] " + MESSAGE + "creating zip entry: " + destFile.getAbsolutePath());
+                     log4j.info("[info] " + MESSAGE + "creating zip entry: " + destFile.getAbsolutePath());
                      if (zipEntry.isDirectory()){
                         destFile.mkdirs();
                      } else {
@@ -337,7 +340,7 @@ public class HandlerDisaggregate extends Handler<JobState>
 		 zipIn.close();
 
 	    } else if (! name.endsWith(".tar")) {
-		if (DEBUG) System.out.println("[error] " + MESSAGE + "file extension not supported as a container: " + container.getAbsolutePath());
+		log4j.error("[error] " + MESSAGE + "file extension not supported as a container: " + container.getAbsolutePath());
 		throw new TException.INVALID_OR_MISSING_PARM("[error] File extension not supported as a container: " + container.getAbsolutePath());
 	    }
 
@@ -346,8 +349,8 @@ public class HandlerDisaggregate extends Handler<JobState>
 	} catch (TException te) {
 	    throw new Exception(te.toString());
 	} catch (Exception e) {
-	    e.printStackTrace();
-	    System.out.println("[error] + " + MESSAGE + "error decompressing file: " + container.getAbsolutePath());
+	    log4j.error("Exception:" + e, e);
+	    log4j.error("[error] + " + MESSAGE + "error decompressing file: " + container.getAbsolutePath());
 	    throw e;
 	} finally {
 	    try {
@@ -387,7 +390,7 @@ public class HandlerDisaggregate extends Handler<JobState>
     private boolean createMetadata(File ingestFile, String status)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
         Map<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
 
         ingestProperties.put("containerValidity", status);

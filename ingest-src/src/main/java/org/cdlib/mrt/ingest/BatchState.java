@@ -62,11 +62,6 @@ public class BatchState
     private String batchStatusMessage = null;
     private String queueConnectionString = null;
     private Map<String, JobState> jobStates = new HashMap<String, JobState>();
-    //private static Map<String, BatchState> batchStates = new HashMap<String, BatchState>();
-    //private static Map<String, Integer> batchReadiness = new HashMap<String, Integer>();
-    //private static Map<String, Integer> batchCompletion = new HashMap<String, Integer>();
-    //private static Map<String, String> batchQueuePath = new HashMap<String, String>();
-    //private boolean completion = false;
     private boolean updateFlag = false;
 
     // constructors
@@ -77,65 +72,6 @@ public class BatchState
         BatchState copy = (BatchState) super.clone();  
         return copy;  
     }  
-
-/*
-    public synchronized static Map<String, BatchState> getBatchStates () {
-      return batchStates;
-    } 
-    public synchronized static BatchState getBatchState (String id) {
-      return batchStates.get(id);
-    } 
-    public synchronized static void putBatchState (String id, BatchState batchState) {
-      batchStates.put(id, batchState);
-    }
-    public synchronized static void removeBatchState (String id) {
-      batchStates.remove(id);
-    }
-
-    public synchronized static int getBatchReadiness (String id) {
-      try {
-          return batchReadiness.get(id);
-      } catch (Exception e) {
-	  // Recovering from a Tomcat restart
-	  if (! batchReadiness.containsKey(id)) {
-		System.out.println("Recovering from a Shutdown.  Forcing batch ready: " + id);
-		return 1;
-	  }
-	  return 0;
-      }
-    } 
-    public synchronized static void putBatchReadiness (String id, int batchReady) {
-      batchReadiness.put(id, batchReady);
-    }
-    public synchronized static void removeBatchReadiness (String id) {
-      batchReadiness.remove(id);
-    }
-
-    public synchronized static int getBatchCompletion (String id) {
-      try {
-          return batchCompletion.get(id);
-      } catch (Exception e) {
-	  return 0;
-      }
-    } 
-    public synchronized static void putBatchCompletion (String id, int batchComplete) {
-      batchCompletion.put(id, batchComplete);
-    }
-    public synchronized static void removeBatchCompletion (String id) {
-      batchCompletion.remove(id);
-    }
-
-    // use for shutdown
-    public synchronized static void putQueuePath (String id, String queuePath) {
-      batchQueuePath.put(id, queuePath);
-    }
-    public synchronized static String getQueuePath (String id) {
-      return batchQueuePath.get(id);
-    }
-    public synchronized static void removeQueuePath (String id) {
-      batchQueuePath.remove(id);
-    }
-*/
 
     @Override
     public Identifier getBatchID() {

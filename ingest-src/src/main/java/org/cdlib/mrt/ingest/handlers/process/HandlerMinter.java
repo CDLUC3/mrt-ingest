@@ -37,8 +37,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-//import java.util.Set;
-//import java.util.LinkedHashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.cdlib.mrt.ingest.handlers.Handler;
 import org.cdlib.mrt.ingest.handlers.HandlerResult;
@@ -66,10 +67,11 @@ public class HandlerMinter extends Handler<JobState>
 
     private static final String NAME = "HandlerMinter";
     private static final String MESSAGE = NAME + ": ";
-    private static final boolean DEBUG = true;
     private LoggerInf logger = null;
     private Properties conf = null;
     private int metadataDisplaySize;
+
+    protected static final Logger log4j = LogManager.getLogger();
 
     /**
      * mint object ID
@@ -135,7 +137,7 @@ public class HandlerMinter extends Handler<JobState>
 
 	    if (ProfileUtil.isDemoMode(profileState)) {
 	        if (jobState.getPrimaryID() != null) {
-	            System.out.println("[debug] " + MESSAGE + "demo mode detected, resetting primary id.");
+	            log4j.debug("[debug] " + MESSAGE + "demo mode detected, resetting primary id.");
 		    jobState.setLocalID(jobState.getPrimaryID().getValue());
 	    	    jobState.setPrimaryID(null);
 		}
@@ -145,7 +147,7 @@ public class HandlerMinter extends Handler<JobState>
 	    if (localID != null && jobState.getPrimaryID() == null && ! localID.getValue().contains("(:unas)"))	
 		retrievedObjectID = LocalIDUtil.fetchPrimaryID(profileState, localID.getValue());
 	    else
-		System.out.println("[debug] " + MESSAGE + "No Local ID specified for object");
+		log4j.debug("[debug] " + MESSAGE + "No Local ID specified for object");
 
 	    if (jobState.getPrimaryID() != null) {
 		if (retrievedObjectID != null) {
@@ -153,24 +155,24 @@ public class HandlerMinter extends Handler<JobState>
 		        throw new TException.INVALID_OR_MISSING_PARM("[error]" + MESSAGE + "local ID and primary ID mapping is incorrect: " +
 			        retrievedObjectID + " - " + jobState.getPrimaryID().getValue());
 		    } else {
-	                System.out.println("[debug] " + MESSAGE + "Primary ID and Local ID mapping is correct: " + retrievedObjectID + " --- " + localID);
+	                log4j.debug("[debug] " + MESSAGE + "Primary ID and Local ID mapping is correct: " + retrievedObjectID + " --- " + localID);
 		    }
 		}
 	    } else {
 		if (retrievedObjectID != null) {
 	    	    jobState.setPrimaryID(retrievedObjectID);
-	            System.out.println("[debug] " + MESSAGE + "Primary ID found from local ID: " + retrievedObjectID + " --- " + localID);
+	            log4j.debug("[debug] " + MESSAGE + "Primary ID found from local ID: " + retrievedObjectID + " --- " + localID);
 		}
 	    }
 
 	    if (jobState.getPrimaryID() != null) {
-	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "objectID found, no minting necessary.");
+	        log4j.debug("[debug] " + MESSAGE + "objectID found, no minting necessary.");
 		mint = false;
 	    }
 
 	    if (mint) {
 		if (profileState.getIdentifierScheme() ==  Identifier.Namespace.DOI) {
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Merritt no longer supports DOI minting: " + profileState.getIdentifierScheme());
+	            log4j.debug("[debug] " + MESSAGE + "Merritt no longer supports DOI minting: " + profileState.getIdentifierScheme());
                     throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Merritt no longer supports DOI minting: " + profileState.getIdentifierScheme());
 		} 
 		    
@@ -178,9 +180,9 @@ public class HandlerMinter extends Handler<JobState>
 		if (profileState.getIdentifierScheme() ==  Identifier.Namespace.ARK) {
 		    assignedObjectID = returnValue;
 	            jobState.setPrimaryID(assignedObjectID);
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "objectID minted: " + assignedObjectID);
+	            log4j.debug("[debug] " + MESSAGE + "objectID minted: " + assignedObjectID);
 		} else {
-	            if (DEBUG) System.out.println("[debug] " + MESSAGE + "Unsupported Identifier scheme: " + profileState.getIdentifierScheme());
+	            log4j.debug("[debug] " + MESSAGE + "Unsupported Identifier scheme: " + profileState.getIdentifierScheme());
                     throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Unsupported Identifier scheme: " + profileState.getIdentifierScheme());
 		}
 	    }
@@ -189,17 +191,17 @@ public class HandlerMinter extends Handler<JobState>
 	    if (jobState.grabUpdateFlag()) {
 		// populate metadata
 		try {
-		    System.out.println("[debug] " + MESSAGE + "Update specified, let's update primary/local IDs'");
+		    log4j.debug("[debug] " + MESSAGE + "Update specified, let's update primary/local IDs'");
 		    File previousSystemErcFile = StorageUtil.getStorageFile(profileState, jobState.getPrimaryID().getValue(), "system/mrt-erc.txt");
 	    	    if (previousSystemErcFile != null && previousSystemErcFile.exists()) {
                 	previousSystemERC = MetadataUtil.readMetadataANVL(previousSystemErcFile, metadataDisplaySize);
            		// erc file in ANVL format
            		updateMetadata(jobState, previousSystemERC, true, false);	// update IDs only
             	    } else {
-		        System.out.println("[info] " + MESSAGE + "No previous version exists'");
+		        log4j.info("[info] " + MESSAGE + "No previous version exists'");
 		    }
 		} catch (Exception e) {
-		    System.out.println("[warn] " + MESSAGE + "Error populating metadata w/ previous version");
+		    log4j.warn("[warn] " + MESSAGE + "Error populating metadata w/ previous version");
 		}
 
 		// populate local ID
@@ -209,8 +211,8 @@ public class HandlerMinter extends Handler<JobState>
 		    } catch (NullPointerException npe) {
 		    }
 		    if (retrievedLocalID != null) {
-		        System.out.println("[info] " + MESSAGE + "Found previous local ID (storage db): " + retrievedLocalID);
-		        System.out.println("[info] " + MESSAGE + "Appending to current local ID: " + jobState.getLocalID());
+		        log4j.info("[info] " + MESSAGE + "Found previous local ID (storage db): " + retrievedLocalID);
+		        log4j.info("[info] " + MESSAGE + "Appending to current local ID: " + jobState.getLocalID());
 		        if (jobState.getLocalID() == null) {
 			    jobState.setLocalID(retrievedLocalID);
 			} else {
@@ -219,22 +221,22 @@ public class HandlerMinter extends Handler<JobState>
 				    // append
 			            jobState.setLocalID(jobState.getLocalID() + "; " + lid.trim());
 				} else {
-		        	    System.out.println("[warn] " + MESSAGE + "Local ID already contains: " + lid.trim());
+		        	    log4j.warn("[warn] " + MESSAGE + "Local ID already contains: " + lid.trim());
 				}
 			    }
 			}
-		        System.out.println("[info] " + MESSAGE + "Local ID now set to: " + jobState.getLocalID());
+		        log4j.info("[info] " + MESSAGE + "Local ID now set to: " + jobState.getLocalID());
 		    } else {
-		        System.out.println("[warn] " + MESSAGE + "Could not retrieve local ID.");
+		        log4j.warn("[warn] " + MESSAGE + "Could not retrieve local ID.");
 		    }
 		} catch (Exception e) {
-		    System.out.println("[warn] " + MESSAGE + "Error populating local ID w/ previous version");
+		    log4j.warn("[warn] " + MESSAGE + "Error populating local ID w/ previous version");
 		}
 	    }
 
 	    // At this point we have a primary identifer.  Make sure it is an ARK.
 	    if (! jobState.getPrimaryID().getValue().startsWith("ark")) {
-	        System.err.println("[warn] " + MESSAGE + "Primary ID is not an ARK: " + jobState.getPrimaryID().getValue());
+	        log4j.warn("[warn] " + MESSAGE + "Primary ID is not an ARK: " + jobState.getPrimaryID().getValue());
                	throw new TException.GENERAL_EXCEPTION("[error] " + MESSAGE + ": Primary ID is not an ARK: " + jobState.getPrimaryID().getValue());
 	    }
 
@@ -242,7 +244,7 @@ public class HandlerMinter extends Handler<JobState>
 	    returnValue = MintUtil.processObjectID(profileState, jobState, ingestRequest, false);
 
 	    if (! returnValue.startsWith("ark")) {
-	        System.out.println("[info] " + MESSAGE + "Non ark returned by EZID: " + returnValue);
+	        log4j.info("[info] " + MESSAGE + "Non ark returned by EZID: " + returnValue);
 	    }
 
 
@@ -272,10 +274,10 @@ public class HandlerMinter extends Handler<JobState>
         } catch (InterruptedException ie) {
             return new HandlerResult(false, "[error]: " + MESSAGE + " Interrupted detected - forcing failure");
 	} catch (TException te) {
-            te.printStackTrace(System.err);
+	    log4j.error("Exception:" + te, te);
             return new HandlerResult(false, "[error]: " + MESSAGE + te.getDetail());
 	} catch (Exception e) {
-            e.printStackTrace(System.err);
+	    log4j.error("Exception:" + e, e);
             String msg = "[error] " + MESSAGE + "minting identifier: " + e.getMessage();
             return new HandlerResult(false, msg);
         } finally {
@@ -298,7 +300,7 @@ public class HandlerMinter extends Handler<JobState>
     private boolean createMetadata(File ingestFile, String scheme, String namespace, String assignedIdentifier, String retrievedIdentifier)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "appending metadata: " + ingestFile.getAbsolutePath());
         Map<String, Object> ingestProperties = new LinkedHashMap();   // maintains insertion order
 
 	if (StringUtil.isNotEmpty(assignedIdentifier)) 
@@ -326,7 +328,7 @@ public class HandlerMinter extends Handler<JobState>
     private boolean updateMom(File momFile, String primaryIdentifier, String localIdentifier)
         throws TException
     {
-        if (DEBUG) System.out.println("[debug] " + MESSAGE + "updating momFile: " + momFile.getAbsolutePath());
+        log4j.debug("[debug] " + MESSAGE + "updating momFile: " + momFile.getAbsolutePath());
         Map<String, Object> momProperties = new LinkedHashMap();   // maintains insertion order
 
 	// read existing MOM data
@@ -340,13 +342,13 @@ public class HandlerMinter extends Handler<JobState>
 	if (StringUtil.isNotEmpty(localIdentifier)) {
 	    if (momProperties.containsValue("localIdentifier")) {
 	        if (((String) momProperties.get("localIdentifier")).contains("(:unas)")) {
-                    if (DEBUG) System.out.println("[debug] " + MESSAGE + "assigning localID in momFile: " + localIdentifier);
+                    log4j.debug("[debug] " + MESSAGE + "assigning localID in momFile: " + localIdentifier);
 	        } else {
 		    if (! StringUtil.squeeze(localIdentifier).equals(StringUtil.squeeze((String) momProperties.get("localIdentifier")))) {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "overriding localID in momFile: " 
+        	        log4j.debug("[debug] " + MESSAGE + "overriding localID in momFile: " 
 			    +  momProperties.get("localIdentifier") + " --- " + localIdentifier);
 		    } else {
-        	        if (DEBUG) System.out.println("[debug] " + MESSAGE + "local ID has not changed.  No action taken");
+        	        log4j.debug("[debug] " + MESSAGE + "local ID has not changed.  No action taken");
 		    }
 	        }
 	    }
@@ -354,10 +356,10 @@ public class HandlerMinter extends Handler<JobState>
 	} else {
 	    if (momProperties.containsValue("localIdentifier")) {
 	        if (((String) momProperties.get("localIdentifier")).contains("(:unas)")) {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "no localID defined, removing momFile entry");
+        	    log4j.debug("[debug] " + MESSAGE + "no localID defined, removing momFile entry");
 	    	    momProperties.remove("localIdentifier");
 	        } else {
-        	    if (DEBUG) System.out.println("[debug] " + MESSAGE + "no localID created in minter, preserving existing localID");
+        	    log4j.debug("[debug] " + MESSAGE + "no localID created in minter, preserving existing localID");
 	        }
 	    }
 	}
@@ -414,7 +416,7 @@ public class HandlerMinter extends Handler<JobState>
 			if (overwrite || objectCreator == null || objectCreator.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectCreator(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] " + NAME + " found creator in metadata file: " + value);
+			    log4j.info("[info] " + NAME + " found creator in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
@@ -424,7 +426,7 @@ public class HandlerMinter extends Handler<JobState>
 			if (overwrite || objectTitle == null || objectTitle.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectTitle(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] " + NAME + " found title in metadata file: " + value);
+			    log4j.info("[info] " + NAME + " found title in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
@@ -434,7 +436,7 @@ public class HandlerMinter extends Handler<JobState>
 			if (overwrite || objectDate == null || objectDate.equals("(:unas)")) {
 			    // overwrite existing value
 		            jobState.setObjectDate(trimLeft(trimRight(value)));
-			    if (DEBUG) System.out.println("[info] " + NAME + " found date in metadata file: " + value);
+			    log4j.info("[info] " + NAME + " found date in metadata file: " + value);
 	    	            haveMetadata = true;
 			}
 		    }
@@ -442,77 +444,77 @@ public class HandlerMinter extends Handler<JobState>
 
 		if (key.matches("dc.contributor")) {
 		    jobState.setDCcontributor(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.contributor in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.contributor in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.coverage")) {
 		    jobState.setDCcoverage(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.coverage in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.coverage in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.creator")) {
 		    jobState.setDCcreator(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.creator in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.creator in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.date")) {
 		    jobState.setDCdate(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.date in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.date in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.description")) {
 		    jobState.setDCdescription(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.description in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.description in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.format")) {
 		    jobState.setDCformat(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.format in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.format in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.identifier")) {
 		    jobState.setDCidentifier(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.identifier in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.identifier in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.language")) {
 		    jobState.setDClanguage(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.language in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.language in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.publisher")) {
 		    jobState.setDCpublisher(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.publisher in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.publisher in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.relation")) {
 		    jobState.setDCrelation(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.relation in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.relation in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.rights")) {
 		    jobState.setDCrights(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.rights in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.rights in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.source")) {
 		    jobState.setDCsource(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.source in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.source in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.subject")) {
 		    jobState.setDCsubject(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.subject in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.subject in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.title")) {
 		    jobState.setDCtitle(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.title in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.title in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 		if (key.matches("dc.type")) {
 		    jobState.setDCtype(trimLeft(trimRight(value)));
-		    if (DEBUG) System.out.println("[info] " + NAME + " found dc.type in metadata file: " + value);
+		    log4j.info("[info] " + NAME + " found dc.type in metadata file: " + value);
 	    	    haveMetadata = true;
 		}
 
@@ -531,13 +533,13 @@ public class HandlerMinter extends Handler<JobState>
                                         // append
                                         value += "; " + lid;
                                     } else {
-                                        System.out.println("[warn] " + MESSAGE + "Previous version extracted Local ID already contains: " + lid);
+                                        log4j.warn("[warn] " + MESSAGE + "Previous version extracted Local ID already contains: " + lid);
                                     }
                                 }
 			    } 
 			    value = MintUtil.sanitize(value);
                             jobState.setLocalID(trimLeft(trimRight(value)));
-                            if (DEBUG) System.out.println("[info]" + MESSAGE + "Found local ID(s) in metadata file: " + value);
+                            log4j.info("[info]" + MESSAGE + "Found local ID(s) in metadata file: " + value);
 			}
 		    }
                 }
@@ -547,13 +549,13 @@ public class HandlerMinter extends Handler<JobState>
 			// overwrite existing primary ID (should never be different)
 			if (updateIDs) {
                             jobState.setPrimaryID(trimLeft(trimRight(value)));
-                            if (DEBUG) System.out.println("[info]" + NAME + " Found primary ID in metadata file: " + value);
+                            log4j.info("[info]" + NAME + " Found primary ID in metadata file: " + value);
 			}
 		    }
                 }
             }
         } else {
-            if (DEBUG) System.out.println("[info]" + NAME + " No additional ERC metadata found");
+            log4j.info("[info]" + NAME + " No additional ERC metadata found");
         }
 
 	return haveMetadata;
@@ -568,32 +570,6 @@ public class HandlerMinter extends Handler<JobState>
     public String trimRight(String s) {
         return s.replaceAll("\\s+$", "");
     }
-
-/*
-    public static String sanitize(String s) {
-        Set<String> set = new LinkedHashSet<String>();
-
-	String rebuild = "";
-	boolean first = true;
-	for (String p: s.split(";")) {
-	    p = p.trim();
-
-	    if (! set.contains(p)) {
-		if (first) {
-		    rebuild = p;
-		    first = false;
-		} else {
-		    rebuild += ";" + p;
-		}
-	        set.add(p);
-	    }
-	}
-	if (first) rebuild = s;
-        System.out.println("[info] " + MESSAGE + "sanitized localid: " + s + " ---> " + rebuild);
-
-        return rebuild;
-    }
-*/
 
     public String getName() {
 	return NAME;
