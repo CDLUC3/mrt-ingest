@@ -160,7 +160,7 @@
                       <port>mrt-minio-it.port:8088</port>
                     </ports>
                     <wait>
-                      <time>1000</time>
+                      <time>5000</time>
                     </wait>
                   </run>
                 </image>
@@ -192,7 +192,7 @@
                       <port>it-server.port:8080</port>
                     </ports>
                     <wait>
-                      <time>3000</time>
+                      <time>10000</time>
                     </wait>
                     <volumes>
                       <bind>
