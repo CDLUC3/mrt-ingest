@@ -1,4 +1,4 @@
-which-ingest: "{!ENV: MERRITT_INGEST !DEFAULT: ingest}"
+which-ingest: "{!ENV: MERRITT_INGEST !DEFAULT: ingest-docker}"
 ingest-docker: 
   ingest-info: &ingestinfo
     name: "{!ENV: CONFIG_NAME !DEFAULT: UC3 Ingest }"
