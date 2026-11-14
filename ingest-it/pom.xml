@@ -165,6 +165,20 @@
                   </run>
                 </image>
                 <image>
+                  <name>${itDockerRegistry}/mrt-rustfs-it:dev</name>
+                  <alias>mrt-minio-init</alias>
+                  <run>
+                    <network>
+                      <name>network</name>
+                      <alias>mrt-minio-init</alias>
+                    </network>
+                    <entrypoint>/config-init.sh</entrypoint>
+                    <wait>
+                      <time>7000</time>
+                    </wait>
+                  </run>
+                </image>
+                <image>
                   <name>public.ecr.aws/docker/library/zookeeper:3.9.7</name>
                   <alias>zoo-it</alias>
                   <run>
@@ -192,7 +206,7 @@
                       <port>it-server.port:8080</port>
                     </ports>
                     <wait>
-                      <time>10000</time>
+                      <time>12000</time>
                     </wait>
                     <volumes>
                       <bind>

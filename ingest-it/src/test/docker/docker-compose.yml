@@ -39,7 +39,7 @@ services:
     entrypoint: ["catalina.sh", "jpda", "run"]
   zoo-it:
     container_name: zoo-it
-    image: public.ecr.aws/docker/library/zookeeper:3.9.4
+    image: public.ecr.aws/docker/library/zookeeper:3.9.7
     networks:
       merrittnet:
     ports:
@@ -54,10 +54,19 @@ services:
     networks:
       merrittnet:
     restart: unless-stopped
-  minio:
+  mrt-minio-it:
     container_name: minio
     image: ${ECR_REGISTRY}/mrt-rustfs-it:dev
     # command: server /buckets --address :9000 --console-address ":9001"
+    networks:
+      merrittnet:
+    restart: unless-stopped
+  minio-init:
+    container_name: minio-init
+    image: ${ECR_REGISTRY}/mrt-rustfs-it:dev
+    depends_on:
+    - mrt-minio-it
+    entrypoint: ["/config-init.sh"]
     networks:
       merrittnet:
     restart: unless-stopped
